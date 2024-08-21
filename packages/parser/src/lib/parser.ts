@@ -17,12 +17,12 @@ export type BooleanOptionConfig = {
   type: 'boolean';
 } & CommonOptionConfig<boolean>;
 
-export type ArrayOptionConfig<T extends string | number> = {
+export type ArrayOptionConfig<T extends string | number = string | number> = {
   type: 'array';
   items: T extends string ? 'string' : 'number';
 } & CommonOptionConfig<T[]>;
 
-type OptionConfig =
+export type OptionConfig =
   | StringOptionConfig
   | NumberOptionConfig
   | ArrayOptionConfig<string | number>
@@ -33,26 +33,68 @@ type InternalOptionConfig = OptionConfig & {
   position?: number;
 };
 
-type ParsedArgs = {
-  [key: string]: string | number | boolean | string[] | number[];
-  unmatached: string[];
+export type ParsedArgs = {
+  unmatched: string[];
 };
 
-class ArgvParser<
+export type WithOptionType<
+  TInitial,
+  TKey extends string,
+  TOptionConfig extends OptionConfig
+> = TInitial & {
+  [key in TKey]: {
+    string: string;
+    number: number;
+    boolean: boolean;
+    array: (TOptionConfig extends ArrayOptionConfig
+      ? TOptionConfig['items'] extends 'string'
+        ? string
+        : number
+      : never)[];
+  }[TOptionConfig['type']];
+};
+
+export type ParserOptions = {
+  extraParsers?: Record<string, Parser<any>>;
+  /**
+   * @returns true if the argument was handled, false if it was not
+   */
+  unmatchedParser?: (
+    arg: string,
+    tokens: string[],
+    parser: ArgvParser
+  ) => boolean;
+};
+
+export class ArgvParser<
   TArgs extends ParsedArgs = {
-    unmatached: string[];
+    unmatched: string[];
   }
 > {
   configuredOptions: { [key in keyof TArgs]: InternalOptionConfig };
   configuredPositionals: InternalOptionConfig[];
+  options: Required<ParserOptions>;
+  parserMap: Record<string, Parser<any>>;
 
-  constructor() {
+  constructor(options?: ParserOptions) {
     this.configuredOptions = {} as Record<keyof TArgs, InternalOptionConfig>;
     this.configuredPositionals = [];
+    this.options = {
+      extraParsers: {},
+      unmatchedParser: () => false,
+      ...options,
+    };
+    this.parserMap = {
+      ...parserMap,
+      ...this.options.extraParsers,
+    };
   }
 
-  option<TOption extends string>(name: TOption, config: OptionConfig) {
-    const thisAsNewType = this as ArgvParser<
+  option<TOption extends string, TOptionConfig extends OptionConfig>(
+    name: TOption,
+    config: TOptionConfig
+  ) {
+    const thisAsNewType = this as any as ArgvParser<
       TArgs & { [key in TOption]: OptionConfig }
     >;
 
@@ -68,7 +110,20 @@ class ArgvParser<
       } as InternalOptionConfig;
     }
 
-    return this as ArgvParser<TArgs & { [key in typeof name]: any }>;
+    return this as any as ArgvParser<
+      TArgs & {
+        [key in TOption]: {
+          string: string;
+          number: number;
+          boolean: boolean;
+          array: (TOptionConfig extends ArrayOptionConfig
+            ? TOptionConfig['items'] extends 'string'
+              ? string
+              : number
+            : never)[];
+        }[TOptionConfig['type']];
+      }
+    >;
   }
 
   positional<TOption extends string>(name: TOption, config: OptionConfig) {
@@ -92,13 +147,18 @@ class ArgvParser<
         if (isConfiguredOption<TArgs>(key, this.configuredOptions)) {
           const configuration = this.configuredOptions[key];
           const value = tryParseValue(
-            parserMap[configuration.type],
+            this.parserMap[configuration.type],
             configuration,
             argvClone
           );
           result[configuration.key] = value;
           arg = argvClone.shift();
         } else {
+          // The configured unmatched parser handled the argument
+          if (this.options.unmatchedParser(arg, argvClone, this)) {
+            arg = argvClone.shift();
+            continue;
+          }
           // Unmatched flag
           result.unmatched.push(arg);
           let next = argvClone.shift();
@@ -112,27 +172,45 @@ class ArgvParser<
         // Found a positional argument
       } else {
         const configuration = this.configuredPositionals[matchedPositionals];
-        console.log('configuration', configuration);
         if (configuration && configuration.positional === true) {
           const value = tryParseValue(
-            parserMap[configuration.type],
+            this.parserMap[configuration.type],
             configuration,
             [arg]
           );
           result[configuration.key] = value;
           matchedPositionals++;
         } else {
+          if (this.options.unmatchedParser(arg, argvClone, this)) {
+            arg = argvClone.shift();
+            continue;
+          }
           result.unmatched.push(arg);
         }
         arg = argvClone.shift();
       }
     }
-    return result;
+    return result as TArgs;
+  }
+
+  augment<TAugment extends ParsedArgs>(
+    parser: ArgvParser<TAugment>
+  ): ArgvParser<TArgs & TAugment> {
+    const thisAsNewType = this as any as ArgvParser<TArgs & TAugment>;
+    thisAsNewType.configuredOptions = {
+      ...this.configuredOptions,
+      ...parser.configuredOptions,
+    };
+    thisAsNewType.configuredPositionals = [
+      ...this.configuredPositionals,
+      ...parser.configuredPositionals,
+    ];
+    return thisAsNewType;
   }
 }
 
-export function parser() {
-  return new ArgvParser();
+export function parser(opts?: ParserOptions) {
+  return new ArgvParser(opts);
 }
 
 function isConfiguredOption<T extends ParsedArgs>(
@@ -161,7 +239,7 @@ const booleanParser: Parser<BooleanOptionConfig> = (_, tokens: string[]) => {
   return true;
 };
 
-class NoValueError extends Error {
+export class NoValueError extends Error {
   constructor() {
     super('Expected a value');
   }
@@ -259,6 +337,11 @@ function tryParseValue(
   config: InternalOptionConfig,
   tokens: string[]
 ) {
+  if (!parser) {
+    throw new Error(
+      `No parser found for option ${config.key} with type ${config.type}`
+    );
+  }
   try {
     return parser(config, tokens);
   } catch (e) {

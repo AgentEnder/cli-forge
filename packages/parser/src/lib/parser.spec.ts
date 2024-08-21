@@ -106,4 +106,47 @@ describe('parser', () => {
         .parse(['--foo', 'hello', 'world', '--bar', '42', '--baz', 'true'])
     ).toEqual({ foo: 'hello', bar: 42, unmatched: ['world', '--baz', 'true'] });
   });
+
+  it('should have correct typings', () => {
+    const parsed = parser()
+      .option('foo', { type: 'string', default: 'hello' })
+      .option('bar', { type: 'number' })
+      .option('baz', { type: 'boolean' })
+      .option('bam', { type: 'array', items: 'string' })
+      .option('qux', { type: 'array', items: 'number' })
+      .parse([
+        '--foo',
+        'hello',
+        '--bar',
+        '42',
+        '--baz',
+        'true',
+        '--bam',
+        'world',
+        '--qux',
+        '1',
+        '2',
+      ]);
+
+    // The following lines should not throw type errors.
+    parsed.foo.charAt(0);
+    parsed.bar.toFixed();
+    parsed.baz.valueOf();
+    parsed.bam.join('');
+    parsed.qux.reduce((acc, val) => acc + val, 0);
+  });
+
+  it('should allow customizing unmatched parser', () => {
+    expect(
+      parser({
+        unmatchedParser: () => true,
+      })
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', 'world', '--bar', '42', '--baz', 'true'])
+    ).toEqual({
+      foo: 'hello',
+      // The unmatched parser should have handled the arguments, so nothing should be unmatched
+      unmatched: [],
+    });
+  });
 });
