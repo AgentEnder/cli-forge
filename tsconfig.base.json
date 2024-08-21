@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@cli-forge/parser": ["packages/parser/src/index.ts"]
+      "@cli-forge/parser": ["packages/parser/src/index.ts"],
+      "cli-forge": ["packages/cli-forge/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
