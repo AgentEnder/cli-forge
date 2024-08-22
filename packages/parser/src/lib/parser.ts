@@ -1,32 +1,42 @@
-export type CommonOptionConfig<T> = {
+export type CommonOptionConfig<T, TCoerce = T> = {
   positional?: boolean;
   alias?: string[];
   default?: T;
   description?: string;
+  coerce?: (value: T) => TCoerce;
 };
 
-export type StringOptionConfig = {
+export type StringOptionConfig<TCoerce = string> = {
   type: 'string';
-} & CommonOptionConfig<string>;
+} & CommonOptionConfig<string, TCoerce>;
 
-export type NumberOptionConfig = {
+export type NumberOptionConfig<TCoerce = number> = {
   type: 'number';
-} & CommonOptionConfig<number>;
+} & CommonOptionConfig<number, TCoerce>;
 
-export type BooleanOptionConfig = {
+export type BooleanOptionConfig<TCoerce = boolean> = {
   type: 'boolean';
-} & CommonOptionConfig<boolean>;
+} & CommonOptionConfig<boolean, TCoerce>;
 
-export type ArrayOptionConfig<T extends string | number = string | number> = {
+export type StringArrayOptionConfig<TCoerce = string> = {
   type: 'array';
-  items: T extends string ? 'string' : 'number';
-} & CommonOptionConfig<T[]>;
+  items: 'string';
+} & CommonOptionConfig<string[], TCoerce>;
 
-export type OptionConfig =
-  | StringOptionConfig
-  | NumberOptionConfig
-  | ArrayOptionConfig<string | number>
-  | BooleanOptionConfig;
+export type NumberArrayOptionConfig<TCoerce = number> = {
+  type: 'array';
+  items: 'number';
+} & CommonOptionConfig<number[], TCoerce>;
+
+export type ArrayOptionConfig<TCoerce = string | number> =
+  | StringArrayOptionConfig<TCoerce>
+  | NumberArrayOptionConfig<TCoerce>;
+
+export type OptionConfig<TCoerce = any> =
+  | StringOptionConfig<TCoerce>
+  | NumberOptionConfig<TCoerce>
+  | ArrayOptionConfig<TCoerce>
+  | BooleanOptionConfig<TCoerce>;
 
 type InternalOptionConfig = OptionConfig & {
   key: string;
@@ -35,23 +45,6 @@ type InternalOptionConfig = OptionConfig & {
 
 export type ParsedArgs = {
   unmatched: string[];
-};
-
-export type WithOptionType<
-  TInitial,
-  TKey extends string,
-  TOptionConfig extends OptionConfig
-> = TInitial & {
-  [key in TKey]: {
-    string: string;
-    number: number;
-    boolean: boolean;
-    array: (TOptionConfig extends ArrayOptionConfig
-      ? TOptionConfig['items'] extends 'string'
-        ? string
-        : number
-      : never)[];
-  }[TOptionConfig['type']];
 };
 
 export type ParserOptions = {
@@ -112,16 +105,18 @@ export class ArgvParser<
 
     return this as any as ArgvParser<
       TArgs & {
-        [key in TOption]: {
-          string: string;
-          number: number;
-          boolean: boolean;
-          array: (TOptionConfig extends ArrayOptionConfig
-            ? TOptionConfig['items'] extends 'string'
-              ? string
-              : number
-            : never)[];
-        }[TOptionConfig['type']];
+        [key in TOption]: TOptionConfig['coerce'] extends (s: any) => any
+          ? ReturnType<TOptionConfig['coerce']>
+          : {
+              string: string;
+              number: number;
+              boolean: boolean;
+              array: (TOptionConfig extends ArrayOptionConfig
+                ? TOptionConfig['items'] extends 'string'
+                  ? string
+                  : number
+                : never)[];
+            }[TOptionConfig['type']];
       }
     >;
   }
@@ -343,7 +338,8 @@ function tryParseValue(
     );
   }
   try {
-    return parser(config, tokens);
+    const val = parser(config, tokens);
+    return (config.coerce as (s: any) => any)?.(val) ?? val;
   } catch (e) {
     if (e instanceof NoValueError) {
       if (config.default !== undefined) {

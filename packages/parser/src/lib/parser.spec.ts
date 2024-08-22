@@ -149,4 +149,20 @@ describe('parser', () => {
       unmatched: [],
     });
   });
+
+  it('should have correct types with coerce', () => {
+    const parsed = parser()
+      .option('foo', { type: 'string', coerce: (s) => Number(s) })
+      .option('bar', { type: 'number', coerce: (n) => n.toFixed() })
+      .parse(['--foo', 'hello', '--bar', '42']);
+
+    // The following line should not throw a type error.
+    // Foo was coerced to a number
+    parsed.foo.toFixed();
+    // Bar was coerced to a string
+    parsed.bar.substring(4);
+
+    expect(typeof parsed.foo).toBe('number');
+    expect(typeof parsed.bar).toBe('string');
+  });
 });
