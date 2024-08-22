@@ -14,7 +14,7 @@ type CLICommandOptions<TInitial extends ParsedArgs, TArgs extends TInitial> = {
 export class CLI<T extends ParsedArgs> {
   private commands: Record<string, CLI<any>> = {};
   private commandChain: string[] = [];
-  private parser: ArgvParser<T> = new ArgvParser({
+  private parser = new ArgvParser<T>({
     unmatchedParser: (arg, tokens, parser) => {
       let currentCommand: CLI<any> = this;
       for (const command of this.commandChain) {
@@ -22,12 +22,16 @@ export class CLI<T extends ParsedArgs> {
       }
       const command = currentCommand.commands[arg];
       if (command && command.configuration) {
-        command.configuration.builder?.(this);
+        command.configuration.builder?.(command);
         this.commandChain.push(arg);
         return true;
       }
       return false;
     },
+  }).option('help', {
+    type: 'boolean',
+    alias: ['-h'],
+    description: 'Show help for the current command',
   });
 
   constructor(
@@ -45,6 +49,7 @@ export class CLI<T extends ParsedArgs> {
       };
     }
     this.commands[key] = new CLI<TArgs>(key, options);
+    this.commands[key].parser = this.parser;
     return this;
   }
 
@@ -55,16 +60,20 @@ export class CLI<T extends ParsedArgs> {
     this.parser.option(name, config);
     return this as any as CLI<
       T & {
-        [key in TOption]: {
-          string: string;
-          number: number;
-          boolean: boolean;
-          array: (TOptionConfig extends ArrayOptionConfig<string | number>
-            ? TOptionConfig['items'] extends 'string'
-              ? string
-              : number
-            : never)[];
-        }[TOptionConfig['type']];
+        [key in TOption]: TOptionConfig['coerce'] extends (
+          value: string
+        ) => infer TCoerce
+          ? TCoerce
+          : {
+              string: string;
+              number: number;
+              boolean: boolean;
+              array: (TOptionConfig extends ArrayOptionConfig<string | number>
+                ? TOptionConfig['items'] extends 'string'
+                  ? string
+                  : number
+                : never)[];
+            }[TOptionConfig['type']];
       }
     >;
   }
@@ -90,25 +99,89 @@ export class CLI<T extends ParsedArgs> {
     >;
   }
 
-  runCommand(command: string, args: any) {
-    const cmd = this.commands[command];
-    if (cmd && cmd.configuration?.handler) {
-      cmd.configuration.handler(args);
+  formatHelp() {
+    const help: string[] = [];
+    let command = this;
+    for (const key of this.commandChain) {
+      command = command.commands[key] as typeof this;
+    }
+    help.push(`Usage: ${[this.name, ...this.commandChain].join(' ')}`);
+    if (command.configuration?.description) {
+      help.push(command.configuration.description);
+    }
+    if (Object.keys(command.commands).length > 0) {
+      help.push('');
+      help.push('Commands:');
+    }
+    for (const key in command.commands) {
+      const subcommand = command.commands[key];
+      help.push(
+        `  ${key}${
+          subcommand.configuration?.description
+            ? ' - ' + subcommand.configuration.description
+            : ''
+        }`
+      );
+    }
+    if (Object.keys(this.parser.configuredOptions).length > 0) {
+      help.push('');
+      help.push('Options:');
+    }
+    for (const key in this.parser.configuredOptions) {
+      const option = (this.parser.configuredOptions as any)[
+        key
+      ] as OptionConfig;
+      help.push(
+        `  --${key}${option.description ? ' - ' + option.description : ''}`
+      );
+    }
+
+    if (Object.keys(command.commands).length > 0) {
+      help.push(' ');
+      help.push(
+        `Run \`${[this.name, ...this.commandChain].join(
+          ' '
+        )} [command] --help\` for more information on a command`
+      );
+    }
+
+    return help.join('\n');
+  }
+
+  printHelp() {
+    console.log(this.formatHelp());
+  }
+
+  async runCommand<T extends ParsedArgs>(cmd: CLI<T>, args: T) {
+    try {
+      await cmd.configuration!.handler(args);
+    } catch {
+      this.printHelp();
     }
   }
 
-  forge(args: string[] = process.argv.slice(2)) {
+  async forge(args: string[] = process.argv.slice(2)) {
+    // Parsing the args does two things:
+    // - builds argv to pass to handler
+    // - fills the command chain + registers commands
     const argv = this.parser.parse(args);
     let currentCommand: CLI<any> = this;
     for (const command of this.commandChain) {
       currentCommand = currentCommand.commands[command];
     }
-    if (currentCommand === this && this.configuration?.handler) {
-      const parser = this.configuration.builder?.(this).parser ?? this.parser;
-      this.configuration.handler(parser.parse(args));
-    } else {
-      currentCommand.configuration?.handler(argv);
+    if (argv.help) {
+      this.printHelp();
+      return;
     }
+
+    const finalArgV =
+      currentCommand === this
+        ? (this.configuration?.builder?.(this).parser ?? this.parser).parse(
+            args
+          )
+        : argv;
+
+    await this.runCommand(currentCommand, finalArgV);
   }
 }
 
