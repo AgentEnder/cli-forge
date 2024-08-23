@@ -14,6 +14,7 @@ type CLICommandOptions<TInitial extends ParsedArgs, TArgs extends TInitial> = {
 export class CLI<T extends ParsedArgs> {
   private commands: Record<string, CLI<any>> = {};
   private commandChain: string[] = [];
+  private requiresCommand: boolean = false;
   private parser = new ArgvParser<T>({
     unmatchedParser: (arg, tokens, parser) => {
       let currentCommand: CLI<any> = this;
@@ -99,6 +100,11 @@ export class CLI<T extends ParsedArgs> {
     >;
   }
 
+  demandCommand() {
+    this.requiresCommand = true;
+    return this;
+  }
+
   formatHelp() {
     const help: string[] = [];
     let command = this;
@@ -154,8 +160,14 @@ export class CLI<T extends ParsedArgs> {
 
   async runCommand<T extends ParsedArgs>(cmd: CLI<T>, args: T) {
     try {
+      if (cmd.requiresCommand) {
+        throw new Error(
+          `${[this.name, ...this.commandChain].join(' ')} requires a command`
+        );
+      }
       await cmd.configuration!.handler(args);
     } catch {
+      process.exitCode = 1;
       this.printHelp();
     }
   }

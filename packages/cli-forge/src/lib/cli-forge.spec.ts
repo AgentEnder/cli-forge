@@ -1,6 +1,33 @@
 import { cli } from './cli-forge';
 
+const ORIGINAL_CONSOLE_LOG = console.log;
+
+function mockConsoleLog() {
+  const lines: string[] = [];
+  console.log = (...contents) =>
+    lines.push(
+      contents
+        .map((s) => (typeof s === 'string' ? s : JSON.stringify(s)))
+        .join(' ')
+    );
+  return {
+    getOutput: () => lines.join('\n'),
+    restore: () => {
+      console.log = ORIGINAL_CONSOLE_LOG;
+    },
+  };
+}
+
 describe('cliForge', () => {
+  afterEach(() => {
+    // Tests that contain handlers which fail
+    // set process.exitCode to 1
+    process.exitCode = undefined;
+
+    // Restore console.log
+    console.log = ORIGINAL_CONSOLE_LOG;
+  });
+
   it('typings should work', async () => {
     await cli('test cli')
       .option('foo', { type: 'string' })
@@ -83,9 +110,7 @@ describe('cliForge', () => {
   });
 
   it('should generate help text', async () => {
-    const lines: string[] = [];
-    const originalLog = console.log;
-    console.log = (line: string) => lines.push(line);
+    const { getOutput } = mockConsoleLog();
     await cli('test')
       .option('baz', { type: 'string' })
       .command('format', {
@@ -97,7 +122,7 @@ describe('cliForge', () => {
         handler: () => {},
       })
       .forge(['--help']);
-    expect(lines.join('\n')).toMatchInlineSnapshot(`
+    expect(getOutput()).toMatchInlineSnapshot(`
       "Usage: test
 
       Commands:
@@ -109,18 +134,10 @@ describe('cliForge', () => {
        
       Run \`test [command] --help\` for more information on a command"
     `);
-    console.log = originalLog;
   });
 
   it('should generate help text for subcommands', async () => {
-    const lines: string[] = [];
-    const originalLog = console.log;
-    console.log = (...contents) =>
-      lines.push(
-        contents
-          .map((s) => (typeof s === 'string' ? s : JSON.stringify(s)))
-          .join(' ')
-      );
+    const { getOutput } = mockConsoleLog();
     await cli('test')
       .option('baz', { type: 'string' })
       .command('format', {
@@ -134,7 +151,7 @@ describe('cliForge', () => {
         handler: () => {},
       })
       .forge(['format', 'check', '--help']);
-    expect(lines.join('\n')).toMatchInlineSnapshot(`
+    expect(getOutput()).toMatchInlineSnapshot(`
       "Usage: test format check
 
       Options:
@@ -143,13 +160,10 @@ describe('cliForge', () => {
         --bar
         --foo"
     `);
-    console.log = originalLog;
   });
 
   it('should print help if command throws', async () => {
-    const lines: string[] = [];
-    const originalLog = console.log;
-    console.log = (line: string) => lines.push(line);
+    const { getOutput } = mockConsoleLog();
     await cli('test')
       .command('foo', {
         builder: (argv) => argv.option('bar', { type: 'string' }),
@@ -158,14 +172,14 @@ describe('cliForge', () => {
         },
       })
       .forge(['foo']);
-    expect(lines.join('\n')).toMatchInlineSnapshot(`
+    expect(getOutput()).toMatchInlineSnapshot(`
       "Usage: test foo
 
       Options:
         --help - Show help for the current command
         --bar"
     `);
-    console.log = originalLog;
+    expect(process.exitCode).toBe(1);
   });
 
   it('should support async handlers', async () => {
@@ -180,5 +194,27 @@ describe('cliForge', () => {
       })
       .forge(['foo']);
     expect(ran).toBe(true);
+  });
+
+  it('should support requiring subcommands', async () => {
+    let ran = false;
+    await cli('test')
+      .command('foo', {
+        builder: (argv) => argv.option('bar', { type: 'string' }),
+        handler: () => {
+          ran = true;
+        },
+      })
+      .command('$0', {
+        handler: () => {
+          ran = true;
+        },
+      })
+      .demandCommand()
+      .forge([]);
+
+    // With `demandCommand`, no command should be ran. Instead, the help text should be printed.
+    expect(ran).toBe(false);
+    expect(process.exitCode).toBe(1);
   });
 });
