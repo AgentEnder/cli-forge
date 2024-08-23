@@ -78,6 +78,7 @@ type InternalOptionConfig = OptionConfig & {
 
 export type ParsedArgs = {
   unmatched: string[];
+  '--'?: string[];
 };
 
 export type ParserOptions = {
@@ -169,6 +170,10 @@ export class ArgvParser<
     let arg = argvClone.shift();
     let matchedPositionals = 0;
     while (arg) {
+      if (arg === '--') {
+        result['--'] = argvClone;
+        break;
+      }
       // Found a flag + value
       if (isFlag(arg)) {
         const keys = readArgKeys(arg);

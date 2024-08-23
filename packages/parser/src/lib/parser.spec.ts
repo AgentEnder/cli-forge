@@ -262,4 +262,12 @@ describe('parser', () => {
         .parse(['--foo', 'world'])
     ).toThrowError('foo must be hello');
   });
+
+  it('should provide `--` if passed', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', 'world', '--', '--bar', '42'])
+    ).toEqual({ foo: 'hello', unmatched: ['world'], '--': ['--bar', '42'] });
+  });
 });
