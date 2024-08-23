@@ -191,6 +191,17 @@ export class ArgvParser<
         arg = argvClone.shift();
       }
     }
+    for (const configurationKey in this.configuredOptions) {
+      const configuration = this.configuredOptions[configurationKey];
+      if (configuration.default !== undefined) {
+        result[configuration.key] ??= configuration.default;
+      }
+    }
+    for (const configuration of this.configuredPositionals) {
+      if (configuration.default !== undefined) {
+        result[configuration.key] ??= configuration.default;
+      }
+    }
     return result as TArgs;
   }
 

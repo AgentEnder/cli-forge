@@ -185,4 +185,14 @@ describe('parser', () => {
         .parse(['-fb'])
     ).toEqual({ foo: true, bar: true, unmatched: [] });
   });
+
+  it('should support default values', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'string', default: 'hello' })
+        .option('bar', { type: 'number', default: 42 })
+        .option('baz', { type: 'boolean', default: true })
+        .parse([])
+    ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
+  });
 });
