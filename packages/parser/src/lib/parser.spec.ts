@@ -165,4 +165,24 @@ describe('parser', () => {
     expect(typeof parsed.foo).toBe('number');
     expect(typeof parsed.bar).toBe('string');
   });
+
+  it('should accept aliases', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'string', alias: ['f'] })
+        .option('bar', { type: 'number', alias: ['b'] })
+        .option('baz', { type: 'boolean', alias: ['zax'] })
+        .parse(['-f', 'hello', '-b', '42', '--zax'])
+    ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
+  });
+
+  it('should accept short flag groups', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'boolean', alias: ['f'] })
+        .option('bar', { type: 'boolean', alias: ['b'] })
+        .option('baz', { type: 'boolean', alias: ['z'] })
+        .parse(['-fb'])
+    ).toEqual({ foo: true, bar: true, unmatched: [] });
+  });
 });

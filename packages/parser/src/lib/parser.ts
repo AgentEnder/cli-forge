@@ -137,24 +137,17 @@ export class ArgvParser<
     let matchedPositionals = 0;
     while (arg) {
       // Found a flag + value
-      if (arg.startsWith('--')) {
-        const key = arg.slice(2);
-        if (isConfiguredOption<TArgs>(key, this.configuredOptions)) {
-          const configuration = this.configuredOptions[key];
-          const value = tryParseValue(
-            this.parserMap[configuration.type],
-            configuration,
-            argvClone
-          );
-          result[configuration.key] = value;
-          arg = argvClone.shift();
-        } else {
-          // The configured unmatched parser handled the argument
+      if (isFlag(arg)) {
+        const keys = readArgKeys(arg);
+        const configuredKeys = keys.map((key) =>
+          getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
+        );
+        // Handles unmatched flags
+        if (configuredKeys.some((key) => key === undefined)) {
           if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
           }
-          // Unmatched flag
           result.unmatched.push(arg);
           let next = argvClone.shift();
           // Collect all the values until the next flag
@@ -163,6 +156,19 @@ export class ArgvParser<
             next = argvClone.shift();
           }
           arg = next;
+          continue;
+        }
+        for (const configuredKey of configuredKeys) {
+          if (configuredKey) {
+            const configuration = this.configuredOptions[configuredKey];
+            const value = tryParseValue(
+              this.parserMap[configuration.type],
+              configuration,
+              argvClone
+            );
+            result[configuration.key] = value;
+            arg = argvClone.shift();
+          }
         }
         // Found a positional argument
       } else {
@@ -208,11 +214,20 @@ export function parser(opts?: ParserOptions) {
   return new ArgvParser(opts);
 }
 
-function isConfiguredOption<T extends ParsedArgs>(
-  key: string | number | symbol,
+function getConfiguredOptionKey<T extends ParsedArgs>(
+  key: string,
   configuredOptions: Partial<Record<keyof T, OptionConfig>>
-): key is keyof T {
-  return key in configuredOptions;
+): keyof T | undefined {
+  if (key in configuredOptions) {
+    return key as keyof T;
+  }
+  for (const configuredKey in configuredOptions) {
+    const config = configuredOptions[configuredKey];
+    if (config?.alias?.includes(key)) {
+      return configuredKey as keyof T;
+    }
+  }
+  return undefined;
 }
 
 function isNextFlag(str: string) {
@@ -357,3 +372,18 @@ const parserMap: Record<string, Parser<any>> = {
   boolean: booleanParser,
   array: arrayParser,
 };
+
+function isFlag(str: string): str is `-${string}` {
+  return str.startsWith('-');
+}
+
+function readArgKeys(str: `-${string}`): string[] {
+  // Long flags (e.g. --foo)
+  if (str.startsWith('--')) {
+    return [str.slice(2)];
+    // Short flag combinations (e.g. -xvf)
+  } else if (str.startsWith('-')) {
+    return str.slice(1).split('');
+  }
+  throw new Error(`Invalid flag ${str}`);
+}
