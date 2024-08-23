@@ -61,6 +61,14 @@ describe('parser', () => {
     ).toEqual({ foo: ['hello', 'world'], unmatched: [] });
   });
 
+  it('should handle arrays passed as multiple arguments', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'array', items: 'string' })
+        .parse(['--foo', 'hello', '--foo', 'world'])
+    ).toEqual({ foo: ['hello', 'world'], unmatched: [] });
+  });
+
   it('should handle space separated number arrays', () => {
     expect(
       parser()

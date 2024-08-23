@@ -202,7 +202,8 @@ export class ArgvParser<
             const value = tryParseValue(
               this.parserMap[configuration.type],
               configuration,
-              argvClone
+              argvClone,
+              result[configuration.key]
             );
             result[configuration.key] = value;
             arg = argvClone.shift();
@@ -215,7 +216,8 @@ export class ArgvParser<
           const value = tryParseValue(
             this.parserMap[configuration.type],
             configuration,
-            [arg]
+            [arg],
+            result[configuration.key]
           );
           result[configuration.key] = value;
           matchedPositionals++;
@@ -389,7 +391,8 @@ const arrayParser: Parser<ArrayOptionConfig<string | number>> = <
   T extends string | number
 >(
   config: ArrayOptionConfig<T>,
-  tokens: string[]
+  tokens: string[],
+  current?: T[]
 ) => {
   const coerce =
     config.items === 'string'
@@ -408,18 +411,21 @@ const arrayParser: Parser<ArrayOptionConfig<string | number>> = <
     collected.push(val);
     val = tokens.shift();
   }
-  return collected.map(coerce);
+  const coerced = collected.map(coerce);
+  return current ? current.concat(coerced) : coerced;
 };
 
-type Parser<TConfig extends OptionConfig, T = unknown> = (
+type Parser<TConfig extends OptionConfig, T = any> = (
   config: TConfig,
-  tokens: string[]
+  tokens: string[],
+  current?: T
 ) => T;
 
 function tryParseValue(
   parser: Parser<OptionConfig>,
   config: InternalOptionConfig,
-  tokens: string[]
+  tokens: string[],
+  current?: any
 ) {
   if (!parser) {
     throw new Error(
@@ -427,7 +433,7 @@ function tryParseValue(
     );
   }
   try {
-    const val = parser(config, tokens);
+    const val = parser(config, tokens, current);
     return (config.coerce as (s: any) => any)?.(val) ?? val;
   } catch (e) {
     if (e instanceof NoValueError) {
