@@ -1,9 +1,42 @@
 export type CommonOptionConfig<T, TCoerce = T> = {
+  /**
+   * If set to true, the option will be treated as a positional argument.
+   */
   positional?: boolean;
+
+  /**
+   * Provide an array of aliases for the option.
+   */
   alias?: string[];
+
+  /**
+   * Provide a default value for the option.
+   */
   default?: T;
+
+  /**
+   * Provide a description for the option.
+   */
   description?: string;
+
+  /**
+   * Provide a function to coerce the value of the option.
+   * @param value Value of the option
+   * @returns Coerced value of the option
+   */
   coerce?: (value: T) => TCoerce;
+
+  /**
+   * Provide a function to validate the value of the option.
+   * @param value Coerced value of the option
+   * @returns If the value is valid, return true. If the value is invalid, return false or a string with an error message.
+   */
+  validate?: (value: TCoerce) => boolean | string;
+
+  /**
+   * If true, the option is required.
+   */
+  required?: boolean;
 };
 
 export type StringOptionConfig<TCoerce = string> = {
@@ -196,11 +229,13 @@ export class ArgvParser<
       if (configuration.default !== undefined) {
         result[configuration.key] ??= configuration.default;
       }
+      validateOption(configuration, result[configuration.key]);
     }
     for (const configuration of this.configuredPositionals) {
       if (configuration.default !== undefined) {
         result[configuration.key] ??= configuration.default;
       }
+      validateOption(configuration, result[configuration.key]);
     }
     return result as TArgs;
   }
@@ -223,6 +258,29 @@ export class ArgvParser<
 
 export function parser(opts?: ParserOptions) {
   return new ArgvParser(opts);
+}
+
+function validateOption<T>(optionConfig: InternalOptionConfig, value: T) {
+  if (optionConfig.validate) {
+    const result = optionConfig.validate(value);
+    if (typeof result === 'string') {
+      throw new Error(result);
+    }
+    if (!result) {
+      throw new Error(
+        `Invalid value for${
+          optionConfig.positional ? ' positional' : ''
+        } option ${optionConfig.key}`
+      );
+    }
+  }
+  if (optionConfig.required && value === undefined) {
+    throw new Error(
+      `Missing required${optionConfig.positional ? ' positional' : ''} option ${
+        optionConfig.key
+      }`
+    );
+  }
 }
 
 function getConfiguredOptionKey<T extends ParsedArgs>(

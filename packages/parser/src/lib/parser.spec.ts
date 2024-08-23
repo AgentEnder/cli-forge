@@ -195,4 +195,71 @@ describe('parser', () => {
         .parse([])
     ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
   });
+
+  it('should not overwrite provided values with defaults', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'string', default: 'hello' })
+        .option('bar', { type: 'number', default: 42 })
+        .option('baz', { type: 'boolean', default: true })
+        .option('qux', { type: 'string', default: 'world' })
+        .parse(['--foo', 'world', '--bar', '1', '--baz', 'false'])
+    ).toEqual({
+      foo: 'world',
+      bar: 1,
+      baz: false,
+      qux: 'world',
+      unmatched: [],
+    });
+  });
+
+  it('should support required options', () => {
+    expect(() =>
+      parser().option('foo', { type: 'string', required: true }).parse([])
+    ).toThrowError('Missing required option foo');
+  });
+
+  it('should support required positional arguments', () => {
+    expect(() =>
+      parser().positional('foo', { type: 'string', required: true }).parse([])
+    ).toThrowError('Missing required positional option foo');
+  });
+
+  it('should support custom validators', () => {
+    expect(() =>
+      parser()
+        .option('foo', {
+          type: 'string',
+          validate: (s) => s === 'hello',
+        })
+        .parse(['--foo', 'world'])
+    ).toThrowError('Invalid value for option foo');
+  });
+
+  it('should support custom positional argument validators', () => {
+    expect(() =>
+      parser()
+        .positional('foo', {
+          type: 'string',
+          validate: (s) => s === 'hello',
+        })
+        .parse(['world'])
+    ).toThrowError('Invalid value for positional option foo');
+  });
+
+  it('should support custom validators with custom error messages', () => {
+    expect(() =>
+      parser()
+        .option('foo', {
+          type: 'string',
+          validate: (s) => {
+            if (s !== 'hello') {
+              return 'foo must be hello';
+            }
+            return true;
+          },
+        })
+        .parse(['--foo', 'world'])
+    ).toThrowError('foo must be hello');
+  });
 });
