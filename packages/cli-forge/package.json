@@ -2,9 +2,19 @@
   "name": "cli-forge",
   "version": "0.0.1",
   "dependencies": {
-    "tslib": "^2.3.0"
+    "tslib": "^2.3.0",
+    "@cli-forge/parser": "file:../parser"
   },
   "type": "commonjs",
   "main": "./src/index.js",
-  "typings": "./src/index.d.ts"
+  "typings": "./src/index.d.ts",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "directory": "packages/cli-forge",
+    "url": "https://github.com/agentender/cli-forge"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

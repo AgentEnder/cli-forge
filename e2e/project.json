@@ -1,0 +1,9 @@
+{
+  "name": "e2e",
+  "implicitDependencies": ["examples", "parser", "cli-forge"],
+  "targets": {
+    "e2e": {
+      "command": "tsx {projectRoot}/run-e2e.ts"
+    }
+  }
+}

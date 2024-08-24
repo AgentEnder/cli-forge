@@ -6,5 +6,14 @@
   },
   "type": "commonjs",
   "main": "./src/index.js",
-  "typings": "./src/index.d.ts"
+  "typings": "./src/index.d.ts",
+  "license": "ISC",
+  "repository": {
+    "type": "git",
+    "directory": "packages/parser",
+    "url": "https://github.com/agentender/cli-forge"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
 }

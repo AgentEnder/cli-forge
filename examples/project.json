@@ -1,0 +1,9 @@
+{
+  "name": "examples",
+  "targets": {
+    "run-example": {
+      "command": "tsx {projectRoot}/{args.example}.ts"
+    }
+  },
+  "implicitDependencies": ["cli-forge", "parser"]
+}
