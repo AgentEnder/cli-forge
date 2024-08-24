@@ -1,6 +1,14 @@
 import { LoadContext } from '@docusaurus/types';
 import { workspaceRoot } from '@nx/devkit';
-import { h1, h2, lines, link, ul } from 'markdown-factory';
+import {
+  blockQuote,
+  codeBlock,
+  h1,
+  h2,
+  lines,
+  link,
+  ul,
+} from 'markdown-factory';
 
 import { mkdirSync, readFileSync, readdirSync, writeFileSync } from 'node:fs';
 import { basename, dirname, join, sep } from 'node:path';
@@ -92,10 +100,8 @@ ${
   data.commands.length
     ? h2(
         'Usage',
-        ul(
-          data.commands.map(
-            (command) => `node ${command.replace('{filename}', data.id)}`
-          )
+        ...data.commands.map((command) =>
+          codeBlock(`node ${command.replace('{filename}', data.id)}`, 'shell')
         )
       )
     : ''
@@ -133,6 +139,9 @@ ${h1(
     examples.map((example) =>
       link(`examples/${example.data.id}`, example.data?.title)
     )
+  ),
+  blockQuote(
+    'These examples are ran as e2e tests on pull-requests and releases to verify they are accurate and up to date. If you see any issues, please open an issue on the github repo.'
   )
 )}
 `;
