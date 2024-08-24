@@ -8,8 +8,8 @@ import { CopyReadmeAndChangelogPlugin } from './src/plugins/copy-readme-changelo
 import RemarkGithubPlugin from 'remark-github';
 
 const config: Config = {
-  title: 'FlexiBench',
-  tagline: 'Powerful, flexible benchmarking for JavaScript and beyond',
+  title: 'CLI Forge',
+  tagline: 'Powerful, composable CLI tools',
   favicon: 'img/favicon.ico',
 
   // Set the production url of your site here
@@ -85,7 +85,7 @@ const config: Config = {
     // Replace with your project's social card
     image: 'img/docusaurus-social-card.jpg',
     navbar: {
-      title: 'FlexiBench',
+      title: 'CLI Forge',
       logo: {
         alt: 'My Site Logo',
         src: 'img/logo.svg',

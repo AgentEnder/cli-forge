@@ -24,6 +24,7 @@
     "eslint-config-prettier": "^9.0.0",
     "markdown-factory": "^0.2.0",
     "nx": "19.6.2",
+    "nx-github-pages": "^1.0.0",
     "prettier": "^2.6.2",
     "tsx": "^4.17.0",
     "typescript": "~5.5.2",

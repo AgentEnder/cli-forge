@@ -1,5 +1,5 @@
 {
-  "name": "@flexi-bench/docs-site",
+  "name": "@cli-forge/docs-site",
   "version": "0.0.0",
   "private": true,
   "scripts": {
@@ -73,11 +73,10 @@
         "dependsOn": [
           "build"
         ],
-        "executor": "@nx-dotnet/nx-ghpages:deploy",
+        "executor": "nx-github-pages:deploy",
         "options": {
-          "remote": "https://github.com/agentender/flexi-bench.git",
-          "directory": "{projectRoot}/build",
-          "baseBranch": "main"
+          "remote": "https://github.com/agentender/cli-forge.git",
+          "directory": "{projectRoot}/build"
         }
       }
     }
