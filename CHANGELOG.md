@@ -1,3 +1,19 @@
+## 0.2.0 (2024-08-24)
+
+
+### 🚀 Features
+
+- **docs-site:** add docs site + examples setup ([6e62fa5](https://github.com/agentender/cli-forge/commit/6e62fa5))
+- **parser:** support kebab case and camel case options ([a2cd6f0](https://github.com/agentender/cli-forge/commit/a2cd6f0))
+
+### 🩹 Fixes
+
+- **parser:** support --flag=value ([e00934e](https://github.com/agentender/cli-forge/commit/e00934e))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.1.0 (2024-08-24)
 
 
