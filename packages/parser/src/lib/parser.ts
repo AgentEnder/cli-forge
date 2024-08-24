@@ -1,3 +1,5 @@
+import { fromDashedToCamelCase } from './utils';
+
 /* eslint-disable @typescript-eslint/no-explicit-any */
 export type CommonOptionConfig<T, TCoerce = T> = {
   /**
@@ -188,6 +190,11 @@ export class ArgvParser<
     const thisAsNewType = this as any as ArgvParser<
       TArgs & { [key in TOption]: OptionConfig }
     >;
+
+    if (name.includes('-')) {
+      config.alias ??= [];
+      config.alias.push(fromDashedToCamelCase(name));
+    }
 
     if (config.positional) {
       thisAsNewType.configuredPositionals.push({
@@ -550,6 +557,9 @@ function readArgKeys(str: `-${string}`): string[] {
   // Long flags (e.g. --foo)
   if (str.startsWith('--')) {
     const key = str.slice(2);
+    if (key.includes('-')) {
+      return [fromDashedToCamelCase(key)];
+    }
     return [str.slice(2)];
     // Short flag combinations (e.g. -xvf)
   } else if (str.startsWith('-')) {

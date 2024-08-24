@@ -287,4 +287,13 @@ describe('parser', () => {
         .parse(['--foo=hello', '--bar=42'])
     ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
   });
+
+  it('should support camelCase or kebab-case options', () => {
+    expect(
+      parser()
+        .option('foo-bar', { type: 'string' })
+        .option('bazQux', { type: 'string' })
+        .parse(['--fooBar', 'hello', '--baz-qux', 'world'])
+    ).toEqual({ 'foo-bar': 'hello', bazQux: 'world', unmatched: [] });
+  });
 });

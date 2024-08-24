@@ -12,7 +12,7 @@
   "repository": {
     "type": "git",
     "directory": "packages/cli-forge",
-    "url": "https://github.com/agentender/cli-forge"
+    "url": "https://github.com/AgentEnder/cli-forge"
   },
   "publishConfig": {
     "access": "public"
