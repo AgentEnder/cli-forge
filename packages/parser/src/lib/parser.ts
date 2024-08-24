@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CommonOptionConfig<T, TCoerce = T> = {
   /**
    * If set to true, the option will be treated as a positional argument.
@@ -61,10 +62,25 @@ export type NumberArrayOptionConfig<TCoerce = number> = {
   items: 'number';
 } & CommonOptionConfig<number[], TCoerce>;
 
+/**
+ * Configuration for array options. Arrays are parsed from
+ * comma separated, space separated, or multiple values.
+ *
+ * e.g. `--foo a b c`, `--foo a,b,c`, or `--foo a --foo b --foo c`
+ */
 export type ArrayOptionConfig<TCoerce = string | number> =
   | StringArrayOptionConfig<TCoerce>
   | NumberArrayOptionConfig<TCoerce>;
 
+/**
+ * Configures an option for the parser. See subtypes for more information.
+ * - {@link StringOptionConfig}
+ * - {@link NumberOptionConfig}
+ * - {@link ArrayOptionConfig}
+ * - {@link BooleanOptionConfig}
+ *
+ * @typeParam TCoerce The return type of the `coerce` function if provided.
+ */
 export type OptionConfig<TCoerce = any> =
   | StringOptionConfig<TCoerce>
   | NumberOptionConfig<TCoerce>
@@ -76,14 +92,32 @@ type InternalOptionConfig = OptionConfig & {
   position?: number;
 };
 
+/**
+ * Base type for parsed arguments.
+ */
 export type ParsedArgs = {
+  /**
+   * Contains any unmatched arguments as originally passed to the parser.
+   */
   unmatched: string[];
+
+  /**
+   * Contains any arguments passed after `--`, which halts parsing of flags.
+   */
   '--'?: string[];
 };
 
+/**
+ * Extra options for the parser
+ */
 export type ParserOptions = {
-  extraParsers?: Record<string, Parser<any>>;
   /**
+   * Can be used to implement custom parser types.
+   */
+  extraParsers?: Record<string, Parser<any>>;
+
+  /**
+   * Can be used to implement custom handling for unmatched arguments.
    * @returns true if the argument was handled, false if it was not
    */
   unmatchedParser?: (
@@ -93,16 +127,40 @@ export type ParserOptions = {
   ) => boolean;
 };
 
+/**
+ * The main parser class. This class is used to configure and parse arguments.
+ *
+ * {@link parser} is a small helper function to create a new parser instance.
+ */
 export class ArgvParser<
   TArgs extends ParsedArgs = {
     unmatched: string[];
   }
 > {
+  /**
+   * The configured options for the parser.
+   */
   configuredOptions: { [key in keyof TArgs]: InternalOptionConfig };
+
+  /**
+   * The configured positional arguments for the parser
+   */
   configuredPositionals: InternalOptionConfig[];
+
+  /**
+   * The configuration for the parser itself
+   */
   options: Required<ParserOptions>;
+
+  /**
+   * The parsers used to parse individual option types.
+   */
   parserMap: Record<string, Parser<any>>;
 
+  /**
+   * Creates a new parser. Normally using {@link parser} is preferred.
+   * @param options
+   */
   constructor(options?: ParserOptions) {
     this.configuredOptions = {} as Record<keyof TArgs, InternalOptionConfig>;
     this.configuredPositionals = [];
@@ -117,6 +175,12 @@ export class ArgvParser<
     };
   }
 
+  /**
+   * Registers a new option with the parser.
+   * @param name The name of the option
+   * @param config The configuration for the option. See {@link OptionConfig}
+   * @returns Updated parser instance with the new option registered.
+   */
   option<TOption extends string, TOptionConfig extends OptionConfig>(
     name: TOption,
     config: TOptionConfig
@@ -155,6 +219,12 @@ export class ArgvParser<
     >;
   }
 
+  /**
+   * Registers a new positional argument with the parser.
+   * @param name The name of the positional argument
+   * @param config The configuration for the positional argument. See {@link OptionConfig}
+   * @returns Updated parser instance with the new positional argument registered.
+   */
   positional<TOption extends string>(name: TOption, config: OptionConfig) {
     return this.option(name, {
       ...config,
@@ -162,6 +232,11 @@ export class ArgvParser<
     });
   }
 
+  /**
+   * Parses an array of arguments into a structured object.
+   * @param argv The array of arguments to parse
+   * @returns The parsed arguments
+   */
   parse(argv: string[]) {
     const argvClone = [...argv];
     const result: any = {
@@ -176,7 +251,8 @@ export class ArgvParser<
       }
       // Found a flag + value
       if (isFlag(arg)) {
-        const keys = readArgKeys(arg);
+        const [maybeArg, maybeValue] = arg.split('=');
+        const keys = readArgKeys(maybeArg as `-${string}`);
         const configuredKeys = keys.map((key) =>
           getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
         );
@@ -195,6 +271,9 @@ export class ArgvParser<
           }
           arg = next;
           continue;
+        }
+        if (maybeValue) {
+          argvClone.unshift(maybeValue);
         }
         for (const configuredKey of configuredKeys) {
           if (configuredKey) {
@@ -247,6 +326,11 @@ export class ArgvParser<
     return result as TArgs;
   }
 
+  /**
+   * Used to combine two parsers into a single parser.
+   * @param parser The parser to augment the current parser with.
+   * @returns The updated parser instance.
+   */
   augment<TAugment extends ParsedArgs>(
     parser: ArgvParser<TAugment>
   ): ArgvParser<TArgs & TAugment> {
@@ -263,6 +347,11 @@ export class ArgvParser<
   }
 }
 
+/**
+ * Small helper function to create a new parser instance.
+ * @param opts see {@link ParserOptions}
+ * @returns new parser, see {@link ArgvParser}
+ */
 export function parser(opts?: ParserOptions) {
   return new ArgvParser(opts);
 }
@@ -362,7 +451,7 @@ const quotePairs = {
 } as const;
 
 const csvParser = (str: string) => {
-  let collected = [];
+  const collected = [];
   let val = '';
   let inQuote: keyof typeof quotePairs | false = false;
   for (const char of str) {
@@ -460,6 +549,7 @@ function isFlag(str: string): str is `-${string}` {
 function readArgKeys(str: `-${string}`): string[] {
   // Long flags (e.g. --foo)
   if (str.startsWith('--')) {
+    const key = str.slice(2);
     return [str.slice(2)];
     // Short flag combinations (e.g. -xvf)
   } else if (str.startsWith('-')) {

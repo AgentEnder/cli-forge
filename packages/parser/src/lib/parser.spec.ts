@@ -278,4 +278,13 @@ describe('parser', () => {
         .parse(['--foo', 'hello', 'world', '--', '--bar', '42'])
     ).toEqual({ foo: 'hello', unmatched: ['world'], '--': ['--bar', '42'] });
   });
+
+  it('should support arg=value syntax', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .parse(['--foo=hello', '--bar=42'])
+    ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
+  });
 });
