@@ -23,3 +23,5 @@ jobs:
 
       - name: Run tests
         run: npx nx run-many -t build,test,e2e
+        env:
+          NX_VERBOSE_LOGGING: ${{ github.run_attempt == '1' && 'false' || 'true' }}
