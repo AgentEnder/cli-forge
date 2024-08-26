@@ -1,0 +1,53 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`init --format js should generate a new CLI: command output 1`] = `
+"hello world
+"
+`;
+
+exports[`init --format js should generate a new CLI: help text 1`] = `
+"Usage: my-cli
+
+Commands:
+  hello
+
+Options:
+  --help - Show help for the current command
+ 
+Run \`my-cli [command] --help\` for more information on a command
+"
+`;
+
+exports[`init --format js should generate a new CLI: subcommand help text 1`] = `
+"Usage: my-cli hello [name]
+
+Options:
+  --help - Show help for the current command
+"
+`;
+
+exports[`init --format ts should generate a new CLI: command output 1`] = `
+"hello world
+"
+`;
+
+exports[`init --format ts should generate a new CLI: help text 1`] = `
+"Usage: my-cli
+
+Commands:
+  hello
+
+Options:
+  --help - Show help for the current command
+ 
+Run \`my-cli [command] --help\` for more information on a command
+"
+`;
+
+exports[`init --format ts should generate a new CLI: subcommand help text 1`] = `
+"Usage: my-cli hello [name]
+
+Options:
+  --help - Show help for the current command
+"
+`;

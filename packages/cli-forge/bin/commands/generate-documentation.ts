@@ -52,6 +52,9 @@ export function withGenerateDocumentation<T extends ParsedArgs>(cli: CLI<T>) {
     description: 'Generate documentation for the given CLI',
     builder: withGenerateDocumentationArgs,
     handler: async (args) => {
+      if (args.cli.startsWith('./')) {
+        args.cli = join(process.cwd(), args.cli);
+      }
       const cliModule = await import(args.cli);
       const cli = cliModule[args.export || 'default'] ?? cliModule;
       if (!(cli instanceof CLI)) {
@@ -94,6 +97,8 @@ async function generateMarkdownForSingleCommand(
   const subcommands = docs.subcommands;
   const outdir = subcommands.length ? out : dirname(out);
   const outname = subcommands.length ? 'index' : docs.name;
+
+  ensureDirSync(outdir);
 
   writeFileSync(
     join(outdir, outname + '.md'),

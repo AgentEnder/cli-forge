@@ -137,7 +137,7 @@ export class CLI<T extends ParsedArgs = ParsedArgs, T2 extends T = T> {
     name: TOption,
     config: TOptionConfig
   ) {
-    this.parser.option(name, config);
+    this.parser.positional(name, config);
     return this as any as CLI<
       T & {
         [key in TOption]: TOptionConfig['coerce'] extends (
@@ -179,7 +179,13 @@ export class CLI<T extends ParsedArgs = ParsedArgs, T2 extends T = T> {
     for (const key of this.commandChain) {
       command = command.commands[key] as typeof this;
     }
-    help.push(`Usage: ${[this.name, ...this.commandChain].join(' ')}`);
+    help.push(
+      `Usage: ${[
+        this.name,
+        ...this.commandChain,
+        ...command.parser.configuredPositionals.map((p) => `[${p.key}]`),
+      ].join(' ')}`
+    );
     if (command.configuration?.description) {
       help.push(command.configuration.description);
     }

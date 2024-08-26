@@ -11,6 +11,14 @@ CLI Forge is a library / framework for building command line interfaces (CLI) in
 - Command and subcommand support.
 - `--help` and documentation generation.
 
+## Quick Start
+
+To create a new CLI, simply run:
+
+```bash
+npx cli-forge init my-cli
+```
+
 ## Installation
 
 To install the full command library, run:

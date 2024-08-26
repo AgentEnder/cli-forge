@@ -2,8 +2,9 @@
 
 import { cli } from '../src';
 import { withGenerateDocumentation } from './commands/generate-documentation';
+import { withInit } from './commands/init';
 
-const mycli = withGenerateDocumentation(cli('cli-forge'));
+const mycli = withInit(withGenerateDocumentation(cli('cli-forge')));
 
 export default mycli;
 
