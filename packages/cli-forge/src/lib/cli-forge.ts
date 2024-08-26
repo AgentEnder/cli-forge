@@ -60,7 +60,7 @@ export class CLI<T extends ParsedArgs = ParsedArgs, T2 extends T = T> {
     },
   }).option('help', {
     type: 'boolean',
-    alias: ['-h'],
+    alias: ['h'],
     description: 'Show help for the current command',
   });
 

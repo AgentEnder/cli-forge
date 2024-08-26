@@ -1,11 +1,14 @@
 import type { ArrayOptionConfig, ParsedArgs } from '@cli-forge/parser';
+
+import { writeFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+
 import { CLI } from '../../src';
 import {
   Documentation,
   generateDocumentation,
 } from '../../src/lib/documentation';
-import { existsSync, mkdirSync, writeFileSync } from 'fs';
-import { dirname, join } from 'path';
+import { ensureDirSync } from '../utils/fs';
 
 type mdfactory = typeof import('markdown-factory');
 
@@ -26,7 +29,7 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
       required: true,
     })
     .option('output', {
-      alias: ['-o'],
+      alias: ['o'],
       type: 'string',
       description: 'Where should the documentation be output?',
       default: 'docs',
@@ -181,15 +184,5 @@ async function importMarkdownFactory(): Promise<mdfactory> {
     throw new Error(
       'Could not find markdown-factory. Please install it to generate markdown documentation.'
     );
-  }
-}
-
-function ensureDirSync(dir: string) {
-  try {
-    mkdirSync(dir, { recursive: true });
-  } catch (e) {
-    if (!existsSync(dir)) {
-      throw new Error(`Could not create directory: ${dir}`, { cause: e });
-    }
   }
 }
