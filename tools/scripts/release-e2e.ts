@@ -16,6 +16,7 @@ export async function releaseE2EVersion(version: string): Promise<void> {
       skipLockFileUpdate: true,
       currentVersionResolver: 'registry',
     },
+    verbose: true,
   });
   await releasePublish({
     tag: 'e2e',

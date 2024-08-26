@@ -25,7 +25,7 @@
   },
   "release": {
     "version": {
-      "preVersionCommand": "node node_modules/.bin/nx run-many -t build",
+      "preVersionCommand": "node node_modules/.bin/nx run-many -t build --exclude docs-site",
       "conventionalCommits": true
     },
     "changelog": {

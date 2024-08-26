@@ -8,24 +8,33 @@ import { parse as loadYaml } from 'yaml';
 
 const examplesRoot = join(workspaceRoot, 'examples') + sep;
 const examples = collectExamples(join(examplesRoot, '../examples'));
+
+let success = true;
+
 for (const example of examples) {
   const { commands } = example.data;
   if (!commands || commands.length === 0) {
     // If no commands are provided, just run the example
-    execSync(
-      `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${example.path}`
+    success &&= runExampleCommand(
+      `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${example.path}`,
+      example.data.id
     );
   } else {
     // Otherwise, run each command
     for (const command of commands) {
-      execSync(
+      success &&= runExampleCommand(
         `tsx --tsconfig ${join(
           examplesRoot,
           'tsconfig.json'
-        )} ${command.replace('{filename}', example.path)}`
+        )} ${command.replace('{filename}', example.path)}`,
+        `${example.data.id} > ${command}`
       );
     }
   }
+}
+
+if (!success) {
+  process.exit(1);
 }
 
 type FrontMatter = {
@@ -34,6 +43,29 @@ type FrontMatter = {
   description?: string;
   commands: string[];
 };
+
+function runExampleCommand(command: string, label: string) {
+  try {
+    process.stdout.write('▶️ ' + label);
+    const a = performance.now();
+    execSync(command, { stdio: 'ignore' });
+    const b = performance.now();
+    // move cursor to the beginning of the line
+    process.stdout.write('\r');
+    console.log(
+      `✅ ${label} (${Math.round((b - a) * 10) / 10}ms)`.padEnd(
+        process.stdout.columns,
+        ' '
+      )
+    );
+  } catch {
+    // move cursor to the beginning of the line
+    process.stdout.write('\r');
+    console.log(`❌ ${label}`.padEnd(process.stdout.columns, ' '));
+    return false;
+  }
+  return true;
+}
 
 function loadExampleFile(path: string): {
   contents: string;
