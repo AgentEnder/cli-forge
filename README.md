@@ -9,7 +9,7 @@ CLI Forge is a library / framework for building command line interfaces (CLI) in
 - Full option parsing, with support for flags and positional arguments.
 - TypeScript first, with full type support for parsed arguments.
 - Command and subcommand support.
-- Documentation generation.
+- `--help` and documentation generation.
 
 ## Installation
 
@@ -56,3 +56,11 @@ Then run the CLI with:
 ```bash
 node my-cli.js hello --name "World"
 ```
+
+Then, to generate documentation for the CLI, run:
+
+```bash
+npx cli-forge generate-docs my-cli.js
+```
+
+This should generate a folder called `docs` containing markdown documentation for the CLI. Alternatively, you can pass `--format json` to generate JSON documentation to further process.

@@ -117,9 +117,13 @@ describe('cliForge', () => {
         builder: (argv) =>
           argv.option('bar', { type: 'string' }).command('check', {
             builder: (argv) => argv.option('foo', { type: 'string' }),
-            handler: (argv) => {},
+            handler: () => {
+              // No side effect needed.
+            },
           }),
-        handler: () => {},
+        handler: () => {
+          // Not invoked.
+        },
       })
       .forge(['--help']);
     expect(getOutput()).toMatchInlineSnapshot(`
@@ -146,9 +150,13 @@ describe('cliForge', () => {
             builder: (argv) => {
               return argv.option('foo', { type: 'string' });
             },
-            handler: (argv) => {},
+            handler: () => {
+              // No side effect needed.
+            },
           }),
-        handler: () => {},
+        handler: () => {
+          // Not invoked.
+        },
       })
       .forge(['format', 'check', '--help']);
     expect(getOutput()).toMatchInlineSnapshot(`

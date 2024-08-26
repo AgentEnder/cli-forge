@@ -14,6 +14,12 @@ export type CLICommandOptions<
   handler: (args: TArgs) => void | Promise<void>;
 };
 
+export type ArgsOf<T extends CLI> = T extends {
+  configuration: { handler: (args: infer TArgs) => void };
+}
+  ? TArgs
+  : never;
+
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
  *
@@ -33,14 +39,13 @@ export type CLICommandOptions<
  *   }).forge();
  * ```
  */
-export class CLI<T extends ParsedArgs = ParsedArgs> {
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+export class CLI<T extends ParsedArgs = ParsedArgs, T2 extends T = T> {
   private commands: Record<string, CLI<any>> = {};
   private commandChain: string[] = [];
   private requiresCommand = false;
   private parser = new ArgvParser<T>({
     unmatchedParser: (arg) => {
-      // eslint-disable-next-line @typescript-eslint/no-this-alias, @typescript-eslint/no-explicit-any
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
       let currentCommand: CLI<any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.commands[command];
@@ -65,7 +70,7 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
    */
   constructor(
     public name: string,
-    protected configuration?: CLICommandOptions<T, T>
+    public configuration?: CLICommandOptions<T, T2>
   ) {}
 
   /**
@@ -78,14 +83,12 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
     if (key === '$0') {
       this.configuration = {
         ...this.configuration,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         builder: options.builder as any,
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         handler: options.handler as any,
         description: options.description,
       };
     }
-    this.commands[key] = new CLI<TArgs>(key, options);
+    this.commands[key] = new CLI<T, TArgs>(key, options);
     this.commands[key].parser = this.parser;
     return this;
   }
@@ -103,7 +106,6 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
     config: TOptionConfig
   ) {
     this.parser.option(name, config);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this as any as CLI<
       T & {
         [key in TOption]: TOptionConfig['coerce'] extends (
@@ -136,19 +138,22 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
     config: TOptionConfig
   ) {
     this.parser.option(name, config);
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     return this as any as CLI<
       T & {
-        [key in TOption]: {
-          string: string;
-          number: number;
-          boolean: boolean;
-          array: (TOptionConfig extends ArrayOptionConfig<string | number>
-            ? TOptionConfig['items'] extends 'string'
-              ? string
-              : number
-            : never)[];
-        }[TOptionConfig['type']];
+        [key in TOption]: TOptionConfig['coerce'] extends (
+          value: string
+        ) => infer TCoerce
+          ? TCoerce
+          : {
+              string: string;
+              number: number;
+              boolean: boolean;
+              array: (TOptionConfig extends ArrayOptionConfig<string | number>
+                ? TOptionConfig['items'] extends 'string'
+                  ? string
+                  : number
+                : never)[];
+            }[TOptionConfig['type']];
       }
     >;
   }
@@ -197,7 +202,6 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
       help.push('Options:');
     }
     for (const key in this.parser.configuredOptions) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       const option = (this.parser.configuredOptions as any)[
         key
       ] as OptionConfig;
@@ -244,8 +248,9 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
           `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
         );
       }
-    } catch {
+    } catch (e) {
       process.exitCode = 1;
+      console.error(e);
       this.printHelp();
     }
   }
@@ -260,7 +265,7 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
     // - builds argv to pass to handler
     // - fills the command chain + registers commands
     const argv = this.parser.parse(args);
-    // eslint-disable-next-line @typescript-eslint/no-this-alias, @typescript-eslint/no-explicit-any
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     let currentCommand: CLI<any> = this;
     for (const command of this.commandChain) {
       currentCommand = currentCommand.commands[command];
@@ -272,12 +277,29 @@ export class CLI<T extends ParsedArgs = ParsedArgs> {
 
     const finalArgV =
       currentCommand === this
-        ? (this.configuration?.builder?.(this).parser ?? this.parser).parse(
-            args
-          )
+        ? (
+            this.configuration?.builder?.(this as any).parser ?? this.parser
+          ).parse(args)
         : argv;
 
     await this.runCommand(currentCommand, finalArgV);
+  }
+
+  getParser() {
+    return this.parser.asReadonly();
+  }
+
+  getSubcommands() {
+    return this.commands as Readonly<Record<string, CLI>>;
+  }
+
+  clone() {
+    const clone = new CLI<T, T2>(this.name, this.configuration);
+    clone.commands = { ...this.commands };
+    clone.commandChain = [...this.commandChain];
+    clone.requiresCommand = this.requiresCommand;
+    clone.parser = this.parser.clone() as any;
+    return clone;
   }
 }
 

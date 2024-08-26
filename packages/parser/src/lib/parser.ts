@@ -1,6 +1,5 @@
 import { fromDashedToCamelCase } from './utils';
 
-/* eslint-disable @typescript-eslint/no-explicit-any */
 export type CommonOptionConfig<T, TCoerce = T> = {
   /**
    * If set to true, the option will be treated as a positional argument.
@@ -129,6 +128,12 @@ export type ParserOptions = {
   ) => boolean;
 };
 
+export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
+  configuredOptions: Readonly<{ [key in keyof TArgs]: InternalOptionConfig }>;
+  configuredPositionals: readonly Readonly<InternalOptionConfig>[];
+  options: Readonly<Required<ParserOptions>>;
+}
+
 /**
  * The main parser class. This class is used to configure and parse arguments.
  *
@@ -138,7 +143,8 @@ export class ArgvParser<
   TArgs extends ParsedArgs = {
     unmatched: string[];
   }
-> {
+> implements ReadonlyArgvParser<TArgs>
+{
   /**
    * The configured options for the parser.
    */
@@ -351,6 +357,17 @@ export class ArgvParser<
       ...parser.configuredPositionals,
     ];
     return thisAsNewType;
+  }
+
+  clone() {
+    const clone = new ArgvParser(this.options);
+    clone.configuredOptions = { ...this.configuredOptions };
+    clone.configuredPositionals = [...this.configuredPositionals];
+    return clone;
+  }
+
+  asReadonly(): ReadonlyArgvParser<TArgs> {
+    return this;
   }
 }
 

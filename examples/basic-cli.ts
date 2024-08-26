@@ -7,9 +7,9 @@
 //  - '{filename} hello --name sir'
 //  - '{filename} goodbye --name madame'
 // ---
-import { cli } from 'cli-forge';
+import cliForge from 'cli-forge';
 
-cli('basic-cli')
+const cli = cliForge('basic-cli')
   // Requires a command to be provided
   .demandCommand()
 
@@ -37,7 +37,14 @@ cli('basic-cli')
     handler: (args) => {
       console.log(`Goodbye, ${args.name}!`);
     },
-  })
-  // Calling `.forge()` executes the CLI. It's single parameter is the CLI args
-  // and they default to `process.argv.slice(2)`.
-  .forge();
+  });
+
+export default cli;
+
+// Calling `.forge()` executes the CLI. It's single parameter is the CLI args
+// and they default to `process.argv.slice(2)`.
+if (require.main === this) {
+  (async () => {
+    await cli.forge();
+  })();
+}
