@@ -1,3 +1,15 @@
+## 0.3.0 (2024-08-26)
+
+
+### 🚀 Features
+
+- **cli-forge:** generate-documentation support ([c330733](https://github.com/agentender/cli-forge/commit/c330733))
+- **cli-forge:** add init command ([d733f4d](https://github.com/agentender/cli-forge/commit/d733f4d))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.2.0 (2024-08-24)
 
 
