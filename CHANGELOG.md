@@ -1,3 +1,14 @@
+## 0.4.0 (2024-08-28)
+
+
+### 🚀 Features
+
+- **cli-forge:** support for `cli(...).commands()` ([#2](https://github.com/agentender/cli-forge/pull/2))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.3.0 (2024-08-26)
 
 
