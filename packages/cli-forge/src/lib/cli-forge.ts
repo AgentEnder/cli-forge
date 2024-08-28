@@ -3,6 +3,7 @@ import {
   ArrayOptionConfig,
   OptionConfig,
   ParsedArgs,
+  fromCamelOrDashedCaseToConstCase,
 } from '@cli-forge/parser';
 
 export interface CLIHandlerContext {
@@ -27,6 +28,25 @@ export type Command<
     } & CLICommandOptions<TInitial, TArgs>)
   | CLI<TArgs>;
 
+/**
+ * The interface for a CLI application or subcommands.
+ *
+ * {@link cli} is provided as a small helper function to create a new CLI instance.
+ *
+ * @example
+ * ```ts
+ * import { cli } from 'cli-forge';
+ *
+ * cli('basic-cli').command('hello', {
+ *   builder: (args) =>
+ *    args.option('name', {
+ *      type: 'string',
+ *    }),
+ *   handler: (args) => {
+ *     console.log(`Hello, ${args.name}!`);
+ *   }).forge();
+ * ```
+ */
 export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   command<TCommandArgs extends TArgs>(
     cmd: Command<TArgs, TCommandArgs>
@@ -114,6 +134,12 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   >;
 
   /**
+   * Adds support for reading CLI options from environment variables.
+   * @param prefix The prefix to use when looking up environment variables. Defaults to the command name.
+   */
+  env(prefix?: string): CLI<TArgs>;
+
+  /**
    * Requires a command to be provided when executing the CLI. Useful if your parent command
    * cannot be executed on its own.
    * @returns Updated CLI instance.
@@ -161,6 +187,14 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   private _configuration?: CLICommandOptions<any, any>;
 
+  get configuration() {
+    return this._configuration;
+  }
+
+  private set configuration(value: CLICommandOptions<any, any> | undefined) {
+    this._configuration = value;
+  }
+
   private parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -187,14 +221,6 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    * @param configuration Configuration for the current CLI command.
    */
   constructor(public name: string) {}
-
-  get configuration() {
-    return this._configuration;
-  }
-
-  private set configuration(value: CLICommandOptions<any, any> | undefined) {
-    this._configuration = value;
-  }
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
@@ -283,6 +309,11 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
   ) {
     this.parser.positional(name, config);
     return this as any;
+  }
+
+  env(prefix = fromCamelOrDashedCaseToConstCase(this.name)) {
+    this.parser.env(prefix);
+    return this;
   }
 
   demandCommand() {

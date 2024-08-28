@@ -43,7 +43,13 @@ type FrontMatter = {
   id: string;
   title: string;
   description?: string;
-  commands: string[];
+  commands: (
+    | string
+    | {
+        command: string;
+        env: Record<string, string>;
+      }
+  )[];
 };
 
 function loadExampleFile(path: string): {
@@ -100,12 +106,25 @@ ${
   data.commands.length
     ? h2(
         'Usage',
-        ...data.commands.map((command) =>
-          codeBlock(`node ${command.replace('{filename}', data.id)}`, 'shell')
-        )
+        ...data.commands.map((config) => {
+          const { command, env } =
+            typeof config === 'string' ? { command: config, env: {} } : config;
+          return codeBlock(
+            `${
+              Object.entries(env).length
+                ? Object.entries(env)
+                    .map((val) => val.join('='))
+                    .join(' ') + ' '
+                : ''
+            }node ./${command.replace('{filename}', data.id)}.js`,
+            'shell'
+          );
+        })
       )
     : ''
 }
+
+${e2eExamplesDisclaimer}
   `;
 }
 
@@ -140,12 +159,14 @@ ${h1(
       link(`examples/${example.data.id}`, example.data?.title)
     )
   ),
-  blockQuote(
-    'These examples are ran as e2e tests on pull-requests and releases to verify they are accurate and up to date. If you see any issues, please open an issue on the github repo.'
-  )
+  e2eExamplesDisclaimer
 )}
 `;
 }
+
+const e2eExamplesDisclaimer = blockQuote(
+  'These examples are ran as e2e tests on pull-requests and releases to verify they are accurate and up to date. If you see any issues, please open an issue on the github repo.'
+);
 
 // returns all .ts files from given path
 function collectExamples(root: string): {

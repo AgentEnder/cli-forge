@@ -1,4 +1,4 @@
-import { fromDashedToCamelCase } from './utils';
+import { fromDashedToCamelCase, getEnvKey } from './utils';
 
 export type CommonOptionConfig<T, TCoerce = T> = {
   /**
@@ -39,6 +39,13 @@ export type CommonOptionConfig<T, TCoerce = T> = {
    * If true, the option is required.
    */
   required?: boolean;
+
+  /**
+   * If set, the option will be populated from the environment variable `${env}_${optionName}`.
+   * If set to true, the environment variable will be `${optionName}`.
+   * If explicitly set to false, environment variable population will be disabled for this option.
+   */
+  env?: string | boolean;
 };
 
 export type StringOptionConfig<TCoerce = string> = {
@@ -178,6 +185,12 @@ export class ArgvParser<
   parserMap: Record<string, Parser<any>>;
 
   /**
+   * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
+   */
+  private envPrefix?: string;
+  private shouldReadFromEnv?: boolean;
+
+  /**
    * Creates a new parser. Normally using {@link parser} is preferred.
    * @param options
    */
@@ -255,6 +268,16 @@ export class ArgvParser<
       ...config,
       positional: true,
     });
+  }
+
+  /**
+   * Enables environment variable population for options.
+   * @param envPrefix Prefix for environment variables. The full environment variable name will be `${envPrefix}_${optionName}`.
+   */
+  env(envPrefix?: string) {
+    this.envPrefix = envPrefix;
+    this.shouldReadFromEnv = true;
+    return this;
   }
 
   /**
@@ -337,8 +360,19 @@ export class ArgvParser<
     }
     for (const configurationKey in this.configuredOptions) {
       const configuration = this.configuredOptions[configurationKey];
-      if (configuration.default !== undefined) {
-        result[configuration.key] ??= configuration.default;
+      if (!result[configuration.key]) {
+        if (
+          (configuration.env !== false && this.shouldReadFromEnv) ||
+          configuration.env
+        ) {
+          const envValue = this.readFromEnv(configuration);
+          if (envValue) {
+            result[configuration.key] = envValue;
+          }
+        }
+        if (configuration.default !== undefined) {
+          result[configuration.key] ??= configuration.default;
+        }
       }
       validateOption(configuration, result[configuration.key]);
     }
@@ -349,6 +383,24 @@ export class ArgvParser<
       validateOption(configuration, result[configuration.key]);
     }
     return result as TArgs;
+  }
+
+  private readFromEnv(configuration: InternalOptionConfig) {
+    const envKey = getEnvKey(
+      this.envPrefix,
+      typeof configuration.env === 'string'
+        ? configuration.env
+        : configuration.key
+    );
+    const envValue = process.env[envKey];
+    if (envValue) {
+      return tryParseValue(
+        this.parserMap[configuration.type],
+        configuration,
+        [envValue],
+        null
+      );
+    }
   }
 
   /**

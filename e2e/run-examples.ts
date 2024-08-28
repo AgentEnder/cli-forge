@@ -21,7 +21,8 @@ for (const example of examples) {
     );
   } else {
     // Otherwise, run each command
-    for (const command of commands) {
+    for (const config of commands) {
+      const command = typeof config === 'string' ? config : config.command;
       success &&= runExampleCommand(
         `tsx --tsconfig ${join(
           examplesRoot,
@@ -68,14 +69,19 @@ type FrontMatter = {
   id: string;
   title: string;
   description?: string;
-  commands: string[];
+  commands: (string | { command: string; env: Record<string, string> })[];
 };
 
-function runExampleCommand(command: string, label: string) {
+function runExampleCommand(
+  config: string | FrontMatter['commands'][number],
+  label: string
+) {
+  const command = typeof config === 'string' ? config : config.command;
+  const env = typeof config === 'string' ? {} : config.env;
   try {
     process.stdout.write('▶️ ' + label);
     const a = performance.now();
-    execSync(command, { stdio: 'ignore' });
+    execSync(command, { stdio: 'ignore', env: { ...process.env, ...env } });
     const b = performance.now();
     // move cursor to the beginning of the line
     process.stdout.write('\r');
