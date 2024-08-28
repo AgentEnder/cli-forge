@@ -1,20 +1,15 @@
 import type { ParsedArgs } from '@cli-forge/parser';
+
+import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
-import { CLI } from '../../src';
+import { version as CLI_FORGE_VERSION } from '../../package.json';
+import cli, { CLI } from '../../src';
+// import { CLI } from '../../src/lib/cli-forge';
 import { ensureDirSync } from '../utils/fs';
 
-import { version as CLI_FORGE_VERSION } from '../../package.json';
-import { execSync } from 'node:child_process';
-
-type InitArgs = {
-  cliName: string;
-  output: string;
-  format: string;
-};
-
-export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T, T & InitArgs>) {
+export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
   return cmd
     .positional('cliName', {
       type: 'string',
@@ -33,53 +28,44 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T, T & InitArgs>) {
     });
 }
 
-export function withInit<T extends ParsedArgs>(cli: CLI<T>) {
-  return cli.command<T & InitArgs>('init', {
-    description: 'Generate a new CLI',
-    builder: withInitArgs,
-    handler: async (args) => {
-      args.output ??= process.cwd();
-      ensureDirSync(args.output);
-      const packageJsonPath = join(args.output, 'package.json');
-      const cliPath = join(
-        args.output,
-        'bin',
-        `${args.cliName}.${args.format}`
-      );
-      const packageJsonContent: {
-        name: string;
-        bin?: {
-          [cmd: string]: string;
-        };
-        dependencies?: Record<string, string>;
-      } = readJsonOr(packageJsonPath, { name: args.cliName });
-      packageJsonContent.bin ??= {};
-      packageJsonContent.bin[args.cliName] = relative(args.output, cliPath);
-      packageJsonContent.dependencies ??= {};
-      packageJsonContent.dependencies['cli-forge'] ??= CLI_FORGE_VERSION;
-      writeFileSync(
-        packageJsonPath,
-        JSON.stringify(packageJsonContent, null, 2)
-      );
-      ensureDirSync(dirname(cliPath));
-      writeFileSync(
-        cliPath,
-        args.format === 'ts'
-          ? TS_CLI_CONTENTS(args.cliName)
-          : JS_CLI_CONTENTS(args.cliName)
-      );
-      const installCommand = existsSync(join(args.output, 'yarn.lock'))
-        ? 'yarn'
-        : existsSync(join(args.output, 'pnpm-lock.yaml'))
-        ? 'pnpm'
-        : existsSync(join(args.output, 'bun.lockb'))
-        ? 'bun'
-        : 'npm';
+export const initCommand = cli('init', {
+  description: 'Generate a new CLI',
+  builder: (b) => withInitArgs(b),
+  handler: async (args) => {
+    args.output ??= process.cwd();
+    ensureDirSync(args.output);
+    const packageJsonPath = join(args.output, 'package.json');
+    const cliPath = join(args.output, 'bin', `${args.cliName}.${args.format}`);
+    const packageJsonContent: {
+      name: string;
+      bin?: {
+        [cmd: string]: string;
+      };
+      dependencies?: Record<string, string>;
+    } = readJsonOr(packageJsonPath, { name: args.cliName });
+    packageJsonContent.bin ??= {};
+    packageJsonContent.bin[args.cliName] = relative(args.output, cliPath);
+    packageJsonContent.dependencies ??= {};
+    packageJsonContent.dependencies['cli-forge'] ??= CLI_FORGE_VERSION;
+    writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2));
+    ensureDirSync(dirname(cliPath));
+    writeFileSync(
+      cliPath,
+      args.format === 'ts'
+        ? TS_CLI_CONTENTS(args.cliName)
+        : JS_CLI_CONTENTS(args.cliName)
+    );
+    const installCommand = existsSync(join(args.output, 'yarn.lock'))
+      ? 'yarn'
+      : existsSync(join(args.output, 'pnpm-lock.yaml'))
+      ? 'pnpm'
+      : existsSync(join(args.output, 'bun.lockb'))
+      ? 'bun'
+      : 'npm';
 
-      execSync(`${installCommand} install`);
-    },
-  });
-}
+    execSync(`${installCommand} install`);
+  },
+});
 
 const COMMON_CONTENTS = (name: string) => `const myCLI = cli('${name}')
   .command('hello', {

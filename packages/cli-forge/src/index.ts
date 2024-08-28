@@ -1,2 +1,1 @@
-export * from './lib/cli-forge';
-export { default } from './lib/cli-forge';
+export { default, cli, CLI, Command } from './lib/cli-forge';

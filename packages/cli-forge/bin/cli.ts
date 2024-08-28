@@ -1,10 +1,13 @@
 #!/usr/bin/env node
 
 import { cli } from '../src';
-import { withGenerateDocumentation } from './commands/generate-documentation';
-import { withInit } from './commands/init';
+import { generateDocumentationCommand } from './commands/generate-documentation';
+import { initCommand } from './commands/init';
 
-const mycli = withInit(withGenerateDocumentation(cli('cli-forge')));
+const mycli = cli('cli-forge').commands(
+  generateDocumentationCommand,
+  initCommand
+);
 
 export default mycli;
 

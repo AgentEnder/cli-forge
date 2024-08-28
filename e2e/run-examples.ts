@@ -33,6 +33,33 @@ for (const example of examples) {
   }
 }
 
+try {
+  process.stdout.write('▶️ Checking TypeScript types for all examples');
+  const a = performance.now();
+  execSync(`tsc -p tsconfig.json --noEmit`, { cwd: examplesRoot });
+  const b = performance.now();
+  process.stdout.write('\r');
+  console.log(
+    `✅ TypeScript compilation (${Math.round((b - a) * 10) / 10}ms)`.padEnd(
+      process.stdout.columns,
+      ' '
+    )
+  );
+} catch (e) {
+  process.stdout.write('\r');
+  console.log('❌ TypeScript compilation');
+
+  if (e.stdout) {
+    console.log(e.stdout.toString());
+  }
+
+  if (e.stderr) {
+    console.error(e.stderr.toString());
+  }
+
+  success = false;
+}
+
 if (!success) {
   process.exit(1);
 }
