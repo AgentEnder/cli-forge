@@ -156,7 +156,7 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
-  forge(args?: string[]): Promise<void>;
+  forge(args?: string[]): Promise<TArgs>;
 }
 
 /**
@@ -181,8 +181,16 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
 export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
   implements CLI<TArgs>
 {
-  private registeredCommands: Record<string, InternalCLI<any>> = {};
-  private commandChain: string[] = [];
+  /**
+   * For internal use only. Stick to properties available on {@link CLI}.
+   */
+  registeredCommands: Record<string, InternalCLI<any>> = {};
+
+  /**
+   * For internal use only. Stick to properties available on {@link CLI}.
+   */
+  commandChain: string[] = [];
+
   private requiresCommand = false;
 
   private _configuration?: CLICommandOptions<any, any>;
@@ -272,12 +280,12 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       } & CLICommandOptions<TArgs, TCommandArgs>;
       this.command<TCommandArgs>(name, configuration);
     }
-    return this;
+    return this as CLI<TArgs>;
   }
 
-  commands(commands: Command[]): typeof this;
-  commands(...commands: Command[]): typeof this;
-  commands(...a0: Command[] | Command[][]): typeof this {
+  commands(commands: Command[]): CLI<TArgs>;
+  commands(...commands: Command[]): CLI<TArgs>;
+  commands(...a0: Command[] | Command[][]): CLI<TArgs> {
     const commands = a0.flat();
     for (const val of commands) {
       if (val instanceof InternalCLI) {
@@ -292,7 +300,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         this.command(name, configuration);
       }
     }
-    return this;
+    return this as CLI<TArgs>;
   }
 
   option<TOption extends string, TOptionConfig extends OptionConfig>(
@@ -433,7 +441,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
     if (argv.help) {
       this.printHelp();
-      return;
+      return argv as TArgs;
     }
 
     const finalArgV =
@@ -445,6 +453,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         : argv;
 
     await this.runCommand(currentCommand, finalArgV);
+    return finalArgV as TArgs;
   }
 
   getParser() {
@@ -486,7 +495,7 @@ export function cli<TArgs extends ParsedArgs>(
     cli.demandCommand();
   }
 
-  return cli as CLI<TArgs>;
+  return cli as CLI<any> as CLI<TArgs>;
 }
 
 export default cli;
