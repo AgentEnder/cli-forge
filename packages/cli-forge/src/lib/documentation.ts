@@ -1,5 +1,5 @@
 import { OptionConfig } from '@cli-forge/parser';
-import { CLI } from './cli-forge';
+import { InternalCLI } from './cli-forge';
 
 export type Documentation = {
   name: string;
@@ -9,7 +9,7 @@ export type Documentation = {
   subcommands: Documentation[];
 };
 
-export function generateDocumentation(cli: CLI) {
+export function generateDocumentation(cli: InternalCLI) {
   // Ensure current command's options are built.
   if (cli.configuration?.builder) {
     cli.configuration.builder(cli);

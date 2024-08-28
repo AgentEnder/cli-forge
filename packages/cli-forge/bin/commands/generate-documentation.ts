@@ -3,24 +3,25 @@ import type { ArrayOptionConfig, ParsedArgs } from '@cli-forge/parser';
 import { writeFileSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 
-import { CLI } from '../../src';
+import cli from '../../src';
 import {
   Documentation,
   generateDocumentation,
 } from '../../src/lib/documentation';
+import { CLI, InternalCLI } from '../../src/lib/cli-forge';
 import { ensureDirSync } from '../utils/fs';
 
 type mdfactory = typeof import('markdown-factory');
 
-type GenerateDocsArgs = {
+type GenerateDocsArgs = ParsedArgs<{
   cli: string;
   output: string;
   format: string;
   export: string;
-};
+}>;
 
 export function withGenerateDocumentationArgs<T extends ParsedArgs>(
-  cmd: CLI<T, T & GenerateDocsArgs>
+  cmd: CLI<T>
 ) {
   return cmd
     .positional('cli', {
@@ -47,35 +48,33 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
     });
 }
 
-export function withGenerateDocumentation<T extends ParsedArgs>(cli: CLI<T>) {
-  return cli.command<T & GenerateDocsArgs>('generate-documentation', {
-    description: 'Generate documentation for the given CLI',
-    builder: withGenerateDocumentationArgs,
-    handler: async (args) => {
-      if (args.cli.startsWith('./')) {
-        args.cli = join(process.cwd(), args.cli);
-      }
-      const cliModule = await import(args.cli);
-      const cli = cliModule[args.export || 'default'] ?? cliModule;
-      if (!(cli instanceof CLI)) {
-        throw new Error(
-          `${args.cli}${args.export ? '#' + args.export : ''} is not a CLI.`
-        );
-      }
-      const documentation = generateDocumentation(cli);
-      if (args.format === 'md') {
-        await generateMarkdownDocumentation(documentation, args);
-      } else if (args.format === 'json') {
-        const outfile = args.output.endsWith('json')
-          ? args.output
-          : join(args.output, cli.name + '.json');
-        const outdir = dirname(outfile);
-        ensureDirSync(outdir);
-        writeFileSync(outfile, JSON.stringify(documentation, null, 2));
-      }
-    },
-  });
-}
+export const generateDocumentationCommand: CLI = cli('generate-documentation', {
+  description: 'Generate documentation for the given CLI',
+  builder: (b) => withGenerateDocumentationArgs(b),
+  handler: async (args) => {
+    if (args.cli.startsWith('./')) {
+      args.cli = join(process.cwd(), args.cli);
+    }
+    const cliModule = await import(args.cli);
+    const cli = cliModule[args.export || 'default'] ?? cliModule;
+    if (!(cli instanceof InternalCLI)) {
+      throw new Error(
+        `${args.cli}${args.export ? '#' + args.export : ''} is not a CLI.`
+      );
+    }
+    const documentation = generateDocumentation(cli);
+    if (args.format === 'md') {
+      await generateMarkdownDocumentation(documentation, args);
+    } else if (args.format === 'json') {
+      const outfile = args.output.endsWith('json')
+        ? args.output
+        : join(args.output, cli.name + '.json');
+      const outdir = dirname(outfile);
+      ensureDirSync(outdir);
+      writeFileSync(outfile, JSON.stringify(documentation, null, 2));
+    }
+  },
+});
 
 async function generateMarkdownDocumentation(
   docs: Documentation,

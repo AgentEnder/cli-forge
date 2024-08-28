@@ -7,6 +7,7 @@
 // commands:
 //   - '{filename} greet --name sir --greeting "Good day"'
 //   - '{filename} farewell --name madame --farewell "Goodbye"'
+//   - '{filename} converse --name sir'
 // ---
 import { cli, CLI } from 'cli-forge';
 
@@ -23,7 +24,16 @@ function withName<T extends CLI>(argv: T) {
   });
 }
 
+const subcommand = cli('converse', {
+  description: 'A quick chat',
+  builder: (args) => withName(args),
+  handler: (args) => {
+    console.log(`[${args.name}]: hello!`);
+  },
+});
+
 cli('composable-options')
+  .commands(subcommand)
   .command('greet', {
     builder: (args) =>
       withName(args).option('greeting', {

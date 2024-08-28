@@ -96,17 +96,29 @@ type InternalOptionConfig = OptionConfig & {
 /**
  * Base type for parsed arguments.
  */
-export type ParsedArgs = {
-  /**
-   * Contains any unmatched arguments as originally passed to the parser.
-   */
-  unmatched: string[];
+export type ParsedArgs<T = never> = [T] extends [never]
+  ? {
+      /**
+       * Contains any unmatched arguments as originally passed to the parser.
+       */
+      unmatched: string[];
 
-  /**
-   * Contains any arguments passed after `--`, which halts parsing of flags.
-   */
-  '--'?: string[];
-};
+      /**
+       * Contains any arguments passed after `--`, which halts parsing of flags.
+       */
+      '--'?: string[];
+    }
+  : {
+      /**
+       * Contains any unmatched arguments as originally passed to the parser.
+       */
+      unmatched: string[];
+
+      /**
+       * Contains any arguments passed after `--`, which halts parsing of flags.
+       */
+      '--'?: string[];
+    } & T;
 
 /**
  * Extra options for the parser
@@ -340,7 +352,7 @@ export class ArgvParser<
   }
 
   /**
-   * Used to combine two parsers into a single parser.
+   * Used to combine two parsers into a single parser. Mutates `this`, but returns with updated typings
    * @param parser The parser to augment the current parser with.
    * @returns The updated parser instance.
    */
@@ -420,7 +432,7 @@ function getConfiguredOptionKey<T extends ParsedArgs>(
 }
 
 function isNextFlag(str: string) {
-  return str.startsWith('--' || str.startsWith('-'));
+  return str.startsWith('--') || str.startsWith('-');
 }
 
 const booleanParser: Parser<BooleanOptionConfig> = (_, tokens: string[]) => {
