@@ -1,5 +1,54 @@
 import { parser } from './parser';
 
+import 'vitest';
+
+interface CustomMatchers<R = unknown> {
+  toThrowAggregateErrorContaining: (...expected: Array<string | Error>) => R;
+}
+
+declare module 'vitest' {
+  interface Assertion<T = any> extends CustomMatchers<T> {}
+  interface AsymmetricMatchersContaining extends CustomMatchers {}
+}
+
+expect.extend({
+  toThrowAggregateErrorContaining(
+    received: () => void,
+    ...expected: Array<string | Error>
+  ) {
+    try {
+      received();
+      return {
+        pass: false,
+        message: () => 'Expected function to throw an AggregateError',
+      };
+    } catch (e) {
+      if (e instanceof AggregateError) {
+        const errors = e.errors.map((m) => m.message);
+        let pass = expected.every((e) => {
+          if (typeof e === 'string') {
+            return errors.some((error) => error.includes(e));
+          } else {
+            return errors.some((error) => error === e.message);
+          }
+        });
+        return {
+          pass,
+          message: () =>
+            pass ? '' : `Expected "${errors}" to contain "${expected}"`,
+          actual: errors,
+          expected,
+        };
+      }
+      return {
+        pass: false,
+        message: () =>
+          `Expected function to throw an AggregateError, but it threw ${e}`,
+      };
+    }
+  },
+});
+
 describe('parser', () => {
   it('should work for string values', () => {
     expect(
@@ -224,13 +273,13 @@ describe('parser', () => {
   it('should support required options', () => {
     expect(() =>
       parser().option('foo', { type: 'string', required: true }).parse([])
-    ).toThrowError('Missing required option foo');
+    ).toThrowAggregateErrorContaining('Missing required option foo');
   });
 
   it('should support required positional arguments', () => {
     expect(() =>
       parser().positional('foo', { type: 'string', required: true }).parse([])
-    ).toThrowError('Missing required positional option foo');
+    ).toThrowAggregateErrorContaining('Missing required positional option foo');
   });
 
   it('should support custom validators', () => {
@@ -241,7 +290,7 @@ describe('parser', () => {
           validate: (s) => s === 'hello',
         })
         .parse(['--foo', 'world'])
-    ).toThrowError('Invalid value for option foo');
+    ).toThrowAggregateErrorContaining('Invalid value for option foo');
   });
 
   it('should support custom positional argument validators', () => {
@@ -252,7 +301,9 @@ describe('parser', () => {
           validate: (s) => s === 'hello',
         })
         .parse(['world'])
-    ).toThrowError('Invalid value for positional option foo');
+    ).toThrowAggregateErrorContaining(
+      'Invalid value for positional option foo'
+    );
   });
 
   it('should support custom validators with custom error messages', () => {
@@ -268,7 +319,7 @@ describe('parser', () => {
           },
         })
         .parse(['--foo', 'world'])
-    ).toThrowError('foo must be hello');
+    ).toThrowAggregateErrorContaining('foo must be hello');
   });
 
   it('should provide `--` if passed', () => {
@@ -402,6 +453,33 @@ describe('parser', () => {
             .parse([])
         ).toEqual({ bar: 'world', baz: '42', unmatched: [] });
       }
+    );
+  });
+
+  it('should support limiting option choices', () => {
+    expect(() =>
+      parser()
+        .option('foo', { type: 'string', choices: ['hello', 'world'] })
+        .option('bar', {
+          type: 'array',
+          items: 'string',
+          choices: ['hello', 'world'],
+        })
+        .option('baz', { type: 'array', items: 'number', choices: [1, 2] })
+        .parse([
+          '--foo',
+          'foo',
+          '--bar',
+          'hello',
+          'world',
+          '--baz',
+          '1',
+          '2',
+          '3',
+        ])
+    ).toThrowErrorMatchingInlineSnapshot(
+      'Invalid value for option foo. Valid values are: hello, world',
+      'Invalid value for option baz. Valid values are: 1, 2'
     );
   });
 });

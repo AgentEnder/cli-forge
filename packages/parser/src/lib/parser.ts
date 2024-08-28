@@ -1,5 +1,7 @@
 import { fromDashedToCamelCase, getEnvKey } from './utils';
 
+type Flatten<T> = T extends Array<infer U> ? U : T;
+
 export type CommonOptionConfig<T, TCoerce = T> = {
   /**
    * If set to true, the option will be treated as a positional argument.
@@ -10,6 +12,11 @@ export type CommonOptionConfig<T, TCoerce = T> = {
    * Provide an array of aliases for the option.
    */
   alias?: string[];
+
+  /**
+   * Provide an array of choices for the option. Values not in the array will throw an error.
+   */
+  choices?: Flatten<T>[] | (() => Flatten<T>[]);
 
   /**
    * Provide a default value for the option.
@@ -358,6 +365,12 @@ export class ArgvParser<
         arg = argvClone.shift();
       }
     }
+    this.validateAndNormalizeResults(result);
+    return result as TArgs;
+  }
+
+  private validateAndNormalizeResults(result: any) {
+    const errors: [key: string, error: Error][] = [];
     for (const configurationKey in this.configuredOptions) {
       const configuration = this.configuredOptions[configurationKey];
       if (!result[configuration.key]) {
@@ -374,15 +387,40 @@ export class ArgvParser<
           result[configuration.key] ??= configuration.default;
         }
       }
-      validateOption(configuration, result[configuration.key]);
+      try {
+        validateOption(configuration, result[configuration.key]);
+      } catch (e: any) {
+        errors.push([configuration.key, e]);
+      }
     }
     for (const configuration of this.configuredPositionals) {
       if (configuration.default !== undefined) {
         result[configuration.key] ??= configuration.default;
       }
-      validateOption(configuration, result[configuration.key]);
+      try {
+        validateOption(configuration, result[configuration.key]);
+      } catch (e: any) {
+        errors.push([configuration.key, e]);
+      }
     }
-    return result as TArgs;
+    if (errors.length) {
+      const error = new AggregateError(
+        errors.map(([, error]) =>
+          error instanceof Error ? error : new Error(error)
+        ),
+        `Validation failed for one or more options`
+      );
+      if (
+        process.env[
+          this.envPrefix
+            ? `${this.envPrefix}_VERBOSE_LOGGING`
+            : 'CLI_VERBOSE_LOGGING'
+        ] !== 'true'
+      ) {
+        error.stack = undefined;
+      }
+      throw error;
+    }
   }
 
   private readFromEnv(configuration: InternalOptionConfig) {
@@ -445,25 +483,67 @@ export function parser(opts?: ParserOptions) {
 }
 
 function validateOption<T>(optionConfig: InternalOptionConfig, value: T) {
-  if (optionConfig.validate) {
-    const result = optionConfig.validate(value);
-    if (typeof result === 'string') {
-      throw new Error(result);
-    }
-    if (!result) {
+  if (optionConfig.choices) {
+    const choices = [
+      ...new Set<T>(
+        [
+          typeof optionConfig.choices === 'function'
+            ? optionConfig.choices()
+            : optionConfig.choices,
+        ].flat() as T[]
+      ),
+    ];
+    optionConfig.validate ??= () => true;
+    optionConfig.validate = (val) => {
+      if (
+        !(Array.isArray(val)
+          ? // If option config is an array, check if all values are in choices
+            val.every((v) => choices.includes(v))
+          : // If option config is not an array, check if value is in choices
+            choices.includes(val))
+      ) {
+        return `Invalid value "${val}" for${
+          optionConfig.positional ? ' positional' : ''
+        } option ${optionConfig.key}. Valid values are: ${choices.join(', ')}`;
+      }
+      return true;
+    };
+  }
+  if (optionConfig.validate && value !== undefined) {
+    let result: ReturnType<Required<CommonOptionConfig<any>>['validate']>;
+    try {
+      result = optionConfig.validate(value);
+    } catch (e) {
       throw new Error(
-        `Invalid value for${
+        `Validation failed for${
+          optionConfig.positional ? ' positional' : ''
+        } option ${optionConfig.key}`,
+        { cause: e }
+      );
+    }
+    if (typeof result === 'string') {
+      const e = new Error(result);
+      delete e.stack;
+      throw e;
+    }
+    if (result === false) {
+      const e = new Error(
+        `Invalid value "${value}" for${
           optionConfig.positional ? ' positional' : ''
         } option ${optionConfig.key}`
       );
+      delete e.stack;
+      throw e;
     }
   }
   if (optionConfig.required && value === undefined) {
-    throw new Error(
+    const e = new Error(
       `Missing required${optionConfig.positional ? ' positional' : ''} option ${
         optionConfig.key
       }`
     );
+    delete e.stack;
+    throw e;
   }
 }
 

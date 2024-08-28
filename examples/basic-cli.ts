@@ -39,11 +39,15 @@ const cli = cliForge('basic-cli')
     },
   });
 
+// We export the CLI for a few reasons:
+// - Testing
+// - Composition (a CLI can be a subcommand of another CLI)
+// - Docs generation
 export default cli;
 
 // Calling `.forge()` executes the CLI. It's single parameter is the CLI args
 // and they default to `process.argv.slice(2)`.
-if (require.main === this) {
+if (require.main === module) {
   (async () => {
     await cli.forge();
   })();

@@ -116,7 +116,7 @@ ${
                     .map((val) => val.join('='))
                     .join(' ') + ' '
                 : ''
-            }node ./${command.replace('{filename}', data.id)}.js`,
+            }node ${command.replace('{filename}', './' + data.id)}.js`,
             'shell'
           );
         })
