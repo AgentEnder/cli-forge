@@ -200,6 +200,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
   ): InternalCLI<TArgs> {
     this.configuration = configuration;
+    this.requiresCommand = false;
     return this;
   }
 
@@ -230,6 +231,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           handler: options.handler as any,
           description: options.description,
         };
+        this.requiresCommand = false;
       }
       this.registeredCommands[key] = new InternalCLI<TArgs>(
         key
@@ -449,6 +451,8 @@ export function cli<TArgs extends ParsedArgs>(
 
   if (rootCommandConfiguration) {
     cli.withRootCommandConfiguration(rootCommandConfiguration);
+  } else {
+    cli.demandCommand();
   }
 
   return cli as CLI<TArgs>;
