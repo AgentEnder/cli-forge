@@ -52,7 +52,6 @@
     "targets": {
       "build": {
         "dependsOn": [
-          "typecheck",
           "^build",
           "extract-cli-docs"
         ],

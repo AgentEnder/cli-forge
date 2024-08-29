@@ -1,7 +1,8 @@
 import type { ArrayOptionConfig, ParsedArgs } from '@cli-forge/parser';
 
 import { writeFileSync } from 'node:fs';
-import { dirname, join } from 'node:path';
+import { dirname, join, relative } from 'node:path';
+import { join as joinPathFragments, normalize } from 'node:path/posix';
 
 import cli from '../../src';
 import {
@@ -81,12 +82,13 @@ async function generateMarkdownDocumentation(
   args: GenerateDocsArgs
 ) {
   const md = await importMarkdownFactory();
-  await generateMarkdownForSingleCommand(docs, join(args.output), md);
+  await generateMarkdownForSingleCommand(docs, args.output, args.output, md);
 }
 
 async function generateMarkdownForSingleCommand(
   docs: Documentation,
   out: string,
+  docsRoot: string,
   md: mdfactory
 ) {
   const subcommands = docs.subcommands;
@@ -104,7 +106,7 @@ async function generateMarkdownForSingleCommand(
         docs.description,
         getPositionalArgsFragment(docs.positionals, md),
         getFlagArgsFragment(docs.options, md),
-        getSubcommandsFragment(docs.subcommands, md),
+        getSubcommandsFragment(docs.subcommands, outdir, docsRoot, md),
         getExamplesFragment(docs.examples, md),
       ].filter(isTruthy)
     )
@@ -113,6 +115,7 @@ async function generateMarkdownForSingleCommand(
     await generateMarkdownForSingleCommand(
       subcommand,
       join(outdir, subcommand.name),
+      docsRoot,
       md
     );
   }
@@ -176,6 +179,8 @@ function getFlagArgsFragment(options: Documentation['options'], md: mdfactory) {
 
 function getSubcommandsFragment(
   subcommands: Documentation['subcommands'],
+  outdir: string,
+  docsRoot: string,
   md: mdfactory
 ) {
   if (subcommands.length === 0) {
@@ -184,7 +189,14 @@ function getSubcommandsFragment(
   return md.h2(
     'Subcommands',
     ...subcommands.map((subcommand) =>
-      md.link(`./${subcommand.name}`, subcommand.name)
+      md.link(
+        './' +
+          joinPathFragments(
+            normalize(relative(docsRoot, outdir)),
+            subcommand.name + '.md'
+          ),
+        subcommand.name
+      )
     )
   );
 }

@@ -5,6 +5,10 @@ try {
   mkdirSync('./tmp/extract-cli-docs/node_modules', { recursive: true });
 } catch {}
 
+execSync('git clean -fdX', {
+  cwd: './docs-site/docs',
+});
+
 cpSync(
   './dist/packages/cli-forge',
   './tmp/extract-cli-docs/node_modules/cli-forge',
