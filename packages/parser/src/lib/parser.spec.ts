@@ -505,6 +505,16 @@ describe('parser', () => {
       }
     );
   });
+
+  it('should throw if conflicting options are set', () => {
+    expect(() =>
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'string' })
+        .conflicts('foo', 'bar')
+        .parse(['--foo=a', '--bar=b'])
+    ).toThrowAggregateErrorContaining('Provided option foo conflicts with bar');
+  });
 });
 
 async function withEnv(env: NodeJS.ProcessEnv, cb: () => void | Promise<void>) {

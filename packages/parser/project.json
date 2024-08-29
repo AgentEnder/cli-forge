@@ -6,7 +6,7 @@
   "release": {
     "version": {
       "generatorOptions": {
-        "packageRoot": "dist/@cli-forge/{projectName}",
+        "packageRoot": "dist/{projectRoot}",
         "currentVersionResolver": "git-tag"
       }
     }
@@ -17,7 +17,7 @@
       "executor": "@nx/js:tsc",
       "outputs": ["{options.outputPath}"],
       "options": {
-        "outputPath": "dist/packages/@cli-forge/parser",
+        "outputPath": "dist/packages/parser",
         "main": "packages/parser/src/index.ts",
         "tsConfig": "packages/parser/tsconfig.lib.json",
         "assets": ["packages/parser/*.md"]
@@ -25,7 +25,7 @@
     },
     "nx-release-publish": {
       "options": {
-        "packageRoot": "dist/@cli-forge/{projectName}"
+        "packageRoot": "dist/{projectRoot}"
       }
     },
     "test": {

@@ -142,6 +142,19 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   env(prefix?: string): CLI<TArgs>;
 
   /**
+   * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.
+   * @param options The options that should be mutually exclusive.
+   */
+  conflicts(...options: [string, string, ...string[]]): CLI<TArgs>;
+
+  /**
+   * Sets a group of options as mutually inclusive. If one option is provided, all other options must also be provided.
+   * @param option The option that implies the other options.
+   * @param impliedOptions The options which become required when the option is provided.
+   */
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs>;
+
+  /**
    * Requires a command to be provided when executing the CLI. Useful if your parent command
    * cannot be executed on its own.
    * @returns Updated CLI instance.
@@ -282,7 +295,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       } & CLICommandOptions<TArgs, TCommandArgs>;
       this.command<TCommandArgs>(name, configuration);
     }
-    return this as CLI<TArgs>;
+    return this;
   }
 
   commands(commands: Command[]): CLI<TArgs>;
@@ -302,7 +315,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         this.command(name, configuration);
       }
     }
-    return this as CLI<TArgs>;
+    return this;
   }
 
   option<TOption extends string, TOptionConfig extends OptionConfig>(
@@ -310,6 +323,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     config: TOptionConfig
   ) {
     this.parser.option(name, config);
+    // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
   }
 
@@ -318,7 +332,18 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     config: TOptionConfig
   ) {
     this.parser.positional(name, config);
+    // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
+  }
+
+  conflicts(...args: [string, string, ...string[]]): CLI<TArgs> {
+    this.parser.conflicts(...args);
+    return this;
+  }
+
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs> {
+    this.parser.implies(option, ...impliedOptions);
+    return this;
   }
 
   env(prefix = fromCamelOrDashedCaseToConstCase(this.name)) {
@@ -412,7 +437,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
     for (const [key, ...parts] of allParts) {
       help.push(
-        `--${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
+        `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
           .map((part, i) => part.padEnd(paddingValues[i + 1]))
           .join(' ')}`
       );

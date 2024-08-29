@@ -202,6 +202,16 @@ export class ArgvParser<
   configuredPositionals: InternalOptionConfig[];
 
   /**
+   * The configured conflicts for the parser. If an option is set, and a conflicting option is also set, an error will be thrown.
+   */
+  configuredConflicts: Record<string, Set<string>> = {};
+
+  /**
+   * The configured implies for the parser. If an option is set, the implied option must also be set.
+   */
+  configuredImplies: Record<string, Set<string>> = {};
+
+  /**
    * The configuration for the parser itself
    */
   options: Required<ParserOptions>;
@@ -385,53 +395,105 @@ export class ArgvParser<
         arg = argvClone.shift();
       }
     }
-    this.validateAndNormalizeResults(result);
-    return result as TArgs;
+
+    return this.validateAndNormalizeResults(result) as TArgs;
   }
 
-  private validateAndNormalizeResults(result: any) {
-    const errors: [key: string, error: Error][] = [];
-    for (const configurationKey in this.configuredOptions) {
-      const configuration = this.configuredOptions[configurationKey];
-      if (!result[configuration.key]) {
+  private normalizeOptions(result: any) {
+    const normalized = { ...result };
+    for (const key in this.configuredOptions) {
+      const configuration = this.configuredOptions[key];
+      if (normalized[key] === undefined) {
         if (
           (configuration.env !== false && this.shouldReadFromEnv) ||
           configuration.env
         ) {
           const envValue = this.readFromEnv(configuration);
           if (envValue) {
-            result[configuration.key] = envValue;
+            normalized[configuration.key] = envValue;
           }
         }
         if (configuration.default !== undefined) {
-          result[configuration.key] ??= configuration.default;
+          normalized[configuration.key] ??= configuration.default;
         }
-      }
-      try {
-        validateOption(configuration, result[configuration.key]);
-      } catch (e: any) {
-        delete result[configuration.key];
-        errors.push([configuration.key, e]);
       }
     }
     for (const configuration of this.configuredPositionals) {
       if (configuration.default !== undefined) {
-        result[configuration.key] ??= configuration.default;
+        normalized[configuration.key] ??= configuration.default;
       }
+    }
+    return normalized;
+  }
+
+  private validateAndNormalizeResults(result: any) {
+    const errors: Error[] = [];
+    const normalized = this.normalizeOptions(result);
+    const partial = { ...normalized };
+
+    const validateConflicts = (configuration: InternalOptionConfig) => {
+      if (this.configuredConflicts[configuration.key]) {
+        for (const conflict of this.configuredConflicts[configuration.key]) {
+          if (normalized[conflict] !== undefined) {
+            const error = new Error(
+              `Provided option ${configuration.key} conflicts with ${conflict}`
+            );
+            delete partial[configuration.key];
+            delete partial[conflict];
+            delete error.stack;
+            errors.push(error);
+          }
+        }
+      }
+    };
+
+    const validateImplications = (configuration: InternalOptionConfig) => {
+      if (this.configuredImplies[configuration.key]) {
+        for (const imply of this.configuredImplies[configuration.key]) {
+          if (normalized[imply] === undefined) {
+            const error = new Error(
+              `If ${configuration.key} is set, ${imply} is required.`
+            );
+            delete partial[configuration.key];
+            delete error.stack;
+            errors.push(error);
+          }
+        }
+      }
+    };
+
+    for (const configurationKey in this.configuredOptions) {
+      const configuration = this.configuredOptions[configurationKey];
       try {
-        validateOption(configuration, result[configuration.key]);
+        validateOption(configuration, normalized[configuration.key]);
+        if (normalized[configuration.key] !== undefined) {
+          validateConflicts(configuration);
+          validateImplications(configuration);
+        }
       } catch (e: any) {
-        delete result[configuration.key];
-        errors.push([configuration.key, e]);
+        delete partial[configuration.key];
+        errors.push(e);
+      }
+    }
+    for (const configuration of this.configuredPositionals) {
+      try {
+        validateOption(configuration, normalized[configuration.key]);
+        if (normalized[configuration.key] !== undefined) {
+          validateConflicts(configuration);
+          validateImplications(configuration);
+        }
+      } catch (e: any) {
+        delete partial[configuration.key];
+        errors.push(e);
       }
     }
     if (errors.length) {
       const error = new ValidationFailedError<TArgs>(
-        errors.map(([, error]) =>
+        errors.map((error) =>
           error instanceof Error ? error : new Error(error)
         ),
         `Validation failed for one or more options`,
-        result
+        partial
       );
       if (
         process.env[
@@ -444,6 +506,7 @@ export class ArgvParser<
       }
       throw error;
     }
+    return normalized;
   }
 
   private readFromEnv(configuration: InternalOptionConfig) {
@@ -467,6 +530,35 @@ export class ArgvParser<
         null
       );
     }
+  }
+
+  /**
+   * Registers that a set of options cannot be provided at the same time.
+   * @param options The options that cannot be provided together.
+   */
+  conflicts(...options: [string, string, ...string[]]) {
+    for (let i = 0; i < options.length; i++) {
+      const option = options[i];
+      this.configuredConflicts[option] ??= new Set();
+      for (let j = 0; j < options.length; j++) {
+        if (i !== j) {
+          this.configuredConflicts[option].add(options[j]);
+        }
+      }
+    }
+    return this;
+  }
+
+  /**
+   * Registers that the presence of one option implies the presence of one or more other options.
+   * @param options The options that imply the other option.
+   */
+  implies(option: string, ...options: string[]) {
+    this.configuredImplies[option] ??= new Set();
+    for (const opt of options) {
+      this.configuredImplies[option].add(opt);
+    }
+    return this;
   }
 
   /**

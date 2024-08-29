@@ -58,11 +58,9 @@ describe('init', () => {
 
       expect(() =>
         checkFilesExist(
-          [
-            'docs',
-            join('docs', 'my-cli', 'index.md'),
-            join('docs', 'my-cli', 'hello.md'),
-          ].map((f) => join(e2eSubDir, f))
+          ['docs', join('docs', 'index.md'), join('docs', 'hello.md')].map(
+            (f) => join(e2eSubDir, f)
+          )
         )
       ).not.toThrow();
     });

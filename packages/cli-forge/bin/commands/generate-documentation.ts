@@ -118,8 +118,9 @@ async function generateMarkdownForSingleCommand(
 
 function formatOption(option: Documentation['options'][string], md: mdfactory) {
   return md.h3(
-    md.strikethrough(option.key),
+    option.deprecated ? md.strikethrough(option.key) : option.key,
     ...[
+      option.deprecated ? md.bold(md.italics('Deprecated')) : undefined,
       md.bold('Type:') +
         ' ' +
         (option.type === 'array'

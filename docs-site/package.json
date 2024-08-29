@@ -7,8 +7,7 @@
     "build": "docusaurus build",
     "swizzle": "docusaurus swizzle",
     "write-heading-ids": "docusaurus write-heading-ids",
-    "typecheck": "tsc",
-    "extract-cli-docs": "npx tsx ../dist/packages/cli-forge/bin/cli.js generate-documentation ../packages/cli-forge/bin/cli.ts --output ./docs/cli"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@docusaurus/core": "3.4.0",
@@ -87,7 +86,8 @@
             "target": "build",
             "projects": "cli-forge"
           }
-        ]
+        ],
+        "command": "npx tsx ./tools/scripts/extract-cli-docs.ts"
       },
       "serve": {
         "dependsOn": [
