@@ -23,11 +23,15 @@ for (const example of examples) {
     // Otherwise, run each command
     for (const config of commands) {
       const command = typeof config === 'string' ? config : config.command;
+      const env = typeof config === 'string' ? {} : config.env;
       success &&= runExampleCommand(
-        `tsx --tsconfig ${join(
-          examplesRoot,
-          'tsconfig.json'
-        )} ${command.replace('{filename}', example.path)}`,
+        {
+          command: `tsx --tsconfig ${join(
+            examplesRoot,
+            'tsconfig.json'
+          )} ${command.replace('{filename}', example.path)}`,
+          env,
+        },
         `${example.data.id} > ${command}`
       );
     }
@@ -73,7 +77,7 @@ type FrontMatter = {
 };
 
 function runExampleCommand(
-  config: string | FrontMatter['commands'][number],
+  config: FrontMatter['commands'][number],
   label: string
 ) {
   const command = typeof config === 'string' ? config : config.command;
@@ -81,7 +85,7 @@ function runExampleCommand(
   try {
     process.stdout.write('▶️ ' + label);
     const a = performance.now();
-    execSync(command, { stdio: 'ignore', env: { ...process.env, ...env } });
+    execSync(command, { stdio: 'pipe', env: { ...process.env, ...env } });
     const b = performance.now();
     // move cursor to the beginning of the line
     process.stdout.write('\r');
@@ -91,10 +95,19 @@ function runExampleCommand(
         ' '
       )
     );
-  } catch {
+  } catch (e) {
     // move cursor to the beginning of the line
     process.stdout.write('\r');
     console.log(`❌ ${label}`.padEnd(process.stdout.columns, ' '));
+
+    if (e.stdout) {
+      console.log(e.stdout.toString());
+    }
+
+    if (e.stderr) {
+      console.error(e.stderr.toString());
+    }
+
     return false;
   }
   return true;

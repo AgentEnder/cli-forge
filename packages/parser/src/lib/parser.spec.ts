@@ -7,7 +7,9 @@ interface CustomMatchers<R = unknown> {
 }
 
 declare module 'vitest' {
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface Assertion<T = any> extends CustomMatchers<T> {}
+  // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface AsymmetricMatchersContaining extends CustomMatchers {}
 }
 
@@ -25,7 +27,7 @@ expect.extend({
     } catch (e) {
       if (e instanceof AggregateError) {
         const errors = e.errors.map((m) => m.message);
-        let pass = expected.every((e) => {
+        const pass = expected.every((e) => {
           if (typeof e === 'string') {
             return errors.some((error) => error.includes(e));
           } else {
@@ -290,7 +292,7 @@ describe('parser', () => {
           validate: (s) => s === 'hello',
         })
         .parse(['--foo', 'world'])
-    ).toThrowAggregateErrorContaining('Invalid value for option foo');
+    ).toThrowAggregateErrorContaining('Invalid value "world" for option foo');
   });
 
   it('should support custom positional argument validators', () => {
@@ -302,7 +304,7 @@ describe('parser', () => {
         })
         .parse(['world'])
     ).toThrowAggregateErrorContaining(
-      'Invalid value for positional option foo'
+      'Invalid value "world" for positional option foo'
     );
   });
 
@@ -477,9 +479,30 @@ describe('parser', () => {
           '2',
           '3',
         ])
-    ).toThrowErrorMatchingInlineSnapshot(
-      'Invalid value for option foo. Valid values are: hello, world',
-      'Invalid value for option baz. Valid values are: 1, 2'
+    ).toThrowAggregateErrorContaining(
+      'Invalid value "foo" for option foo. Valid values are: hello, world',
+      'Invalid value "1,2,3" for option baz. Valid values are: 1, 2'
+    );
+  });
+
+  it('should support ignoring prefixing for specific options', async () => {
+    await withEnv(
+      {
+        FOO: 'BAR',
+        PREFIX_BAZ: 'QUX',
+      },
+      () => {
+        expect(
+          parser()
+            .option('foo', {
+              type: 'string',
+              env: { key: 'foo', prefix: false },
+            })
+            .option('baz', { type: 'string', env: 'baz' })
+            .env('PREFIX')
+            .parse([])
+        ).toEqual({ foo: 'BAR', baz: 'QUX', unmatched: [] });
+      }
     );
   });
 });

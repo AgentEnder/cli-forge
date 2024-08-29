@@ -6,7 +6,7 @@
 // commands:
 //  - command: '{filename} hello'
 //    env:
-//      ENV_OPTIONS_NAME: sir
+//      NAME: sir
 // ---
 import cli from 'cli-forge';
 
@@ -36,4 +36,4 @@ const myCLI = cli('env-options').command('hello', {
   },
 });
 
-await myCLI.forge();
+(async () => await myCLI.forge())();

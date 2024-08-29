@@ -38,6 +38,7 @@ describe('utils', () => {
       ['FOO', 'someCLI', 'FOO_SOME_CLI'],
       ['FOO', 'someCLITool', 'FOO_SOME_CLI_TOOL'],
       [undefined, 'foo-bar', 'FOO_BAR'],
+      [undefined, 'FOO', 'FOO'],
     ])(
       'with prefix %s and key %s should return %s',
       (prefix, key, expected) => {

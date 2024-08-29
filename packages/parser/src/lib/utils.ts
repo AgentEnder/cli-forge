@@ -3,7 +3,7 @@ export function fromDashedToCamelCase(str: string) {
 }
 
 export function fromCamelOrDashedCaseToConstCase(str: string) {
-  let parts = [];
+  const parts = [];
   let currentPart = '';
   let prev: string | undefined;
   for (const char of str) {
@@ -15,7 +15,7 @@ export function fromCamelOrDashedCaseToConstCase(str: string) {
       continue;
     }
     // Previous was lower case and current is upper case
-    if (prev?.toLowerCase() === prev && char === char.toUpperCase()) {
+    if (prev && prev?.toLowerCase() === prev && char === char.toUpperCase()) {
       parts.push(currentPart);
       currentPart = char;
       // Handle someCLITool -> SOME_CLI_TOOL

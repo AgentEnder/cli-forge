@@ -52,7 +52,20 @@ export type CommonOptionConfig<T, TCoerce = T> = {
    * If set to true, the environment variable will be `${optionName}`.
    * If explicitly set to false, environment variable population will be disabled for this option.
    */
-  env?: string | boolean;
+  env?:
+    | string
+    | boolean
+    | {
+        /**
+         * What key should the value be read from in process.env
+         */
+        key: string;
+
+        /**
+         * If set to false, ignore prefix provided by .env() call.
+         */
+        prefix?: boolean;
+      };
 };
 
 export type StringOptionConfig<TCoerce = string> = {
@@ -424,12 +437,17 @@ export class ArgvParser<
   }
 
   private readFromEnv(configuration: InternalOptionConfig) {
-    const envKey = getEnvKey(
-      this.envPrefix,
+    const { envKey: configuredKey, prefix } =
       typeof configuration.env === 'string'
-        ? configuration.env
-        : configuration.key
-    );
+        ? { envKey: configuration.env, prefix: this.envPrefix }
+        : typeof configuration.env === 'boolean'
+        ? { envKey: configuration.key, prefix: this.envPrefix }
+        : {
+            envKey: configuration.env?.key ?? configuration.key,
+            prefix:
+              configuration.env?.prefix === false ? undefined : this.envPrefix,
+          };
+    const envKey = getEnvKey(prefix, configuredKey);
     const envValue = process.env[envKey];
     if (envValue) {
       return tryParseValue(
