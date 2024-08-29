@@ -1,3 +1,26 @@
+## 0.5.0 (2024-08-29)
+
+
+### 🚀 Features
+
+- **cli-forge:** add test harness for checking args and command parsing ([e068033](https://github.com/agentender/cli-forge/commit/e068033))
+- **cli-forge:** add support for implies and conflicts ([5afdcc5](https://github.com/agentender/cli-forge/commit/5afdcc5))
+- **cli-forge:** support for usage + examples ([9fca5e7](https://github.com/agentender/cli-forge/commit/9fca5e7))
+- **parser:** add support for reading args from environment ([d6a7edb](https://github.com/agentender/cli-forge/commit/d6a7edb))
+- **parser:** add support for restricting valid values ([fe817fe](https://github.com/agentender/cli-forge/commit/fe817fe))
+- **parser:** support deprecated options ([affaaa6](https://github.com/agentender/cli-forge/commit/affaaa6))
+
+### 🩹 Fixes
+
+- **cli-forge:** require command by default when no handler is provided ([1703351](https://github.com/agentender/cli-forge/commit/1703351))
+- **cli-forge:** --help should not throw on argument validation errors ([f6859d9](https://github.com/agentender/cli-forge/commit/f6859d9))
+- **cli-forge:** properly link subcommands on index pages ([26a43af](https://github.com/agentender/cli-forge/commit/26a43af))
+- **parser:** unprefixed args not loading properly ([4ce145f](https://github.com/agentender/cli-forge/commit/4ce145f))
+
+### ❤️  Thank You
+
+- Craigory Coppola
+
 ## 0.4.0 (2024-08-28)
 
 
