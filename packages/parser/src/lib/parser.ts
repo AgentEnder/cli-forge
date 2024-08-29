@@ -403,6 +403,7 @@ export class ArgvParser<
       try {
         validateOption(configuration, result[configuration.key]);
       } catch (e: any) {
+        delete result[configuration.key];
         errors.push([configuration.key, e]);
       }
     }
@@ -413,15 +414,17 @@ export class ArgvParser<
       try {
         validateOption(configuration, result[configuration.key]);
       } catch (e: any) {
+        delete result[configuration.key];
         errors.push([configuration.key, e]);
       }
     }
     if (errors.length) {
-      const error = new AggregateError(
+      const error = new ValidationFailedError<TArgs>(
         errors.map(([, error]) =>
           error instanceof Error ? error : new Error(error)
         ),
-        `Validation failed for one or more options`
+        `Validation failed for one or more options`,
+        result
       );
       if (
         process.env[
@@ -745,4 +748,14 @@ function readArgKeys(str: `-${string}`): string[] {
     return str.slice(1).split('');
   }
   throw new Error(`Invalid flag ${str}`);
+}
+
+export class ValidationFailedError<T> extends AggregateError {
+  constructor(
+    errors: Error[],
+    message: string,
+    public partialArgV: Partial<T>
+  ) {
+    super(errors, message);
+  }
 }

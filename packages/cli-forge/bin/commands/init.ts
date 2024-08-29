@@ -24,7 +24,8 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
     .option('format', {
       type: 'string',
       default: 'ts',
-      description: 'What format should the CLI be in? (js, ts)',
+      description: 'What format should the CLI be in?',
+      choices: ['js', 'ts'],
     });
 }
 

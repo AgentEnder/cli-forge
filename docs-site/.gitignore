@@ -19,9 +19,11 @@ npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 
+
 # Generated at build time
 docs/api/cli-forge
 docs/api/parser
 docs/examples
+docs/cli/**/*.md
 docs/changelog.md
 docs/index.md

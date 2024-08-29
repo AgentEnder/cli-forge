@@ -3,6 +3,7 @@ import {
   ArrayOptionConfig,
   OptionConfig,
   ParsedArgs,
+  ValidationFailedError,
   fromCamelOrDashedCaseToConstCase,
 } from '@cli-forge/parser';
 
@@ -368,12 +369,48 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       help.push('');
       help.push('Options:');
     }
+
+    function getOptionParts(key: string, option: OptionConfig) {
+      const parts = [];
+      if (option.description) {
+        parts.push(option.description);
+      }
+      if (option.choices) {
+        const choices =
+          typeof option.choices === 'function'
+            ? option.choices()
+            : option.choices;
+        parts.push(`(${choices.join(', ')})`);
+      }
+      if (option.default) {
+        parts.push('[default: ' + option.default + ']');
+      } else if (option.required) {
+        parts.push('[required]');
+      }
+      return parts;
+    }
+
+    const allParts: Array<[key: string, ...parts: string[]]> = [];
     for (const key in this.parser.configuredOptions) {
       const option = (this.parser.configuredOptions as any)[
         key
       ] as OptionConfig;
+      allParts.push([key, ...getOptionParts(key, option)]);
+    }
+    const paddingValues: number[] = [];
+    for (let i = 0; i < allParts.length; i++) {
+      for (let j = 0; j < allParts[i].length; j++) {
+        if (!paddingValues[j]) {
+          paddingValues[j] = 0;
+        }
+        paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
+      }
+    }
+    for (const [key, ...parts] of allParts) {
       help.push(
-        `  --${key}${option.description ? ' - ' + option.description : ''}`
+        `--${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
+          .map((part, i) => part.padEnd(paddingValues[i + 1]))
+          .join(' ')}`
       );
     }
 
@@ -433,7 +470,18 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     // Parsing the args does two things:
     // - builds argv to pass to handler
     // - fills the command chain + registers commands
-    const argv = this.parser.parse(args);
+    let argv: TArgs & { help?: boolean };
+    let validationFailedError: ValidationFailedError<TArgs> | undefined;
+    try {
+      argv = this.parser.parse(args);
+    } catch (e) {
+      if (e instanceof ValidationFailedError) {
+        argv = e.partialArgV as TArgs;
+        validationFailedError = e;
+      } else {
+        throw e;
+      }
+    }
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let currentCommand: InternalCLI<any> = this;
     for (const command of this.commandChain) {
@@ -441,7 +489,10 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
     if (argv.help) {
       this.printHelp();
-      return argv as TArgs;
+      return argv;
+    } else if (validationFailedError) {
+      this.printHelp();
+      throw validationFailedError;
     }
 
     const finalArgV =

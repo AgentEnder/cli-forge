@@ -37,9 +37,9 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
     })
     .option('format', {
       type: 'string',
-      description:
-        'What format should the documentation be output in? (json, md)',
+      description: 'What format should the documentation be output in?',
       default: 'md',
+      choices: ['json', 'md'],
     })
     .option('export', {
       type: 'string',
@@ -52,12 +52,12 @@ export const generateDocumentationCommand: CLI = cli('generate-documentation', {
   description: 'Generate documentation for the given CLI',
   builder: (b) => withGenerateDocumentationArgs(b),
   handler: async (args) => {
-    if (args.cli.startsWith('./')) {
+    if (args.cli.startsWith('./') || args.cli.startsWith('../')) {
       args.cli = join(process.cwd(), args.cli);
     }
     const cliModule = await import(args.cli);
     const cli = cliModule[args.export || 'default'] ?? cliModule;
-    if (!(cli instanceof InternalCLI)) {
+    if (!isCLI(cli)) {
       throw new Error(
         `${args.cli}${args.export ? '#' + args.export : ''} is not a CLI.`
       );
@@ -81,11 +81,7 @@ async function generateMarkdownDocumentation(
   args: GenerateDocsArgs
 ) {
   const md = await importMarkdownFactory();
-  await generateMarkdownForSingleCommand(
-    docs,
-    join(args.output, docs.name),
-    md
-  );
+  await generateMarkdownForSingleCommand(docs, join(args.output), md);
 }
 
 async function generateMarkdownForSingleCommand(
@@ -131,7 +127,20 @@ function formatOption(option: Documentation['options'][string], md: mdfactory) {
           : option.type),
       option.description,
       option.default ? md.bold('Default:') + ' ' + option.default : undefined,
-      option.required ? md.bold('Required') : undefined,
+      // No need to show required if it's required and has a default, as its not actually required to pass.
+      option.required && !option.default ? md.bold('Required') : undefined,
+      option.choices
+        ? md.bold('Valid values:') +
+          ' ' +
+          (() => {
+            const choicesAsString = (
+              typeof option.choices === 'function'
+                ? option.choices()
+                : option.choices
+            ).map((t) => t.toString());
+            return choicesAsString.join(', ');
+          })()
+        : undefined,
       option.alias?.length
         ? md.h4('Aliases', md.ul(...option.alias))
         : undefined,
@@ -189,4 +198,20 @@ async function importMarkdownFactory(): Promise<mdfactory> {
       'Could not find markdown-factory. Please install it to generate markdown documentation.'
     );
   }
+}
+
+function isCLI(obj: unknown): obj is InternalCLI {
+  if (obj instanceof InternalCLI) {
+    return true;
+  }
+  if (typeof obj !== 'object' || !obj) {
+    return false;
+  }
+  if (!('constructor' in obj)) {
+    return false;
+  }
+  if (!('name' in obj.constructor)) {
+    return false;
+  }
+  return obj.constructor.name === InternalCLI.name;
 }

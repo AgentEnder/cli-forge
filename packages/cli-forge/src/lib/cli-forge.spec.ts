@@ -112,7 +112,15 @@ describe('cliForge', () => {
   it('should generate help text', async () => {
     const { getOutput } = mockConsoleLog();
     await cli('test')
-      .option('baz', { type: 'string' })
+      .option('baz', { type: 'string', choices: ['a', 'b'] })
+      .option('qux', {
+        type: 'string',
+        required: true,
+      })
+      .option('quux', {
+        type: 'string',
+        default: 'a',
+      })
       .command('format', {
         builder: (argv) =>
           argv.option('bar', { type: 'string' }).command('check', {
@@ -133,8 +141,10 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help - Show help for the current command
-        --baz
+      --help - Show help for the current command
+      --baz  - (a, b)                           
+      --qux  - [required]                       
+      --quux - [default: a]                     
        
       Run \`test [command] --help\` for more information on a command"
     `);
@@ -163,10 +173,10 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help - Show help for the current command
-        --baz
-        --bar
-        --foo"
+      --help - Show help for the current command
+      --baz 
+      --bar 
+      --foo "
     `);
   });
 
@@ -184,8 +194,8 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help - Show help for the current command
-        --bar"
+      --help - Show help for the current command
+      --bar "
     `);
     expect(process.exitCode).toBe(1);
   });

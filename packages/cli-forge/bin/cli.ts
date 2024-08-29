@@ -11,4 +11,8 @@ const mycli = cli('cli-forge').commands(
 
 export default mycli;
 
-mycli.forge();
+if (require.main === module) {
+  (async () => {
+    await mycli.forge();
+  })();
+}
