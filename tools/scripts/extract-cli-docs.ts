@@ -36,6 +36,7 @@ execSync(
   'npx tsx node_modules/cli-forge/bin/cli.js generate-documentation ../../packages/cli-forge/bin/cli.ts --output ../../docs-site/docs/cli',
   {
     cwd: './tmp/extract-cli-docs',
+    stdio: 'inherit',
     env: {
       ...process.env,
       NODE_PATH: './tmp/extract-cli-docs/node_modules',

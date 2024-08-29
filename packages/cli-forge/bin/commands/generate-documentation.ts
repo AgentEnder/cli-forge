@@ -100,10 +100,12 @@ async function generateMarkdownForSingleCommand(
     md.h1(
       docs.name,
       ...[
+        [md.bold('Usage:'), md.code(docs.usage)].join(' '),
         docs.description,
         getPositionalArgsFragment(docs.positionals, md),
         getFlagArgsFragment(docs.options, md),
         getSubcommandsFragment(docs.subcommands, md),
+        getExamplesFragment(docs.examples, md),
       ].filter(isTruthy)
     )
   );
@@ -215,4 +217,17 @@ function isCLI(obj: unknown): obj is InternalCLI {
     return false;
   }
   return obj.constructor.name === InternalCLI.name;
+}
+
+function getExamplesFragment(
+  examples: string[],
+  md: typeof import('markdown-factory')
+): string | undefined {
+  if (examples.length === 0) {
+    return undefined;
+  }
+  return md.h2(
+    'Examples',
+    ...examples.map((example) => md.codeBlock(example, 'shell'))
+  );
 }

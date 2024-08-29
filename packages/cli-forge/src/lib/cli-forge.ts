@@ -18,7 +18,9 @@ export type CLICommandOptions<
 > = {
   description?: string;
   builder?: (parser: CLI<TInitial>) => CLI<TArgs>;
-  handler: (args: TArgs, context: CLIHandlerContext) => void | Promise<void>;
+  handler?: (args: TArgs, context: CLIHandlerContext) => void | Promise<void>;
+  usage?: string;
+  examples?: string[];
 };
 
 export type Command<
@@ -160,6 +162,18 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @returns Updated CLI instance.
    */
   demandCommand(): CLI<TArgs>;
+
+  /**
+   * Sets the usage text for the CLI. This text will be displayed in place of the default usage text
+   * @param usageText Text displayed in place of the default usage text for `--help` and in generated docs.
+   */
+  usage(usageText: string): CLI<TArgs>;
+
+  /**
+   * Sets the description for the CLI. This text will be displayed in the help text and generated docs.
+   * @param examples Examples to display in the help text and generated docs.
+   */
+  examples(...examples: string[]): CLI<TArgs>;
 
   /**
    * Prints help text to stdout.
@@ -356,6 +370,19 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     return this;
   }
 
+  usage(usageText: string) {
+    this.configuration ??= {};
+    this.configuration.usage = usageText;
+    return this;
+  }
+
+  examples(...examples: string[]) {
+    this.configuration ??= {};
+    this.configuration.examples ??= [];
+    this.configuration.examples.push(...examples);
+    return this;
+  }
+
   /**
    * Gets help text for the current command as a string.
    * @returns Help text for the current command.
@@ -368,11 +395,17 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       command = command.registeredCommands[key] as typeof this;
     }
     help.push(
-      `Usage: ${[
-        this.name,
-        ...this.commandChain,
-        ...command.parser.configuredPositionals.map((p) => `[${p.key}]`),
-      ].join(' ')}`
+      `Usage: ${
+        this.configuration?.usage
+          ? this.configuration.usage
+          : [
+              this.name,
+              ...this.commandChain,
+              ...command.parser.configuredPositionals.map((p) =>
+                p.required ? `<${p.key}>` : `[${p.key}]`
+              ),
+            ].join(' ')
+      }`
     );
     if (command.configuration?.description) {
       help.push(command.configuration.description);
@@ -441,6 +474,14 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           .map((part, i) => part.padEnd(paddingValues[i + 1]))
           .join(' ')}`
       );
+    }
+
+    if (command.configuration?.examples?.length) {
+      help.push('');
+      help.push('Examples:');
+      for (const example of command.configuration.examples) {
+        help.push(`  \`${example}\``);
+      }
     }
 
     if (Object.keys(command.registeredCommands).length > 0) {
