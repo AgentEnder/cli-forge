@@ -65,4 +65,26 @@ describe('init', () => {
       ).not.toThrow();
     });
   });
+
+  describe('--initial-version', () => {
+    it('should work with --version for the new CLI', async () => {
+      await runCommand(
+        // We are using --js here to avoid needing to invoke cli forge with tsx
+        'npx cli-forge@e2e init my-cli --initial-version 1.0.0',
+        [],
+        {}
+      );
+      const packageJson = require(join(e2eSubDir, 'package.json'));
+      expect(packageJson).toHaveProperty('version', '1.0.0');
+      const { stdout } = await runCommand(
+        'npx -y tsx ./bin/my-cli --version',
+        [],
+        {}
+      );
+      expect(stdout).toMatchInlineSnapshot(`
+        "1.0.0
+        "
+      `);
+    });
+  });
 });

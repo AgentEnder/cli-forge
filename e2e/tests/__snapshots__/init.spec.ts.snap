@@ -12,7 +12,8 @@ Commands:
   hello
 
 Options:
-  --help - Show help for the current command
+  --help    - Show help for the current command  
+  --version - Show the version number for the CLI
  
 Run \`my-cli [command] --help\` for more information on a command
 "
@@ -22,7 +23,8 @@ exports[`init --format js should generate a new CLI: subcommand help text 1`] = 
 "Usage: my-cli hello [name]
 
 Options:
-  --help - Show help for the current command
+  --help    - Show help for the current command  
+  --version - Show the version number for the CLI
 "
 `;
 
@@ -38,7 +40,8 @@ Commands:
   hello
 
 Options:
-  --help - Show help for the current command
+  --help    - Show help for the current command  
+  --version - Show the version number for the CLI
  
 Run \`my-cli [command] --help\` for more information on a command
 "
@@ -48,6 +51,7 @@ exports[`init --format ts should generate a new CLI: subcommand help text 1`] = 
 "Usage: my-cli hello [name]
 
 Options:
-  --help - Show help for the current command
+  --help    - Show help for the current command  
+  --version - Show the version number for the CLI
 "
 `;

@@ -7,6 +7,8 @@ import {
   fromCamelOrDashedCaseToConstCase,
   hideBin,
 } from '@cli-forge/parser';
+import { getCallingFile, getParentPackageJson } from './utils';
+import { readFileSync } from 'fs';
 
 export interface CLIHandlerContext {
   command: CLI<any>;
@@ -176,6 +178,13 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   examples(...examples: string[]): CLI<TArgs>;
 
   /**
+   * Allows overriding the version displayed when passing `--version`. Defaults to crawling
+   * the file system to get the package.json of the currently executing command.
+   * @param override
+   */
+  version(override?: string): CLI<TArgs>;
+
+  /**
    * Prints help text to stdout.
    */
   printHelp(): void;
@@ -224,6 +233,8 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   private _configuration?: CLICommandOptions<any, any>;
 
+  private _versionOverride?: string;
+
   get configuration() {
     return this._configuration;
   }
@@ -247,11 +258,16 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       }
       return false;
     },
-  }).option('help', {
-    type: 'boolean',
-    alias: ['h'],
-    description: 'Show help for the current command',
-  });
+  })
+    .option('help', {
+      type: 'boolean',
+      alias: ['h'],
+      description: 'Show help for the current command',
+    })
+    .option('version', {
+      type: 'boolean',
+      description: 'Show the version number for the CLI',
+    });
 
   /**
    * @param name What should the name of the cli command be?
@@ -380,6 +396,11 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     this.configuration ??= {};
     this.configuration.examples ??= [];
     this.configuration.examples.push(...examples);
+    return this;
+  }
+
+  version(version?: string) {
+    this._versionOverride = version;
     return this;
   }
 
@@ -531,6 +552,21 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
   }
 
+  private versionHandler() {
+    if (this._versionOverride) {
+      console.log(this._versionOverride);
+      return;
+    }
+    let mainFile = require?.main?.filename;
+    mainFile ??= getCallingFile();
+    if (!mainFile) {
+      console.log('unknown');
+      return;
+    }
+    const packageJson = getParentPackageJson(mainFile);
+    console.log(packageJson.version ?? 'unknown');
+  }
+
   /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
@@ -540,7 +576,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     // Parsing the args does two things:
     // - builds argv to pass to handler
     // - fills the command chain + registers commands
-    let argv: TArgs & { help?: boolean };
+    let argv: TArgs & { help?: boolean; version?: boolean };
     let validationFailedError: ValidationFailedError<TArgs> | undefined;
     try {
       argv = this.parser.parse(args);
@@ -557,6 +593,12 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     for (const command of this.commandChain) {
       currentCommand = currentCommand.registeredCommands[command];
     }
+
+    if (argv.version) {
+      this.versionHandler();
+      return argv;
+    }
+
     if (argv.help) {
       this.printHelp();
       return argv;

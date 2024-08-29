@@ -26,6 +26,12 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
       default: 'ts',
       description: 'What format should the CLI be in?',
       choices: ['js', 'ts'],
+    })
+    .option('initialVersion', {
+      type: 'string',
+      default: '0.0.1',
+      description:
+        'Initial version used when creating the package.json for the new CLI.',
     });
 }
 
@@ -43,7 +49,10 @@ export const initCommand = cli('init', {
         [cmd: string]: string;
       };
       dependencies?: Record<string, string>;
-    } = readJsonOr(packageJsonPath, { name: args.cliName });
+    } = readJsonOr(packageJsonPath, {
+      name: args.cliName,
+      version: args.initialVersion,
+    });
     packageJsonContent.bin ??= {};
     packageJsonContent.bin[args.cliName] = relative(args.output, cliPath);
     packageJsonContent.dependencies ??= {};
