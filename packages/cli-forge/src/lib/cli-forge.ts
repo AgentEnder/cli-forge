@@ -5,6 +5,7 @@ import {
   ParsedArgs,
   ValidationFailedError,
   fromCamelOrDashedCaseToConstCase,
+  hideBin,
 } from '@cli-forge/parser';
 
 export interface CLIHandlerContext {
@@ -387,6 +388,9 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       } else if (option.required) {
         parts.push('[required]');
       }
+      if (option.deprecated) {
+        parts.push('[deprecated: ' + option.deprecated + ']');
+      }
       return parts;
     }
 
@@ -466,7 +470,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
-  async forge(args: string[] = process.argv.slice(2)) {
+  async forge(args: string[] = hideBin(process.argv)) {
     // Parsing the args does two things:
     // - builds argv to pass to handler
     // - fills the command chain + registers commands

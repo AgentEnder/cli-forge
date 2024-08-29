@@ -118,7 +118,7 @@ async function generateMarkdownForSingleCommand(
 
 function formatOption(option: Documentation['options'][string], md: mdfactory) {
   return md.h3(
-    option.key,
+    md.strikethrough(option.key),
     ...[
       md.bold('Type:') +
         ' ' +

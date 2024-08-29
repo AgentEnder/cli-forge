@@ -1,3 +1,4 @@
+import { hideBin } from './helpers';
 import { fromDashedToCamelCase, getEnvKey } from './utils';
 
 type Flatten<T> = T extends Array<infer U> ? U : T;
@@ -66,6 +67,12 @@ export type CommonOptionConfig<T, TCoerce = T> = {
          */
         prefix?: boolean;
       };
+
+  /**
+   * If set, the option will be marked as deprecated, with the provided message. This will not effect runtime behavior,
+   * but will be displayed in help output and generated docs.
+   */
+  deprecated?: string;
 };
 
 export type StringOptionConfig<TCoerce = string> = {
@@ -305,7 +312,7 @@ export class ArgvParser<
    * @param argv The array of arguments to parse
    * @returns The parsed arguments
    */
-  parse(argv: string[]) {
+  parse(argv: string[] = hideBin(process.argv)) {
     const argvClone = [...argv];
     const result: any = {
       unmatched: [],
