@@ -4,10 +4,28 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
-import { version as CLI_FORGE_VERSION } from '../../package.json';
+import * as CLI_FORGE_PACKAGE_JSON from '../../package.json';
 import cli, { CLI } from '../../src';
 // import { CLI } from '../../src/lib/cli-forge';
 import { ensureDirSync } from '../utils/fs';
+
+const CLI_FORGE_VERSION = CLI_FORGE_PACKAGE_JSON.version;
+const DEV_PEER_DEPS = Object.entries(
+  CLI_FORGE_PACKAGE_JSON.peerDependencies
+).reduce((acc, [dep, version]) => {
+  if (
+    // The dev prop doesn't actually do anything for npm/pnpm/yarn,
+    // but we are using it to mark when a peer dep is only used at dev time.
+    // In these cases, we can safely add them to the devDependencies of the
+    // generated CLI.
+    CLI_FORGE_PACKAGE_JSON.peerDependenciesMeta[
+      dep as keyof typeof CLI_FORGE_PACKAGE_JSON.peerDependenciesMeta
+    ]?.dev
+  ) {
+    acc[dep] = version;
+  }
+  return acc;
+}, {} as Record<string, string>);
 
 export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
   return cmd
@@ -49,6 +67,7 @@ export const initCommand = cli('init', {
         [cmd: string]: string;
       };
       dependencies?: Record<string, string>;
+      devDependencies?: Record<string, string>;
     } = readJsonOr(packageJsonPath, {
       name: args.cliName,
       version: args.initialVersion,
@@ -57,6 +76,16 @@ export const initCommand = cli('init', {
     packageJsonContent.bin[args.cliName] = relative(args.output, cliPath);
     packageJsonContent.dependencies ??= {};
     packageJsonContent.dependencies['cli-forge'] ??= CLI_FORGE_VERSION;
+    if (args.format === 'ts') {
+      const latestTypescriptVersion = execSync(
+        'npm show typescript version'
+      ).toString();
+      packageJsonContent.devDependencies = {
+        typescript: latestTypescriptVersion,
+        ...DEV_PEER_DEPS,
+        ...packageJsonContent.devDependencies,
+      };
+    }
     writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2));
     ensureDirSync(dirname(cliPath));
     writeFileSync(

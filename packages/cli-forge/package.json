@@ -6,11 +6,17 @@
     "@cli-forge/parser": "file:../parser"
   },
   "peerDependencies": {
-    "markdown-factory": "0.2.0"
+    "markdown-factory": "0.2.0",
+    "tsx": "4.19.0"
   },
   "peerDependenciesMeta": {
     "markdown-factory": {
-      "optional": true
+      "optional": true,
+      "dev": true
+    },
+    "tsx": {
+      "optional": true,
+      "dev": true
     }
   },
   "type": "commonjs",

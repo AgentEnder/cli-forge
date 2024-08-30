@@ -41,20 +41,11 @@ describe('init', () => {
       ));
       expect(stdout).toMatchSnapshot('subcommand help text');
 
-      //
-      if (format === 'js') {
-        await runCommand(
-          'npx cli-forge generate-documentation ./bin/my-cli',
-          [],
-          {}
-        );
-      } else {
-        await runCommand(
-          'npx tsx ./node_modules/.bin/cli-forge generate-documentation ./bin/my-cli',
-          [],
-          {}
-        );
-      }
+      await runCommand(
+        'npx cli-forge generate-documentation ./bin/my-cli',
+        [],
+        {}
+      );
 
       expect(() =>
         checkFilesExist(

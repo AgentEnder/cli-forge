@@ -29,7 +29,7 @@
     "nx-github-pages": "^1.0.0",
     "prettier": "^2.6.2",
     "ts-jest": "^29.2.5",
-    "tsx": "^4.17.0",
+    "tsx": "^4.19.0",
     "typescript": "~5.5.2",
     "verdaccio": "^5.0.4",
     "vite": "^5.0.0",
