@@ -8,7 +8,11 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
   const readme = readFileSync(join(workspaceRoot, './README.md'), 'utf-8');
   const changelog = readFileSync(
     join(workspaceRoot, './CHANGELOG.md'),
-    'utf-8',
+    'utf-8'
+  );
+  const contributing = readFileSync(
+    join(workspaceRoot, './CONTRIBUTING.md'),
+    'utf-8'
   );
 
   writeFileSync(
@@ -19,7 +23,7 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
       hide_title: true,
       slug: '/',
       sidebar_position: 1,
-    }),
+    })
   );
   writeFileSync(
     join(__dirname, '../../docs/changelog.md'),
@@ -29,7 +33,17 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
       hide_title: true,
       sidebar_position: 2,
       slug: '/changelog',
-    }),
+    })
+  );
+  writeFileSync(
+    join(__dirname, '../../docs/contributing.md'),
+    addFrontMatter(contributing, {
+      id: 'contributing',
+      title: 'Contributing',
+      hide_title: true,
+      sidebar_position: 3,
+      slug: '/contributing',
+    })
   );
 
   return {
@@ -40,7 +54,7 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
 
 function addFrontMatter(
   contents: string,
-  frontMatter: Record<string, string | boolean | number>,
+  frontMatter: Record<string, string | boolean | number>
 ) {
   return `---
 ${stringify(frontMatter).trim()}
