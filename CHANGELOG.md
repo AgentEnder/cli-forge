@@ -1,3 +1,21 @@
+## 0.6.0 (2024-08-30)
+
+
+### 🚀 Features
+
+- **cli-forge:** add implicit --version handler ([a45be15](https://github.com/agentender/cli-forge/commit/a45be15))
+- **cli-forge:** interactive shell ([8fae952](https://github.com/agentender/cli-forge/commit/8fae952))
+- **parser:** allow passing positional args as flag ([f1392c2](https://github.com/agentender/cli-forge/commit/f1392c2))
+
+### 🩹 Fixes
+
+- **cli-forge:** use tsx to load typescript clis when generating docs if it is available ([4dafd37](https://github.com/agentender/cli-forge/commit/4dafd37))
+- **parser:** clone conflicts and implies when cloning object ([9402b82](https://github.com/agentender/cli-forge/commit/9402b82))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.5.0 (2024-08-29)
 
 
