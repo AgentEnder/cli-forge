@@ -8,7 +8,7 @@ import {
   hideBin,
 } from '@cli-forge/parser';
 import { getCallingFile, getParentPackageJson } from './utils';
-import { readFileSync } from 'fs';
+import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
 
 export interface CLIHandlerContext {
   command: CLI<any>;
@@ -33,6 +33,23 @@ export type Command<
       name: string;
     } & CLICommandOptions<TInitial, TArgs>)
   | CLI<TArgs>;
+
+/**
+ * Error Handler for CLI applications. Error handlers should re-throw the error if they cannot handle it.
+ *
+ * @param e The error that was thrown.
+ * @param actions Actions that can be taken by the error handler. Prefer using these over process.exit for better support of interactive shells.
+ */
+export type ErrorHandler = (
+  e: unknown,
+  actions: {
+    /**
+     * Exits the process immediately.
+     * @param code
+     */
+    exit: (code?: number) => void;
+  }
+) => void;
 
 /**
  * The interface for a CLI application or subcommands.
@@ -79,6 +96,23 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
   commands(...commands: Command[]): CLI<TArgs>;
+
+  /**
+   * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
+   * This presents as a small shell that only knows the current command and its subcommands.
+   * Any flags already consumed by the command will be passed to every subcommand invocation.
+   */
+  enableInteractiveShell(): CLI<TArgs>;
+
+  /**
+   * Registers a custom global error handler for the CLI. This handler will be called when an error is thrown
+   * during the execution of the CLI and not otherwise handled. Error handlers should re-throw the error if they
+   * cannot handle it, s.t. the next error handler can attempt to handle it.
+   *
+   * @param handler Typically called with an Error object, but you should be prepared to handle any type of error.
+   * @param actions Actions that can be taken by the error handler. Prefer using these over process.exit for better support of interactive shells.
+   */
+  errorHandler(handler: ErrorHandler): CLI<TArgs>;
 
   /**
    * Registers a new option for the CLI command. This option will be accessible
@@ -229,11 +263,23 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    */
   commandChain: string[] = [];
 
-  private requiresCommand = false;
+  private requiresCommand: 'IMPLICIT' | 'EXPLICIT' | false = 'IMPLICIT';
 
   private _configuration?: CLICommandOptions<any, any>;
 
   private _versionOverride?: string;
+
+  private registeredErrorHandlers: Array<ErrorHandler> = [
+    (e: unknown, actions) => {
+      if (e instanceof ValidationFailedError) {
+        this.printHelp();
+        console.log();
+        console.log(e.message);
+        console.log(e.errors.map((e) => `  - ${e.message}`).join('\n'));
+        actions.exit(1);
+      }
+    },
+  ];
 
   get configuration() {
     return this._configuration;
@@ -252,6 +298,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       }
       const command = currentCommand.registeredCommands[arg];
       if (command && command.configuration) {
+        command.parser = this.parser;
         command.configuration.builder?.(command);
         this.commandChain.push(arg);
         return true;
@@ -273,7 +320,16 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    * @param name What should the name of the cli command be?
    * @param configuration Configuration for the current CLI command.
    */
-  constructor(public name: string) {}
+  constructor(
+    public name: string,
+    rootCommandConfiguration?: CLICommandOptions<TArgs>
+  ) {
+    if (rootCommandConfiguration) {
+      this.withRootCommandConfiguration(rootCommandConfiguration);
+    } else {
+      this.requiresCommand = 'IMPLICIT';
+    }
+  }
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
@@ -304,18 +360,16 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         );
       }
       if (key === '$0') {
-        this.configuration = {
-          ...this.configuration,
+        this.withRootCommandConfiguration({
+          ...this._configuration,
           builder: options.builder as any,
           handler: options.handler as any,
           description: options.description,
-        };
-        this.requiresCommand = false;
+        });
       }
       this.registeredCommands[key] = new InternalCLI<TArgs>(
         key
       ).withRootCommandConfiguration(options);
-      this.registeredCommands[key].parser = this.parser;
     } else if (keyOrCommand instanceof InternalCLI) {
       const cmd = keyOrCommand;
       this.registeredCommands[cmd.name] = cmd;
@@ -337,7 +391,6 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         this.registeredCommands[val.name] = val;
         // Include any options that were defined via cli(...).option() instead of via builder
         this.parser.augment(val.parser);
-        val.parser = this.parser;
       } else {
         const { name, ...configuration } = val as {
           name: string;
@@ -382,7 +435,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
   }
 
   demandCommand() {
-    this.requiresCommand = true;
+    this.requiresCommand = 'EXPLICIT';
     return this;
   }
 
@@ -529,7 +582,11 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    * @param cmd The command to run.
    * @param args The arguments to pass to the command.
    */
-  async runCommand<T extends ParsedArgs>(cmd: InternalCLI<T>, args: T) {
+  async runCommand<T extends ParsedArgs>(
+    cmd: InternalCLI<T>,
+    args: T,
+    originalArgV: string[]
+  ) {
     try {
       if (cmd.requiresCommand) {
         throw new Error(
@@ -541,15 +598,47 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           command: cmd,
         });
       } else {
-        throw new Error(
-          `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
-        );
+        // We can treat a command as a subshell if it has subcommands
+        if (Object.keys(cmd.registeredCommands).length > 0) {
+          cmd.command('help', { handler: () => this.printHelp() });
+          if (!INTERACTIVE_SHELL) {
+            const tui = new InteractiveShell(this, {
+              prependArgs: originalArgV,
+            });
+            await new Promise<void>((res) => {
+              ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
+                process.on(s, () => {
+                  tui.close();
+                  res();
+                })
+              );
+            });
+          }
+        }
+        // No subcommands so subshell doesn't make sense
+        // No handler, so nothing to run
+        else {
+          throw new Error(
+            `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
+          );
+        }
       }
     } catch (e) {
       process.exitCode = 1;
       console.error(e);
       this.printHelp();
     }
+  }
+
+  enableInteractiveShell() {
+    if (this.requiresCommand === 'EXPLICIT') {
+      throw new Error(
+        'Interactive shell is not supported for commands that require a command.'
+      );
+    } else if (process.stdout.isTTY) {
+      this.requiresCommand = false;
+    }
+    return this;
   }
 
   private versionHandler() {
@@ -567,57 +656,90 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     console.log(packageJson.version ?? 'unknown');
   }
 
+  private async withErrorHandlers<T>(cb: () => T): Promise<Awaited<T>> {
+    try {
+      return await cb();
+    } catch (e) {
+      let handled = false;
+      for (const handler of this.registeredErrorHandlers) {
+        try {
+          handler(e, {
+            exit: (c) => {
+              process.exit(c);
+            },
+          });
+          // Error was handled, no need to continue
+          break;
+        } catch {
+          // Error was not handled, continue to the next handler
+        }
+      }
+      if (!handled) {
+        throw e;
+      }
+    }
+    return {} as Awaited<T>;
+  }
+
+  errorHandler(handler: ErrorHandler) {
+    this.registeredErrorHandlers.unshift(handler);
+    return this;
+  }
+
   /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
-  async forge(args: string[] = hideBin(process.argv)) {
-    // Parsing the args does two things:
-    // - builds argv to pass to handler
-    // - fills the command chain + registers commands
-    let argv: TArgs & { help?: boolean; version?: boolean };
-    let validationFailedError: ValidationFailedError<TArgs> | undefined;
-    try {
-      argv = this.parser.parse(args);
-    } catch (e) {
-      if (e instanceof ValidationFailedError) {
-        argv = e.partialArgV as TArgs;
-        validationFailedError = e;
-      } else {
-        throw e;
+  forge = (args: string[] = hideBin(process.argv)) =>
+    this.withErrorHandlers(async () => {
+      // Parsing the args does two things:
+      // - builds argv to pass to handler
+      // - fills the command chain + registers commands
+      let argv: TArgs & { help?: boolean; version?: boolean };
+      let validationFailedError: ValidationFailedError<TArgs> | undefined;
+      try {
+        argv = this.parser.parse(args);
+      } catch (e) {
+        if (e instanceof ValidationFailedError) {
+          argv = e.partialArgV as TArgs;
+          validationFailedError = e;
+        } else {
+          throw e;
+        }
       }
-    }
-    // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let currentCommand: InternalCLI<any> = this;
-    for (const command of this.commandChain) {
-      currentCommand = currentCommand.registeredCommands[command];
-    }
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      let currentCommand: InternalCLI = this;
+      for (const command of this.commandChain) {
+        currentCommand = currentCommand.registeredCommands[command];
+      }
 
-    if (argv.version) {
-      this.versionHandler();
-      return argv;
-    }
+      if (argv.version) {
+        this.versionHandler();
+        return argv;
+      }
 
-    if (argv.help) {
-      this.printHelp();
-      return argv;
-    } else if (validationFailedError) {
-      this.printHelp();
-      throw validationFailedError;
-    }
+      if (argv.help) {
+        this.printHelp();
+        return argv;
+      } else if (validationFailedError) {
+        throw validationFailedError;
+      }
 
-    const finalArgV =
-      currentCommand === this
-        ? (
-            (this.configuration?.builder?.(this as any) as InternalCLI<TArgs>)
-              ?.parser ?? this.parser
-          ).parse(args)
-        : argv;
+      const finalArgV = (() => {
+        if (currentCommand === this) {
+          if (this.configuration?.builder) {
+            return (
+              this.configuration.builder?.(this as any) as InternalCLI<TArgs>
+            ).parser.parse(args);
+          }
+        }
+        return argv;
+      })();
 
-    await this.runCommand(currentCommand, finalArgV);
-    return finalArgV as TArgs;
-  }
+      await this.runCommand(currentCommand, finalArgV, args);
+      return finalArgV as TArgs;
+    });
 
   getParser() {
     return this.parser.asReadonly();
@@ -629,13 +751,17 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   clone() {
     const clone = new InternalCLI<TArgs>(this.name);
+    clone.parser = this.parser.clone(clone.parser.options) as any;
     if (this.configuration) {
       clone.withRootCommandConfiguration(this.configuration);
     }
-    clone.registeredCommands = { ...this.registeredCommands };
+    clone.registeredCommands = {};
+    for (const command in this.registeredCommands ?? {}) {
+      clone.command(this.registeredCommands[command].clone());
+      // this.registeredCommands[command].clone();
+    }
     clone.commandChain = [...this.commandChain];
     clone.requiresCommand = this.requiresCommand;
-    clone.parser = this.parser.clone() as any;
     return clone;
   }
 }
@@ -650,15 +776,7 @@ export function cli<TArgs extends ParsedArgs>(
   name: string,
   rootCommandConfiguration?: CLICommandOptions<ParsedArgs, TArgs>
 ) {
-  const cli = new InternalCLI(name);
-
-  if (rootCommandConfiguration) {
-    cli.withRootCommandConfiguration(rootCommandConfiguration);
-  } else {
-    cli.demandCommand();
-  }
-
-  return cli as CLI<any> as CLI<TArgs>;
+  return new InternalCLI(name, rootCommandConfiguration) as any as CLI<TArgs>;
 }
 
 export default cli;

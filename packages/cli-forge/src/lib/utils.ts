@@ -76,3 +76,54 @@ export function getParentPackageJson(searchPath: string) {
     dependencies?: Record<string, string>;
   };
 }
+
+export function stringToArgs(str: string) {
+  const quotePairs = new Map<string, string>([
+    ['"', '"'],
+    ["'", "'"],
+    ['`', '`'],
+  ]);
+  const escapeChars = new Set(['\\']);
+
+  let activeQuote: string | undefined;
+
+  const args = [];
+  let currentArg = '';
+
+  let prev: string | undefined;
+  for (let i = 0; i < str.length; i++) {
+    const char = str[i];
+    if (activeQuote) {
+      while (true) {
+        if (i >= str.length) {
+          break;
+        } else if (
+          str[i] === quotePairs.get(activeQuote) &&
+          !(prev && escapeChars.has(prev))
+        ) {
+          break;
+        }
+        if (!escapeChars.has(str[i])) {
+          currentArg += str[i];
+        }
+        prev = str[i];
+        i++;
+      }
+      activeQuote = undefined;
+    } else if (quotePairs.has(char) && !(prev && escapeChars.has(prev))) {
+      activeQuote = char;
+    } else if (
+      char === ' ' &&
+      prev !== ' ' &&
+      !(prev && escapeChars.has(prev))
+    ) {
+      args.push(currentArg);
+      currentArg = '';
+    } else if (!escapeChars.has(char) || (prev && escapeChars.has(prev))) {
+      currentArg += char;
+    }
+    prev = char;
+  }
+  args.push(currentArg);
+  return args;
+}

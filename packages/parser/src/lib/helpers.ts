@@ -26,6 +26,10 @@ export function hideBin(argv: string[]) {
   return argv.slice(getProcessArgvBinIndex() + 1);
 }
 
+export function getBin(argv: string[]) {
+  return argv[getProcessArgvBinIndex()];
+}
+
 interface ElectronProcess extends NodeJS.Process {
   defaultApp?: boolean;
   versions: NodeJS.ProcessVersions & {
