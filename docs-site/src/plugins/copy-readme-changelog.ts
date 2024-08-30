@@ -36,13 +36,12 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
     })
   );
   writeFileSync(
-    join(__dirname, '../../docs/contributing.md'),
+    join(__dirname, '../../docs/CONTRIBUTING.md'),
     addFrontMatter(contributing, {
       id: 'contributing',
       title: 'Contributing',
       hide_title: true,
       sidebar_position: 3,
-      slug: '/contributing',
     })
   );
 

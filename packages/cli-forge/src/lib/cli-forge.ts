@@ -498,12 +498,15 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         }`
       );
     }
-    if (Object.keys(this.parser.configuredOptions).length > 0) {
+    const nonpositionalOptions = Object.values(
+      command.parser.configuredOptions
+    ).filter((c) => !c.positional);
+    if (nonpositionalOptions.length > 0) {
       help.push('');
       help.push('Options:');
     }
 
-    function getOptionParts(key: string, option: OptionConfig) {
+    function getOptionParts(option: OptionConfig) {
       const parts = [];
       if (option.description) {
         parts.push(option.description);
@@ -527,11 +530,8 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
 
     const allParts: Array<[key: string, ...parts: string[]]> = [];
-    for (const key in this.parser.configuredOptions) {
-      const option = (this.parser.configuredOptions as any)[
-        key
-      ] as OptionConfig;
-      allParts.push([key, ...getOptionParts(key, option)]);
+    for (const option of nonpositionalOptions) {
+      allParts.push([option.key, ...getOptionParts(option)]);
     }
     const paddingValues: number[] = [];
     for (let i = 0; i < allParts.length; i++) {

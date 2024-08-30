@@ -124,4 +124,4 @@ Vorpal can do **a lot**. There are some cool features there that may be consider
 
 ## Contributing
 
-Contributions are welcome! Please see the [contributing guide](./CONTRIBUTING.md) for more information.
+Contributions are welcome! Please see the [contributing guide](CONTRIBUTING.md) for more information.
