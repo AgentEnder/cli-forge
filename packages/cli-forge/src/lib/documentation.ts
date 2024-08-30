@@ -21,8 +21,12 @@ export function generateDocumentation(
   }
   const parser = cli.getParser();
 
-  const options = parser.configuredOptions;
+  const options: Record<string, OptionConfig & { key: string }> =
+    parser.configuredOptions;
   const positionals = parser.configuredPositionals;
+  for (const positional of positionals) {
+    delete options[positional.key];
+  }
   const subcommands: Documentation[] = Object.values(cli.getSubcommands()).map(
     (cmd) => generateDocumentation(cmd.clone(), [...commandChain, cli.name])
   );

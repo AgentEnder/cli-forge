@@ -157,6 +157,31 @@ describe('parser', () => {
     });
   });
 
+  it('should be able to parse positional arguments without options', () => {
+    expect(
+      parser()
+        .positional('foo', { type: 'string' })
+        .positional('bar', { type: 'number' })
+        .positional('baz', { type: 'string' })
+        .parse([
+          'The meaning of life is',
+          '--bar',
+          '42',
+          'to be',
+          'or not to be',
+        ])
+    ).toMatchInlineSnapshot(`
+      {
+        "bar": 42,
+        "baz": "to be",
+        "foo": "The meaning of life is",
+        "unmatched": [
+          "or not to be",
+        ],
+      }
+    `);
+  });
+
   it('should collect unmatched arguments', () => {
     expect(
       parser()

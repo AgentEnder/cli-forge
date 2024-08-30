@@ -264,16 +264,14 @@ export class ArgvParser<
       config.alias.push(fromDashedToCamelCase(name));
     }
 
-    if (config.positional) {
-      thisAsNewType.configuredPositionals.push({
-        key: name,
-        ...config,
-      });
-    } else {
-      thisAsNewType.configuredOptions[name] = {
-        key: name,
-        ...config,
-      } as InternalOptionConfig;
+    const entry = {
+      key: name,
+      ...config,
+    } as InternalOptionConfig;
+
+    thisAsNewType.configuredOptions[name] = entry;
+    if (entry.positional) {
+      thisAsNewType.configuredPositionals.push(entry);
     }
 
     return this as any as ArgvParser<
@@ -375,7 +373,12 @@ export class ArgvParser<
         }
         // Found a positional argument
       } else {
-        const configuration = this.configuredPositionals[matchedPositionals];
+        let configuration = this.configuredPositionals[matchedPositionals];
+        // Handles if a positional argument was already set by a flag.
+        while (configuration && result[configuration.key] !== undefined) {
+          matchedPositionals++;
+          configuration = this.configuredPositionals[matchedPositionals];
+        }
         if (configuration && configuration.positional === true) {
           const value = tryParseValue(
             this.parserMap[configuration.type],
@@ -416,11 +419,6 @@ export class ArgvParser<
         if (configuration.default !== undefined) {
           normalized[configuration.key] ??= configuration.default;
         }
-      }
-    }
-    for (const configuration of this.configuredPositionals) {
-      if (configuration.default !== undefined) {
-        normalized[configuration.key] ??= configuration.default;
       }
     }
     return normalized;
@@ -475,18 +473,7 @@ export class ArgvParser<
         errors.push(e);
       }
     }
-    for (const configuration of this.configuredPositionals) {
-      try {
-        validateOption(configuration, normalized[configuration.key]);
-        if (normalized[configuration.key] !== undefined) {
-          validateConflicts(configuration);
-          validateImplications(configuration);
-        }
-      } catch (e: any) {
-        delete partial[configuration.key];
-        errors.push(e);
-      }
-    }
+
     if (errors.length) {
       const error = new ValidationFailedError<TArgs>(
         errors.map((error) =>
