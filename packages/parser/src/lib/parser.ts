@@ -581,10 +581,14 @@ export class ArgvParser<
     return thisAsNewType;
   }
 
-  clone() {
-    const clone = new ArgvParser(this.options);
+  clone(parserOptions: ParserOptions = this.options) {
+    const clone = new ArgvParser(parserOptions);
+
     clone.configuredOptions = { ...this.configuredOptions };
     clone.configuredPositionals = [...this.configuredPositionals];
+    clone.configuredConflicts = { ...this.configuredConflicts };
+    clone.configuredImplies = { ...this.configuredImplies };
+
     return clone;
   }
 
