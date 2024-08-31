@@ -61,6 +61,8 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     },
   ];
 
+  private registeredMiddleware: Array<(args: TArgs) => void> = [];
+
   /**
    * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
    *
@@ -461,16 +463,26 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     console.log(this.formatHelp());
   }
 
+  middleware(callback: (args: TArgs) => void): CLI<TArgs> {
+    this.registeredMiddleware.push(callback);
+    return this;
+  }
+
   /**
    * Runs the current command.
    * @param cmd The command to run.
    * @param args The arguments to pass to the command.
    */
-  async runCommand<T extends ParsedArgs>(
-    cmd: InternalCLI<T>,
-    args: T,
-    originalArgV: string[]
-  ) {
+  async runCommand<T extends ParsedArgs>(args: T, originalArgV: string[]) {
+    const middlewares: Array<(args: any) => void> = [
+      ...this.registeredMiddleware,
+    ];
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: InternalCLI<any> = this;
+    for (const command of this.commandChain) {
+      cmd = cmd.registeredCommands[command];
+      middlewares.push(...cmd.registeredMiddleware);
+    }
     try {
       if (cmd.requiresCommand) {
         throw new Error(
@@ -478,6 +490,9 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         );
       }
       if (cmd.configuration?.handler) {
+        for (const middleware of middlewares) {
+          await middleware(args);
+        }
         await cmd.configuration.handler(args, {
           command: cmd,
         });
@@ -637,18 +652,14 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         throw validationFailedError;
       }
 
-      const finalArgV = (() => {
-        if (currentCommand === this) {
-          if (this.configuration?.builder) {
-            return (
+      const finalArgV =
+        this.commandChain.length === 0 && this.configuration?.builder
+          ? (
               this.configuration.builder?.(this as any) as InternalCLI<TArgs>
-            ).parser.parse(args);
-          }
-        }
-        return argv;
-      })();
+            ).parser.parse(args)
+          : argv;
 
-      await this.runCommand(currentCommand, finalArgV, args);
+      await this.runCommand(finalArgV, args);
       return finalArgV as TArgs;
     });
 

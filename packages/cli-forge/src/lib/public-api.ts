@@ -184,6 +184,8 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   }): CLI<TArgs>;
   group(label: string, keys: (keyof TArgs)[]): CLI<TArgs>;
 
+  middleware(callback: (args: TArgs) => void): CLI<TArgs>;
+
   /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
