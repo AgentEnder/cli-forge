@@ -8,6 +8,10 @@ export type Documentation = {
   examples: string[];
   options: Readonly<Record<string, OptionConfig & { key: string }>>;
   positionals: readonly Readonly<OptionConfig & { key: string }>[];
+  groupedOptions: Array<{
+    label: string;
+    keys: Array<OptionConfig & { key: string }>;
+  }>;
   subcommands: Documentation[];
 };
 
@@ -21,6 +25,7 @@ export function generateDocumentation(
   }
   const parser = cli.getParser();
 
+  const groupedOptions = cli.getGroupedOptions();
   const options: Record<string, OptionConfig & { key: string }> =
     Object.fromEntries(
       Object.entries(parser.configuredOptions).filter(([, c]) => !c.hidden)
@@ -55,6 +60,7 @@ export function generateDocumentation(
           ...positionals.map((p) => (p.required ? `<${p.key}>` : `[${p.key}]`)),
         ].join(' '),
     examples: cli.configuration?.examples ?? [],
+    groupedOptions,
     options,
     positionals,
     subcommands,

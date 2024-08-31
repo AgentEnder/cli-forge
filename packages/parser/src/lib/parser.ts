@@ -78,6 +78,11 @@ export type CommonOptionConfig<T, TCoerce = T> = {
    * If true, the option will not be displayed in help output or generated docs.
    */
   hidden?: boolean;
+
+  /**
+   * Can be set to group options in help output and generated docs.
+   */
+  group?: string;
 };
 
 export type StringOptionConfig<TCoerce = string> = {
@@ -127,7 +132,7 @@ export type OptionConfig<TCoerce = any> =
   | ArrayOptionConfig<TCoerce>
   | BooleanOptionConfig<TCoerce>;
 
-type InternalOptionConfig = OptionConfig & {
+export type InternalOptionConfig = OptionConfig & {
   key: string;
   position?: number;
 };
