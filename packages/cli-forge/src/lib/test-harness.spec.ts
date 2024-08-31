@@ -8,14 +8,14 @@ describe('test harness', () => {
       {
         name: 'foo',
         builder: (argv) => argv.option('bar', { type: 'string' }),
-        handler: (args) => {
+        handler: () => {
           commandsExecuted++;
         },
       },
       {
         name: 'bar',
         builder: (argv) => argv.option('baz', { type: 'string' }),
-        handler: (args) => {
+        handler: () => {
           commandsExecuted++;
         },
       }

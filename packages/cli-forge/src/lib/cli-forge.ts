@@ -323,13 +323,19 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     const help: string[] = [];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let command = this;
+    let epilogue = this.configuration?.epilogue;
     for (const key of this.commandChain) {
       command = command.registeredCommands[key] as typeof this;
+
+      // Properties that are ineherited from the parent command should be copied over
+      if (command.configuration?.epilogue) {
+        epilogue = command.configuration.epilogue;
+      }
     }
     help.push(
       `Usage: ${
-        this.configuration?.usage
-          ? this.configuration.usage
+        command.configuration?.usage
+          ? command.configuration.usage
           : [
               this.name,
               ...this.commandChain,
@@ -382,6 +388,11 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           ' '
         )} [command] --help\` for more information on a command`
       );
+    }
+
+    if (epilogue) {
+      help.push('');
+      help.push(epilogue);
     }
 
     return help.join('\n');

@@ -4,6 +4,7 @@ import { InternalCLI } from './cli-forge';
 export type Documentation = {
   name: string;
   description?: string;
+  epilogue?: string;
   usage: string;
   examples: string[];
   options: Readonly<Record<string, OptionConfig & { key: string }>>;
@@ -37,8 +38,12 @@ export function generateDocumentation(
   const subcommands: Documentation[] = [];
   for (const subcommand of Object.values(cli.getSubcommands())) {
     if (subcommand.configuration?.hidden !== true) {
+      const clone = subcommand.clone();
+      if (clone.configuration) {
+        clone.configuration.epilogue ??= cli.configuration?.epilogue;
+      }
       subcommands.push(
-        generateDocumentation(subcommand.clone(), [...commandChain, cli.name])
+        generateDocumentation(clone, [...commandChain, cli.name])
       );
     }
   }
@@ -59,6 +64,7 @@ export function generateDocumentation(
           cli.name,
           ...positionals.map((p) => (p.required ? `<${p.key}>` : `[${p.key}]`)),
         ].join(' '),
+    epilogue: cli.configuration?.epilogue,
     examples: cli.configuration?.examples ?? [],
     groupedOptions,
     options,

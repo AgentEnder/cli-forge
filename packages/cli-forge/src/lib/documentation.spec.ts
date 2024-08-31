@@ -120,4 +120,37 @@ describe('generateDocumentation', () => {
     expect(checkDocs?.options?.['bar']).toBeDefined();
     expect(checkDocs?.options?.['foo']).toBeDefined();
   });
+
+  it('should document epilogue, which inherits from parent command', () => {
+    const docs = generateDocumentation(
+      cli('test')
+        .command('foo', {
+          epilogue: 'foo epilogue',
+          builder: (argv) =>
+            argv.option('bar', { type: 'string' }).command('subcommand', {}),
+          handler: () => {
+            // not executed.
+          },
+        })
+        .command('bar', {
+          builder: (argv) => argv.option('baz', { type: 'string' }),
+          handler: () => {
+            // not executed.
+          },
+        }) as unknown as InternalCLI
+    );
+    const fooDocs = docs.subcommands.find((d) => d.name === 'foo');
+    expect(fooDocs).toBeDefined();
+    expect(fooDocs?.epilogue).toBe('foo epilogue');
+
+    const subcommandDocs = fooDocs?.subcommands.find(
+      (d) => d.name === 'subcommand'
+    );
+    expect(subcommandDocs).toBeDefined();
+    expect(subcommandDocs?.epilogue).toBe('foo epilogue');
+
+    const barDocs = docs.subcommands.find((d) => d.name === 'bar');
+    expect(barDocs).toBeDefined();
+    expect(barDocs?.epilogue).toBeUndefined();
+  });
 });

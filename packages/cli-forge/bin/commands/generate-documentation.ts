@@ -114,6 +114,7 @@ async function generateMarkdownForSingleCommand(
         ),
         getSubcommandsFragment(docs.subcommands, outdir, docsRoot, md),
         getExamplesFragment(docs.examples, md),
+        getEpilogueFragment(docs.epilogue, md),
       ].filter(isTruthy)
     )
   );
@@ -337,4 +338,14 @@ async function loadCLIModule(
       throw e;
     }
   }
+}
+
+function getEpilogueFragment(
+  epilogue: string | undefined,
+  md: typeof import('markdown-factory')
+) {
+  if (!epilogue) {
+    return undefined;
+  }
+  return md.blockQuote(epilogue);
 }
