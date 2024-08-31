@@ -238,4 +238,31 @@ describe('cliForge', () => {
     expect(ran).toBe(false);
     expect(process.exitCode).toBe(1);
   });
+
+  it('should support displaying grouped options in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('foo', { type: 'string', group: 'Basic' })
+      .option('baz', { type: 'string' })
+      .option('qux', { type: 'string' })
+      .option('quux', { type: 'string' })
+      .group('Advanced', ['baz', 'qux'])
+      .forge(['--help']);
+
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help    - Show help for the current command  
+        --version - Show the version number for the CLI
+        --quux   
+
+      Advanced:
+        --baz
+        --qux
+
+      Basic:
+        --foo"
+    `);
+  });
 });

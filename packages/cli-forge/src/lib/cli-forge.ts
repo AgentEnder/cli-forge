@@ -1,5 +1,6 @@
 import {
   ArgvParser,
+  InternalOptionConfig,
   OptionConfig,
   ParsedArgs,
   ValidationFailedError,
@@ -59,6 +60,84 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       }
     },
   ];
+
+  /**
+   * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
+   *
+   * For internal use only. Stick to properties available on {@link CLI}.
+   */
+  private registeredOptionGroups: Array<{
+    label: string;
+    sortOrder: number;
+    keys: Array<keyof TArgs>;
+  }> = [];
+
+  getGroupedOptions() {
+    function registerGroupsFromCLI(cli: InternalCLI) {
+      for (const { label, keys, sortOrder } of cli.registeredOptionGroups) {
+        groups[label] ??= {
+          keys: new Set(),
+          sortOrder: Number.MAX_SAFE_INTEGER,
+        };
+        if (sortOrder) {
+          groups[label].sortOrder = sortOrder;
+        }
+        for (const key of keys) {
+          groups[label].keys.add(key);
+        }
+      }
+    }
+
+    const groups: Record<string, { keys: Set<string>; sortOrder: number }> = {};
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let command: InternalCLI<any> = this;
+    registerGroupsFromCLI(command);
+    for (const subcommand of this.commandChain) {
+      command = command?.registeredCommands[subcommand];
+      registerGroupsFromCLI(command);
+    }
+    const parserOptions: Record<string, InternalOptionConfig> =
+      this.parser.configuredOptions;
+
+    for (const key in parserOptions) {
+      const option = parserOptions[key];
+      if (option.group) {
+        groups[option.group] ??= {
+          keys: new Set(),
+          sortOrder: Number.MAX_SAFE_INTEGER,
+        };
+        groups[option.group].keys.add(key);
+      }
+    }
+
+    const groupedOptions: Array<{
+      label: string;
+      sortOrder: number;
+      keys: Array<InternalOptionConfig>;
+    }> = [];
+
+    for (const label in groups) {
+      const entry = {
+        sortOrder: groups[label].sortOrder,
+        keys: [] as InternalOptionConfig[],
+        label,
+      };
+      for (const key of groups[label].keys) {
+        const option = parserOptions[key];
+        entry.keys.push(option);
+        delete parserOptions[key];
+      }
+      groupedOptions.push(entry);
+    }
+    groupedOptions.sort((a, b) => {
+      if (a.sortOrder === b.sortOrder) {
+        return a.label.localeCompare(b.label);
+      } else {
+        return a.sortOrder - b.sortOrder;
+      }
+    });
+    return groupedOptions;
+  }
 
   get configuration() {
     return this._configuration;
@@ -277,13 +356,35 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         }`
       );
     }
+    const groupedOptions = this.getGroupedOptions();
     const nonpositionalOptions = Object.values(
       command.parser.configuredOptions
     ).filter((c) => !c.positional);
-    if (nonpositionalOptions.length > 0) {
-      help.push('');
-      help.push('Options:');
+
+    help.push(...getOptionBlock('Options', nonpositionalOptions));
+
+    for (const { label, keys } of groupedOptions) {
+      help.push(...getOptionBlock(label, keys));
     }
+
+    if (command.configuration?.examples?.length) {
+      help.push('');
+      help.push('Examples:');
+      for (const example of command.configuration.examples) {
+        help.push(`  \`${example}\``);
+      }
+    }
+
+    if (Object.keys(command.registeredCommands).length > 0) {
+      help.push(' ');
+      help.push(
+        `Run \`${[this.name, ...this.commandChain].join(
+          ' '
+        )} [command] --help\` for more information on a command`
+      );
+    }
+
+    return help.join('\n');
 
     function getOptionParts(option: OptionConfig) {
       const parts = [];
@@ -308,45 +409,38 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       return parts;
     }
 
-    const allParts: Array<[key: string, ...parts: string[]]> = [];
-    for (const option of nonpositionalOptions) {
-      allParts.push([option.key, ...getOptionParts(option)]);
-    }
-    const paddingValues: number[] = [];
-    for (let i = 0; i < allParts.length; i++) {
-      for (let j = 0; j < allParts[i].length; j++) {
-        if (!paddingValues[j]) {
-          paddingValues[j] = 0;
+    function getOptionBlock(label: string, options: InternalOptionConfig[]) {
+      const lines: string[] = [];
+
+      if (options.length > 0) {
+        lines.push('');
+        lines.push(label + ':');
+      }
+
+      const allParts: Array<[key: string, ...parts: string[]]> = [];
+      for (const option of options) {
+        allParts.push([option.key, ...getOptionParts(option)]);
+      }
+      const paddingValues: number[] = [];
+      for (let i = 0; i < allParts.length; i++) {
+        for (let j = 0; j < allParts[i].length; j++) {
+          if (!paddingValues[j]) {
+            paddingValues[j] = 0;
+          }
+          paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
         }
-        paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
       }
-    }
-    for (const [key, ...parts] of allParts) {
-      help.push(
-        `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-          .map((part, i) => part.padEnd(paddingValues[i + 1]))
-          .join(' ')}`
-      );
-    }
-
-    if (command.configuration?.examples?.length) {
-      help.push('');
-      help.push('Examples:');
-      for (const example of command.configuration.examples) {
-        help.push(`  \`${example}\``);
+      for (const [key, ...parts] of allParts) {
+        lines.push(
+          `  --${key.padEnd(paddingValues[0])}${
+            parts.length ? ' - ' : ''
+          }${parts
+            .map((part, i) => part.padEnd(paddingValues[i + 1]))
+            .join(' ')}`
+        );
       }
+      return lines;
     }
-
-    if (Object.keys(command.registeredCommands).length > 0) {
-      help.push(' ');
-      help.push(
-        `Run \`${[this.name, ...this.commandChain].join(
-          ' '
-        )} [command] --help\` for more information on a command`
-      );
-    }
-
-    return help.join('\n');
   }
 
   /**
@@ -461,6 +555,37 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     return this;
   }
 
+  group(configObject: {
+    label: string;
+    keys: (keyof TArgs)[];
+    sortOrder: number;
+  }): CLI<TArgs>;
+
+  group(label: string, keys: (keyof TArgs)[]): CLI<TArgs>;
+
+  group(
+    labelOrConfigObject:
+      | string
+      | { label: string; keys: (keyof TArgs)[]; sortOrder: number },
+    keys?: (keyof TArgs)[]
+  ): CLI<TArgs> {
+    const config =
+      typeof labelOrConfigObject === 'object'
+        ? labelOrConfigObject
+        : {
+            label: labelOrConfigObject,
+            keys: keys as (keyof TArgs)[],
+            sortOrder: Object.keys(this.registeredOptionGroups).length,
+          };
+
+    if (!config.keys) {
+      throw new Error('keys must be provided when calling `group`.');
+    }
+
+    this.registeredOptionGroups.push(config);
+    return this;
+  }
+
   /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
@@ -484,7 +609,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI = this;
+      let currentCommand: InternalCLI<any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }

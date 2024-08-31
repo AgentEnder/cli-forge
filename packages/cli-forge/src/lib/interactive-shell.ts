@@ -37,12 +37,13 @@ export class InteractiveShell {
   private readonly rl: readline.Interface;
   private listeners: any[] = [];
 
-  constructor(cli: InternalCLI, opts?: InteractiveShellOptions) {
+  constructor(cli: InternalCLI<any>, opts?: InteractiveShellOptions) {
     if (INTERACTIVE_SHELL) {
       throw new Error(
         'Only one interactive shell can be created at a time. Make sure the other instance is closed.'
       );
     }
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
     INTERACTIVE_SHELL = this;
 
     const { prompt, prependArgs } = normalizeShellOptions(cli, opts);
@@ -79,7 +80,9 @@ export class InteractiveShell {
       } else if (line.trim()) {
         try {
           execSync(line, { stdio: 'inherit' });
-        } catch {}
+        } catch {
+          // ignore
+        }
       }
     });
   }

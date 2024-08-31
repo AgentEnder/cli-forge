@@ -104,7 +104,14 @@ async function generateMarkdownForSingleCommand(
         [md.bold('Usage:'), md.code(docs.usage)].join(' '),
         docs.description,
         getPositionalArgsFragment(docs.positionals, md),
-        getFlagArgsFragment(docs.options, md),
+        getFlagArgsFragment(docs.options, 'Flags', md),
+        ...docs.groupedOptions.map((group) =>
+          getFlagArgsFragment(
+            Object.fromEntries(group.keys.map((key) => [key.key, key])),
+            group.label,
+            md
+          )
+        ),
         getSubcommandsFragment(docs.subcommands, outdir, docsRoot, md),
         getExamplesFragment(docs.examples, md),
       ].filter(isTruthy)
@@ -166,12 +173,16 @@ function getPositionalArgsFragment(
   );
 }
 
-function getFlagArgsFragment(options: Documentation['options'], md: mdfactory) {
+function getFlagArgsFragment(
+  options: Documentation['options'],
+  label: string,
+  md: mdfactory
+) {
   if (Object.keys(options).length === 0) {
     return undefined;
   }
   return md.h2(
-    'Flags',
+    label,
     ...Object.values(options).map((option) => formatOption(option, md))
   );
 }

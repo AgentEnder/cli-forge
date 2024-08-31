@@ -173,6 +173,17 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    */
   printHelp(): void;
 
+  group({
+    label,
+    keys,
+    sortOrder,
+  }: {
+    label: string;
+    keys: (keyof TArgs)[];
+    sortOrder: number;
+  }): CLI<TArgs>;
+  group(label: string, keys: (keyof TArgs)[]): CLI<TArgs>;
+
   /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)

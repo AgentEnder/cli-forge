@@ -75,6 +75,21 @@ describe('generateDocumentation', () => {
     expect(barDocs?.options?.['baz']).toBeDefined();
   });
 
+  it('should group options by group', () => {
+    const docs = generateDocumentation(
+      cli('test')
+        .option('baz', { type: 'string' })
+        .option('bar', { type: 'string' })
+        .option('foo', {
+          type: 'string',
+        })
+        .group('Advanced', ['foo', 'bar']) as unknown as InternalCLI
+    );
+    const advanced = docs.groupedOptions.find((g) => g.label === 'Advanced');
+    expect(advanced).toBeDefined();
+    expect(advanced?.keys.map((k) => k.key)).toEqual(['foo', 'bar']);
+  });
+
   // TODO: This test should not fail.
   it.skip('should contain parent command arguments in subcommand documentation', () => {
     const docs = generateDocumentation(

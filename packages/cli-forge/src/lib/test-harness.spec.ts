@@ -1,4 +1,4 @@
-import cli from './cli-forge';
+import cli from './public-api';
 import { TestHarness } from './test-harness';
 
 describe('test harness', () => {
