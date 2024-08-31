@@ -241,6 +241,11 @@ export interface CLICommandOptions<
    * Hides the command from the help text and generated docs. Useful primarily for experimental or internal commands.
    */
   hidden?: boolean;
+
+  /**
+   * The epilogue text for the command. This text will be displayed at the end of the help text and generated docs.
+   */
+  epilogue?: string;
 }
 
 export type Command<
