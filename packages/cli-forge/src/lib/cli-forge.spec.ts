@@ -265,4 +265,51 @@ describe('cliForge', () => {
         --foo"
     `);
   });
+
+  it('should run middlewares before command handlers', async () => {
+    const executionOrder: string[] = [];
+    await cli('test')
+      .middleware((args) => {
+        executionOrder.push('middleware1');
+        return args;
+      })
+      .middleware((args) => {
+        executionOrder.push('middleware2');
+        return args;
+      })
+      .command('foo', {
+        builder: (argv) =>
+          argv.middleware((args) => {
+            executionOrder.push('middleware3');
+            return args;
+          }),
+        handler: () => {
+          executionOrder.push('foo handler');
+        },
+      })
+      .command('bar', {
+        builder: (argv) =>
+          argv.middleware((args) => {
+            executionOrder.push('middleware4');
+            return args;
+          }),
+        handler: () => {
+          executionOrder.push('bar handler');
+        },
+      })
+      .forge(['foo']);
+
+    expect(executionOrder).toEqual([
+      // middlewares first, only for the command being executed
+      'middleware1',
+      'middleware2',
+      'middleware3',
+      // then the handler
+      'foo handler',
+
+      // NO:
+      // - middlewares for the 'bar' command
+      // - 'bar' handler
+    ]);
+  });
 });
