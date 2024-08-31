@@ -57,6 +57,11 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
 
 export const generateDocumentationCommand: CLI = cli('generate-documentation', {
   description: 'Generate documentation for the given CLI',
+  examples: [
+    'cli-forge generate-documentation ./bin/my-cli',
+    'cli-forge generate-documentation ./bin/my-cli --format json',
+    'cli-forge generate-documentation ./bin/my-cli --export mycli',
+  ],
   builder: (b) => withGenerateDocumentationArgs(b),
   handler: async (args) => {
     const cliModule = await loadCLIModule(args);

@@ -55,6 +55,12 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
 
 export const initCommand = cli('init', {
   description: 'Generate a new CLI',
+  examples: [
+    'cli-forge init {mycli}',
+    'cli-forge init {mycli} --format js',
+    'cli-forge init {mycli} --output packages/{mycli}',
+    'cli-forge init {mycli} --initial-version 1.0.0',
+  ],
   builder: (b) => withInitArgs(b),
   handler: async (args) => {
     args.output ??= process.cwd();
