@@ -4,12 +4,12 @@ import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { join as joinPathFragments, normalize } from 'node:path/posix';
 
-import cli from '../../src';
+import cli, { CLI } from '../../src';
 import {
   Documentation,
   generateDocumentation,
 } from '../../src/lib/documentation';
-import { CLI, InternalCLI } from '../../src/lib/cli-forge';
+import { InternalCLI } from '../../src/lib/cli-forge';
 import { ensureDirSync } from '../utils/fs';
 import { pathToFileURL } from 'node:url';
 
