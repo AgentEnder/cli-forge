@@ -1,5 +1,6 @@
-import cli, { InternalCLI } from './cli-forge';
+import { InternalCLI } from './cli-forge';
 import { generateDocumentation } from './documentation';
+import cli from './public-api';
 
 describe('generateDocumentation', () => {
   it('should not document hidden commands and options', () => {
