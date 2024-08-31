@@ -1,3 +1,17 @@
+## 0.7.0 (2024-08-31)
+
+
+### 🚀 Features
+
+- **cli-forge:** hide hidden options ([fb0b1d3](https://github.com/agentender/cli-forge/commit/fb0b1d3))
+- **cli-forge:** add support for renderning grouped options ([67dcd8e](https://github.com/agentender/cli-forge/commit/67dcd8e))
+- **cli-forge:** initial draft for middleware ([953b9b7](https://github.com/agentender/cli-forge/commit/953b9b7))
+- **cli-parser:** add epilogue support ([395a1ea](https://github.com/agentender/cli-forge/commit/395a1ea))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.6.0 (2024-08-30)
 
 
