@@ -22,13 +22,24 @@ export function generateDocumentation(
   const parser = cli.getParser();
 
   const options: Record<string, OptionConfig & { key: string }> =
-    parser.configuredOptions;
+    Object.fromEntries(
+      Object.entries(parser.configuredOptions).filter(([, c]) => !c.hidden)
+    );
   const positionals = parser.configuredPositionals;
   for (const positional of positionals) {
     delete options[positional.key];
   }
-  const subcommands: Documentation[] = Object.values(cli.getSubcommands()).map(
-    (cmd) => generateDocumentation(cmd.clone(), [...commandChain, cli.name])
+  const subcommands: Documentation[] = [];
+  for (const subcommand of Object.values(cli.getSubcommands())) {
+    if (subcommand.configuration?.hidden !== true) {
+      subcommands.push(
+        generateDocumentation(subcommand.clone(), [...commandChain, cli.name])
+      );
+    }
+  }
+
+  Object.values(cli.getSubcommands()).map((cmd) =>
+    generateDocumentation(cmd.clone(), [...commandChain, cli.name])
   );
 
   return {
