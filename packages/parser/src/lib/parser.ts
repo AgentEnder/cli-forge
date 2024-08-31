@@ -73,6 +73,11 @@ export type CommonOptionConfig<T, TCoerce = T> = {
    * but will be displayed in help output and generated docs.
    */
   deprecated?: string;
+
+  /**
+   * If true, the option will not be displayed in help output or generated docs.
+   */
+  hidden?: boolean;
 };
 
 export type StringOptionConfig<TCoerce = string> = {

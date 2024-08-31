@@ -14,16 +14,52 @@ export interface CLIHandlerContext {
   command: CLI<any>;
 }
 
-export type CLICommandOptions<
+/**
+ * Represents the configuration needed to create a CLI command.
+ */
+export interface CLICommandOptions<
+  /**
+   * The type of the arguments that are already registered before `builder` is invoked.
+   */
   TInitial extends ParsedArgs,
+  /**
+   * The type of the arguments that are registered after `builder` is invoked, and the type that is passed to the handler.
+   */
   TArgs extends TInitial = TInitial
-> = {
+> {
+  /**
+   * The command description. This will be displayed in the help text and generated docs.
+   */
   description?: string;
+
+  /**
+   * The command builder. This function is called before the command is executed, and is used to register options and positional parameters.
+   * @param parser The parser instance to register options and positionals with.
+   */
   builder?: (parser: CLI<TInitial>) => CLI<TArgs>;
+
+  /**
+   * The command handler. This function is called when the command is executed.
+   * @param args The parsed arguments.
+   * @param context Context for the handler. Contains the command instance.
+   */
   handler?: (args: TArgs, context: CLIHandlerContext) => void | Promise<void>;
+
+  /**
+   * The usage text for the command. This text will be displayed in place of the default usage text in the help text and generated docs.
+   */
   usage?: string;
+
+  /**
+   * Examples to display in the help text and generated docs.
+   */
   examples?: string[];
-};
+
+  /**
+   * Hides the command from the help text and generated docs. Useful primarily for experimental or internal commands.
+   */
+  hidden?: boolean;
+}
 
 export type Command<
   TInitial extends ParsedArgs = any,
@@ -660,7 +696,6 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     try {
       return await cb();
     } catch (e) {
-      let handled = false;
       for (const handler of this.registeredErrorHandlers) {
         try {
           handler(e, {
@@ -674,11 +709,8 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           // Error was not handled, continue to the next handler
         }
       }
-      if (!handled) {
-        throw e;
-      }
+      throw e;
     }
-    return {} as Awaited<T>;
   }
 
   errorHandler(handler: ErrorHandler) {

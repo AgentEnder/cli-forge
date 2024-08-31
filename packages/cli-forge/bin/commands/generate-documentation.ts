@@ -60,7 +60,7 @@ export const generateDocumentationCommand: CLI = cli('generate-documentation', {
   builder: (b) => withGenerateDocumentationArgs(b),
   handler: async (args) => {
     const cliModule = await loadCLIModule(args);
-    let cli = readCLIFromModule(cliModule, args);
+    const cli = readCLIFromModule(cliModule, args);
 
     const documentation = generateDocumentation(cli);
     if (args.format === 'md') {
@@ -302,7 +302,12 @@ async function loadCLIModule(
 
   try {
     const tsx = (await import(
-      //@ts-ignore
+      // For some reason the typescript language server doesn't like the import statement below.
+      // Its accurate, and in fact the full path with `/dist/` would error as its not part of
+      // the package.json's `exports` field.
+      //
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+      //@ts-expect-error
       'tsx/esm/api'
     )) as typeof import('tsx/dist/esm/api/index.cjs');
     return tsx.tsImport(cliPath, {
