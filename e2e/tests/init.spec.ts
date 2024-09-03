@@ -1,8 +1,14 @@
 import { join } from 'node:path';
 
-import { e2eSubDir, ensureCleanWorkingDirectory } from '../utils/setup';
+import {
+  e2eProjectDir,
+  e2eSubDir,
+  ensureCleanWorkingDirectory,
+  setProjectDir,
+} from '../utils/setup';
 import { runCommand } from '../utils/child_process';
 import { checkFilesExist } from '../utils/fs';
+import { execSync } from 'node:child_process';
 
 describe('init', () => {
   beforeEach(() => {
@@ -16,10 +22,11 @@ describe('init', () => {
         [],
         {}
       );
+      setProjectDir('my-cli');
       expect(() =>
         checkFilesExist(
           ['package.json', join('bin', 'my-cli.' + format)].map((f) =>
-            join(e2eSubDir, f)
+            join(e2eProjectDir, f)
           )
         )
       ).not.toThrow();
@@ -50,10 +57,26 @@ describe('init', () => {
       expect(() =>
         checkFilesExist(
           ['docs', join('docs', 'index.md'), join('docs', 'hello.md')].map(
-            (f) => join(e2eSubDir, f)
+            (f) => join(e2eProjectDir, f)
           )
         )
       ).not.toThrow();
+
+      if (format === 'ts') {
+        expect(() =>
+          checkFilesExist(
+            ['tsconfig.json', 'scripts/build.ts'].map((f) =>
+              join(e2eProjectDir, f)
+            )
+          )
+        ).not.toThrow();
+
+        // We are really just testing that the build script works here
+        ({ stdout } = await runCommand('npm run build', [], {}));
+        expect(stdout).toBeTruthy();
+        ({ stdout } = await runCommand('node dist/bin/my-cli --help', [], {}));
+        expect(stdout).toBeTruthy();
+      }
     });
   });
 
@@ -65,7 +88,8 @@ describe('init', () => {
         [],
         {}
       );
-      const packageJson = require(join(e2eSubDir, 'package.json'));
+      setProjectDir('my-cli');
+      const packageJson = require(join(e2eProjectDir, 'package.json'));
       expect(packageJson).toHaveProperty('version', '1.0.0');
       const { stdout } = await runCommand(
         'npx -y tsx ./bin/my-cli --version',

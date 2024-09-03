@@ -1,5 +1,5 @@
 import { SpawnOptions, spawn } from 'child_process';
-import { e2eSubDir } from './setup';
+import { e2eProjectDir, e2eSubDir } from './setup';
 
 export function runCommand(
   command: string,
@@ -9,7 +9,7 @@ export function runCommand(
   const child = spawn(command, args, {
     shell: true,
     stdio: 'pipe',
-    cwd: e2eSubDir,
+    cwd: e2eProjectDir ?? e2eSubDir,
     ...options,
   });
 

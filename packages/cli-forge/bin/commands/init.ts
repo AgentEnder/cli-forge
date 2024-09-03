@@ -10,6 +10,12 @@ import cli, { CLI } from '../../src';
 import { ensureDirSync } from '../utils/fs';
 
 const CLI_FORGE_VERSION = CLI_FORGE_PACKAGE_JSON.version;
+
+/**
+ * These are peer dependencies that **we** will call require/import on,
+ * but are not actually required at runtime. These are mostly optional,
+ * and used when running `cli-forge` commands rather than the user's CLI.
+ */
 const DEV_PEER_DEPS = Object.entries(
   CLI_FORGE_PACKAGE_JSON.peerDependencies
 ).reduce((acc, [dep, version]) => {
@@ -63,34 +69,72 @@ export const initCommand = cli('init', {
   ],
   builder: (b) => withInitArgs(b),
   handler: async (args) => {
-    args.output ??= process.cwd();
+    args.output ??= join(process.cwd(), args.cliName);
     ensureDirSync(args.output);
     const packageJsonPath = join(args.output, 'package.json');
     const cliPath = join(args.output, 'bin', `${args.cliName}.${args.format}`);
-    const packageJsonContent: {
-      name: string;
-      bin?: {
-        [cmd: string]: string;
-      };
-      dependencies?: Record<string, string>;
-      devDependencies?: Record<string, string>;
-    } = readJsonOr(packageJsonPath, {
+
+    let packageJsonContent: PackageJson = readJsonOr(packageJsonPath, {
       name: args.cliName,
       version: args.initialVersion,
     });
-    packageJsonContent.bin ??= {};
-    packageJsonContent.bin[args.cliName] = relative(args.output, cliPath);
-    packageJsonContent.dependencies ??= {};
-    packageJsonContent.dependencies['cli-forge'] ??= CLI_FORGE_VERSION;
+    packageJsonContent = mergePackageJsonContents(packageJsonContent, {
+      name: args.cliName,
+      version: args.initialVersion,
+      bin: {
+        [args.cliName]: relative(args.output, cliPath),
+      },
+      dependencies: {
+        'cli-forge': CLI_FORGE_VERSION,
+      },
+    });
     if (args.format === 'ts') {
-      const latestTypescriptVersion = execSync(
-        'npm show typescript version'
-      ).toString();
-      packageJsonContent.devDependencies = {
-        typescript: latestTypescriptVersion,
-        ...DEV_PEER_DEPS,
-        ...packageJsonContent.devDependencies,
-      };
+      const latestTypescriptVersion = execSync('npm show typescript version')
+        .toString()
+        .trim();
+      const latestTsConfigNodeVersion = execSync(
+        'npm show @tsconfig/node-lts version'
+      )
+        .toString()
+        .trim();
+      packageJsonContent = mergePackageJsonContents(packageJsonContent, {
+        scripts: {
+          build: 'tsx scripts/build.ts',
+        },
+        devDependencies: Object.fromEntries(
+          Object.entries({
+            typescript: latestTypescriptVersion,
+            '@tsconfig/node-lts': latestTsConfigNodeVersion,
+            ...DEV_PEER_DEPS,
+          }).sort(([a], [b]) => a.localeCompare(b))
+        ),
+      });
+      ensureDirSync(join(args.output, 'scripts'));
+      writeFileSync(
+        join(args.output, 'scripts/build.ts'),
+        `import { execSync } from 'node:child_process';
+import { cpSync } from 'node:fs';
+
+execSync('tsc --build tsconfig.json', { stdio: 'inherit' });
+cpSync('package.json', 'dist/package.json');
+        `
+      );
+      writeFileSync(
+        join(args.output, 'tsconfig.json'),
+        JSON.stringify(
+          {
+            extends: '@tsconfig/node-lts',
+            compilerOptions: {
+              rootDir: '.',
+              outDir: 'dist',
+            },
+            include: ['src/**/*.ts', 'bin/**/*.ts'],
+            exclude: ['**/*.{spec,test}.ts'],
+          },
+          null,
+          2
+        )
+      );
     }
     writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2));
     ensureDirSync(dirname(cliPath));
@@ -108,7 +152,9 @@ export const initCommand = cli('init', {
       ? 'bun'
       : 'npm';
 
-    execSync(`${installCommand} install`);
+    execSync(`${installCommand} install`, {
+      cwd: args.output,
+    });
   },
 });
 
@@ -149,4 +195,53 @@ function readJsonOr<T>(filePath: string, alt: T): T {
   } catch {
     return alt;
   }
+}
+
+type PackageJson = {
+  name: string;
+  version?: string;
+  bin?: {
+    [cmd: string]: string;
+  };
+  scripts?: Record<string, string>;
+  dependencies?: Record<string, string>;
+  devDependencies?: Record<string, string>;
+};
+
+function mergePackageJsonContents(
+  original: PackageJson,
+  updates: Partial<PackageJson>,
+  overwriteExistingValues = false
+): PackageJson {
+  const first = overwriteExistingValues ? original : updates;
+  const second = overwriteExistingValues ? updates : original;
+
+  const merged: PackageJson = {
+    name: original.name ?? updates.name,
+    ...first,
+    ...second,
+  };
+
+  if (first.bin && second.bin) {
+    merged.bin = {
+      ...first.bin,
+      ...second.bin,
+    };
+  }
+
+  if (first.dependencies && second.dependencies) {
+    merged.dependencies = {
+      ...first.dependencies,
+      ...second.dependencies,
+    };
+  }
+
+  if (first.devDependencies && second.devDependencies) {
+    merged.devDependencies = {
+      ...first.devDependencies,
+      ...second.devDependencies,
+    };
+  }
+
+  return merged;
 }

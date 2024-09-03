@@ -3,6 +3,7 @@ import { join } from 'node:path';
 
 const e2eRoot = join(__dirname, '../../tmp/e2e');
 export let e2eSubDir = join(e2eRoot, 'default');
+export let e2eProjectDir: string | null = null;
 
 export function ensureCleanWorkingDirectory(): string {
   try {
@@ -29,5 +30,11 @@ export function ensureCleanWorkingDirectory(): string {
     }
   }
 
+  e2eProjectDir = null;
+
   return e2eSubDir;
+}
+
+export function setProjectDir(dir: string) {
+  e2eProjectDir = join(e2eSubDir, dir);
 }
