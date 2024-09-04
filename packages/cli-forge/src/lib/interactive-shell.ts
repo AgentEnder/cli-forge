@@ -1,6 +1,6 @@
 import * as readline from 'readline';
 import { stringToArgs } from './utils';
-import { InternalCLI } from './cli-forge';
+import { InternalCLI } from './internal-cli';
 import { execSync, spawnSync } from 'child_process';
 import { getBin } from '@cli-forge/parser';
 

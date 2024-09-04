@@ -1,5 +1,6 @@
 import { OptionConfig } from '@cli-forge/parser';
-import { InternalCLI } from './cli-forge';
+import { InternalCLI } from './internal-cli';
+import { CLI } from './public-api';
 
 export type Documentation = {
   name: string;
@@ -22,7 +23,10 @@ export function generateDocumentation(
 ) {
   // Ensure current command's options are built.
   if (cli.configuration?.builder) {
-    cli.configuration.builder(cli);
+    // The cli instance here is typed a bit too well
+    // for the builder function, so we need to cast it to
+    // a more generic form.
+    cli.configuration.builder(cli as CLI);
   }
   const parser = cli.getParser();
 

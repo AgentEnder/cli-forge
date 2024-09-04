@@ -3,15 +3,15 @@ import type { ArrayOptionConfig, ParsedArgs } from '@cli-forge/parser';
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { join as joinPathFragments, normalize } from 'node:path/posix';
+import { pathToFileURL } from 'node:url';
 
 import cli, { CLI } from '../../src';
 import {
   Documentation,
   generateDocumentation,
 } from '../../src/lib/documentation';
-import { InternalCLI } from '../../src/lib/cli-forge';
 import { ensureDirSync } from '../utils/fs';
-import { pathToFileURL } from 'node:url';
+import { InternalCLI } from '../../src/lib/internal-cli';
 
 type mdfactory = typeof import('markdown-factory');
 

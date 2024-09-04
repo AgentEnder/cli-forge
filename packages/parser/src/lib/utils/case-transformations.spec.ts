@@ -2,7 +2,7 @@ import {
   fromCamelOrDashedCaseToConstCase,
   fromDashedToCamelCase,
   getEnvKey,
-} from './utils';
+} from './case-transformations';
 
 describe('utils', () => {
   describe('fromDashedToCamelCase', () => {
