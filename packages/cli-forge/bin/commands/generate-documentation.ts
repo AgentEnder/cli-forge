@@ -147,7 +147,7 @@ function formatOption(option: Documentation['options'][string], md: mdfactory) {
       option.default ? md.bold('Default:') + ' ' + option.default : undefined,
       // No need to show required if it's required and has a default, as its not actually required to pass.
       option.required && !option.default ? md.bold('Required') : undefined,
-      option.choices
+      'choices' in option && option.choices
         ? md.bold('Valid values:') +
           ' ' +
           (() => {

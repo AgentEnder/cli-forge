@@ -2,7 +2,9 @@
 // id: limit-choices
 // title: Option Choices
 // description: |
-//   This is a simple example that demonstrates how to limit choices for a given option
+//   This is a simple example that demonstrates how to limit choices for a given option. Choices
+//   are checked after `coerce` if it is also provided, so be sure that the `coerce` function
+//   returns a value that is in the choices array.
 // commands:
 //  - '{filename} hello --name sir'
 // ---
@@ -23,6 +25,7 @@ const cli = cliForge('basic-cli')
       }),
     // Handler is used to define the command's behavior
     handler: (args) => {
+      // Note: args.name is typed as 'sir' | 'madame' due to the choices array
       console.log(`Hello, ${args.name}!`);
     },
   });

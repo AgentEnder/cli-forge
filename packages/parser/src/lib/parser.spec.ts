@@ -193,7 +193,7 @@ describe('parser', () => {
 
   it('should have correct typings', () => {
     const parsed = parser()
-      .option('foo', { type: 'string', default: 'hello' })
+      .option('foo', { type: 'string', default: 'hello', choices: ['hello'] })
       .option('bar', { type: 'number' })
       .option('baz', { type: 'boolean' })
       .option('bam', { type: 'array', items: 'string' })
