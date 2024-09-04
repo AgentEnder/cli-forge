@@ -540,6 +540,15 @@ describe('parser', () => {
         .parse(['--foo=a', '--bar=b'])
     ).toThrowAggregateErrorContaining('Provided option foo conflicts with bar');
   });
+
+  it('should read negated boolean options', () => {
+    expect(
+      parser()
+        .option('foo', { type: 'boolean' })
+        .option('bar', { type: 'boolean' })
+        .parse(['--no-foo', '--bar'])
+    ).toEqual({ foo: false, bar: true, unmatched: [] });
+  });
 });
 
 async function withEnv(env: NodeJS.ProcessEnv, cb: () => void | Promise<void>) {
