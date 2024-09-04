@@ -137,6 +137,8 @@ export type InternalOptionConfig = OptionConfig & {
   position?: number;
 };
 
+export type Internal<T extends OptionConfig> = T & InternalOptionConfig;
+
 /**
  * Base type for parsed arguments.
  */
@@ -371,12 +373,12 @@ export class ArgvParser<
         for (const configuredKey of configuredKeys) {
           if (configuredKey) {
             const configuration = this.configuredOptions[configuredKey];
-            const value = tryParseValue(
-              this.parserMap[configuration.type],
-              configuration,
-              argvClone,
-              result[configuration.key]
-            );
+            const value = tryParseValue(this.parserMap[configuration.type], {
+              config: configuration,
+              tokens: argvClone,
+              current: result[configuration.key],
+              providedFlag: arg,
+            });
             result[configuration.key] = value;
             arg = argvClone.shift();
           }
@@ -390,12 +392,12 @@ export class ArgvParser<
           configuration = this.configuredPositionals[matchedPositionals];
         }
         if (configuration && configuration.positional === true) {
-          const value = tryParseValue(
-            this.parserMap[configuration.type],
-            configuration,
-            [arg],
-            result[configuration.key]
-          );
+          argvClone.unshift(arg);
+          const value = tryParseValue(this.parserMap[configuration.type], {
+            config: configuration,
+            tokens: argvClone,
+            current: result[configuration.key],
+          });
           result[configuration.key] = value;
           matchedPositionals++;
         } else {
@@ -520,12 +522,10 @@ export class ArgvParser<
     const envKey = getEnvKey(prefix, configuredKey);
     const envValue = process.env[envKey];
     if (envValue) {
-      return tryParseValue(
-        this.parserMap[configuration.type],
-        configuration,
-        [envValue],
-        null
-      );
+      return tryParseValue(this.parserMap[configuration.type], {
+        config: configuration,
+        tokens: [envValue],
+      });
     }
   }
 
@@ -675,9 +675,29 @@ function getConfiguredOptionKey<T extends ParsedArgs>(
   if (key in configuredOptions) {
     return key as keyof T;
   }
+
+  // Handles booleans passed as `--no-foo`
+  const normalizedKey =
+    key.startsWith('no') && key.length > 2 && key[2] === key[2].toUpperCase()
+      ? (() => {
+          const stripped = key.slice(2);
+          return [stripped[0].toLowerCase(), stripped.slice(1)].join('');
+        })()
+      : key;
+  if (
+    normalizedKey in configuredOptions &&
+    configuredOptions[normalizedKey as keyof T]?.type === 'boolean'
+  ) {
+    return normalizedKey as keyof T;
+  }
+
   for (const configuredKey in configuredOptions) {
     const config = configuredOptions[configuredKey];
     if (config?.alias?.includes(key)) {
+      return configuredKey as keyof T;
+    }
+    // Handles negated booleans that are aliased
+    if (config?.type === 'boolean' && config.alias?.includes(normalizedKey)) {
       return configuredKey as keyof T;
     }
   }
@@ -688,19 +708,26 @@ function isNextFlag(str: string) {
   return str.startsWith('--') || str.startsWith('-');
 }
 
-const booleanParser: Parser<BooleanOptionConfig> = (_, tokens: string[]) => {
+const booleanParser: Parser<Internal<BooleanOptionConfig>> = ({
+  tokens,
+  providedFlag,
+}) => {
+  const negated = providedFlag?.startsWith('--no-');
   const val = tokens.shift();
-  if (val === undefined) {
+  const parsed = (() => {
+    if (val === undefined) {
+      return true;
+    }
+    if (isNextFlag(val)) {
+      tokens.unshift(val);
+      return true;
+    }
+    if (val === 'false') {
+      return false;
+    }
     return true;
-  }
-  if (isNextFlag(val)) {
-    tokens.unshift(val);
-    return true;
-  }
-  if (val === 'false') {
-    return false;
-  }
-  return true;
+  })();
+  return negated ? !parsed : parsed;
 };
 
 export class NoValueError extends Error {
@@ -709,7 +736,7 @@ export class NoValueError extends Error {
   }
 }
 
-const stringParser: Parser<StringOptionConfig> = (cfg, tokens: string[]) => {
+const stringParser: Parser<Internal<StringOptionConfig>> = ({ tokens }) => {
   const val = tokens.shift();
   if (val === undefined) {
     throw new NoValueError();
@@ -721,7 +748,7 @@ const stringParser: Parser<StringOptionConfig> = (cfg, tokens: string[]) => {
   return val;
 };
 
-const numberParser: Parser<NumberOptionConfig> = (_, tokens: string[]) => {
+const numberParser: Parser<Internal<NumberOptionConfig>> = ({ tokens }) => {
   const val = tokens.shift();
   if (val === undefined) {
     throw new NoValueError();
@@ -765,13 +792,13 @@ const csvParser = (str: string) => {
   return collected;
 };
 
-const arrayParser: Parser<ArrayOptionConfig<string | number>> = <
+const arrayParser: Parser<Internal<ArrayOptionConfig>> = <
   T extends string | number
->(
-  config: ArrayOptionConfig<T>,
-  tokens: string[],
-  current?: T[]
-) => {
+>({
+  config,
+  tokens,
+  current,
+}: ParserContext<Internal<ArrayOptionConfig>>) => {
   const coerce =
     config.items === 'string'
       ? (s: string) => s as T
@@ -793,32 +820,35 @@ const arrayParser: Parser<ArrayOptionConfig<string | number>> = <
   return current ? current.concat(coerced) : coerced;
 };
 
-type Parser<TConfig extends OptionConfig, T = any> = (
-  config: TConfig,
-  tokens: string[],
-  current?: T
+type ParserContext<TConfig extends InternalOptionConfig> = {
+  config: TConfig;
+  tokens: string[];
+  current?: any;
+  providedFlag?: string;
+};
+
+type Parser<TConfig extends InternalOptionConfig, T = any> = (
+  input: ParserContext<TConfig>
 ) => T;
 
 function tryParseValue(
-  parser: Parser<OptionConfig>,
-  config: InternalOptionConfig,
-  tokens: string[],
-  current?: any
+  parser: Parser<InternalOptionConfig>,
+  input: ParserContext<InternalOptionConfig>
 ) {
   if (!parser) {
     throw new Error(
-      `No parser found for option ${config.key} with type ${config.type}`
+      `No parser found for option ${input.config.key} with type ${input.config.type}`
     );
   }
   try {
-    const val = parser(config, tokens, current);
-    return (config.coerce as (s: any) => any)?.(val) ?? val;
+    const val = parser(input);
+    return (input.config.coerce as (s: any) => any)?.(val) ?? val;
   } catch (e) {
     if (e instanceof NoValueError) {
-      if (config.default !== undefined) {
-        return config.default;
+      if (input.config.default !== undefined) {
+        return input.config.default;
       }
-      throw new Error(`Expected a value for ${config.key}`);
+      throw new Error(`Expected a value for ${input.config.key}`);
     }
     throw e;
   }
