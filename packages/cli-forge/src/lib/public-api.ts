@@ -4,7 +4,7 @@ import {
   ParsedArgs,
 } from '@cli-forge/parser';
 
-import { InternalCLI } from './cli-forge';
+import { InternalCLI } from './internal-cli';
 
 /**
  * The interface for a CLI application or subcommands.
@@ -256,10 +256,10 @@ export type ErrorHandler = (
 ) => void;
 
 /**
- * Constructs a CLI instance. See {@link InternalCLI} for more information.
+ * Constructs a CLI instance. See {@link CLI} for more information.
  * @param name Name for the top level CLI
  * @param rootCommandConfiguration Configuration used when running the bare CLI. e.g. npx my-cli, rather than npx my-cli [cmd]
- * @returns A {@link InternalCLI} instance.
+ * @returns A {@link CLI} instance.
  */
 export function cli<TArgs extends ParsedArgs>(
   name: string,

@@ -1,5 +1,5 @@
 import { ParsedArgs } from '@cli-forge/parser';
-import { InternalCLI } from './cli-forge';
+import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
 
 export type TestHarnessParseResult<T extends ParsedArgs> = {

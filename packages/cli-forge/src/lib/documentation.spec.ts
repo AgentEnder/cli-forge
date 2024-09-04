@@ -1,4 +1,4 @@
-import { InternalCLI } from './cli-forge';
+import { InternalCLI } from './internal-cli';
 import { generateDocumentation } from './documentation';
 import cli from './public-api';
 
