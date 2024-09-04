@@ -1,4 +1,9 @@
-import { ArrayOptionConfig, OptionConfig, ParsedArgs } from '@cli-forge/parser';
+import {
+  OptionConfig,
+  OptionConfigToType,
+  ParsedArgs,
+} from '@cli-forge/parser';
+
 import { InternalCLI } from './cli-forge';
 
 /**
@@ -72,25 +77,12 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param config Configuration for the option. See {@link OptionConfig}.
    * @returns Updated CLI instance with the new option registered.
    */
-  option<TOption extends string, TOptionConfig extends OptionConfig>(
+  option<TOption extends string, const TOptionConfig extends OptionConfig>(
     name: TOption,
     config: TOptionConfig
   ): CLI<
     TArgs & {
-      [key in TOption]: TOptionConfig['coerce'] extends (
-        value: string
-      ) => infer TCoerce
-        ? TCoerce
-        : {
-            string: string;
-            number: number;
-            boolean: boolean;
-            array: (TOptionConfig extends ArrayOptionConfig<string | number>
-              ? TOptionConfig['items'] extends 'string'
-                ? string
-                : number
-              : never)[];
-          }[TOptionConfig['type']];
+      [key in TOption]: OptionConfigToType<TOptionConfig>;
     }
   >;
 
@@ -101,25 +93,12 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param config Configuration for the positional argument. See {@link OptionConfig}.
    * @returns Updated CLI instance with the new positional argument registered.
    */
-  positional<TOption extends string, TOptionConfig extends OptionConfig>(
+  positional<TOption extends string, const TOptionConfig extends OptionConfig>(
     name: TOption,
     config: TOptionConfig
   ): CLI<
     TArgs & {
-      [key in TOption]: TOptionConfig['coerce'] extends (
-        value: string
-      ) => infer TCoerce
-        ? TCoerce
-        : {
-            string: string;
-            number: number;
-            boolean: boolean;
-            array: (TOptionConfig extends ArrayOptionConfig<string | number>
-              ? TOptionConfig['items'] extends 'string'
-                ? string
-                : number
-              : never)[];
-          }[TOptionConfig['type']];
+      [key in TOption]: OptionConfigToType<TOptionConfig>;
     }
   >;
 

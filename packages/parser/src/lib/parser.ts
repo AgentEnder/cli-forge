@@ -107,6 +107,18 @@ export type NumberArrayOptionConfig<TCoerce = number> = {
   items: 'number';
 } & CommonOptionConfig<number[], TCoerce>;
 
+export interface ObjectOptionConfig<
+  TCoerce = Record<string, string>,
+  TProperties extends {
+    [key: string]: Readonly<OptionConfig>;
+  } = Record<string, any>
+> extends CommonOptionConfig<Record<string, string>, TCoerce> {
+  type: 'object';
+  /** */
+  properties: TProperties;
+  additionalProperties?: false | 'string' | 'number' | 'boolean';
+}
+
 /**
  * Configuration for array options. Arrays are parsed from
  * comma separated, space separated, or multiple values.
@@ -126,11 +138,15 @@ export type ArrayOptionConfig<TCoerce = string | number> =
  *
  * @typeParam TCoerce The return type of the `coerce` function if provided.
  */
-export type OptionConfig<TCoerce = any> =
+export type OptionConfig<
+  TCoerce = any,
+  TObjectProps extends Record<string, OptionConfig> = Record<string, any>
+> =
   | StringOptionConfig<TCoerce>
   | NumberOptionConfig<TCoerce>
   | ArrayOptionConfig<TCoerce>
-  | BooleanOptionConfig<TCoerce>;
+  | BooleanOptionConfig<TCoerce>
+  | ObjectOptionConfig<TCoerce, TObjectProps>;
 
 export type InternalOptionConfig = OptionConfig & {
   key: string;
@@ -263,7 +279,7 @@ export class ArgvParser<
    * @param config The configuration for the option. See {@link OptionConfig}
    * @returns Updated parser instance with the new option registered.
    */
-  option<TOption extends string, TOptionConfig extends OptionConfig>(
+  option<TOption extends string, const TOptionConfig extends OptionConfig<any>>(
     name: TOption,
     config: TOptionConfig
   ) {
@@ -288,18 +304,7 @@ export class ArgvParser<
 
     return this as any as ArgvParser<
       TArgs & {
-        [key in TOption]: TOptionConfig['coerce'] extends (s: any) => any
-          ? ReturnType<TOptionConfig['coerce']>
-          : {
-              string: string;
-              number: number;
-              boolean: boolean;
-              array: (TOptionConfig extends ArrayOptionConfig
-                ? TOptionConfig['items'] extends 'string'
-                  ? string
-                  : number
-                : never)[];
-            }[TOptionConfig['type']];
+        [key in TOption]: OptionConfigToType<TOptionConfig>;
       }
     >;
   }
@@ -310,7 +315,10 @@ export class ArgvParser<
    * @param config The configuration for the positional argument. See {@link OptionConfig}
    * @returns Updated parser instance with the new positional argument registered.
    */
-  positional<TOption extends string>(name: TOption, config: OptionConfig) {
+  positional<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any>
+  >(name: TOption, config: TOptionConfig) {
     return this.option(name, {
       ...config,
       positional: true,
@@ -377,7 +385,7 @@ export class ArgvParser<
               config: configuration,
               tokens: argvClone,
               current: result[configuration.key],
-              providedFlag: arg,
+              providedFlag: maybeArg,
             });
             result[configuration.key] = value;
             arg = argvClone.shift();
@@ -676,18 +684,31 @@ function getConfiguredOptionKey<T extends ParsedArgs>(
     return key as keyof T;
   }
 
+  function normalizeNegatedBooleanKey(key: string) {
+    if (
+      key.startsWith('no') &&
+      key.length > 2 &&
+      key[2] === key[2].toUpperCase()
+    ) {
+      const stripped = key.slice(2);
+      return [stripped[0].toLowerCase(), stripped.slice(1)].join('');
+    }
+    return key;
+  }
+
+  function normalizeObjectOptionKey(key: string) {
+    if (key.includes('.')) {
+      return key.split('.')[0];
+    }
+    return key;
+  }
+
   // Handles booleans passed as `--no-foo`
-  const normalizedKey =
-    key.startsWith('no') && key.length > 2 && key[2] === key[2].toUpperCase()
-      ? (() => {
-          const stripped = key.slice(2);
-          return [stripped[0].toLowerCase(), stripped.slice(1)].join('');
-        })()
-      : key;
-  if (
-    normalizedKey in configuredOptions &&
-    configuredOptions[normalizedKey as keyof T]?.type === 'boolean'
-  ) {
+  const normalizedKey = normalizeObjectOptionKey(
+    normalizeNegatedBooleanKey(key)
+  );
+
+  if (normalizedKey in configuredOptions) {
     return normalizedKey as keyof T;
   }
 
@@ -820,14 +841,150 @@ const arrayParser: Parser<Internal<ArrayOptionConfig>> = <
   return current ? current.concat(coerced) : coerced;
 };
 
-type ParserContext<TConfig extends InternalOptionConfig> = {
+const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
+  tokens,
+  config,
+  providedFlag,
+  current,
+}) => {
+  current ??= {};
+  // `providedFlag` is the flag that was used on the cli.
+  // it will look like `env.foo.bar`, or `env.foo`. for dot notation
+  //
+  // We don't care about the first part, as the base parser has already matched the flag.
+  const parts = providedFlag?.split('.').slice(1);
+  if (!parts?.length) {
+    throw new Error(
+      `${config.key} is configured as an object, but no properties were provided. Pass properties like so: --${config.key}.foo bar --${config.key}.baz qux`
+    );
+  }
+  const { config: propConfig, readValue, setValue } = parsePath(parts);
+  const currentValue = readValue();
+  const parsedValue = tryParseValue(parserMap[propConfig.type], {
+    config: {
+      ...propConfig,
+      key: `${config.key}.${parts.join('.')}`,
+    },
+    tokens,
+    current: currentValue,
+    providedFlag: providedFlag,
+  });
+  setValue(parsedValue);
+
+  return current;
+
+  function parsePath(parts: string[]): {
+    readValue(): any;
+    setValue(v: any): void;
+    config: OptionConfig;
+  } {
+    const propParts = [...parts];
+    let currentObject = current;
+    let currentKey = propParts.shift();
+    let currentValue: any;
+    let currentConfig: OptionConfig = config;
+    let last: string;
+    // eslint-disable-next-line no-constant-condition
+    while (true) {
+      if (!currentKey) {
+        return {
+          readValue() {
+            return currentValue;
+          },
+          setValue(v) {
+            currentObject[last] = v;
+          },
+          config: currentConfig,
+        };
+      }
+      const nextKey = propParts.shift();
+      currentValue = currentObject[currentKey];
+      if (nextKey) {
+        if (currentValue && typeof currentValue !== 'object') {
+          throw new Error(
+            `Expected ${currentKey} to be an object, but found ${typeof currentValue}`
+          );
+        } else {
+          currentObject[currentKey] ??= {};
+        }
+      }
+      last = currentKey;
+      currentKey = nextKey;
+      if (nextKey) {
+        currentObject = currentObject[last];
+      }
+      const c = (currentConfig as ObjectOptionConfig).properties[last];
+      if (!c) {
+        if (
+          'additionalProperties' in currentConfig &&
+          currentConfig.additionalProperties
+        ) {
+          currentConfig = {
+            type: currentConfig.additionalProperties,
+          };
+        } else {
+          throw new Error(
+            `No configuration found for ${last} in ${config.key}`
+          );
+        }
+      } else {
+        currentConfig = c;
+      }
+    }
+  }
+
+  // function readValue(propParts: string[]) {
+  //   const pathParts = [...propParts];
+  //   let currentValue = current;
+  //   let currentKey = pathParts.shift();
+  //   while (currentKey) {
+  //     if (typeof currentValue !== 'object' && currentValue !== undefined) {
+  //       throw new Error(
+  //         `Expected ${currentKey} to be an object, but found ${typeof currentValue}`
+  //       );
+  //     } else if (!(currentKey in currentValue)) {
+  //       return undefined;
+  //     } else {
+  //       currentValue = currentValue[currentKey];
+  //       currentKey = pathParts.shift();
+  //     }
+  //   }
+  // }
+
+  // function readOptionConfig(propParts: string[]): InternalOptionConfig {
+  //   const pathParts = [...propParts];
+  //   let currentConfig = config;
+  //   let currentKey = pathParts.shift();
+  //   while (currentKey) {
+  //     if (!(currentKey in currentConfig.properties)) {
+  //       if (!currentConfig.additionalProperties) {
+  //         throw new Error(
+  //           `No configuration found for ${currentKey} in ${config.key}`
+  //         );
+  //       } else {
+  //         return {
+  //           type: currentConfig.additionalProperties,
+  //           key: 'additionalProperties',
+  //         };
+  //       }
+  //     }
+  //     currentConfig = currentConfig.properties[currentKey];
+  //     currentKey = pathParts.shift();
+  //   }
+  //   return currentConfig;
+  // }
+
+  // function setValue(propParts: string[]) {}
+};
+
+type ParserContext<TConfig extends OptionConfig> = {
   config: TConfig;
   tokens: string[];
   current?: any;
   providedFlag?: string;
 };
 
-type Parser<TConfig extends InternalOptionConfig, T = any> = (
+type Parser<TConfig extends OptionConfig, T = any> = (
   input: ParserContext<TConfig>
 ) => T;
 
@@ -859,6 +1016,7 @@ const parserMap: Record<string, Parser<any>> = {
   number: numberParser,
   boolean: booleanParser,
   array: arrayParser,
+  object: objectParser,
 };
 
 function isFlag(str: string): str is `-${string}` {
@@ -889,3 +1047,31 @@ export class ValidationFailedError<T> extends AggregateError {
     super(errors, message);
   }
 }
+
+export type OptionConfigToType<TOptionConfig extends OptionConfig> =
+  TOptionConfig['coerce'] extends (s: any) => any
+    ? ReturnType<TOptionConfig['coerce']>
+    : {
+        string: string;
+        number: number;
+        boolean: boolean;
+        array: (TOptionConfig extends ArrayOptionConfig<string | number>
+          ? TOptionConfig['items'] extends 'string'
+            ? string
+            : number
+          : never)[];
+        object: TOptionConfig extends ObjectOptionConfig
+          ? ResolveTProperties<TOptionConfig['properties']> &
+              (TOptionConfig['additionalProperties'] extends 'string'
+                ? Record<string, string>
+                : TOptionConfig['additionalProperties'] extends 'number'
+                ? Record<string, number>
+                : TOptionConfig['additionalProperties'] extends 'boolean'
+                ? Record<string, boolean>
+                : Record<string, never>)
+          : never;
+      }[TOptionConfig['type']];
+
+type ResolveTProperties<TProperties extends Record<string, OptionConfig>> = {
+  [key in keyof TProperties]: OptionConfigToType<TProperties[key]>;
+};
