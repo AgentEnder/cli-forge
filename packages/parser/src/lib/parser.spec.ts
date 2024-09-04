@@ -198,6 +198,18 @@ describe('parser', () => {
       .option('baz', { type: 'boolean' })
       .option('bam', { type: 'array', items: 'string' })
       .option('qux', { type: 'array', items: 'number' })
+      .option('env', {
+        type: 'object',
+        properties: {
+          foo: {
+            type: 'string',
+          },
+          bar: {
+            type: 'boolean',
+          },
+        },
+        additionalProperties: 'string',
+      })
       .parse([
         '--foo',
         'hello',
@@ -210,6 +222,9 @@ describe('parser', () => {
         '--qux',
         '1',
         '2',
+        '--env.foo=foo',
+        '--env.bar',
+        '--env.blam=world',
       ]);
 
     // The following lines should not throw type errors.
@@ -218,6 +233,9 @@ describe('parser', () => {
     parsed.baz.valueOf();
     parsed.bam.join('');
     parsed.qux.reduce((acc, val) => acc + val, 0);
+    parsed.env.foo.charAt(0);
+    parsed.env.bar.valueOf();
+    parsed.env['blam'].charAt(0);
   });
 
   it('should allow customizing unmatched parser', () => {
@@ -548,6 +566,86 @@ describe('parser', () => {
         .option('bar', { type: 'boolean' })
         .parse(['--no-foo', '--bar'])
     ).toEqual({ foo: false, bar: true, unmatched: [] });
+  });
+
+  it('should work for simple object options', () => {
+    expect(
+      parser()
+        .option('foo', {
+          type: 'object',
+          properties: {
+            bar: {
+              type: 'number',
+            },
+          },
+        })
+        .parse(['--foo.bar', '3'])
+    ).toEqual({
+      foo: { bar: 3 },
+      unmatched: [],
+    });
+  });
+
+  it('should work for nested object options', () => {
+    const parsed = parser()
+      .option('foo', {
+        type: 'object',
+        properties: {
+          bar: {
+            type: 'object',
+            properties: {
+              baz: {
+                type: 'number',
+              },
+            },
+          },
+          qux: {
+            type: 'number',
+          },
+          arr: {
+            type: 'array',
+            items: 'number',
+          },
+        },
+        additionalProperties: 'string',
+      })
+      .parse([
+        '--foo.bar.baz',
+        '3',
+        '--foo.qux',
+        '4',
+        '--foo.blam',
+        '5',
+        '--foo.arr',
+        '1',
+        '2',
+        '3',
+        '--some-bool',
+      ]);
+    expect(parsed).toMatchInlineSnapshot(`
+      {
+        "foo": {
+          "arr": [
+            1,
+            2,
+            3,
+          ],
+          "bar": {
+            "baz": 3,
+          },
+          "blam": "5",
+          "qux": 4,
+        },
+        "unmatched": [
+          "--some-bool",
+        ],
+      }
+    `);
+    // Types should be inferred correctly
+    parsed.foo.bar.baz.toFixed();
+    parsed.foo['blam'].charAt(0);
+    // It's an array of numbers
+    parsed.foo.arr.reduce((acc, val) => acc + val, 0);
   });
 });
 
