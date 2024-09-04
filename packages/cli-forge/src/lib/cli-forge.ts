@@ -404,7 +404,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       if (option.description) {
         parts.push(option.description);
       }
-      if (option.choices) {
+      if ('choices' in option && option.choices) {
         const choices =
           typeof option.choices === 'function'
             ? option.choices()

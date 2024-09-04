@@ -3,7 +3,7 @@ import { fromDashedToCamelCase, getEnvKey } from './utils';
 
 type Flatten<T> = T extends Array<infer U> ? U : T;
 
-export type CommonOptionConfig<T, TCoerce = T> = {
+export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
   /**
    * If set to true, the option will be treated as a positional argument.
    */
@@ -17,7 +17,7 @@ export type CommonOptionConfig<T, TCoerce = T> = {
   /**
    * Provide an array of choices for the option. Values not in the array will throw an error.
    */
-  choices?: Flatten<T>[] | (() => Flatten<T>[]);
+  choices?: TChoices | (() => TChoices);
 
   /**
    * Provide a default value for the option.
@@ -85,34 +85,34 @@ export type CommonOptionConfig<T, TCoerce = T> = {
   group?: string;
 };
 
-export type StringOptionConfig<TCoerce = string> = {
+export type StringOptionConfig<TCoerce = string, TChoices = TCoerce[]> = {
   type: 'string';
-} & CommonOptionConfig<string, TCoerce>;
+} & CommonOptionConfig<string, TCoerce, TChoices>;
 
-export type NumberOptionConfig<TCoerce = number> = {
+export type NumberOptionConfig<TCoerce = number, TChoices = TCoerce[]> = {
   type: 'number';
-} & CommonOptionConfig<number, TCoerce>;
+} & CommonOptionConfig<number, TCoerce, TChoices>;
 
-export type BooleanOptionConfig<TCoerce = boolean> = {
+export type BooleanOptionConfig<TCoerce = boolean, TChoices = TCoerce[]> = {
   type: 'boolean';
-} & CommonOptionConfig<boolean, TCoerce>;
+} & CommonOptionConfig<boolean, TCoerce, TChoices>;
 
-export type StringArrayOptionConfig<TCoerce = string> = {
+export type StringArrayOptionConfig<TCoerce = string, TChoices = TCoerce[]> = {
   type: 'array';
   items: 'string';
-} & CommonOptionConfig<string[], TCoerce>;
+} & CommonOptionConfig<string[], TCoerce, TChoices>;
 
-export type NumberArrayOptionConfig<TCoerce = number> = {
+export type NumberArrayOptionConfig<TCoerce = number, TChoices = number[]> = {
   type: 'array';
   items: 'number';
-} & CommonOptionConfig<number[], TCoerce>;
+} & CommonOptionConfig<number[], TCoerce, TChoices>;
 
 export interface ObjectOptionConfig<
   TCoerce = Record<string, string>,
   TProperties extends {
     [key: string]: Readonly<OptionConfig>;
   } = Record<string, any>
-> extends CommonOptionConfig<Record<string, string>, TCoerce> {
+> extends Omit<CommonOptionConfig<Record<string, string>, TCoerce>, 'choices'> {
   type: 'object';
   /** */
   properties: TProperties;
@@ -125,9 +125,12 @@ export interface ObjectOptionConfig<
  *
  * e.g. `--foo a b c`, `--foo a,b,c`, or `--foo a --foo b --foo c`
  */
-export type ArrayOptionConfig<TCoerce = string | number> =
-  | StringArrayOptionConfig<TCoerce>
-  | NumberArrayOptionConfig<TCoerce>;
+export type ArrayOptionConfig<
+  TCoerce = string | number,
+  TChoices = TCoerce[]
+> =
+  | StringArrayOptionConfig<TCoerce, TChoices>
+  | NumberArrayOptionConfig<TCoerce, TChoices>;
 
 /**
  * Configures an option for the parser. See subtypes for more information.
@@ -140,12 +143,13 @@ export type ArrayOptionConfig<TCoerce = string | number> =
  */
 export type OptionConfig<
   TCoerce = any,
+  TChoices = any[],
   TObjectProps extends Record<string, OptionConfig> = Record<string, any>
 > =
-  | StringOptionConfig<TCoerce>
-  | NumberOptionConfig<TCoerce>
-  | ArrayOptionConfig<TCoerce>
-  | BooleanOptionConfig<TCoerce>
+  | StringOptionConfig<TCoerce, TChoices>
+  | NumberOptionConfig<TCoerce, TChoices>
+  | ArrayOptionConfig<TCoerce, TChoices>
+  | BooleanOptionConfig<TCoerce, TChoices>
   | ObjectOptionConfig<TCoerce, TObjectProps>;
 
 export type InternalOptionConfig = OptionConfig & {
@@ -612,7 +616,7 @@ export function parser(opts?: ParserOptions) {
 }
 
 function validateOption<T>(optionConfig: InternalOptionConfig, value: T) {
-  if (optionConfig.choices) {
+  if ('choices' in optionConfig && optionConfig.choices) {
     const choices = [
       ...new Set<T>(
         [
@@ -1049,29 +1053,43 @@ export class ValidationFailedError<T> extends AggregateError {
 }
 
 export type OptionConfigToType<TOptionConfig extends OptionConfig> =
-  TOptionConfig['coerce'] extends (s: any) => any
-    ? ReturnType<TOptionConfig['coerce']>
-    : {
-        string: string;
-        number: number;
-        boolean: boolean;
-        array: (TOptionConfig extends ArrayOptionConfig<string | number>
-          ? TOptionConfig['items'] extends 'string'
-            ? string
-            : number
-          : never)[];
-        object: TOptionConfig extends ObjectOptionConfig
-          ? ResolveTProperties<TOptionConfig['properties']> &
-              (TOptionConfig['additionalProperties'] extends 'string'
-                ? Record<string, string>
-                : TOptionConfig['additionalProperties'] extends 'number'
-                ? Record<string, number>
-                : TOptionConfig['additionalProperties'] extends 'boolean'
-                ? Record<string, boolean>
-                : Record<string, never>)
-          : never;
-      }[TOptionConfig['type']];
+  InferTChoice<TOptionConfig> extends [never]
+    ? TOptionConfig['coerce'] extends (s: any) => any
+      ? ReturnType<TOptionConfig['coerce']>
+      : {
+          string: string;
+          number: number;
+          boolean: boolean;
+          array: ArrayItems<TOptionConfig>[];
+          object: TOptionConfig extends ObjectOptionConfig
+            ? ResolveTProperties<TOptionConfig['properties']> &
+                AdditionalProperties<TOptionConfig>
+            : never;
+        }[TOptionConfig['type']]
+    : InferTChoice<TOptionConfig>;
+
+type ArrayItems<TOptionConfig extends OptionConfig> =
+  TOptionConfig extends ArrayOptionConfig<string | number>
+    ? TOptionConfig['items'] extends 'string'
+      ? string
+      : number
+    : never;
+
+type AdditionalProperties<TOptionConfig extends ObjectOptionConfig> =
+  TOptionConfig['additionalProperties'] extends 'string'
+    ? Record<string, string>
+    : TOptionConfig['additionalProperties'] extends 'number'
+    ? Record<string, number>
+    : TOptionConfig['additionalProperties'] extends 'boolean'
+    ? Record<string, boolean>
+    : Record<string, never>;
 
 type ResolveTProperties<TProperties extends Record<string, OptionConfig>> = {
   [key in keyof TProperties]: OptionConfigToType<TProperties[key]>;
 };
+
+type InferTChoice<TOptionConfig> = 'choices' extends keyof TOptionConfig
+  ? TOptionConfig['choices'] extends Array<infer TChoice>
+    ? TChoice
+    : never
+  : never;
