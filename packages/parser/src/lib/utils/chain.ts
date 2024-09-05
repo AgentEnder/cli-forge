@@ -27,6 +27,7 @@ type UnaryFunction<T, R> = (arg: T) => R;
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, R>(initial: T0, fn0: UnaryFunction<T0, R>): R;
 
@@ -47,6 +48,7 @@ export function chain<T0, R>(initial: T0, fn0: UnaryFunction<T0, R>): R;
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, R>(
   initial: T0,
@@ -71,6 +73,7 @@ export function chain<T0, T1, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, R>(
   initial: T0,
@@ -96,6 +99,7 @@ export function chain<T0, T1, T2, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, R>(
   initial: T0,
@@ -122,6 +126,7 @@ export function chain<T0, T1, T2, T3, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, R>(
   initial: T0,
@@ -149,6 +154,7 @@ export function chain<T0, T1, T2, T3, T4, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, R>(
   initial: T0,
@@ -177,6 +183,7 @@ export function chain<T0, T1, T2, T3, T4, T5, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, R>(
   initial: T0,
@@ -206,6 +213,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, R>(
   initial: T0,
@@ -236,6 +244,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, R>(
   initial: T0,
@@ -267,6 +276,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(
   initial: T0,
@@ -299,6 +309,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R>(
   initial: T0,
@@ -332,6 +343,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R>(
   initial: T0,
@@ -366,6 +378,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R>(
   initial: T0,
@@ -401,6 +414,7 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R>(
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<
   T0,
@@ -453,6 +467,7 @@ export function chain<
  * @param initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
  * @returns Updated value after all functions have been applied
+ * @hidden docs for {@link chain} are found on the main signature.
  */
 export function chain<
   T0,
@@ -504,9 +519,9 @@ export function chain<
  *
  * See [composable-options](/examples/composable-options) for an example of how this can be used.
  *
- * @param initial Initial value to pass through the chain
+ * @param {T0} initial Initial value to pass through the chain
  * @param fns Functions to apply to the initial value, and each subsequent value
- * @returns Updated value after all functions have been applied
+ * @returns {R} Updated value after all functions have been applied
  */
 export function chain<
   T0,
