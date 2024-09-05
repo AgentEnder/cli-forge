@@ -1,3 +1,22 @@
+## 0.8.0 (2024-09-05)
+
+
+### 🚀 Features
+
+- **cli-forge,parser:** add composition helpers `chain` and `makeComposable*` ([8063d13](https://github.com/agentender/cli-forge/commit/8063d13))
+- **parser:** support negated booleans (--no-x) ([25e8da3](https://github.com/agentender/cli-forge/commit/25e8da3))
+- **parser:** support object-valued flags ([09ce196](https://github.com/agentender/cli-forge/commit/09ce196))
+- **parser:** allow setting descriptions for default values ([d1197f9](https://github.com/agentender/cli-forge/commit/d1197f9))
+
+### 🩹 Fixes
+
+- **cli-forge:** fixup init to include tsc infra ([51b1d18](https://github.com/agentender/cli-forge/commit/51b1d18))
+- **parser:** choices should narrow arg typing ([0a913e2](https://github.com/agentender/cli-forge/commit/0a913e2))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.7.0 (2024-08-31)
 
 
