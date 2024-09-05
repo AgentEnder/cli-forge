@@ -1,4 +1,4 @@
-import type { ArrayOptionConfig, ParsedArgs } from '@cli-forge/parser';
+import type { ParsedArgs } from '@cli-forge/parser';
 
 import { existsSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
@@ -140,11 +140,13 @@ function formatOption(option: Documentation['options'][string], md: mdfactory) {
       option.deprecated ? md.bold(md.italics('Deprecated')) : undefined,
       md.bold('Type:') +
         ' ' +
-        (option.type === 'array'
-          ? `${(option as ArrayOptionConfig).items}[]`
+        ('items' in option && option.type === 'array'
+          ? `${option.items}[]`
           : option.type),
       option.description,
-      option.default ? md.bold('Default:') + ' ' + option.default : undefined,
+      option.default !== undefined
+        ? renderDefaultValueSection(option.default, md)
+        : undefined,
       // No need to show required if it's required and has a default, as its not actually required to pass.
       option.required && !option.default ? md.bold('Required') : undefined,
       'choices' in option && option.choices
@@ -155,7 +157,7 @@ function formatOption(option: Documentation['options'][string], md: mdfactory) {
               typeof option.choices === 'function'
                 ? option.choices()
                 : option.choices
-            ).map((t) => t.toString());
+            ).map((t: any) => md.code(t.toString()));
             return choicesAsString.join(', ');
           })()
         : undefined,
@@ -353,4 +355,13 @@ function getEpilogueFragment(
     return undefined;
   }
   return md.blockQuote(epilogue);
+}
+
+function renderDefaultValueSection(defaultValue: unknown, md: mdfactory) {
+  const json = JSON.stringify(defaultValue, null, 2);
+  if (json.split('\n').length > 1) {
+    return md.lines(md.bold('Default:'), md.codeBlock(json, 'json'));
+  } else {
+    return md.bold('Default:') + ' ' + md.code(json);
+  }
 }

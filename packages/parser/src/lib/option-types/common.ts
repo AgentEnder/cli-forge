@@ -1,3 +1,18 @@
+export type PlainDefaultValue<T> = T;
+export type DefaultValueWithDescription<T> = {
+  value: PlainDefaultValue<T>;
+  description: string;
+};
+export type DefaultValueWithFactory<T> = {
+  factory: () => PlainDefaultValue<T>;
+  description: string;
+};
+
+export type Default<T> =
+  | PlainDefaultValue<T>
+  | DefaultValueWithDescription<T>
+  | DefaultValueWithFactory<T>;
+
 export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
   /**
    * If set to true, the option will be treated as a positional argument.
@@ -16,8 +31,10 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
 
   /**
    * Provide a default value for the option.
+   *
+   * If the default value is a tuple, the first value will be used as the default value, and the second value will be used as the description.
    */
-  default?: T;
+  default?: Default<T>;
 
   /**
    * Provide a description for the option.
