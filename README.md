@@ -1,3 +1,9 @@
+<!-- BEGIN LOGO -->
+
+![CLI Forge Logo](./docs-site/static/img/logo.svg)
+
+<!-- END LOGO -->
+
 # CLI Forge
 
 ✨ Proudly built with [Nx](https://nx.dev) ✨.

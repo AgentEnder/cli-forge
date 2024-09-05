@@ -17,13 +17,15 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
 
   writeFileSync(
     join(__dirname, '../../docs/index.md'),
-    addFrontMatter(readme, {
-      id: 'index',
-      title: 'Home',
-      hide_title: true,
-      slug: '/',
-      sidebar_position: 1,
-    })
+    replaceLogo(
+      addFrontMatter(readme, {
+        id: 'index',
+        title: 'Home',
+        hide_title: true,
+        slug: '/',
+        sidebar_position: 1,
+      })
+    )
   );
   writeFileSync(
     join(__dirname, '../../docs/changelog.md'),
@@ -49,6 +51,20 @@ export async function CopyReadmeAndChangelogPlugin(context: LoadContext) {
     // a unique name for this plugin
     name: 'copy-readme-and-changelog-plugin',
   };
+}
+
+function replaceLogo(contents: string) {
+  const lines = contents.split('\n');
+  const logoStart = lines.findIndex((line) =>
+    line.includes('<!-- BEGIN LOGO -->')
+  );
+  const logoEnd = lines.findIndex((line) => line.includes('<!-- END LOGO -->'));
+  lines.splice(
+    logoStart + 1,
+    logoEnd - logoStart - 1,
+    '![CLI Forge Logo](../static/img/logo.svg)'
+  );
+  return lines.join('\n');
 }
 
 function addFrontMatter(
