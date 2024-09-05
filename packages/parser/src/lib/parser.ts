@@ -7,6 +7,7 @@ import { parserMap } from './parsers/parser-map';
 import { NoValueError, Parser, ParserContext } from './parsers/typings';
 import { getConfiguredOptionKey } from './utils/get-configured-key';
 import { isFlag, isNextFlag, readArgKeys } from './utils/flags';
+import { readDefaultValue } from './utils/read-default-value';
 
 /**
  * Base type for parsed arguments.
@@ -290,7 +291,7 @@ export class ArgvParser<
           }
         }
         if (configuration.default !== undefined) {
-          normalized[configuration.key] ??= configuration.default;
+          normalized[configuration.key] ??= readDefaultValue(configuration)[0];
         }
       }
     }
@@ -544,7 +545,7 @@ export function tryParseValue(
   } catch (e) {
     if (e instanceof NoValueError) {
       if (input.config.default !== undefined) {
-        return input.config.default;
+        return readDefaultValue(input.config)[0];
       }
       throw new Error(`Expected a value for ${input.config.key}`);
     }

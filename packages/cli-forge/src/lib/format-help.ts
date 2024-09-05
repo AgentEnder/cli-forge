@@ -1,4 +1,8 @@
-import { InternalOptionConfig, OptionConfig } from '@cli-forge/parser';
+import {
+  InternalOptionConfig,
+  OptionConfig,
+  readDefaultValue,
+} from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 
 export function formatHelp(parentCLI: InternalCLI<any>): string {
@@ -77,58 +81,69 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   }
 
   return help.join('\n');
+}
 
-  function getOptionParts(option: OptionConfig) {
-    const parts = [];
-    if (option.description) {
-      parts.push(option.description);
-    }
-    if ('choices' in option && option.choices) {
-      const choices =
-        typeof option.choices === 'function'
-          ? option.choices()
-          : option.choices;
-      parts.push(`(${choices.join(', ')})`);
-    }
-    if (option.default) {
-      parts.push('[default: ' + option.default + ']');
-    } else if (option.required) {
-      parts.push('[required]');
-    }
-    if (option.deprecated) {
-      parts.push('[deprecated: ' + option.deprecated + ']');
-    }
-    return parts;
+function getOptionParts(option: OptionConfig) {
+  const parts = [];
+  if (option.description) {
+    parts.push(option.description);
+  }
+  if ('choices' in option && option.choices) {
+    const choices =
+      typeof option.choices === 'function' ? option.choices() : option.choices;
+    parts.push(`(${choices.join(', ')})`);
+  }
+  if (option.default) {
+    parts.push(
+      '[default: ' + formatDefaultValue(readDefaultValue(option)) + ']'
+    );
+  } else if (option.required) {
+    parts.push('[required]');
+  }
+  if (option.deprecated) {
+    parts.push('[deprecated: ' + option.deprecated + ']');
+  }
+  return parts;
+}
+
+function formatDefaultValue([value, description]: [any, string | undefined]) {
+  if (description) {
+    return description;
+  }
+  return removeTrailingAndLeadingQuotes(JSON.stringify(value));
+}
+
+function removeTrailingAndLeadingQuotes(str: string) {
+  return str.replace(/^['"]/, '').replace(/['"]$/, '');
+}
+
+function getOptionBlock(label: string, options: InternalOptionConfig[]) {
+  const lines: string[] = [];
+
+  if (options.length > 0) {
+    lines.push('');
+    lines.push(label + ':');
   }
 
-  function getOptionBlock(label: string, options: InternalOptionConfig[]) {
-    const lines: string[] = [];
-
-    if (options.length > 0) {
-      lines.push('');
-      lines.push(label + ':');
-    }
-
-    const allParts: Array<[key: string, ...parts: string[]]> = [];
-    for (const option of options) {
-      allParts.push([option.key, ...getOptionParts(option)]);
-    }
-    const paddingValues: number[] = [];
-    for (let i = 0; i < allParts.length; i++) {
-      for (let j = 0; j < allParts[i].length; j++) {
-        if (!paddingValues[j]) {
-          paddingValues[j] = 0;
-        }
-        paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
+  const allParts: Array<[key: string, ...parts: string[]]> = [];
+  for (const option of options) {
+    allParts.push([option.key, ...getOptionParts(option)]);
+  }
+  const paddingValues: number[] = [];
+  for (let i = 0; i < allParts.length; i++) {
+    for (let j = 0; j < allParts[i].length; j++) {
+      if (!paddingValues[j]) {
+        paddingValues[j] = 0;
       }
+      paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
     }
-    for (const [key, ...parts] of allParts) {
-      lines.push(
-        `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-          .map((part, i) => part.padEnd(paddingValues[i + 1]))
-          .join(' ')}`
-      );
-    }
-    return lines;
   }
+  for (const [key, ...parts] of allParts) {
+    lines.push(
+      `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
+        .map((part, i) => part.padEnd(paddingValues[i + 1]))
+        .join(' ')}`
+    );
+  }
+  return lines;
 }

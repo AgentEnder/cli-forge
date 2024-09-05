@@ -1,4 +1,8 @@
-import { OptionConfig } from '@cli-forge/parser';
+import {
+  OptionConfig,
+  OptionConfigToType,
+  readDefaultValue,
+} from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
 
@@ -8,14 +12,38 @@ export type Documentation = {
   epilogue?: string;
   usage: string;
   examples: string[];
-  options: Readonly<Record<string, OptionConfig & { key: string }>>;
-  positionals: readonly Readonly<OptionConfig & { key: string }>[];
+  options: Readonly<Record<string, NormalizedOptionConfig>>;
+  positionals: readonly Readonly<NormalizedOptionConfig>[];
   groupedOptions: Array<{
     label: string;
-    keys: Array<OptionConfig & { key: string }>;
+    keys: Array<NormalizedOptionConfig>;
   }>;
   subcommands: Documentation[];
 };
+
+function normalizeOptionConfigForDocumentation<T extends OptionConfig>(
+  option: T,
+  key: string
+) {
+  const { default: declaredDefault, ...rest } = option;
+  let resolvedDefault: OptionConfigToType<T> | string | undefined;
+  if (declaredDefault !== undefined) {
+    const [defaultValue, description] = readDefaultValue(option);
+    resolvedDefault = description ?? defaultValue;
+  }
+  const result: typeof rest & {
+    key: string;
+    default?: OptionConfigToType<T> | string | undefined;
+  } = { ...rest, key };
+  if (resolvedDefault !== undefined) {
+    result.default = resolvedDefault;
+  }
+  return result;
+}
+
+type NormalizedOptionConfig<T extends OptionConfig = OptionConfig> = ReturnType<
+  typeof normalizeOptionConfigForDocumentation<T>
+>;
 
 export function generateDocumentation(
   cli: InternalCLI,
@@ -31,10 +59,11 @@ export function generateDocumentation(
   const parser = cli.getParser();
 
   const groupedOptions = cli.getGroupedOptions();
-  const options: Record<string, OptionConfig & { key: string }> =
-    Object.fromEntries(
-      Object.entries(parser.configuredOptions).filter(([, c]) => !c.hidden)
-    );
+  const options: Record<string, NormalizedOptionConfig> = Object.fromEntries(
+    Object.entries(parser.configuredOptions)
+      .filter(([, c]) => !c.hidden)
+      .map(([k, v]) => [k, normalizeOptionConfigForDocumentation(v, k)])
+  );
   const positionals = parser.configuredPositionals;
   for (const positional of positionals) {
     delete options[positional.key];
@@ -74,5 +103,5 @@ export function generateDocumentation(
     options,
     positionals,
     subcommands,
-  };
+  } as Documentation;
 }
