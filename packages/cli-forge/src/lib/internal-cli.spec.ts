@@ -1,3 +1,4 @@
+import { InternalCLI } from './internal-cli';
 import { cli } from './public-api';
 
 const ORIGINAL_CONSOLE_LOG = console.log;
@@ -58,6 +59,35 @@ describe('cliForge', () => {
       .forge(['foo', '--bar', 'baz']);
     expect(ran).toBe(true);
     expect(bar).toBe('baz');
+  });
+
+  it('should run commands by alias', async () => {
+    const ran: Record<string, number> = {};
+    const makeHandler = (name: string) => () => {
+      ran[name] = (ran[name] || 0) + 1;
+    };
+
+    const test = cli('test')
+      .command('foo', {
+        alias: ['f'],
+        builder: (argv) => argv,
+        handler: makeHandler('foo'),
+      })
+      .command('bar', {
+        alias: ['$0'],
+        builder: (argv) => argv,
+        handler: makeHandler('bar'),
+      }) as InternalCLI;
+    await test.clone().forge(['f']);
+    await test.clone().forge(['foo']);
+    await test.clone().forge(['bar']);
+    await test.clone().forge([]);
+    expect(ran).toMatchInlineSnapshot(`
+      {
+        "bar": 2,
+        "foo": 2,
+      }
+    `);
   });
 
   it('should run parent command if no subcommand is given', () => {

@@ -1,5 +1,6 @@
-import { existsSync } from 'fs';
+import { existsSync, readFileSync } from 'fs';
 import { join, resolve } from 'path';
+import { CLI } from './public-api';
 
 export function getCallingFile() {
   // Since this function lives in a utility file, the parent file
@@ -19,10 +20,12 @@ export function getCallingFile() {
     const err = new Error();
     const callsites = err.stack as any as NodeJS.CallSite[];
 
-    let currentfile = callsites.shift()!.getFileName();
+    // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+    const currentfile = callsites.shift()!.getFileName();
     let parentfile: string | undefined;
 
     while (callsites.length) {
+      // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
       const callerfile = callsites.shift()!.getFileName();
 
       // We've reached the parent file
@@ -46,6 +49,7 @@ export function getParentPackageJson(searchPath: string) {
   let currentPath = searchPath;
   let packageJsonPath: string | undefined;
 
+  // eslint-disable-next-line no-constant-condition
   while (true) {
     const packagePath = join(currentPath, 'package.json');
 
@@ -67,7 +71,7 @@ export function getParentPackageJson(searchPath: string) {
     throw new Error('Could not find package.json');
   }
 
-  return require(packageJsonPath) as {
+  return JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as {
     name: string;
     version: string;
     bin?: {
@@ -94,6 +98,7 @@ export function stringToArgs(str: string) {
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
     if (activeQuote) {
+      // eslint-disable-next-line no-constant-condition
       while (true) {
         if (i >= str.length) {
           break;
@@ -127,3 +132,13 @@ export function stringToArgs(str: string) {
   args.push(currentArg);
   return args;
 }
+
+/**
+ * Resolves the arguments added to a CLI instance by a builder function. Useful
+ * for typing the arguments of a command handler when using composable builders.
+ *
+ * @typeParam T - A function that takes a CLI instance and returns a new CLI instance with additional options, commands etc.
+ */
+export type ArgumentsOf<T> = T extends (...args: any[]) => CLI<infer TArgs>
+  ? TArgs
+  : never;
