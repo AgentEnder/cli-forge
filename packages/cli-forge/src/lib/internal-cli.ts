@@ -157,7 +157,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           'options must be provided when calling `command` with a string'
         );
       }
-      if (key === '$0') {
+      if (key === '$0' || options.alias?.includes('$0')) {
         this.withRootCommandConfiguration({
           ...this._configuration,
           builder: options.builder as any,
@@ -165,12 +165,23 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           description: options.description,
         });
       }
-      this.registeredCommands[key] = new InternalCLI<TArgs>(
-        key
-      ).withRootCommandConfiguration(options);
+      const cmd = new InternalCLI<TArgs>(key).withRootCommandConfiguration(
+        options
+      );
+      this.registeredCommands[key] = cmd;
+      if (options.alias) {
+        for (const alias of options.alias) {
+          this.registeredCommands[alias] = cmd;
+        }
+      }
     } else if (keyOrCommand instanceof InternalCLI) {
       const cmd = keyOrCommand;
       this.registeredCommands[cmd.name] = cmd;
+      if (cmd.configuration?.alias) {
+        for (const alias of cmd.configuration.alias) {
+          this.registeredCommands[alias] = cmd;
+        }
+      }
     } else {
       const { name, ...configuration } = keyOrCommand as {
         name: string;

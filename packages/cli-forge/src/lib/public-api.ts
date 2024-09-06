@@ -191,6 +191,13 @@ export interface CLICommandOptions<
   TArgs extends TInitial = TInitial
 > {
   /**
+   * If set the command will be registered under the provided name and any aliases.
+   *
+   * This can be useful if a command should be executed under more than one name, e.g. `npx my-cli` and `npx my-cli hello`.
+   */
+  alias?: string[];
+
+  /**
    * The command description. This will be displayed in the help text and generated docs.
    */
   description?: string;
