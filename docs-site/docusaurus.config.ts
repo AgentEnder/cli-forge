@@ -137,6 +137,12 @@ const config: Config = {
       ],
       copyright: `Copyright © ${new Date().getFullYear()} CLI Forge. Built with Docusaurus.`,
     },
+    algolia: {
+      apiKey: 'fb805dfaab35bbf1e6489a44a75c8fa5',
+      indexName: 'craigory',
+      contextualSearch: false,
+      appId: 'CEB595M3KJ',
+    },
     prism: {
       theme: prismThemes.github,
       darkTheme: prismThemes.dracula,
