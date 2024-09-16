@@ -1,3 +1,14 @@
+## 0.8.1 (2024-09-16)
+
+
+### 🩹 Fixes
+
+- **cli-forge:** generate-docs should work on windows ([fc9243a](https://github.com/agentender/cli-forge/commit/fc9243a))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.8.0 (2024-09-05)
 
 
