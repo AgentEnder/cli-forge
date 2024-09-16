@@ -63,7 +63,7 @@ function loadExampleFile(path: string): {
   let line = lines.shift();
   if (line && line.startsWith('// ---')) {
     while (true) {
-      line = lines.shift();
+      line = lines.shift().trimEnd();
       if (!line) {
         throw new Error('Unexpected end of file');
       }

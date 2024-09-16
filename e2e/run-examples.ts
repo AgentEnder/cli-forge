@@ -131,19 +131,27 @@ function loadExampleFile(path: string): {
       if (line.startsWith('// ---')) {
         break;
       } else {
-        frontMatterLines.push(line.replace(/^\/\/\s?/, ''));
+        frontMatterLines.push(line.replace(/^\/\/\s?/, '').trimEnd());
       }
     }
   } else if (line) {
     lines.unshift(line);
   }
+  try {
+    const yaml = frontMatterLines.join('\n');
 
-  const yaml = frontMatterLines.join('\n');
-
-  return {
-    contents: lines.join('\n'),
-    data: yaml ? loadYaml(yaml) : {},
-  };
+    return {
+      contents: lines.join('\n'),
+      data: yaml ? loadYaml(yaml) : {},
+    };
+  } catch (e) {
+    throw new Error(
+      `Invalid front matter in ${path}.` +
+        '\n' +
+        frontMatterLines.map((l) => `\t${l}`).join('\n'),
+      { cause: e }
+    );
+  }
 }
 
 function normalizeFrontMatter(

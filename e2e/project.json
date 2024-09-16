@@ -11,5 +11,10 @@
     "e2e:examples": {
       "command": "tsx {projectRoot}/run-examples.ts"
     }
+  },
+  "metadata": {
+    "targetGroups": {
+      "E2E": ["e2e", "e2e:jest", "e2e:examples"]
+    }
   }
 }
