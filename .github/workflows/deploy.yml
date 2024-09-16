@@ -52,7 +52,7 @@ jobs:
 
       - name: Build and release
         run: |
-          node ./node_modules/.bin/nx release --yes
+          node ./node_modules/.bin/nx release ${{ github.run_attempt == '1' && '--yes' || '--yes --verbose' }}
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
           NPM_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}

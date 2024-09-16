@@ -26,7 +26,7 @@
   "release": {
     "projects": ["packages/*"],
     "version": {
-      "preVersionCommand": "nx run-many -t build --exclude docs-site",
+      "preVersionCommand": "npx nx run-many -t build --exclude docs-site",
       "conventionalCommits": true,
       "generatorOptions": {
         "skipLockFileUpdate": true
