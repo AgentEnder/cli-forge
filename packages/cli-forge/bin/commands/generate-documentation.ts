@@ -298,9 +298,10 @@ async function loadCLIModule(
     output: string;
   } & { format: string } & { export: string } & { tsconfig: string }
 ) {
-  if (!isAbsolute(args.cli)) {
-    args.cli = join(process.cwd(), args.cli);
+  if (isAbsolute(args.cli)) {
+    args.cli = relative(process.cwd(), args.cli);
   }
+
   const cliPath = [
     args.cli,
     `${args.cli}.ts`,
@@ -311,7 +312,7 @@ async function loadCLIModule(
     join(args.cli, 'index.js'),
     join(args.cli, 'index.cjs'),
     join(args.cli, 'index.mjs'),
-  ].find((f) => existsSync(f));
+  ].find((f) => existsSync(join(process.cwd(), f)));
 
   if (!cliPath) {
     throw new Error(`Could not find CLI module at ${args.cli}
@@ -320,18 +321,12 @@ async function loadCLIModule(
   }
 
   try {
-    const tsx = (await import(
-      // For some reason the typescript language server doesn't like the import statement below.
-      // Its accurate, and in fact the full path with `/dist/` would error as its not part of
-      // the package.json's `exports` field.
-      //
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      //@ts-expect-error
-      'tsx/esm/api'
-    )) as typeof import('tsx/dist/esm/api/index.cjs');
+    const tsx = (await import('tsx/esm/api')) as typeof import('tsx/esm/api');
     return tsx.tsImport(cliPath, {
       tsconfig: args.tsconfig,
-      parentURL: pathToFileURL(__dirname).toString(),
+      parentURL: pathToFileURL(
+        join(process.cwd(), 'fake-file-for-import.ts')
+      ).toString(),
     });
   } catch {
     try {
