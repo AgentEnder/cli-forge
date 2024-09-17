@@ -1,6 +1,8 @@
+import { join } from 'path';
 import { parser } from './parser';
 
 import 'vitest';
+import { ConfigurationProvider } from './config-files/configuration-loader';
 
 interface CustomMatchers<R = unknown> {
   toThrowAggregateErrorContaining: (...expected: Array<string | Error>) => R;
@@ -11,6 +13,16 @@ declare module 'vitest' {
   interface Assertion<T = any> extends CustomMatchers<T> {}
   // eslint-disable-next-line @typescript-eslint/no-empty-interface
   interface AsymmetricMatchersContaining extends CustomMatchers {}
+}
+
+function makeMockConfigLoader<T>(config: Record<string, T>) {
+  return {
+    resolve: (file) => {
+      const p = file.endsWith('.myclirc') ? file : join(file, '.myclirc');
+      return config[p] ? p : undefined;
+    },
+    load: (file) => config[file],
+  } as ConfigurationProvider<any>;
 }
 
 expect.extend({
@@ -646,6 +658,102 @@ describe('parser', () => {
     parsed.foo['blam'].charAt(0);
     // It's an array of numbers
     parsed.foo.arr.reduce((acc, val) => acc + val, 0);
+  });
+
+  it('should read values from config files', () => {
+    const configurationLoader = makeMockConfigLoader({
+      [join(process.cwd(), '.myclirc')]: {
+        extends: './node_modules/.myclirc',
+        foo: 'hello',
+        bar: 42,
+      },
+      [join(process.cwd(), 'node_modules', '.myclirc')]: {
+        baz: true,
+        foo: 'world',
+        extra: 'not used',
+      },
+    });
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .option('baz', { type: 'boolean' })
+        .config(configurationLoader)
+        .parse([])
+    ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
+  });
+
+  it('should follow precedence of provided flag < env var < config file', async () => {
+    await withEnv(
+      {
+        FOO: 'env',
+        BAR: 'env',
+      },
+      () => {
+        const configLoader = makeMockConfigLoader({
+          [join(process.cwd(), '.myclirc')]: {
+            foo: 'configured',
+            bar: 'configured',
+            baz: 'configured',
+          },
+        });
+        expect(
+          parser()
+            .option('foo', { type: 'string' })
+            .option('bar', { type: 'string' })
+            .option('baz', { type: 'string' })
+            .config(configLoader)
+            .env()
+            .parse(['--foo', 'override'])
+        ).toEqual({
+          foo: 'override',
+          bar: 'env',
+          baz: 'configured',
+          unmatched: [],
+        });
+      }
+    );
+  });
+
+  it('should not return unrelated values from config files', () => {
+    const configurationLoader = makeMockConfigLoader({
+      [join(process.cwd(), '.myclirc')]: {
+        foo: 'hello',
+        bar: 42,
+        extra: 'not used',
+      },
+    });
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .config(configurationLoader)
+        .parse([])
+    ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
+  });
+
+  it('should not read config files multiple times for more than one option', () => {
+    let configRead = 0;
+    const configurationLoader: ConfigurationProvider<any> = {
+      resolve: () => 'some-file',
+      load: () => {
+        configRead++;
+        return {
+          foo: 'hello',
+          bar: 42,
+          baz: true,
+        };
+      },
+    };
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .option('baz', { type: 'boolean' })
+        .config(configurationLoader)
+        .parse([])
+    ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
+    expect(configRead).toBe(1);
   });
 });
 

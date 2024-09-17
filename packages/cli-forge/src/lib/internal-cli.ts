@@ -1,11 +1,11 @@
 import {
   ArgvParser,
-  InternalOptionConfig,
   OptionConfig,
   ParsedArgs,
   ValidationFailedError,
   fromCamelOrDashedCaseToConstCase,
   hideBin,
+  type ConfigurationFiles,
 } from '@cli-forge/parser';
 import { getCallingFile, getParentPackageJson } from './utils';
 import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
@@ -420,6 +420,15 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     }
 
     this.registeredOptionGroups.push(config);
+    return this;
+  }
+
+  config(
+    provider: ConfigurationFiles.ConfigurationProvider<TArgs>
+  ): CLI<TArgs> {
+    this.parser.config(
+      provider as ConfigurationFiles.ConfigurationProvider<any>
+    );
     return this;
   }
 
