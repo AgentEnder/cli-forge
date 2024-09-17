@@ -8,6 +8,10 @@ import { NoValueError, Parser, ParserContext } from './parsers/typings';
 import { getConfiguredOptionKey } from './utils/get-configured-key';
 import { isFlag, isNextFlag, readArgKeys } from './utils/flags';
 import { readDefaultValue } from './utils/read-default-value';
+import {
+  ConfigurationProvider,
+  resolveConfiguration,
+} from './config-files/configuration-loader';
 
 /**
  * Base type for parsed arguments.
@@ -39,7 +43,7 @@ export type ParsedArgs<T = never> = [T] extends [never]
 /**
  * Extra options for the parser
  */
-export type ParserOptions = {
+export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
   /**
    * Can be used to implement custom parser types.
    */
@@ -52,14 +56,14 @@ export type ParserOptions = {
   unmatchedParser?: (
     arg: string,
     tokens: string[],
-    parser: ArgvParser
+    parser: ArgvParser<T>
   ) => boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
   configuredOptions: Readonly<{ [key in keyof TArgs]: InternalOptionConfig }>;
   configuredPositionals: readonly Readonly<InternalOptionConfig>[];
-  options: Readonly<Required<ParserOptions>>;
+  options: Readonly<Required<ParserOptions<TArgs>>>;
 }
 
 /**
@@ -96,12 +100,16 @@ export class ArgvParser<
   /**
    * The configuration for the parser itself
    */
-  options: Required<ParserOptions>;
+  options: Required<ParserOptions<TArgs>>;
 
   /**
    * The parsers used to parse individual option types.
    */
   parserMap: Record<string, Parser<any>>;
+
+  private configuredConfigurationProviders: Array<
+    ConfigurationProvider<TArgs>
+  > = [];
 
   /**
    * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
@@ -113,7 +121,7 @@ export class ArgvParser<
    * Creates a new parser. Normally using {@link parser} is preferred.
    * @param options
    */
-  constructor(options?: ParserOptions) {
+  constructor(options?: ParserOptions<TArgs>) {
     this.configuredOptions = {} as Record<keyof TArgs, InternalOptionConfig>;
     this.configuredPositionals = [];
     this.options = {
@@ -186,6 +194,15 @@ export class ArgvParser<
   env(envPrefix?: string) {
     this.envPrefix = envPrefix;
     this.shouldReadFromEnv = true;
+    return this;
+  }
+
+  /**
+   * Registers a configuration provider to read configuration from.
+   * @param provider The configuration provider to register.
+   */
+  config(provider: ConfigurationProvider<TArgs>) {
+    this.configuredConfigurationProviders.push(provider);
     return this;
   }
 
@@ -290,6 +307,12 @@ export class ArgvParser<
             normalized[configuration.key] = envValue;
           }
         }
+        if (normalized[configuration.key] === undefined) {
+          const configValue = this.readFromConfig(configuration);
+          if (configValue !== undefined) {
+            normalized[configuration.key] = configValue;
+          }
+        }
         if (configuration.default !== undefined) {
           normalized[configuration.key] ??= readDefaultValue(configuration)[0];
         }
@@ -391,6 +414,23 @@ export class ArgvParser<
     }
   }
 
+  private cachedConfigKey: number | undefined;
+  private cachedConfig: Partial<TArgs> | null | undefined;
+
+  private readFromConfig(configuration: InternalOptionConfig) {
+    if (
+      this.cachedConfig === undefined ||
+      this.cachedConfigKey !== this.configuredConfigurationProviders.length
+    ) {
+      this.cachedConfig = resolveConfiguration(
+        process.cwd(),
+        this.configuredConfigurationProviders
+      );
+      this.cachedConfigKey = this.configuredConfigurationProviders.length;
+    }
+    return this.cachedConfig?.[configuration.key as keyof TArgs];
+  }
+
   /**
    * Registers that a set of options cannot be provided at the same time.
    * @param options The options that cannot be provided together.
@@ -440,7 +480,7 @@ export class ArgvParser<
     return thisAsNewType;
   }
 
-  clone(parserOptions: ParserOptions = this.options) {
+  clone(parserOptions: ParserOptions<TArgs> = this.options) {
     const clone = new ArgvParser(parserOptions);
 
     clone.configuredOptions = { ...this.configuredOptions };

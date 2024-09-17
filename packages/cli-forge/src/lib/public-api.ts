@@ -1,4 +1,5 @@
 import {
+  type ConfigurationFiles,
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
@@ -51,6 +52,13 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
   commands(...commands: Command[]): CLI<TArgs>;
+
+  /**
+   * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
+   *
+   * @param provider Provider to register.
+   */
+  config(provider: ConfigurationFiles.ConfigurationProvider<TArgs>): CLI<TArgs>;
 
   /**
    * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
