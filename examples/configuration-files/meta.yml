@@ -1,0 +1,37 @@
+id: configuration-files
+title: Configuration Files
+description: |
+  This example demonstrates how to enable loading arguments from a configuration file. The `.config()` method configures the CLI to load arguments from a configuration file. The method takes a single argument, a `ConfigurationProvider`. [See the docs for `ConfigurationProvider` here](/api/parser/namespaces/ConfigurationFiles/type-aliases/ConfigurationProvider).
+
+  For convenience, `cli-forge` exports some built-in configuration providers. Currently, there are two built-in configuration providers: `JsonFile` and `PackageJson`.
+
+  Usage of each of these is demonstrated below. Note that when using multiple configuration files, the order in which they are loaded is important. The last configuration file loaded will override any previously loaded configuration files.
+
+  When both environment variables and configuration files are used, the order of precedence is as follows:
+  - CLI Arguments
+  - Environment Variables
+  - Configuration Files
+  - Default Values
+
+  This is based on the idea of highest specificity. CLI Arguments are always provided directly by the user. Environment variables can change system-to-system. Configuration files are specific to the project. Default values are equal for all instances of the CLI.
+entryPoint: configured-cli.ts
+fileMap:
+  './configured-cli.ts': 'configured-cli.ts'
+  './package.json': 'package.json'
+  './configured-cli.config.json': 'configured-cli.config.json'
+  './other.config.json': 'other.config.json'
+commands:
+  - command: '{filename}'
+    title: 'Pure Config'
+    description: 'Note that no arguments are provided to the CLI. In this case, all arguments are being loaded from the configuration files.'
+    assertions:
+      - contains: 'Hello!'
+      - contains: 'Goodbye'
+      - contains: 'bar'
+  - command: '{filename} --greeting "Welcome"'
+    title: 'CLI Arguments'
+    description: 'In this case, the CLI arguments are being used to override the configuration file.'
+    assertions:
+      - contains: 'Welcome'
+      - contains: 'Goodbye'
+      - contains: 'bar'
