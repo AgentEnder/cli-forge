@@ -1,10 +1,13 @@
 import { workspaceRoot } from '@nx/devkit';
 import { execSync } from 'node:child_process';
 
-import { readFileSync, readdirSync } from 'node:fs';
-import { basename, join, sep } from 'node:path';
+import { dirname, join, sep } from 'node:path';
 
-import { parse as loadYaml } from 'yaml';
+import {
+  CommandConfiguration,
+  FrontMatter,
+  collectExamples,
+} from '../tools/scripts/collect-examples';
 
 const examplesRoot = join(workspaceRoot, 'examples') + sep;
 const examples = collectExamples(join(examplesRoot, '../examples'));
@@ -16,24 +19,30 @@ for (const example of examples) {
   if (!commands || commands.length === 0) {
     // If no commands are provided, just run the example
     success &&= runExampleCommand(
-      `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${example.path}`,
-      example.data.id
+      {
+        command: `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${
+          example.data.entryPoint
+        }`,
+        env: {},
+      },
+      example.data.id,
+      dirname(example.data.entryPoint)
     );
   } else {
     // Otherwise, run each command
     for (const config of commands) {
-      const command = typeof config === 'string' ? config : config.command;
-      const env = typeof config === 'string' ? {} : config.env;
-      success &&= runExampleCommand(
-        {
-          command: `tsx --tsconfig ${join(
-            examplesRoot,
-            'tsconfig.json'
-          )} ${command.replace('{filename}', example.path)}`,
-          env,
-        },
-        `${example.data.id} > ${command}`
-      );
+      const commandConfiguration =
+        typeof config === 'string' ? { command: config, env: {} } : config;
+      const command = commandConfiguration.command;
+      (commandConfiguration.command = `tsx --tsconfig ${join(
+        examplesRoot,
+        'tsconfig.json'
+      )} ${command.replace('{filename}', example.data.entryPoint)}`),
+        (success &&= runExampleCommand(
+          commandConfiguration,
+          `${example.data.id} > ${command}`,
+          dirname(example.data.entryPoint)
+        ));
     }
   }
 }
@@ -69,24 +78,23 @@ if (!success) {
   process.exit(1);
 }
 
-type FrontMatter = {
-  id: string;
-  title: string;
-  description?: string;
-  commands: (string | { command: string; env: Record<string, string> })[];
-};
-
 function runExampleCommand(
-  config: FrontMatter['commands'][number],
-  label: string
+  config: CommandConfiguration,
+  label: string,
+  cwd: string
 ) {
   const command = typeof config === 'string' ? config : config.command;
   const env = typeof config === 'string' ? {} : config.env;
   try {
     process.stdout.write('▶️ ' + label);
     const a = performance.now();
-    execSync(command, { stdio: 'pipe', env: { ...process.env, ...env } });
+    const output = execSync(command, {
+      stdio: 'pipe',
+      env: { ...process.env, ...env },
+      cwd,
+    }).toString();
     const b = performance.now();
+    checkAssertions(output, config.assertions);
     // move cursor to the beginning of the line
     process.stdout.write('\r');
     console.log(
@@ -105,7 +113,11 @@ function runExampleCommand(
     }
 
     if (e.stderr) {
-      console.error(e.stderr.toString());
+      console.log(e.stderr.toString());
+    }
+
+    if (!e.stdout && !e.stderr) {
+      console.log(e.toString());
     }
 
     return false;
@@ -113,94 +125,19 @@ function runExampleCommand(
   return true;
 }
 
-function loadExampleFile(path: string): {
-  contents: string;
-  data: FrontMatter;
-} {
-  const contents = readFileSync(path, 'utf-8');
-  const lines = contents.split('\n');
-  const frontMatterLines: string[] = [];
+function checkAssertions(
+  output: string,
+  assertions: CommandConfiguration['assertions']
+) {
+  if (!assertions) return true;
 
-  let line = lines.shift();
-  if (line && line.startsWith('// ---')) {
-    while (true) {
-      line = lines.shift();
-      if (!line) {
-        throw new Error('Unexpected end of file');
-      }
-      if (line.startsWith('// ---')) {
-        break;
-      } else {
-        frontMatterLines.push(line.replace(/^\/\/\s?/, '').trimEnd());
-      }
-    }
-  } else if (line) {
-    lines.unshift(line);
-  }
-  try {
-    const yaml = frontMatterLines.join('\n');
-
-    return {
-      contents: lines.join('\n'),
-      data: yaml ? loadYaml(yaml) : {},
-    };
-  } catch (e) {
-    throw new Error(
-      `Invalid front matter in ${path}.` +
-        '\n' +
-        frontMatterLines.map((l) => `\t${l}`).join('\n'),
-      { cause: e }
-    );
-  }
-}
-
-function normalizeFrontMatter(
-  example: Omit<ReturnType<typeof collectExamples>[number], 'data'> & {
-    data: Partial<FrontMatter>;
-  }
-): ReturnType<typeof collectExamples>[number] {
-  const { data, path } = example;
-  const defaultName = basename(path).replace('.ts', '');
-
-  return {
-    ...example,
-    data: {
-      id: data?.id ?? defaultName.replace(/\//g, '-'),
-      title: data?.title ?? defaultName,
-      commands: [],
-      ...data,
-    },
-  };
-}
-
-// returns all .ts files from given path
-function collectExamples(root: string): {
-  path: string;
-  contents: string;
-  data: FrontMatter;
-}[] {
-  const files = readdirSync(root, { withFileTypes: true });
-  const collected: {
-    path: string;
-    contents: string;
-    data: FrontMatter;
-  }[] = [];
-  for (const file of files) {
-    if (file.isDirectory()) {
-      collected.push(...collectExamples(join(root, file.name)));
-    } else {
-      if (file.name.endsWith('.ts')) {
-        const path = join(root, file.name);
-        const loaded = loadExampleFile(path);
-        collected.push(
-          normalizeFrontMatter({
-            path,
-            data: loaded.data,
-            contents: loaded.contents,
-          })
-        );
-      }
+  for (const assertion of assertions) {
+    if (assertion.contains && !output.includes(assertion.contains)) {
+      throw new Error(
+        `Output does not contain "${assertion.contains}". Received:\n${output}`
+      );
     }
   }
-  return collected;
+
+  return true;
 }

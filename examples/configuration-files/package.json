@@ -1,0 +1,6 @@
+{
+  "name": "some-package",
+  "configured-cli": {
+    "name": "bar"
+  }
+}
