@@ -1,3 +1,16 @@
+## 0.9.0 (2024-09-17)
+
+
+### 🚀 Features
+
+- **cli-forge:** add arguments-of helper and command alias support ([b56bedb](https://github.com/agentender/cli-forge/commit/b56bedb))
+- **cli-forge,parser:** add support for loading args from configuration files ([4439ece](https://github.com/agentender/cli-forge/commit/4439ece))
+- **docs-site:** support for multifile examples ([161cf08](https://github.com/agentender/cli-forge/commit/161cf08))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.8.1 (2024-09-16)
 
 
