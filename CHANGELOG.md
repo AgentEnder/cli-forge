@@ -1,3 +1,18 @@
+## 0.10.0 (2024-09-18)
+
+
+### 🚀 Features
+
+- **parser:** add env config options `reflect` and `populate` ([#24](https://github.com/agentender/cli-forge/pull/24))
+
+### 🩹 Fixes
+
+- **parser:** optional arguments are possibly undefined ([#25](https://github.com/agentender/cli-forge/pull/25))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.9.0 (2024-09-17)
 
 
