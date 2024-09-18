@@ -72,12 +72,26 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
         /**
          * What key should the value be read from in process.env
          */
-        key: string;
+        key?: string;
 
         /**
          * If set to false, ignore prefix provided by .env() call.
          */
         prefix?: boolean;
+
+        /**
+         * If set to false, the option will not be set in process.env, even if the global env option is set to reflect.
+         * If set to true, the option will be set in process.env, even if the global env option is set to ignore.
+         */
+        reflect?: boolean;
+
+        /**
+         * If set to false the option will not be read from process.env. This is useful if you
+         * want to set the value in process.env, but not read it from there.
+         *
+         * @default true
+         */
+        populate?: boolean;
       };
 
   /**

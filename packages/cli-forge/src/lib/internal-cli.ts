@@ -1,5 +1,6 @@
 import {
   ArgvParser,
+  EnvOptionConfig,
   OptionConfig,
   ParsedArgs,
   ValidationFailedError,
@@ -236,8 +237,17 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     return this;
   }
 
-  env(prefix = fromCamelOrDashedCaseToConstCase(this.name)) {
-    this.parser.env(prefix);
+  env(
+    a0: string | EnvOptionConfig | undefined = fromCamelOrDashedCaseToConstCase(
+      this.name
+    )
+  ) {
+    if (typeof a0 === 'string') {
+      this.parser.env(a0);
+    } else {
+      a0.prefix ??= fromCamelOrDashedCaseToConstCase(this.name);
+      this.parser.env(a0);
+    }
     return this;
   }
 

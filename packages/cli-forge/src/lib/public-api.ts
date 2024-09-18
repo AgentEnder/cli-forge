@@ -3,6 +3,7 @@ import {
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
+  EnvOptionConfig,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -115,6 +116,8 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param prefix The prefix to use when looking up environment variables. Defaults to the command name.
    */
   env(prefix?: string): CLI<TArgs>;
+
+  env(options: EnvOptionConfig): CLI<TArgs>;
 
   /**
    * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.

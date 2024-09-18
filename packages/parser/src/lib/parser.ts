@@ -14,6 +14,15 @@ import {
 } from './config-files/configuration-loader';
 
 /**
+ * Defines the option configuration passed to {@link ArgvParser.env}.
+ */
+export type EnvOptionConfig = {
+  prefix?: string;
+  reflect?: boolean;
+  populate?: boolean;
+};
+
+/**
  * Base type for parsed arguments.
  */
 export type ParsedArgs<T = never> = [T] extends [never]
@@ -116,6 +125,7 @@ export class ArgvParser<
    */
   private envPrefix?: string;
   private shouldReadFromEnv?: boolean;
+  private shouldReflectEnv?: boolean;
 
   /**
    * Creates a new parser. Normally using {@link parser} is preferred.
@@ -191,9 +201,20 @@ export class ArgvParser<
    * Enables environment variable population for options.
    * @param envPrefix Prefix for environment variables. The full environment variable name will be `${envPrefix}_${optionName}`.
    */
-  env(envPrefix?: string) {
-    this.envPrefix = envPrefix;
+  env(envPrefix?: string): typeof this;
+
+  env(options: EnvOptionConfig): typeof this;
+
+  env(a1: EnvOptionConfig | string | undefined) {
+    if (typeof a1 === 'object') {
+      this.envPrefix = a1.prefix;
+      this.shouldReadFromEnv = a1.populate ?? true;
+      this.shouldReflectEnv = a1.reflect ?? true;
+      return this;
+    }
+    this.envPrefix = a1;
     this.shouldReadFromEnv = true;
+    this.shouldReflectEnv = true;
     return this;
   }
 
@@ -299,8 +320,19 @@ export class ArgvParser<
       const configuration = this.configuredOptions[key];
       if (normalized[key] === undefined) {
         if (
-          (configuration.env !== false && this.shouldReadFromEnv) ||
-          configuration.env
+          // If env not disabled for this option, and env is enabled for parser
+          (configuration.env !== false &&
+            !(
+              typeof configuration.env === 'object' &&
+              configuration.env.populate === false
+            ) &&
+            this.shouldReadFromEnv) ||
+          // OR the env is explicitly enabled for this option, and populate is not disabled
+          (configuration.env &&
+            !(
+              typeof configuration.env === 'object' &&
+              configuration.env.populate === false
+            ))
         ) {
           const envValue = this.readFromEnv(configuration);
           if (envValue) {
@@ -317,6 +349,7 @@ export class ArgvParser<
           normalized[configuration.key] ??= readDefaultValue(configuration)[0];
         }
       }
+      this.reflectEnv(configuration, normalized[configuration.key]);
     }
     return normalized;
   }
@@ -394,6 +427,39 @@ export class ArgvParser<
   }
 
   private readFromEnv(configuration: InternalOptionConfig) {
+    const envKey = this.getEnvKey(configuration);
+    const envValue = process.env[envKey];
+    if (envValue) {
+      return tryParseValue(this.parserMap[configuration.type], {
+        config: configuration,
+        tokens: [envValue],
+      });
+    }
+  }
+
+  private reflectEnv(configuration: InternalOptionConfig, value: any) {
+    // Skip reflection if:
+    if (
+      // - Global reflect is disabled, and local reflect is not enabled
+      (this.shouldReflectEnv !== true && configuration.env !== true) ||
+      // - Local reflect is explicitly disabled
+      configuration.env === false ||
+      (typeof configuration.env === 'object' &&
+        configuration.env.reflect === false)
+    ) {
+      return;
+    }
+
+    const envKey = this.getEnvKey(configuration);
+    if (value !== undefined) {
+      process.env[envKey] = value;
+    }
+  }
+
+  private cachedConfigKey: number | undefined;
+  private cachedConfig: Partial<TArgs> | null | undefined;
+
+  private getEnvKey(configuration: InternalOptionConfig) {
     const { envKey: configuredKey, prefix } =
       typeof configuration.env === 'string'
         ? { envKey: configuration.env, prefix: this.envPrefix }
@@ -405,17 +471,8 @@ export class ArgvParser<
               configuration.env?.prefix === false ? undefined : this.envPrefix,
           };
     const envKey = getEnvKey(prefix, configuredKey);
-    const envValue = process.env[envKey];
-    if (envValue) {
-      return tryParseValue(this.parserMap[configuration.type], {
-        config: configuration,
-        tokens: [envValue],
-      });
-    }
+    return envKey;
   }
-
-  private cachedConfigKey: number | undefined;
-  private cachedConfig: Partial<TArgs> | null | undefined;
 
   private readFromConfig(configuration: InternalOptionConfig) {
     if (
