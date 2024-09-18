@@ -6,7 +6,7 @@ import { ObjectOptionConfig } from './object';
  * Converts an OptionConfig to the TypeScript type for the parsed value.
  */
 export type OptionConfigToType<TOptionConfig extends OptionConfig> =
-  UndefinedIfRequired<
+  UndefinedIfRequiredAndNoDefault<
     TOptionConfig,
     InferTChoice<TOptionConfig> extends [never]
       ? TOptionConfig['coerce'] extends (s: any) => any
@@ -24,12 +24,17 @@ export type OptionConfigToType<TOptionConfig extends OptionConfig> =
       : InferTChoice<TOptionConfig>
   >;
 
-export type UndefinedIfRequired<
+export type UndefinedIfRequiredAndNoDefault<
   TOptionConfig extends OptionConfig,
   ResolvedValue
+  // Option is required
 > = TOptionConfig extends { required: true }
   ? ResolvedValue
-  : ResolvedValue | undefined;
+  : // Option is not required but has a default value
+  TOptionConfig extends { default: unknown }
+  ? ResolvedValue
+  : // Option is not required and has no default value
+    ResolvedValue | undefined;
 
 // Resolve the type of the items in an array option
 // Items is either:

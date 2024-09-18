@@ -24,18 +24,27 @@ const cli = cliForge('basic-cli')
       }),
     // Handler is used to define the command's behavior
     handler: (args) => {
+      // Note: name is always defined because it has a default value.
       console.log(`Hello, ${args.name}!`);
     },
   })
   .command('goodbye', {
     builder: (args) =>
-      args.option('name', {
-        type: 'string',
-        description: 'The name to say goodbye to',
-        default: 'World',
-      }),
+      args
+        .option('name', {
+          type: 'string',
+          description: 'The name to say goodbye to',
+          default: 'World',
+        })
+        .option('excited', {
+          type: 'boolean',
+          description: 'Whether to say goodbye excitedly',
+        }),
     handler: (args) => {
-      console.log(`Goodbye, ${args.name}!`);
+      // Note the typing of `args` here. It's inferred from the builder.
+      // The `name` option is always defined because it has a default value.
+      // The `excited` option is optional because it doesn't have a default value.
+      console.log(`Goodbye, ${args.name}${args.excited ? '!' : '.'}`);
     },
   });
 

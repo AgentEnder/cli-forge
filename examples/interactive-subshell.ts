@@ -9,7 +9,7 @@ import cliForge from 'cli-forge';
 
 const state = {
   defaultHost: 'example.com',
-  auth: {},
+  auth: {} as Record<string, { user: string; pass?: string }>,
 };
 
 const cli = cliForge('interactive-subshell')

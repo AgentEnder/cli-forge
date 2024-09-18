@@ -121,6 +121,7 @@ cpSync('package.json', 'dist/package.json');
             compilerOptions: {
               rootDir: '.',
               outDir: 'dist',
+              strict: true,
             },
             include: ['src/**/*.ts', 'bin/**/*.ts'],
             exclude: ['**/*.{spec,test}.ts'],

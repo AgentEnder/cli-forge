@@ -213,7 +213,7 @@ describe('parser', () => {
       .option('bar', { type: 'number', required: true })
       .option('baz', { type: 'boolean' })
       .option('bam', { type: 'array', items: 'string' })
-      .option('qux', { type: 'array', items: 'number' })
+      .option('qux', { type: 'array', items: 'number', default: [1] })
       .option('env', {
         type: 'object',
         properties: {
@@ -252,7 +252,8 @@ describe('parser', () => {
     parsed.bam.join('');
     // Bam doesn't error if we use ?.
     parsed.bam?.join('');
-    parsed.qux?.reduce((acc, val) => acc + val, 0);
+    // Qux is not required, but it has a default value, so it can't be undefined
+    parsed.qux.reduce((acc, val) => acc + val, 0);
     parsed.env?.foo?.charAt(0);
     parsed.env?.bar?.valueOf();
     parsed.env?.['blam'].charAt(0);

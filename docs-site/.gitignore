@@ -23,7 +23,7 @@ yarn-error.log*
 # Generated at build time
 docs/api/cli-forge
 docs/api/parser
-docs/examples
+docs/examples/**/*.md
 docs/cli/**/*.md
 docs/changelog.md
 docs/index.md
