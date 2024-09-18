@@ -6,20 +6,30 @@ import { ObjectOptionConfig } from './object';
  * Converts an OptionConfig to the TypeScript type for the parsed value.
  */
 export type OptionConfigToType<TOptionConfig extends OptionConfig> =
-  InferTChoice<TOptionConfig> extends [never]
-    ? TOptionConfig['coerce'] extends (s: any) => any
-      ? ReturnType<TOptionConfig['coerce']>
-      : {
-          string: string;
-          number: number;
-          boolean: boolean;
-          array: ArrayItems<TOptionConfig>[];
-          object: TOptionConfig extends ObjectOptionConfig
-            ? ResolveTProperties<TOptionConfig['properties']> &
-                AdditionalProperties<TOptionConfig>
-            : never;
-        }[TOptionConfig['type']]
-    : InferTChoice<TOptionConfig>;
+  UndefinedIfRequired<
+    TOptionConfig,
+    InferTChoice<TOptionConfig> extends [never]
+      ? TOptionConfig['coerce'] extends (s: any) => any
+        ? ReturnType<TOptionConfig['coerce']>
+        : {
+            string: string;
+            number: number;
+            boolean: boolean;
+            array: ArrayItems<TOptionConfig>[];
+            object: TOptionConfig extends ObjectOptionConfig
+              ? ResolveTProperties<TOptionConfig['properties']> &
+                  AdditionalProperties<TOptionConfig>
+              : never;
+          }[TOptionConfig['type']]
+      : InferTChoice<TOptionConfig>
+  >;
+
+export type UndefinedIfRequired<
+  TOptionConfig extends OptionConfig,
+  ResolvedValue
+> = TOptionConfig extends { required: true }
+  ? ResolvedValue
+  : ResolvedValue | undefined;
 
 // Resolve the type of the items in an array option
 // Items is either:

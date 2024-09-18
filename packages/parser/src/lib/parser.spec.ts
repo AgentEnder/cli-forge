@@ -205,8 +205,12 @@ describe('parser', () => {
 
   it('should have correct typings', () => {
     const parsed = parser()
-      .option('foo', { type: 'string', default: 'hello', choices: ['hello'] })
-      .option('bar', { type: 'number' })
+      .option('foo', {
+        type: 'string',
+        default: 'hello',
+        choices: ['hello'],
+      })
+      .option('bar', { type: 'number', required: true })
       .option('baz', { type: 'boolean' })
       .option('bam', { type: 'array', items: 'string' })
       .option('qux', { type: 'array', items: 'number' })
@@ -240,14 +244,18 @@ describe('parser', () => {
       ]);
 
     // The following lines should not throw type errors.
-    parsed.foo.charAt(0);
+    parsed.foo?.charAt(0);
+    // Bar is required, so it can't be undefined
     parsed.bar.toFixed();
-    parsed.baz.valueOf();
+    parsed.baz?.valueOf();
+    // @ts-expect-error Bam is not required, so it can be undefined.
     parsed.bam.join('');
-    parsed.qux.reduce((acc, val) => acc + val, 0);
-    parsed.env.foo.charAt(0);
-    parsed.env.bar.valueOf();
-    parsed.env['blam'].charAt(0);
+    // Bam doesn't error if we use ?.
+    parsed.bam?.join('');
+    parsed.qux?.reduce((acc, val) => acc + val, 0);
+    parsed.env?.foo?.charAt(0);
+    parsed.env?.bar?.valueOf();
+    parsed.env?.['blam'].charAt(0);
   });
 
   it('should allow customizing unmatched parser', () => {
@@ -272,9 +280,9 @@ describe('parser', () => {
 
     // The following line should not throw a type error.
     // Foo was coerced to a number
-    parsed.foo.toFixed();
+    parsed.foo?.toFixed();
     // Bar was coerced to a string
-    parsed.bar.substring(4);
+    parsed.bar?.substring(4);
 
     expect(typeof parsed.foo).toBe('number');
     expect(typeof parsed.bar).toBe('string');
@@ -546,10 +554,10 @@ describe('parser', () => {
       }
     `);
     // Types should be inferred correctly
-    parsed.foo.bar.baz.toFixed();
-    parsed.foo['blam'].charAt(0);
+    parsed.foo?.bar?.baz?.toFixed();
+    parsed.foo?.['blam'].charAt(0);
     // It's an array of numbers
-    parsed.foo.arr.reduce((acc, val) => acc + val, 0);
+    parsed.foo?.arr?.reduce((acc, val) => acc + val, 0);
   });
 
   it('should read values from config files', () => {
