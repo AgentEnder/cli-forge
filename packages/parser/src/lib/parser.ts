@@ -433,6 +433,7 @@ export class ArgvParser<
       return tryParseValue(this.parserMap[configuration.type], {
         config: configuration,
         tokens: [envValue],
+        providedFlag: `--${configuration.key}`,
       });
     }
   }

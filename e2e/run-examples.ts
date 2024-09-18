@@ -18,31 +18,33 @@ for (const example of examples) {
   const { commands } = example.data;
   if (!commands || commands.length === 0) {
     // If no commands are provided, just run the example
-    success &&= runExampleCommand(
-      {
-        command: `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${
-          example.data.entryPoint
-        }`,
-        env: {},
-      },
-      example.data.id,
-      dirname(example.data.entryPoint)
-    );
+    success =
+      runExampleCommand(
+        {
+          command: `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${
+            example.data.entryPoint
+          }`,
+          env: {},
+        },
+        example.data.id,
+        dirname(example.data.entryPoint)
+      ) && success;
   } else {
     // Otherwise, run each command
     for (const config of commands) {
       const commandConfiguration =
         typeof config === 'string' ? { command: config, env: {} } : config;
       const command = commandConfiguration.command;
-      (commandConfiguration.command = `tsx --tsconfig ${join(
+      commandConfiguration.command = `tsx --tsconfig ${join(
         examplesRoot,
         'tsconfig.json'
-      )} ${command.replace('{filename}', example.data.entryPoint)}`),
-        (success &&= runExampleCommand(
+      )} ${command.replace('{filename}', example.data.entryPoint)}`;
+      success =
+        runExampleCommand(
           commandConfiguration,
           `${example.data.id} > ${command}`,
           dirname(example.data.entryPoint)
-        ));
+        ) && success;
     }
   }
 }

@@ -31,12 +31,12 @@ describe('cliForge', () => {
 
   it('typings should work', async () => {
     await cli('test cli')
-      .option('foo', { type: 'string' })
+      .option('foo', { type: 'string', required: true })
       .command('bar', {
         builder: (argv) => argv.option('baz', { type: 'number' }),
         handler: (args) => {
           // baz should be a number
-          args.baz.toFixed();
+          args.baz?.toFixed();
 
           // foo should be a string
           args.foo.concat('bar');

@@ -5,7 +5,7 @@ import { dirname, isAbsolute, join, relative } from 'node:path';
 import { join as joinPathFragments, normalize } from 'node:path/posix';
 import { pathToFileURL } from 'node:url';
 
-import cli, { CLI } from '../../src';
+import cli, { ArgumentsOf, CLI } from '../../src';
 import {
   Documentation,
   generateDocumentation,
@@ -15,12 +15,7 @@ import { InternalCLI } from '../../src/lib/internal-cli';
 
 type mdfactory = typeof import('markdown-factory');
 
-type GenerateDocsArgs = ParsedArgs<{
-  cli: string;
-  output: string;
-  format: string;
-  export: string;
-}>;
+type GenerateDocsArgs = ArgumentsOf<typeof withGenerateDocumentationArgs>;
 
 export function withGenerateDocumentationArgs<T extends ParsedArgs>(
   cmd: CLI<T>
@@ -294,9 +289,7 @@ function readCLIFromModule(
 }
 
 async function loadCLIModule(
-  args: { unmatched: string[]; '--'?: string[] } & { cli: string } & {
-    output: string;
-  } & { format: string } & { export: string } & { tsconfig: string }
+  args: ArgumentsOf<typeof withGenerateDocumentationArgs>
 ) {
   if (isAbsolute(args.cli)) {
     args.cli = relative(process.cwd(), args.cli);
