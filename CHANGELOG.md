@@ -1,3 +1,15 @@
+## 0.10.1 (2024-09-20)
+
+
+### 🩹 Fixes
+
+- **cli-forge:** fix bin entries for init to exclude .ts extension ([d35e315](https://github.com/agentender/cli-forge/commit/d35e315))
+- **cli-forge:** interactive subshell help should work ([61f8f18](https://github.com/agentender/cli-forge/commit/61f8f18))
+
+### ❤️  Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 0.10.0 (2024-09-18)
 
 
