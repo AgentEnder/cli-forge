@@ -10,7 +10,7 @@ As CLI Forge is focused on first class TypeScript support, this guide will assum
 If adding a cli to an existing project, you may wish to install CLI Forge with npm or yarn:
 
 ```bash npm2yarn
-npm install @cli/forge
+npm install cli-forge
 ```
 
 ## Automatic Installation (cli-forge init)
@@ -375,18 +375,20 @@ describe('hello', () => {
   it('should greet people', async () => {
     const { args, commandChain } = await harness.parse(['hello', '--people', 'john', 'jane', '--newline']);
     assert.deepStrictEqual(args.people, ['john', 'jane']);
-    assert.deepStrictEqual(args.newline, ['hello']);
+    assert.deepStrictEqual(args.newline, true);
     assert.deepStrictEqual(commandChain, ['hello']);
-  });
-
-  it('should greet people on separate lines', async () => {
-    const result = await harness.run('hello john jane --newline');
-    assert.strictEqual(result.stdout, 'hello john\nhello jane\n');
-  });
-
-  it('should repeat the greeting', async () => {
-    const result = await harness.run('hello john --repeat 3');
-    assert.strictEqual(result.stdout, 'hello john, john, john\n');
   });
 });
 ```
+
+In this example, we are using the `TestHarness` class to test the `hello` command. We are testing that the `people` argument is parsed correctly, that the `newline` option is set to `true`, and that the command chain is correct.
+
+> The `commandChain` is a representation of the command tree that was executed. E.g. `['auth', 'login']` would be the command chain for the `auth login` command.
+
+### Automated Testing (End-to-End Tests)
+
+End-to-end tests are a great way to test your CLI in a real-world scenario. They can be used to test how your CLI behaves when run from the command line, and can be used to test the output of your CLI.
+
+If your CLI is going to be published to npm and ran via `npx`, you can use a tool like `verdaccio` to create a local npm registry to test your CLI in a real-world scenario.
+
+The exact setup for e2e is out of scope for this guide, but you can look at the `e2e` directory in the CLI Forge repository for an example of how to set up e2e tests for your CLI.
