@@ -325,7 +325,6 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
-          cmd.command('help', { handler: () => this.printHelp() });
           if (!process.stdout.isTTY) {
             // If we're not in a TTY, we can't run an interactive shell...
             // Maybe we should warn here?

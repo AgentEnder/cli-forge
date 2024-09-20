@@ -25,7 +25,7 @@ function normalizeShellOptions(
         } else {
           chain.push(...cli.commandChain);
         }
-        return chain.join(' ') + '> ';
+        return chain.join(' ') + ' > ';
       })(),
     prependArgs: options?.prependArgs ?? [],
   };
@@ -77,6 +77,10 @@ export class InteractiveShell {
           ],
           { stdio: 'inherit' }
         );
+      } else if (nextArgs[0] === 'help') {
+        currentCommand.clone().printHelp();
+      } else if (nextArgs[0] === 'exit') {
+        this.close();
       } else if (line.trim()) {
         try {
           execSync(line, { stdio: 'inherit' });
