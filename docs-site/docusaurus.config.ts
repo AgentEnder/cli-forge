@@ -6,6 +6,7 @@ import { ExamplesDocsPlugin } from './src/plugins/examples-plugin';
 import { CopyReadmeAndChangelogPlugin } from './src/plugins/copy-readme-changelog';
 
 import RemarkGithubPlugin from 'remark-github';
+import RemarkNpm2Yarn from '@docusaurus/remark-plugin-npm2yarn';
 
 const config: Config = {
   title: 'CLI Forge',
@@ -71,6 +72,7 @@ const config: Config = {
           routeBasePath: '/',
           remarkPlugins: [
             [RemarkGithubPlugin, { repository: 'agentender/cli-forge' }],
+            RemarkNpm2Yarn,
           ],
         },
         blog: false,
