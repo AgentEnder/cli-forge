@@ -66,7 +66,8 @@ export const initCommand = cli('init', {
     args.output ??= join(process.cwd(), args.cliName);
     ensureDirSync(args.output);
     const packageJsonPath = join(args.output, 'package.json');
-    const cliPath = join(args.output, 'bin', `${args.cliName}.${args.format}`);
+    const cliPathWithoutExtension = join(args.output, 'bin', `${args.cliName}`);
+    const cliPath = [cliPathWithoutExtension, args.format].join('.');
 
     let packageJsonContent: PackageJson = readJsonOr(packageJsonPath, {
       name: args.cliName,
@@ -76,7 +77,7 @@ export const initCommand = cli('init', {
       name: args.cliName,
       version: args.initialVersion,
       bin: {
-        [args.cliName]: relative(args.output, cliPath),
+        [args.cliName]: relative(args.output, cliPathWithoutExtension),
       },
       dependencies: {
         'cli-forge': CLI_FORGE_VERSION,
@@ -131,7 +132,21 @@ cpSync('package.json', 'dist/package.json');
         )
       );
     }
-    writeFileSync(packageJsonPath, JSON.stringify(packageJsonContent, null, 2));
+    writeFileSync(
+      packageJsonPath,
+      JSON.stringify(
+        orderKeysInJson(packageJsonContent, [
+          'name',
+          'version',
+          'scripts',
+          'bin',
+          'dependencies',
+          'devDependencies',
+        ]),
+        null,
+        2
+      )
+    );
     ensureDirSync(dirname(cliPath));
     writeFileSync(
       cliPath,
@@ -272,4 +287,27 @@ function mergePackageJsonContents(
   }
 
   return merged;
+}
+
+function orderKeysInJson<T extends Record<string, unknown>>(
+  obj: T,
+  order: Array<keyof T & string>
+): T {
+  const values = new Map(Object.entries(obj));
+  const keys = new Set(Object.keys(obj));
+  const returnObj = {} as T;
+
+  for (const key of order) {
+    const value = values.get(key);
+    if (value !== undefined) {
+      returnObj[key] = value as T[typeof key];
+      keys.delete(key);
+    }
+  }
+
+  for (const key of keys) {
+    (returnObj as any)[key] = values.get(key) as T[typeof key];
+  }
+
+  return returnObj;
 }
