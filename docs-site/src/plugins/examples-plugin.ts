@@ -1,4 +1,4 @@
-import { LoadContext } from '@docusaurus/types';
+import { LoadContext, Plugin } from '@docusaurus/types';
 import { workspaceRoot } from '@nx/devkit';
 import {
   blockQuote,
@@ -10,6 +10,8 @@ import {
   link,
   ul,
 } from 'markdown-factory';
+
+import { compressToEncodedURIComponent } from 'lz-string';
 
 import { mkdirSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
@@ -26,9 +28,12 @@ function getRelativePath(filepath: string, root: string) {
   return filepath.replace(root, '').replace(/\\/g, '/').replace('^/', '');
 }
 
-export async function ExamplesDocsPlugin(context: LoadContext) {
+export const ExamplesDocsPlugin = async (
+  context: LoadContext
+): Promise<Plugin> => {
   const examplesRoot = join(workspaceRoot, 'examples') + sep;
   const examples = collectExamples(join(examplesRoot, '../examples'));
+
   for (const example of examples) {
     const relative = (
       example.files.length > 1
@@ -45,15 +50,45 @@ export async function ExamplesDocsPlugin(context: LoadContext) {
     ensureDirSync(dirname(destination));
     writeFileSync(destination, formatExampleMd(example));
   }
+
   ensureDirSync(join(__dirname, '../../docs/examples'));
   writeFileSync(
     join(__dirname, '../../docs/examples/index.md'),
     formatIndexMd(examples)
   );
+
   return {
     // a unique name for this plugin
     name: 'examples-docs-plugin',
+
+    async contentLoaded({ content, actions }) {
+      const { createData, addRoute } = actions;
+
+      const examplesJsonPath = await createData(
+        'examples.json',
+        JSON.stringify(examples, null, 2)
+      );
+
+      console.log('Adding playground route', `${context.baseUrl}playground`);
+
+      addRoute({
+        path: `${context.baseUrl}playground`,
+        component: '@site/pages/playground.tsx',
+        modules: {
+          examples: examplesJsonPath,
+        },
+        exact: true,
+      });
+    },
   };
+};
+
+function getEntryPoint(example: Example) {
+  console.log(
+    example.data.entryPoint,
+    example.files.map((f) => f.path)
+  );
+  return example.files.find((file) => file.path === example.data.entryPoint);
 }
 
 function formatExampleMd({ files, data }: Example): string {
@@ -79,6 +114,19 @@ ${contents}
     \`\`\``
   )
   .join('\n\n')}
+
+${link(
+  `https://www.typescriptlang.org/play?#code/${compressToEncodedURIComponent(
+    [
+      "// The following line doesn't do anything really, rather it tells",
+      '// the TypeScript playground that this script should be evaluated as a nodejs script.',
+      "import {} from 'node:fs'",
+      '',
+      getEntryPoint({ files, data }).contents,
+    ].join('\n')
+  )}`,
+  'View on TypeScript Playground'
+)}
 
 ${
   data.commands.length

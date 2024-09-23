@@ -75,6 +75,10 @@ const config: Config = {
             RemarkNpm2Yarn,
           ],
         },
+        // pages: {
+        //   routeBasePath: '/',
+        //   path: 'pages',
+        // },
         blog: false,
         theme: {
           customCss: './src/css/custom.css',
@@ -99,6 +103,10 @@ const config: Config = {
           position: 'left',
           label: 'Tutorial',
         },
+        // {
+        //   to: '/playground',
+        //   label: 'Playground',
+        // },
         {
           href: 'https://github.com/agentender/cli-forge',
           label: 'GitHub',
