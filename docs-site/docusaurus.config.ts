@@ -61,6 +61,7 @@ const config: Config = {
     ],
     CopyReadmeAndChangelogPlugin,
     ExamplesDocsPlugin,
+    'docusaurus-plugin-sass',
   ],
 
   presets: [
@@ -103,10 +104,10 @@ const config: Config = {
           position: 'left',
           label: 'Tutorial',
         },
-        // {
-        //   to: '/playground',
-        //   label: 'Playground',
-        // },
+        {
+          to: '/playground',
+          label: 'Playground',
+        },
         {
           href: 'https://github.com/agentender/cli-forge',
           label: 'GitHub',

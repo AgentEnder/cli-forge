@@ -1,5 +1,6 @@
 import { LoadContext, Plugin } from '@docusaurus/types';
 import { workspaceRoot } from '@nx/devkit';
+import { sync as glob } from 'fast-glob';
 import {
   blockQuote,
   codeBlock,
@@ -11,9 +12,11 @@ import {
   ul,
 } from 'markdown-factory';
 
+import MonacoEditorWebpackPlugin from 'monaco-editor-webpack-plugin';
+
 import { compressToEncodedURIComponent } from 'lz-string';
 
-import { mkdirSync, writeFileSync } from 'node:fs';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, sep } from 'node:path';
 
 import { stringify } from 'yaml';
@@ -61,6 +64,16 @@ export const ExamplesDocsPlugin = async (
     // a unique name for this plugin
     name: 'examples-docs-plugin',
 
+    configureWebpack() {
+      return {
+        plugins: [
+          new MonacoEditorWebpackPlugin({
+            languages: ['typescript'],
+          }),
+        ],
+      };
+    },
+
     async contentLoaded({ content, actions }) {
       const { createData, addRoute } = actions;
 
@@ -69,13 +82,19 @@ export const ExamplesDocsPlugin = async (
         JSON.stringify(examples, null, 2)
       );
 
+      const dtsPath = await createData(
+        'dts.json',
+        JSON.stringify(getDtsFiles())
+      );
+
       console.log('Adding playground route', `${context.baseUrl}playground`);
 
       addRoute({
         path: `${context.baseUrl}playground`,
-        component: '@site/pages/playground.tsx',
+        component: '@site/pages/playground/index.tsx',
         modules: {
           examples: examplesJsonPath,
+          dts: dtsPath,
         },
         exact: true,
       });
@@ -116,7 +135,7 @@ ${contents}
   .join('\n\n')}
 
 ${link(
-  `https://www.typescriptlang.org/play?#code/${compressToEncodedURIComponent(
+  `/playground#${compressToEncodedURIComponent(
     [
       "// The following line doesn't do anything really, rather it tells",
       '// the TypeScript playground that this script should be evaluated as a nodejs script.',
@@ -186,4 +205,46 @@ function ensureDirSync(path: string): void {
   } catch (error) {
     throw new Error(`Failed to create directory: ${path}`);
   }
+}
+function getDtsFiles(): any {
+  if (!existsSync(join(workspaceRoot, 'dist', 'packages', 'cli-forge'))) {
+    throw new Error(
+      'The cli-forge package must be built before running this command'
+    );
+  }
+  const cliForgeDtsFiles = glob('**/*.d.ts', {
+    cwd: join(workspaceRoot, 'dist', 'packages', 'cli-forge'),
+  }).concat('package.json');
+
+  const parserDtsFiles = glob('**/*.d.ts', {
+    cwd: join(workspaceRoot, 'dist', 'packages', 'parser'),
+  }).concat('package.json');
+
+  const nodeDtsFiles = glob('**/*.d.ts', {
+    cwd: join(workspaceRoot, 'node_modules', '@types', 'node'),
+  }).concat('package.json');
+
+  return Object.fromEntries([
+    ...cliForgeDtsFiles.map((f) => [
+      `file:///node_modules/cli-forge/${f}`,
+      readFileSync(
+        join(workspaceRoot, 'dist', 'packages', 'cli-forge', f),
+        'utf-8'
+      ),
+    ]),
+    ...parserDtsFiles.map((f) => [
+      `file:///node_modules/@cli-forge/parser/${f}`,
+      readFileSync(
+        join(workspaceRoot, 'dist', 'packages', 'parser', f),
+        'utf-8'
+      ),
+    ]),
+    ...nodeDtsFiles.map((f) => [
+      `file:///node_modules/@types/node/${f}`,
+      readFileSync(
+        join(workspaceRoot, 'node_modules', '@types', 'node', f),
+        'utf-8'
+      ),
+    ]),
+  ]);
 }

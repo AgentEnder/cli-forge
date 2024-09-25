@@ -5,7 +5,6 @@
   "scripts": {},
   "private": true,
   "devDependencies": {
-    "@docusaurus/remark-plugin-npm2yarn": "^3.5.2",
     "@nx/eslint": "19.6.2",
     "@nx/eslint-plugin": "19.6.2",
     "@nx/js": "19.6.2",
@@ -44,5 +43,7 @@
   "workspaces": [
     "docs-site"
   ],
-  "packageManager": "yarn@4.3.1+sha256.2535167e742927e1d2a1610d5004576e4e8f764d2ca5470d19536790f55cd6e2"
+  "dependencies": {
+    "react-hot-toast": "^2.4.1"
+  }
 }
