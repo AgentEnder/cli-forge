@@ -1,0 +1,1 @@
+"use strict";(self.webpackChunk_cli_forge_docs_site=self.webpackChunk_cli_forge_docs_site||[]).push([[9714],{39714:(e,c,s)=>{s.r(c),s.d(c,{DocSearchModal:()=>_.a1});var _=s(55044)}}]);
