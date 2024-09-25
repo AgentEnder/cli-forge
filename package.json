@@ -29,6 +29,7 @@
     "nx": "19.6.2",
     "nx-github-pages": "^1.0.0",
     "prettier": "^2.6.2",
+    "style-loader": "^4.0.0",
     "ts-jest": "^29.2.5",
     "tsx": "^4.19.0",
     "typescript": "~5.5.2",

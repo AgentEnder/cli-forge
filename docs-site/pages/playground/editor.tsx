@@ -8,7 +8,6 @@ import {
 
 import { createTypeScriptSandbox } from '@typescript/sandbox';
 
-import styles from './editor.module.scss';
 import toast from 'react-hot-toast';
 
 export interface EditorRef {
@@ -148,7 +147,7 @@ export const Editor = forwardRef<EditorRef, EditorProps>(
         {!sandbox ? <div id="loader">Loading...</div> : null}
         <div
           id="monaco-editor-embed"
-          className={styles.editor}
+          className="editor"
           style={{ height: '800px' }}
         />
         {/* TODO: Revisit this later. */}

@@ -4,7 +4,6 @@ import React, { useEffect, useRef } from 'react';
 import type { Example } from '../../../tools/scripts/collect-examples';
 import { Editor, EditorRef } from './editor';
 
-import styles from './index.module.scss';
 import { Toaster } from 'react-hot-toast';
 
 const Playground: React.FC = ({
@@ -30,7 +29,7 @@ const Playground: React.FC = ({
           gridTemplateColumns: 'min-content 1fr',
         }}
       >
-        <nav id="" className={styles.sidebar}>
+        <nav className="sidebar">
           <h2>Load Example</h2>
           <ul>
             {examples.map((example) => (

@@ -27,10 +27,6 @@ import {
   collectExamples,
 } from '../../../tools/scripts/collect-examples';
 
-function getRelativePath(filepath: string, root: string) {
-  return filepath.replace(root, '').replace(/\\/g, '/').replace('^/', '');
-}
-
 export const ExamplesDocsPlugin = async (
   context: LoadContext
 ): Promise<Plugin> => {
@@ -64,11 +60,26 @@ export const ExamplesDocsPlugin = async (
     // a unique name for this plugin
     name: 'examples-docs-plugin',
 
-    configureWebpack() {
+    configureWebpack(config) {
+      const cssRuleIdx = config.module.rules.findIndex(
+        (rule) => (rule as any).test.toString() === '/\\.css$/i'
+      );
+      const cssRule = config.module.rules[cssRuleIdx] as Record<string, any>;
+      cssRule.include = (p) =>
+        p.endsWith('.css') && !p.includes('monaco-editor');
+      config.module.rules.push({
+        test: /\.css$/,
+        include: /monaco-editor/,
+        use: ['style-loader', 'css-loader'],
+      });
       return {
         plugins: [
           new MonacoEditorWebpackPlugin({
             languages: ['typescript'],
+            monacoEditorPath: join(
+              __dirname,
+              '../../../node_modules/monaco-editor'
+            ),
           }),
         ],
       };
@@ -135,7 +146,7 @@ ${contents}
   .join('\n\n')}
 
 ${link(
-  `/playground#${compressToEncodedURIComponent(
+  `/playground/#${compressToEncodedURIComponent(
     [
       "// The following line doesn't do anything really, rather it tells",
       '// the TypeScript playground that this script should be evaluated as a nodejs script.',
