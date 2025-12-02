@@ -814,6 +814,33 @@ describe('parser', () => {
     ).toThrow('Expected config to be a JSON object');
   });
 
+  it('should support mixed JSON and dot notation (JSON first, dot notation overrides)', () => {
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          server: {
+            type: 'object',
+            properties: {
+              host: { type: 'string' },
+              port: { type: 'number' },
+            },
+          },
+        },
+      })
+      .parse([
+        '--config',
+        '{"server": {"host": "json.example.com", "port": 3000}}',
+        '--config.server.port',
+        '9000',
+      ]);
+    
+    expect(result).toEqual({
+      config: { server: { host: 'json.example.com', port: 9000 } },
+      unmatched: [],
+    });
+  });
+
   it('should read values from config files', () => {
     const configurationLoader = makeMockConfigLoader({
       [join(process.cwd(), '.myclirc')]: {

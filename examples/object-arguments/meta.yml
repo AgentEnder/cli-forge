@@ -1,7 +1,7 @@
-id: object-dot-notation
+id: object-arguments
 title: Object Arguments with Defaults and Validation
 description: |
-  This example demonstrates how to work with object-valued options using dot-notation. Object options support:
+  This example demonstrates how to work with object-valued options using dot-notation or JSON strings. Object options support:
   
   - **Nested properties**: Define complex configuration structures with type-safe nested objects
   - **Default values**: Provide defaults at any level (entire object or individual nested properties)
@@ -16,6 +16,13 @@ description: |
   - `--config.server.host localhost` sets `config.server.host` to `"localhost"`
   - `--config.server.port 8080` sets `config.server.port` to `8080`
   - Multiple properties can be set independently
+  
+  ## JSON String Input
+  
+  Alternatively, you can pass the entire object as a JSON string:
+  - `--config '{"server": {"host": "example.com", "port": 8080}}'`
+  - JSON input can be mixed with dot notation
+  - When mixed, the order matters (later values override earlier ones)
   
   ## Default Value Behavior
   
@@ -90,3 +97,11 @@ commands:
       - contains: 'api.example.com'
       - contains: '8443'
       - contains: 'https://api.example.com:8443'
+  
+  - command: '{filename} --config "{\"server\": {\"host\": \"mixed.example.com\"}}" --config.server.port 9000'
+    title: 'Mixed JSON and Dot Notation'
+    description: 'You can combine JSON string input with dot notation. The dot notation property will override or add to the JSON.'
+    assertions:
+      - contains: 'mixed.example.com'
+      - contains: '9000'
+      - contains: 'http://mixed.example.com:9000'
