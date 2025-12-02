@@ -561,6 +561,138 @@ describe('parser', () => {
     parsed.foo?.arr?.reduce((acc, val) => acc + val, 0);
   });
 
+  it('should support default values for object options', () => {
+    expect(
+      parser()
+        .option('env', {
+          type: 'object',
+          properties: {
+            foo: { type: 'string' },
+          },
+          default: { foo: 'default-foo' },
+        })
+        .parse([])
+    ).toEqual({
+      env: { foo: 'default-foo' },
+      unmatched: [],
+    });
+  });
+
+  it('should support required object options', () => {
+    expect(() =>
+      parser()
+        .option('env', {
+          type: 'object',
+          properties: {
+            foo: { type: 'string' },
+          },
+          required: true,
+        })
+        .parse([])
+    ).toThrowAggregateErrorContaining('Missing required option env');
+  });
+
+  it('should support required properties within object options', () => {
+    expect(() =>
+      parser()
+        .option('env', {
+          type: 'object',
+          properties: {
+            foo: { type: 'string', required: true },
+            bar: { type: 'string' },
+          },
+        })
+        .parse(['--env.bar', 'test'])
+    ).toThrowAggregateErrorContaining('Missing required option env.foo');
+  });
+
+  it('should support coerce for object options', () => {
+    const result = parser()
+      .option('env', {
+        type: 'object',
+        properties: {
+          foo: { type: 'string' },
+        },
+        coerce: (val) => ({ ...val, coerced: true }),
+      })
+      .parse(['--env.foo', 'test']);
+    expect(result.env).toEqual({ foo: 'test', coerced: true });
+  });
+
+  it('should support validate for object options', () => {
+    expect(() =>
+      parser()
+        .option('env', {
+          type: 'object',
+          properties: {
+            foo: { type: 'string' },
+          },
+          validate: (val) => val.foo === 'valid',
+        })
+        .parse(['--env.foo', 'invalid'])
+    ).toThrowAggregateErrorContaining('Invalid value');
+  });
+
+  it('should support default values for nested properties within object options', () => {
+    expect(
+      parser()
+        .option('env', {
+          type: 'object',
+          properties: {
+            foo: { type: 'string', default: 'default-foo' },
+            bar: { type: 'string', default: 'default-bar' },
+          },
+        })
+        .parse(['--env.foo', 'custom'])
+    ).toEqual({
+      env: { foo: 'custom', bar: 'default-bar' },
+      unmatched: [],
+    });
+  });
+
+  it('should support required properties in deeply nested objects', () => {
+    expect(() =>
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            server: {
+              type: 'object',
+              properties: {
+                host: { type: 'string', required: true },
+                port: { type: 'number' },
+              },
+            },
+          },
+        })
+        .parse(['--config.server.port', '8080'])
+    ).toThrowAggregateErrorContaining(
+      'Missing required option config.server.host'
+    );
+  });
+
+  it('should support default values in deeply nested objects', () => {
+    expect(
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            server: {
+              type: 'object',
+              properties: {
+                host: { type: 'string', default: 'localhost' },
+                port: { type: 'number', default: 3000 },
+              },
+            },
+          },
+        })
+        .parse(['--config.server.port', '8080'])
+    ).toEqual({
+      config: { server: { host: 'localhost', port: 8080 } },
+      unmatched: [],
+    });
+  });
+
   it('should read values from config files', () => {
     const configurationLoader = makeMockConfigLoader({
       [join(process.cwd(), '.myclirc')]: {

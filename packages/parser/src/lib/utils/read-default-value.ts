@@ -20,6 +20,8 @@ export function readDefaultValue<const T extends OptionConfig>(
           declaredDefault.factory as any as () => OptionConfigToType<T>;
         return [factory(), declaredDefault.description];
       }
+      // Plain object default (e.g., for object options with default: { foo: 'bar' })
+      return [declaredDefault as any as OptionConfigToType<T>, undefined];
     } else {
       return [declaredDefault, undefined];
     }
