@@ -83,9 +83,9 @@ commands:
     assertions:
       - contains: 'custom value'
   
-  - command: '{filename} --config ''{"server": {"host": "api.example.com", "port": 8443, "ssl": true}}'''
+  - command: '{filename} --config "{\"server\": {\"host\": \"api.example.com\", \"port\": 8443, \"ssl\": true}}"'
     title: 'JSON String Input'
-    description: 'Instead of dot notation, you can pass the entire config as a JSON string.'
+    description: 'Instead of dot notation, you can pass the entire config as a JSON string. Note: Escape quotes appropriately for your shell.'
     assertions:
       - contains: 'api.example.com'
       - contains: '8443'
