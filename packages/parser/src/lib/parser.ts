@@ -706,7 +706,7 @@ function normalizeAndValidateObjectProperties(
 
     // Apply defaults for undefined properties
     if (normalized[propKey] === undefined && propConfig.default !== undefined) {
-      normalized[propKey] = readDefaultValue(propConfig as OptionConfig)[0];
+      normalized[propKey] = readDefaultValue(propConfig)[0];
     }
 
     // Validate required properties
@@ -717,13 +717,10 @@ function normalizeAndValidateObjectProperties(
     }
 
     // Recursively handle nested objects
-    if (
-      propConfig.type === 'object' &&
-      (propConfig as ObjectOptionConfig).properties
-    ) {
+    if (propConfig.type === 'object' && 'properties' in propConfig) {
       normalized[propKey] = normalizeAndValidateObjectProperties(
         normalized[propKey],
-        propConfig as ObjectOptionConfig,
+        propConfig,
         propPath,
         errors
       );
