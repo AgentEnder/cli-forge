@@ -2,6 +2,11 @@ import { ParsedArgs } from '@cli-forge/parser';
 import { MiddlewareFunction } from '../lib/public-api';
 import type { z, ZodObject, ZodPipe } from 'zod';
 
+/*
+ * Middleware that uses a Zod schema to validate and transform command arguments.
+ * @param schema The Zod schema to use for validation and transformation.
+ * @returns A middleware function that applies the Zod schema to the command arguments.
+ */
 export function zodMiddleware<
   TArgs extends ParsedArgs,
   TSchema extends ZodObject | ZodPipe<ZodObject>

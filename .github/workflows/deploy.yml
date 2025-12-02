@@ -9,8 +9,8 @@ on:
         required: true
         default: 'false'
         options:
-          - true
-          - false
+          - 'true'
+          - 'false'
   workflow_call:
     inputs:
       docs_only:
@@ -54,8 +54,6 @@ jobs:
         run: |
           node ./node_modules/.bin/nx release ${{ github.run_attempt == '1' && '--yes' || '--yes --verbose' }}
         env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
-          NPM_TOKEN: ${{ secrets.NPM_ACCESS_TOKEN }}
           NPM_CONFIG_PROVENANCE: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.ref == 'refs/heads/main' && github.event.inputs.docs_only == 'false'
