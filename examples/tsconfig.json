@@ -2,5 +2,11 @@
   "extends": "../tsconfig.base.json",
   "compilerOptions": {
     "strict": true
-  }
+  },
+  "references": [
+    {
+      "path": "./tsconfig.lib.json"
+    }
+  ],
+  "files": []
 }

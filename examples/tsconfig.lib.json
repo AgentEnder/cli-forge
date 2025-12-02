@@ -3,7 +3,8 @@
   "compilerOptions": {
     "rootDir": ".",
     "outDir": "../dist/out-tsc/examples",
-    "emitDeclarationOnly": true
+    "emitDeclarationOnly": true,
+    "composite": true
   },
   "references": [
     {

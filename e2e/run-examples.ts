@@ -52,7 +52,7 @@ for (const example of examples) {
 try {
   process.stdout.write('▶️ Checking TypeScript types for all examples');
   const a = performance.now();
-  execSync(`tsc -p tsconfig.json --noEmit`, { cwd: examplesRoot });
+  execSync(`tsc -p tsconfig.lib.json --noEmit`, { cwd: examplesRoot });
   const b = performance.now();
   process.stdout.write('\r');
   console.log(

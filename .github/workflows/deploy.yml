@@ -51,7 +51,7 @@ jobs:
         uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
 
       - name: Install dependencies
-        run: pnpm install --fronzen-lockfile
+        run: pnpm install --frozen-lockfile
 
       - name: Build and release
         run: |
