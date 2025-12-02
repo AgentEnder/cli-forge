@@ -33,7 +33,7 @@
     "url": "https://github.com/AgentEnder/cli-forge"
   },
   "bin": {
-    "cli-forge": "./dist/bin/cli.js"
+    "cli-forge": "./cli.js"
   },
   "exports": {
     ".": {
