@@ -13,12 +13,7 @@
   },
   "nxCloudAccessToken": "MDEwZTk4MGMtMGRiZC00YzhiLWEzYzktNjVkOTYxNDRhOTNjfHJlYWQtd3JpdGU=",
   "targetDefaults": {
-    "@nx/js:tsc": {
-      "cache": true,
-      "dependsOn": ["^build"],
-      "inputs": ["production", "^production"]
-    },
-    "@nx/vite:test": {
+    "test": {
       "cache": true,
       "inputs": ["default", "^production"]
     }
@@ -27,11 +22,7 @@
     "projects": ["packages/*"],
     "version": {
       "preVersionCommand": "npx nx run-many -t build --exclude docs-site",
-      "conventionalCommits": true,
-      "preserveLocalDependencyProtocols": false,
-      "versionActionsOptions": {
-        "skipLockFileUpdate": true
-      }
+      "conventionalCommits": true
     },
     "changelog": {
       "workspaceChangelog": {
@@ -60,6 +51,9 @@
           "configName": "tsconfig.lib.json"
         }
       }
+    },
+    {
+      "plugin": "@nx/vitest"
     }
   ]
 }

@@ -9,6 +9,7 @@
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
     "@nx/vite": "catalog:",
+    "@nx/vitest": "22.2.0-beta.2",
     "@nx/web": "catalog:",
     "@nx/workspace": "catalog:",
     "@swc-node/register": "catalog:",
