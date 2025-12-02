@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "emitDeclarationOnly": true,
+    "outDir": "./dist/out-tsc",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "composite": true
+  },
+  "include": ["./**/*.ts"],
+  "exclude": ["dist"]
+}

@@ -7,7 +7,7 @@ import {
   CommandConfiguration,
   FrontMatter,
   collectExamples,
-} from '../tools/scripts/collect-examples';
+} from 'cli-forge-scripts/collect-examples';
 
 const examplesRoot = join(workspaceRoot, 'examples') + sep;
 const examples = collectExamples(join(examplesRoot, '../examples'));

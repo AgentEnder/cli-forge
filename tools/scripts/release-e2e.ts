@@ -12,10 +12,6 @@ export async function releaseE2EVersion(version: string): Promise<void> {
     gitCommit: false,
     gitTag: false,
     firstRelease: true,
-    generatorOptionsOverrides: {
-      skipLockFileUpdate: true,
-      currentVersionResolver: 'registry',
-    },
     verbose: true,
   });
   await releasePublish({

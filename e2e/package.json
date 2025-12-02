@@ -1,0 +1,8 @@
+{
+  "name": "cli-forge-e2e",
+  "private": true,
+  "dependencies": {
+    "cli-forge-scripts": "workspace:*",
+    "@nx/devkit": "catalog:"
+  }
+}

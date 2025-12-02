@@ -1,0 +1,10 @@
+{
+  "name": "cli-forge-scripts",
+  "exports": {
+    "./*": {
+      "import": "./*.ts",
+      "types": "./*.ts",
+      "require": "./*.ts"
+    }
+  }
+}

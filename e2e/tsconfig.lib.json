@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "../dist/out-tsc",
+    "rootDir": ".",
+    "baseUrl": ".",
+    "types": ["jest", "node"],
+    "lib": ["es2022"],
+    "composite": true
+  },
+  "include": ["./**/*.ts"],
+  "references": [
+    {
+      "path": "../tools/scripts/tsconfig.lib.json"
+    }
+  ]
+}

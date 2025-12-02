@@ -1,0 +1,9 @@
+{
+  "name": "cli-forge-examples",
+  "private": true,
+  "dependencies": {
+    "@cli-forge/parser": "workspace:*",
+    "cli-forge": "workspace:*",
+    "tslib": "catalog:"
+  }
+}
