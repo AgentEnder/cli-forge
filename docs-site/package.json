@@ -22,23 +22,24 @@
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "catalog:",
+    "@docusaurus/remark-plugin-npm2yarn": "catalog:",
+    "@docusaurus/theme-common": "catalog:",
     "@docusaurus/tsconfig": "catalog:",
     "@docusaurus/types": "catalog:",
-    "@docusaurus/theme-common": "catalog:",
-    "docusaurus-plugin-typedoc": "catalog:",
-    "@docusaurus/remark-plugin-npm2yarn": "catalog:",
+    "@nx/devkit": "catalog:",
     "@typescript/sandbox": "catalog:",
+    "cli-forge": "workspace:*",
+    "css-loader": "^7.1.2",
     "docusaurus-plugin-sass": "catalog:",
+    "docusaurus-plugin-typedoc": "catalog:",
     "fast-glob": "catalog:",
     "monaco-editor": "catalog:",
     "monaco-editor-webpack-plugin": "catalog:",
-    "sass": "catalog:",
     "remark-github": "catalog:",
-    "typedoc": "catalog:",
-    "typedoc-plugin-markdown": "catalog:",
+    "sass": "catalog:",
     "style-loader": "catalog:",
-    "@nx/devkit": "catalog:",
-    "cli-forge": "workspace:*"
+    "typedoc": "catalog:",
+    "typedoc-plugin-markdown": "catalog:"
   },
   "browserslist": {
     "production": [

@@ -1,8 +1,9 @@
 import Layout from '@theme/Layout';
-import React, { useEffect, useRef } from 'react';
+import React, { useRef } from 'react';
+import BrowserOnly from '@docusaurus/BrowserOnly';
 
 import type { Example } from '../../../tools/scripts/collect-examples';
-import { Editor, EditorRef } from './editor';
+import type { EditorRef } from './editor';
 
 import { Toaster } from 'react-hot-toast';
 
@@ -14,12 +15,6 @@ const Playground: React.FC = ({
   dts: Record<string, string>;
 }) => {
   const editor = useRef<EditorRef>(null);
-
-  useEffect(() => () => {
-    if (editor.current) {
-      editor.current.cleanup();
-    }
-  });
 
   return (
     <Layout title="TS Playground">
@@ -48,11 +43,19 @@ const Playground: React.FC = ({
             ))}
           </ul>
         </nav>
-        <Editor
-          ref={editor}
-          initialText={getEntryPointContents(examples[0])}
-          dts={dts}
-        />
+        <BrowserOnly fallback={<div>Loading editor...</div>}>
+          {() => {
+            // Dynamically import the Editor component only in browser
+            const { Editor } = require('./editor');
+            return (
+              <Editor
+                ref={editor}
+                initialText={getEntryPointContents(examples[0])}
+                dts={dts}
+              />
+            );
+          }}
+        </BrowserOnly>
       </div>
       <Toaster />
     </Layout>

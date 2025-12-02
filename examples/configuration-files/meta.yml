@@ -1,7 +1,7 @@
 id: configuration-files
 title: Configuration Files
 description: |
-  This example demonstrates how to enable loading arguments from a configuration file. The `.config()` method configures the CLI to load arguments from a configuration file. The method takes a single argument, a `ConfigurationProvider`. [See the docs for `ConfigurationProvider` here](/api/parser/namespaces/ConfigurationFiles/type-aliases/ConfigurationProvider).
+  This example demonstrates how to enable loading arguments from a configuration file. The `.config()` method configures the CLI to load arguments from a configuration file. The method takes a single argument, a `ConfigurationProvider`. [See the docs for `ConfigurationProvider` here](/api/parser/@cli-forge/namespaces/ConfigurationFiles/type-aliases/ConfigurationProvider).
 
   For convenience, `cli-forge` exports some built-in configuration providers. Currently, there are two built-in configuration providers: `JsonFile` and `PackageJson`.
 
