@@ -8,7 +8,7 @@ export * from './number';
 export * from './object';
 export * from './string';
 
-export { OptionConfig };
+export type { OptionConfig };
 
 export type Internal<T extends OptionConfig> = T & InternalOptionConfig;
 export type InternalOptionConfig = OptionConfig & {

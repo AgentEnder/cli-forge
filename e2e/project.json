@@ -9,7 +9,8 @@
       "command": "jest --config {projectRoot}/jest.config.ts"
     },
     "e2e:examples": {
-      "command": "tsx {projectRoot}/run-examples.ts"
+      "command": "tsx {projectRoot}/run-examples.ts",
+      "dependsOn": ["^build"]
     }
   },
   "metadata": {
