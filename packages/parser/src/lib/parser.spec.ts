@@ -693,6 +693,127 @@ describe('parser', () => {
     });
   });
 
+  it('should only require nested properties when parent object is present', () => {
+    // When parent object is not present, nested required properties should not throw
+    expect(
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            server: {
+              type: 'object',
+              properties: {
+                host: { type: 'string', required: true },
+                port: { type: 'number' },
+              },
+            },
+            client: {
+              type: 'object',
+              properties: {
+                endpoint: { type: 'string' },
+              },
+            },
+          },
+        })
+        .parse(['--config.client.endpoint', 'https://example.com'])
+    ).toEqual({
+      config: { client: { endpoint: 'https://example.com' } },
+      unmatched: [],
+    });
+
+    // When parent object IS present, nested required properties SHOULD throw
+    expect(() =>
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            server: {
+              type: 'object',
+              properties: {
+                host: { type: 'string', required: true },
+                port: { type: 'number' },
+              },
+            },
+            client: {
+              type: 'object',
+              properties: {
+                endpoint: { type: 'string' },
+              },
+            },
+          },
+        })
+        .parse(['--config.server.port', '8080'])
+    ).toThrowAggregateErrorContaining(
+      'Missing required option config.server.host'
+    );
+  });
+
+  it('should support passing object options as JSON strings', () => {
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          host: { type: 'string' },
+          port: { type: 'number' },
+        },
+      })
+      .parse(['--config', '{"host": "example.com", "port": 8080}']);
+    
+    expect(result).toEqual({
+      config: { host: 'example.com', port: 8080 },
+      unmatched: [],
+    });
+  });
+
+  it('should merge JSON string with existing object values', () => {
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          host: { type: 'string' },
+          port: { type: 'number' },
+          ssl: { type: 'boolean' },
+        },
+      })
+      .parse([
+        '--config.ssl',
+        'true',
+        '--config',
+        '{"host": "example.com", "port": 8080}',
+      ]);
+    
+    expect(result).toEqual({
+      config: { host: 'example.com', port: 8080, ssl: true },
+      unmatched: [],
+    });
+  });
+
+  it('should validate JSON string format for object options', () => {
+    expect(() =>
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            host: { type: 'string' },
+          },
+        })
+        .parse(['--config', 'not-valid-json'])
+    ).toThrow('Failed to parse config as JSON');
+  });
+
+  it('should reject non-object JSON values for object options', () => {
+    expect(() =>
+      parser()
+        .option('config', {
+          type: 'object',
+          properties: {
+            host: { type: 'string' },
+          },
+        })
+        .parse(['--config', '["array", "not", "object"]'])
+    ).toThrow('Expected config to be a JSON object');
+  });
+
   it('should read values from config files', () => {
     const configurationLoader = makeMockConfigLoader({
       [join(process.cwd(), '.myclirc')]: {

@@ -1,10 +1,13 @@
 // ---
-// id: object-dot-notation
-// title: Object Arguments
+// id: object-dot-notation-simple
+// title: Object Arguments (Simple)
 // description: |
 //   This is a simple example that demonstrates passing object-valued options to a command. Note that
 //   the object-valued options are passed as dot-notation strings. These can be nested for complex option
 //   structures that contain object properties that are themselves objects.
+//
+//   > For a more comprehensive example showcasing defaults, required properties, and validation,
+//   > see the `object-dot-notation` multi-file example.
 //
 //   > Note: This example is a bit more abstract that the others, as real world use cases for object-valued
 //   > options and especially nested objects are less common. This example is included to demonstrate the

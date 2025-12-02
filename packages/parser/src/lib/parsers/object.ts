@@ -16,9 +16,30 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
   // We don't care about the first part, as the base parser has already matched the flag.
   const parts = providedFlag?.split('.').slice(1);
   if (!parts?.length) {
-    throw new Error(
-      `${config.key} is configured as an object, but no properties were provided. Pass properties like so: --${config.key}.foo bar --${config.key}.baz qux`
-    );
+    // When no dot notation is provided (e.g., just --config), try to parse as JSON string
+    const token = tokens.shift();
+    if (!token) {
+      throw new Error(
+        `${config.key} is configured as an object, but no value was provided. Pass properties like so: --${config.key}.foo bar --${config.key}.baz qux, or provide a JSON string: --${config.key} '{"foo": "bar"}'`
+      );
+    }
+    
+    try {
+      const parsed = JSON.parse(token);
+      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+        throw new Error(
+          `Expected ${config.key} to be a JSON object, but got ${typeof parsed}`
+        );
+      }
+      return { ...current, ...parsed };
+    } catch (e) {
+      if (e instanceof SyntaxError) {
+        throw new Error(
+          `Failed to parse ${config.key} as JSON: ${e.message}. Either provide a valid JSON string or use dot notation: --${config.key}.foo bar`
+        );
+      }
+      throw e;
+    }
   }
   const { config: propConfig, readValue, setValue } = parsePath(parts);
   const currentValue = readValue();
