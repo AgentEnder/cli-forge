@@ -4,10 +4,17 @@ import { execSync } from 'node:child_process';
 import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, join, relative } from 'node:path';
 
-import * as CLI_FORGE_PACKAGE_JSON from '../../package.json';
-import cli, { CLI } from '../../src';
-// import { CLI } from '../../src/lib/cli-forge';
+import cli, { CLI } from '../..';
+
 import { ensureDirSync } from '../utils/fs';
+
+const CLI_FORGE_PACKAGE_JSON = (() => {
+  let path = __dirname;
+  while (!existsSync(join(path, 'package.json'))) {
+    path = dirname(path);
+  }
+  return JSON.parse(readFileSync(join(path, 'package.json'), 'utf-8'));
+})();
 
 const CLI_FORGE_VERSION = CLI_FORGE_PACKAGE_JSON.version;
 
@@ -28,7 +35,7 @@ const DEV_PEER_DEPS = Object.entries(
       dep as keyof typeof CLI_FORGE_PACKAGE_JSON.peerDependenciesMeta
     ];
   if (meta && 'dev' in meta && meta.dev) {
-    acc[dep] = version;
+    acc[dep] = version as string;
   }
   return acc;
 }, {} as Record<string, string>);

@@ -5,13 +5,10 @@ import { dirname, isAbsolute, join, relative } from 'node:path';
 import { join as joinPathFragments, normalize } from 'node:path/posix';
 import { pathToFileURL } from 'node:url';
 
-import cli, { ArgumentsOf, CLI } from '../../src';
-import {
-  Documentation,
-  generateDocumentation,
-} from '../../src/lib/documentation';
+import cli, { ArgumentsOf, CLI } from '../..';
+import { Documentation, generateDocumentation } from '../../lib/documentation';
 import { ensureDirSync } from '../utils/fs';
-import { InternalCLI } from '../../src/lib/internal-cli';
+import { InternalCLI } from '../../lib/internal-cli';
 
 type mdfactory = typeof import('markdown-factory');
 

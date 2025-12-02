@@ -24,8 +24,8 @@
     }
   },
   "type": "commonjs",
-  "main": "./src/index.js",
-  "typings": "./src/index.d.ts",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
   "license": "ISC",
   "repository": {
     "type": "git",
@@ -33,20 +33,20 @@
     "url": "https://github.com/AgentEnder/cli-forge"
   },
   "bin": {
-    "cli-forge": "./bin/cli.js"
+    "cli-forge": "./dist/bin/cli.js"
   },
   "exports": {
     ".": {
-      "require": "./src/index.js",
-      "types": "./src/index.d.ts"
+      "require": "./dist/index.js",
+      "types": "./dist/index.d.ts"
     },
     "./middleware": {
-      "require": "./src/middleware.js",
-      "types": "./src/middleware.d.ts"
+      "require": "./dist/middleware.js",
+      "types": "./dist/middleware.d.ts"
     },
     "./middleware/*": {
-      "require": "./src/middleware/*.js",
-      "types": "./src/middleware/*.d.ts"
+      "require": "./dist/middleware/*.js",
+      "types": "./dist/middleware/*.d.ts"
     },
     "./package.json": "./package.json"
   },
