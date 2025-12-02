@@ -19,15 +19,15 @@ const CLI_FORGE_VERSION = CLI_FORGE_PACKAGE_JSON.version;
 const DEV_PEER_DEPS = Object.entries(
   CLI_FORGE_PACKAGE_JSON.peerDependencies
 ).reduce((acc, [dep, version]) => {
-  if (
-    // The dev prop doesn't actually do anything for npm/pnpm/yarn,
-    // but we are using it to mark when a peer dep is only used at dev time.
-    // In these cases, we can safely add them to the devDependencies of the
-    // generated CLI.
+  // The dev prop doesn't actually do anything for npm/pnpm/yarn,
+  // but we are using it to mark when a peer dep is only used at dev time.
+  // In these cases, we can safely add them to the devDependencies of the
+  // generated CLI.
+  const meta =
     CLI_FORGE_PACKAGE_JSON.peerDependenciesMeta[
       dep as keyof typeof CLI_FORGE_PACKAGE_JSON.peerDependenciesMeta
-    ]?.dev
-  ) {
+    ];
+  if (meta && 'dev' in meta && meta.dev) {
     acc[dep] = version;
   }
   return acc;
