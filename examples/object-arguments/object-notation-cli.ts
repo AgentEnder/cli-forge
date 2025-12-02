@@ -1,6 +1,6 @@
 import cliForge from 'cli-forge';
 
-const cli = cliForge('object-notation', {
+const cli = cliForge('object-arguments', {
   builder: (args) =>
     args.option('config', {
       type: 'object',
