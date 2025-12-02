@@ -39,13 +39,20 @@ const cli = cliForge('basic-cli')
         .middleware((args) => {
           args.name = args.name.toUpperCase();
         })
+        // Middleware can add new properties to the args object
+        .middleware((args) => {
+          return {
+            ...args,
+            env: process.env.NODE_ENV || 'development',
+          };
+        })
         // Multiple middleware can be registered
         .middleware(() => {
           console.log('HELLO MIDDLEWARE');
         }),
     // Handler is used to define the command's behavior
     handler: (args) => {
-      console.log(`Hello, ${args.name}!`);
+      console.log(`Hello, ${args.name}! [${args.env.toUpperCase()}]`);
     },
   });
 

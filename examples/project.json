@@ -2,7 +2,7 @@
   "name": "examples",
   "targets": {
     "run-example": {
-      "command": "tsx {projectRoot}/{args.example}.ts"
+      "command": "tsx --tsconfig {projectRoot}/tsconfig.json {projectRoot}/{args.example}.ts"
     }
   },
   "implicitDependencies": ["cli-forge", "parser"]

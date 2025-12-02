@@ -289,9 +289,14 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     console.log(this.formatHelp());
   }
 
-  middleware(callback: (args: TArgs) => void): CLI<TArgs> {
+  middleware<TArgs2>(
+    callback: (args: TArgs) => TArgs2 | Promise<TArgs2>
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2> {
     this.registeredMiddleware.push(callback);
-    return this;
+    // If middleware returns void, TArgs doesn't change...
+    // If it returns something, we need to merge it into TArgs...
+    // that's not here though, its where we apply the middleware results.
+    return this as any;
   }
 
   /**
@@ -317,7 +322,13 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       }
       if (cmd.configuration?.handler) {
         for (const middleware of middlewares) {
-          await middleware(args);
+          const middlewareResult = await middleware(args);
+          if (
+            middlewareResult !== void 0 &&
+            typeof middlewareResult === 'object'
+          ) {
+            args = middlewareResult as T;
+          }
         }
         await cmd.configuration.handler(args, {
           command: cmd,

@@ -174,7 +174,9 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
   }): CLI<TArgs>;
   group(label: string, keys: (keyof TArgs)[]): CLI<TArgs>;
 
-  middleware(callback: (args: TArgs) => void): CLI<TArgs>;
+  middleware<TArgs2>(
+    callback: MiddlewareFunction<TArgs, TArgs2>
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2>;
 
   /**
    * Parses argv and executes the CLI
@@ -272,6 +274,10 @@ export type ErrorHandler = (
     exit: (code?: number) => void;
   }
 ) => void;
+
+export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
+  args: TArgs
+) => TArgs2 | Promise<TArgs2>;
 
 /**
  * Constructs a CLI instance. See {@link CLI} for more information.
