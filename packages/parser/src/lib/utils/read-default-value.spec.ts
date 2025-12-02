@@ -29,4 +29,29 @@ describe('readDefaultValue', () => {
     });
     expect(val).toEqual(['default', 'description']);
   });
+
+  it('should return plain object default values', () => {
+    const val = readDefaultValue({
+      type: 'object',
+      properties: {
+        foo: { type: 'string' },
+      },
+      default: { foo: 'bar' },
+    });
+    expect(val).toEqual([{ foo: 'bar' }, undefined]);
+  });
+
+  it('should return object default values with description', () => {
+    const val = readDefaultValue({
+      type: 'object',
+      properties: {
+        foo: { type: 'string' },
+      },
+      default: {
+        value: { foo: 'bar' },
+        description: 'Object default description',
+      },
+    });
+    expect(val).toEqual([{ foo: 'bar' }, 'Object default description']);
+  });
 });

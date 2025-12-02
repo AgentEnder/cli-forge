@@ -2,7 +2,11 @@ import { CommonOptionConfig } from './option-types/common';
 import { hideBin } from './helpers';
 import { OptionConfigToType } from './option-types/option-config-to-type';
 import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
-import { InternalOptionConfig, OptionConfig } from './option-types';
+import {
+  InternalOptionConfig,
+  ObjectOptionConfig,
+  OptionConfig,
+} from './option-types';
 import { parserMap } from './parsers/parser-map';
 import { NoValueError, Parser, ParserContext } from './parsers/typings';
 import { getConfiguredOptionKey } from './utils/get-configured-key';
@@ -394,6 +398,19 @@ export class ArgvParser<
       const configuration = this.configuredOptions[configurationKey];
       try {
         validateOption(configuration, normalized[configuration.key]);
+        // Handle nested object properties
+        if (
+          configuration.type === 'object' &&
+          (configuration as ObjectOptionConfig).properties &&
+          normalized[configuration.key] !== undefined
+        ) {
+          normalized[configuration.key] = normalizeAndValidateObjectProperties(
+            normalized[configuration.key],
+            configuration as ObjectOptionConfig,
+            configuration.key,
+            errors
+          );
+        }
         if (normalized[configuration.key] !== undefined) {
           validateConflicts(configuration);
           validateImplications(configuration);
@@ -659,4 +676,59 @@ export class ValidationFailedError<T> extends AggregateError {
   ) {
     super(errors, message);
   }
+}
+
+/**
+ * Normalizes and validates nested properties of an object option.
+ * Applies default values and checks required properties recursively.
+ * @param value The current value of the object
+ * @param config The object option configuration
+ * @param keyPath The path to this property for error messages
+ * @param errors Array to collect validation errors
+ * @returns The normalized value with defaults applied
+ */
+function normalizeAndValidateObjectProperties(
+  value: Record<string, any> | undefined,
+  config: ObjectOptionConfig,
+  keyPath: string,
+  errors: Error[]
+): Record<string, any> | undefined {
+  // If the object is undefined and not required, skip processing
+  if (value === undefined) {
+    return value;
+  }
+
+  const normalized = { ...value };
+
+  for (const propKey in config.properties) {
+    const propConfig = config.properties[propKey];
+    const propPath = `${keyPath}.${propKey}`;
+
+    // Apply defaults for undefined properties
+    if (normalized[propKey] === undefined && propConfig.default !== undefined) {
+      normalized[propKey] = readDefaultValue(propConfig as OptionConfig)[0];
+    }
+
+    // Validate required properties
+    if (propConfig.required && normalized[propKey] === undefined) {
+      const e = new Error(`Missing required option ${propPath}`);
+      delete e.stack;
+      errors.push(e);
+    }
+
+    // Recursively handle nested objects
+    if (
+      propConfig.type === 'object' &&
+      (propConfig as ObjectOptionConfig).properties
+    ) {
+      normalized[propKey] = normalizeAndValidateObjectProperties(
+        normalized[propKey],
+        propConfig as ObjectOptionConfig,
+        propPath,
+        errors
+      );
+    }
+  }
+
+  return normalized;
 }
