@@ -78,7 +78,7 @@ export const ExamplesDocsPlugin = async (
             languages: ['typescript'],
             monacoEditorPath: join(
               __dirname,
-              '../../../node_modules/monaco-editor'
+              '../../node_modules/monaco-editor'
             ),
           }),
         ],
@@ -218,18 +218,18 @@ function ensureDirSync(path: string): void {
   }
 }
 function getDtsFiles(): any {
-  if (!existsSync(join(workspaceRoot, 'dist', 'packages', 'cli-forge'))) {
+  if (!existsSync(join(workspaceRoot, 'packages', 'cli-forge', 'dist'))) {
     throw new Error(
       'The cli-forge package must be built before running this command'
     );
   }
   const cliForgeDtsFiles = glob('**/*.d.ts', {
-    cwd: join(workspaceRoot, 'dist', 'packages', 'cli-forge'),
-  }).concat('package.json');
+    cwd: join(workspaceRoot, 'packages', 'cli-forge', 'dist'),
+  });
 
   const parserDtsFiles = glob('**/*.d.ts', {
-    cwd: join(workspaceRoot, 'dist', 'packages', 'parser'),
-  }).concat('package.json');
+    cwd: join(workspaceRoot, 'packages', 'parser', 'dist'),
+  });
 
   const nodeDtsFiles = glob('**/*.d.ts', {
     cwd: join(workspaceRoot, 'node_modules', '@types', 'node'),
@@ -239,17 +239,33 @@ function getDtsFiles(): any {
     ...cliForgeDtsFiles.map((f) => [
       `file:///node_modules/cli-forge/${f}`,
       readFileSync(
-        join(workspaceRoot, 'dist', 'packages', 'cli-forge', f),
+        join(workspaceRoot, 'packages', 'cli-forge', 'dist', f),
         'utf-8'
       ),
     ]),
+    // Also include package.json from the package root (not dist)
+    [
+      'file:///node_modules/cli-forge/package.json',
+      readFileSync(
+        join(workspaceRoot, 'packages', 'cli-forge', 'package.json'),
+        'utf-8'
+      ),
+    ],
     ...parserDtsFiles.map((f) => [
       `file:///node_modules/@cli-forge/parser/${f}`,
       readFileSync(
-        join(workspaceRoot, 'dist', 'packages', 'parser', f),
+        join(workspaceRoot, 'packages', 'parser', 'dist', f),
         'utf-8'
       ),
     ]),
+    // Also include package.json from the package root (not dist)
+    [
+      'file:///node_modules/@cli-forge/parser/package.json',
+      readFileSync(
+        join(workspaceRoot, 'packages', 'parser', 'package.json'),
+        'utf-8'
+      ),
+    ],
     ...nodeDtsFiles.map((f) => [
       `file:///node_modules/@types/node/${f}`,
       readFileSync(
