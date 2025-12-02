@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-import { cli } from '..';
+import { cli } from '../lib/public-api';
 import { generateDocumentationCommand } from './commands/generate-documentation';
 import { initCommand } from './commands/init';
 

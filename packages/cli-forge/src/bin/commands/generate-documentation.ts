@@ -1,6 +1,6 @@
 import type { ParsedArgs } from '@cli-forge/parser';
 
-import { existsSync, writeFileSync } from 'node:fs';
+import { existsSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, isAbsolute, join, relative } from 'node:path';
 import { join as joinPathFragments, normalize } from 'node:path/posix';
 import { pathToFileURL } from 'node:url';
@@ -285,6 +285,46 @@ function readCLIFromModule(
   return cli;
 }
 
+/**
+ * Detects whether a file should be loaded as ESM or CJS.
+ * Checks file extension first (.mjs/.mts = ESM, .cjs/.cts = CJS),
+ * then falls back to the nearest package.json's "type" field.
+ */
+function detectModuleType(filePath: string): 'esm' | 'cjs' {
+  const ext = filePath.split('.').pop()?.toLowerCase();
+
+  // Explicit extensions take precedence
+  if (ext === 'mjs' || ext === 'mts') {
+    return 'esm';
+  }
+  if (ext === 'cjs' || ext === 'cts') {
+    return 'cjs';
+  }
+
+  // Find nearest package.json and check "type" field
+  const absolutePath = isAbsolute(filePath)
+    ? filePath
+    : join(process.cwd(), filePath);
+  let dir = dirname(absolutePath);
+  const root = dirname(dir);
+
+  while (dir !== root) {
+    const pkgPath = join(dir, 'package.json');
+    if (existsSync(pkgPath)) {
+      try {
+        const pkg = JSON.parse(readFileSync(pkgPath, 'utf-8'));
+        return pkg.type === 'module' ? 'esm' : 'cjs';
+      } catch {
+        // Ignore parse errors, continue searching
+      }
+    }
+    dir = dirname(dir);
+  }
+
+  // Default to CJS (Node.js default)
+  return 'cjs';
+}
+
 async function loadCLIModule(
   args: ArgumentsOf<typeof withGenerateDocumentationArgs>
 ) {
@@ -302,22 +342,33 @@ async function loadCLIModule(
     join(args.cli, 'index.js'),
     join(args.cli, 'index.cjs'),
     join(args.cli, 'index.mjs'),
-  ].find((f) => existsSync(join(process.cwd(), f)));
+  ].find((f) => {
+    const p = isAbsolute(f) ? f : join(process.cwd(), f);
+    console.log('Checking for CLI at', p);
+    return existsSync(p);
+  });
 
   if (!cliPath) {
     throw new Error(`Could not find CLI module at ${args.cli}
-      
+
       Ensure that the path is correct and that the CLI module exists.`);
   }
 
+  const moduleType = detectModuleType(cliPath);
+
   try {
-    const tsx = (await import('tsx/esm/api')) as typeof import('tsx/esm/api');
-    return tsx.tsImport(cliPath, {
-      tsconfig: args.tsconfig,
-      parentURL: pathToFileURL(
-        join(process.cwd(), 'fake-file-for-import.ts')
-      ).toString(),
-    });
+    if (moduleType === 'esm') {
+      const tsx = (await import('tsx/esm/api')) as typeof import('tsx/esm/api');
+      return tsx.tsImport(cliPath, {
+        tsconfig: args.tsconfig,
+        parentURL: pathToFileURL(
+          join(process.cwd(), 'fake-file-for-import.ts')
+        ).toString(),
+      });
+    } else {
+      const tsx = (await import('tsx/cjs/api')) as typeof import('tsx/cjs/api');
+      return tsx.require(cliPath, join(process.cwd(), 'fake-file-for-require.ts'));
+    }
   } catch {
     try {
       return await import(cliPath);
