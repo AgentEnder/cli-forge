@@ -61,8 +61,5 @@
         }
       }
     }
-  ],
-  "sync": {
-    "generatorToRun": "@nx/js:typescript-sync"
-  }
+  ]
 }
