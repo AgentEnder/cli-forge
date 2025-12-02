@@ -28,7 +28,8 @@
     "version": {
       "preVersionCommand": "npx nx run-many -t build --exclude docs-site",
       "conventionalCommits": true,
-      "generatorOptions": {
+      "preserveLocalDependencyProtocols": false,
+      "versionActionsOptions": {
         "skipLockFileUpdate": true
       }
     },
@@ -47,6 +48,21 @@
       "options": {
         "targetName": "lint"
       }
+    },
+    {
+      "plugin": "@nx/js/typescript",
+      "options": {
+        "typecheck": {
+          "targetName": "typecheck"
+        },
+        "build": {
+          "targetName": "build",
+          "configName": "tsconfig.lib.json"
+        }
+      }
     }
-  ]
+  ],
+  "sync": {
+    "generatorToRun": "@nx/js:typescript-sync"
+  }
 }
