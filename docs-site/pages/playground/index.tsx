@@ -1,5 +1,5 @@
 import Layout from '@theme/Layout';
-import React, { useRef } from 'react';
+import React, { useRef, useEffect } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 
 import type { Example } from '../../../tools/scripts/collect-examples';
@@ -15,6 +15,12 @@ const Playground: React.FC = ({
   dts: Record<string, string>;
 }) => {
   const editor = useRef<EditorRef>(null);
+
+  useEffect(() => () => {
+    if (editor.current) {
+      editor.current.cleanup();
+    }
+  });
 
   return (
     <Layout title="TS Playground">
