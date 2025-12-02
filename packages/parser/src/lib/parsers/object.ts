@@ -31,6 +31,8 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
           `Expected ${config.key} to be a JSON object, but got ${typeof parsed}`
         );
       }
+      // Merge parsed JSON with existing values, with JSON taking precedence (last value wins)
+      // This matches the behavior of dot notation where later flags override earlier ones
       return { ...current, ...parsed };
     } catch (e) {
       if (e instanceof SyntaxError) {
