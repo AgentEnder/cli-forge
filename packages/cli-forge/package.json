@@ -2,13 +2,13 @@
   "name": "cli-forge",
   "version": "0.0.1",
   "dependencies": {
-    "tslib": "^2.3.0",
-    "@cli-forge/parser": "file:../parser"
+    "tslib": "catalog:",
+    "@cli-forge/parser": "workspace:*"
   },
   "peerDependencies": {
-    "markdown-factory": "0.2.0",
-    "tsx": "4.19.0",
-    "zod": "4.1.13"
+    "markdown-factory": "catalog:",
+    "tsx": "catalog:",
+    "zod": "catalog:"
   },
   "peerDependenciesMeta": {
     "markdown-factory": {
