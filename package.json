@@ -16,7 +16,6 @@
     "@swc/helpers": "catalog:",
     "@types/jest": "catalog:",
     "@types/node": "catalog:",
-    "@types/yaml": "catalog:",
     "@typescript-eslint/eslint-plugin": "catalog:",
     "@typescript-eslint/parser": "catalog:",
     "@vitest/coverage-v8": "catalog:",
