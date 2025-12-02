@@ -54,7 +54,7 @@ export class InteractiveShell {
         output: process.stdout,
         prompt: prompt,
       })
-      .on('SIGINT', () => {
+      .once('SIGINT', () => {
         process.emit('SIGINT');
       });
 
@@ -81,6 +81,7 @@ export class InteractiveShell {
         currentCommand.clone().printHelp();
       } else if (nextArgs[0] === 'exit') {
         this.close();
+        return true;
       } else if (line.trim()) {
         try {
           execSync(line, { stdio: 'inherit' });
@@ -88,14 +89,15 @@ export class InteractiveShell {
           // ignore
         }
       }
+      return false;
     });
   }
 
-  registerLineListener(callback: (line: string) => Promise<void>) {
+  registerLineListener(callback: (line: string) => Promise<boolean | void>) {
     const wrapped = async (line: string) => {
       this.rl.pause();
-      await callback(line);
-      this.rl.prompt();
+      const shouldHalt = await callback(line);
+      if (!shouldHalt) this.rl.prompt();
     };
     this.listeners.push(wrapped);
     this.rl.on('line', wrapped);

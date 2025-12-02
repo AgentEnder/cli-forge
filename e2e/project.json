@@ -3,7 +3,12 @@
   "implicitDependencies": ["examples", "parser", "cli-forge"],
   "targets": {
     "e2e": {
-      "dependsOn": ["e2e:*"]
+      "dependsOn": [
+        {
+          "target": "e2e:*",
+          "projects": "self"
+        }
+      ]
     },
     "e2e:jest": {
       "command": "jest --config {projectRoot}/jest.config.ts"

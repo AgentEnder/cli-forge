@@ -37,6 +37,7 @@
     "verdaccio": "catalog:",
     "vite": "catalog:",
     "vitest": "catalog:",
+    "why-is-node-running": "catalog:",
     "yaml": "catalog:",
     "zod": "catalog:"
   },
@@ -46,5 +47,5 @@
   "dependencies": {
     "react-hot-toast": "catalog:"
   },
-  "packageManager": "pnpm@9.15.9+sha512.68046141893c66fad01c079231128e9afb89ef87e2691d69e4d40eee228988295fd4682181bae55b58418c3a253bde65a505ec7c5f9403ece5cc3cd37dcf2531"
+  "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"
 }
