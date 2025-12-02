@@ -77,6 +77,8 @@ function loadExampleFile(path: string): {
   const lines = contents.split('\n');
   const frontMatterLines = [];
 
+  console.log('Loading example file:', path);
+
   // On windows the line may still contain a \r,
   // this would fail the front matter parsing.
   let line = lines.shift().trimEnd();
