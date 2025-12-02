@@ -6,5 +6,8 @@
       "types": "./*.ts",
       "require": "./*.ts"
     }
+  },
+  "dependencies": {
+    "fast-glob": "catalog:"
   }
 }

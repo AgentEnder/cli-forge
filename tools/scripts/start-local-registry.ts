@@ -4,14 +4,29 @@
  */
 import { startLocalRegistry } from '@nx/js/plugins/jest/local-registry';
 import { execSync } from 'child_process';
-import { releasePublish, releaseVersion } from 'nx/release';
 import { releaseE2EVersion } from './release-e2e';
+import { globSync } from 'fast-glob';
+import { readFileSync } from 'fs';
+import { join, relative } from 'path';
+
+globalThis.packageJsonsToReset = {};
 
 export default async () => {
   // local registry target to run
   const localRegistryTarget = '@cli-forge/source:local-registry';
   // storage folder for the local registry
   const storage = './tmp/local-registry/storage';
+
+  const offsetFromCwd = relative(__dirname, process.cwd());
+
+  const packageJsonPaths = globSync('packages/**/package.json', {
+    ignore: ['**/node_modules/**', '**/dist/**'],
+  }).map((path) => join(__dirname, offsetFromCwd, path));
+
+  for (const packageJsonPath of packageJsonPaths) {
+    globalThis.packageJsonsToReset[packageJsonPath] =
+      readFileSync(packageJsonPath);
+  }
 
   (global as any).stopLocalRegistry = await startLocalRegistry({
     localRegistryTarget,
