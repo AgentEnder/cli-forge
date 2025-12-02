@@ -16,23 +16,27 @@
     "clsx": "catalog:",
     "prism-react-renderer": "catalog:",
     "react": "catalog:",
-    "react-dom": "catalog:"
+    "react-dom": "catalog:",
+    "react-hot-toast": "catalog:"
   },
   "devDependencies": {
     "@docusaurus/module-type-aliases": "catalog:",
     "@docusaurus/tsconfig": "catalog:",
     "@docusaurus/types": "catalog:",
+    "@docusaurus/theme-common": "catalog:",
     "docusaurus-plugin-typedoc": "catalog:",
     "@docusaurus/remark-plugin-npm2yarn": "catalog:",
     "@typescript/sandbox": "catalog:",
     "docusaurus-plugin-sass": "catalog:",
+    "fast-glob": "catalog:",
     "monaco-editor": "catalog:",
     "monaco-editor-webpack-plugin": "catalog:",
     "sass": "catalog:",
     "remark-github": "catalog:",
     "typedoc": "catalog:",
     "typedoc-plugin-markdown": "catalog:",
-    "style-loader": "catalog:"
+    "style-loader": "catalog:",
+    "@nx/devkit": "catalog:"
   },
   "browserslist": {
     "production": [
