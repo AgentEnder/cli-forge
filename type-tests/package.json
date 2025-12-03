@@ -1,0 +1,22 @@
+{
+  "name": "@cli-forge/type-tests",
+  "version": "0.0.1",
+  "private": true,
+  "dependencies": {
+    "cli-forge": "workspace:*",
+    "@cli-forge/parser": "workspace:*",
+    "typescript": "catalog:",
+    "@phenomnomnominal/tsquery": "^6.0.0",
+    "tslib": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:"
+  },
+  "type": "commonjs",
+  "main": "./dist/index.js",
+  "typings": "./dist/index.d.ts",
+  "license": "ISC",
+  "bin": {
+    "type-debug": "./dist/cli.js"
+  }
+}
