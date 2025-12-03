@@ -1,0 +1,23 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "dist",
+    "declaration": true,
+    "composite": true,
+    "types": ["node"],
+    "resolveJsonModule": true,
+    "rootDir": "src",
+    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
+  },
+  "include": ["src/**/*.ts"],
+  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
+  "references": [
+    {
+      "path": "../packages/parser/tsconfig.lib.json"
+    },
+    {
+      "path": "../packages/cli-forge/tsconfig.lib.json"
+    }
+  ]
+}

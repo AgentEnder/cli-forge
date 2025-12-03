@@ -4,6 +4,7 @@ packages:
   - examples
   - e2e
   - tools/scripts
+  - type-tests
 
 catalog:
   '@docusaurus/core': 3.9.2
