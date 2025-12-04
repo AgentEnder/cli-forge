@@ -68,33 +68,40 @@ const cli = cliForge('object-arguments', {
       },
       // Validate the entire config object
       validate: (config) => {
-        if (config.server?.port && (config.server.port < 1 || config.server.port > 65535)) {
+        if (
+          config.server?.port &&
+          (config.server.port < 1 || config.server.port > 65535)
+        ) {
           return 'Server port must be between 1 and 65535';
         }
         return true;
       },
       // Coerce can transform the final config object
       coerce: (config) => {
-        // Add a computed property
+        // Add a computed property - use type assertion since we're extending the type
         if (config.server) {
-          config.server.url = `${config.server.ssl ? 'https' : 'http'}://${config.server.host}:${config.server.port}`;
+          (config.server as { url?: string }).url = `${
+            config.server.ssl ? 'https' : 'http'
+          }://${config.server.host}:${config.server.port}`;
         }
-        return config;
+        return config as typeof config & { server?: { url: string } };
       },
     }),
   handler: (args) => {
     console.log('Configuration:');
     console.log(JSON.stringify(args.config, null, 2));
-    
+
     // Type-safe access to nested properties
     if (args.config?.server) {
       console.log(`\nServer will run at: ${args.config.server.url}`);
     }
-    
+
     if (args.config?.database) {
-      console.log(`Database: ${args.config.database.name} at ${args.config.database.host}:${args.config.database.port}`);
+      console.log(
+        `Database: ${args.config.database.name} at ${args.config.database.host}:${args.config.database.port}`
+      );
     }
-    
+
     if (args.config?.features) {
       console.log(`Features: ${args.config.features.join(', ')}`);
     }
