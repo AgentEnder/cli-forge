@@ -2,7 +2,9 @@
   "permissions": {
     "allow": [
       "Skill(superpowers:systematic-debugging)",
-      "Skill(superpowers:brainstorming)"
+      "Skill(superpowers:brainstorming)",
+      "Bash(gh run view:*)",
+      "WebFetch(domain:docs.npmjs.com)"
     ],
     "deny": [],
     "ask": []

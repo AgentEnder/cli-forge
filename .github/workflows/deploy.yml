@@ -58,7 +58,6 @@ jobs:
         run: |
           npx nx release ${{ github.run_attempt == '1' && '--yes' || '--yes --verbose' }}
         env:
-          NPM_CONFIG_PROVENANCE: true
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         if: github.ref == 'refs/heads/main' && github.event.inputs.docs_only == 'false'
 
