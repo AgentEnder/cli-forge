@@ -4,6 +4,14 @@ import {
   OptionConfigToType,
   ParsedArgs,
   EnvOptionConfig,
+  ObjectOptionConfig,
+  StringOptionConfig,
+  NumberOptionConfig,
+  BooleanOptionConfig,
+  ArrayOptionConfig,
+  ResolveProperties,
+  AdditionalPropertiesType,
+  WithOptional,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -83,10 +91,83 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * within the command handler, as well as any subcommands.
    *
    * @param name The name of the option.
-   * @param config Configuration for the option. See {@link OptionConfig}.
+   * @param config Configuration for the option. See {@link UnknownOptionConfig}.
    * @returns Updated CLI instance with the new option registered.
    */
-  option<TOption extends string, const TOptionConfig extends OptionConfig>(
+  // Object option overload - must come first for proper contextual typing
+  // Uses direct ObjectOptionConfig type (not `extends`) to ensure TypeScript
+  // infers TProps from `properties` BEFORE evaluating the coerce callback type
+  option<
+    TOption extends string,
+    TCoerce,
+    const TProps extends Record<string, { type: string }>,
+    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  >(
+    name: TOption,
+    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  ): CLI<
+    TArgs & {
+      [key in TOption]: WithOptional<
+        unknown extends TCoerce
+          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
+          : TCoerce,
+        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+      >;
+    }
+  >;
+  // String option overload
+  option<
+    TOption extends string,
+    const TConfig extends StringOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Number option overload
+  option<
+    TOption extends string,
+    const TConfig extends NumberOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Boolean option overload
+  option<
+    TOption extends string,
+    const TConfig extends BooleanOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Array option overload
+  option<
+    TOption extends string,
+    const TConfig extends ArrayOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Generic fallback overload
+  option<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(
     name: TOption,
     config: TOptionConfig
   ): CLI<
@@ -99,10 +180,83 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * Registers a new positional argument for the CLI command. This argument will be accessible
    * within the command handler, as well as any subcommands.
    * @param name The name of the positional argument.
-   * @param config Configuration for the positional argument. See {@link OptionConfig}.
+   * @param config Configuration for the positional argument. See {@link UnknownOptionConfig}.
    * @returns Updated CLI instance with the new positional argument registered.
    */
-  positional<TOption extends string, const TOptionConfig extends OptionConfig>(
+  // Object option overload - must come first for proper contextual typing
+  // Uses direct ObjectOptionConfig type (not `extends`) to ensure TypeScript
+  // infers TProps from `properties` BEFORE evaluating the coerce callback type
+  positional<
+    TOption extends string,
+    TCoerce,
+    const TProps extends Record<string, { type: string }>,
+    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  >(
+    name: TOption,
+    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  ): CLI<
+    TArgs & {
+      [key in TOption]: WithOptional<
+        unknown extends TCoerce
+          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
+          : TCoerce,
+        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+      >;
+    }
+  >;
+  // String option overload
+  positional<
+    TOption extends string,
+    const TConfig extends StringOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Number option overload
+  positional<
+    TOption extends string,
+    const TConfig extends NumberOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Boolean option overload
+  positional<
+    TOption extends string,
+    const TConfig extends BooleanOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Array option overload
+  positional<
+    TOption extends string,
+    const TConfig extends ArrayOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): CLI<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Generic fallback overload
+  positional<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(
     name: TOption,
     config: TOptionConfig
   ): CLI<

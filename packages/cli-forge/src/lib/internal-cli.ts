@@ -209,19 +209,19 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     return this;
   }
 
-  option<TOption extends string, TOptionConfig extends OptionConfig>(
-    name: TOption,
-    config: TOptionConfig
-  ) {
+  option<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(name: TOption, config: TOptionConfig) {
     this.parser.option(name, config);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
   }
 
-  positional<TOption extends string, TOptionConfig extends OptionConfig>(
-    name: TOption,
-    config: TOptionConfig
-  ) {
+  positional<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(name: TOption, config: TOptionConfig) {
     this.parser.positional(name, config);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
