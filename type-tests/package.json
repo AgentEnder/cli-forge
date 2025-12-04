@@ -2,6 +2,9 @@
   "name": "@cli-forge/type-tests",
   "version": "0.0.1",
   "private": true,
+  "scripts": {
+    "test": "vitest run"
+  },
   "dependencies": {
     "cli-forge": "workspace:*",
     "@cli-forge/parser": "workspace:*",

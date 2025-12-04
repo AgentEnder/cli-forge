@@ -100,11 +100,8 @@ export function createProgramFromFile(filePath: string): ProgramResult {
 
   const { options, fileNames } = readTsConfig(configPath);
 
-  // Create program with the target file and its dependencies
-  const program = ts.createProgram({
-    rootNames: [...fileNames, filePath],
-    options,
-  });
+  const host = ts.createCompilerHost(options);
+  const program = ts.createProgram(fileNames, options, host);
 
   const sourceFile = program.getSourceFile(filePath);
   if (!sourceFile) {
@@ -183,12 +180,7 @@ export function createTestProgram(
     return undefined;
   };
 
-  const program = ts.createProgram({
-    rootNames: [fileName],
-    options: defaultOptions,
-    host,
-  });
-
+  const program = ts.createProgram([fileName], defaultOptions, host);
   const sourceFile = program.getSourceFile(fileName);
   if (!sourceFile) {
     throw new Error(`Could not create source file for: ${fileName}`);

@@ -73,14 +73,14 @@ export const CommonSelectors = {
 
   /** Object literal with type: 'object' */
   objectConfig:
-    'ObjectLiteralExpression:has(PropertyAssignment[name.text="type"][initializer.text="\\"object\\""])',
+    'ObjectLiteralExpression:has(PropertyAssignment[name.text="type"][initializer.text="object"])',
 
   /** The `properties` field value in object configs */
   propertiesValue:
     'PropertyAssignment[name.text="properties"] > ObjectLiteralExpression',
 
   /** The `default` field in option configs */
-  defaultValue: 'PropertyAssignment[name.text="default"] > *',
+  defaultValue: 'PropertyAssignment[name.text="default"] StringLiteral, PropertyAssignment[name.text="default"] NumericLiteral, PropertyAssignment[name.text="default"] ObjectLiteralExpression, PropertyAssignment[name.text="default"] ArrayLiteralExpression',
 
   /** All option() method calls */
   optionCalls: 'CallExpression[expression.name.text="option"]',
