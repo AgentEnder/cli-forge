@@ -7,8 +7,9 @@
     "declaration": true,
     "composite": true,
     "types": ["node"],
-    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
+    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo",
+    "noImplicitAny": true
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["vite.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts"]
+  "exclude": ["vite.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/type-debug.ts"]
 }
