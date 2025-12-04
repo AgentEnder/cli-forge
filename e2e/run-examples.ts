@@ -21,7 +21,7 @@ for (const example of examples) {
     success =
       runExampleCommand(
         {
-          command: `tsx --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${
+          command: `tsx --no-cache --tsconfig ${join(examplesRoot, 'tsconfig.json')} ${
             example.data.entryPoint
           }`,
           env: {},
@@ -35,7 +35,7 @@ for (const example of examples) {
       const commandConfiguration =
         typeof config === 'string' ? { command: config, env: {} } : config;
       const command = commandConfiguration.command;
-      commandConfiguration.command = `tsx --tsconfig ${join(
+      commandConfiguration.command = `tsx --no-cache --tsconfig ${join(
         examplesRoot,
         'tsconfig.json'
       )} ${command.replace('{filename}', example.data.entryPoint)}`;
@@ -52,7 +52,7 @@ for (const example of examples) {
 try {
   process.stdout.write('▶️ Checking TypeScript types for all examples');
   const a = performance.now();
-  execSync(`tsc -p tsconfig.lib.json --noEmit`, { cwd: examplesRoot });
+  execSync(`tsc -p tsconfig.lib.json --noEmit --force`, { cwd: examplesRoot });
   const b = performance.now();
   process.stdout.write('\r');
   console.log(
