@@ -44,8 +44,9 @@ jobs:
         with:
           node-version: 22
           registry-url: https://registry.npmjs.org/
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upgrade npm for OIDC support
+        run: npm install -g npm@latest
 
       - name: Setup PNPM
         uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
