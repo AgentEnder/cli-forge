@@ -29,6 +29,6 @@ jobs:
         env:
           NX_VERBOSE_LOGGING: ${{ github.run_attempt == '1' && 'false' || 'true'}}
 
-      - namw: Fix CI
+      - name: Fix CI
         run: npx nx@latest -y fix-ci
         if: always()
