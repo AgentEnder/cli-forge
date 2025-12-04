@@ -520,6 +520,23 @@ export class ArgvParser<
           normalized[configuration.key] ??= readDefaultValue(configuration)[0];
         }
       }
+      // Apply nested defaults for object options (before coerce)
+      if (
+        configuration.type === 'object' &&
+        (configuration as ObjectOptionConfig<any, any>).properties &&
+        normalized[configuration.key] !== undefined
+      ) {
+        normalized[configuration.key] = applyNestedObjectDefaults(
+          normalized[configuration.key],
+          configuration as ObjectOptionConfig<any, any>
+        );
+        // Now apply coerce after defaults have been applied
+        if (configuration.coerce) {
+          normalized[configuration.key] = (
+            configuration.coerce as (s: any) => any
+          )(normalized[configuration.key]);
+        }
+      }
       this.reflectEnv(configuration, normalized[configuration.key]);
     }
     return normalized;
@@ -827,6 +844,11 @@ export function tryParseValue(
   }
   try {
     const val = parser(input);
+    // For object types, defer coerce until after nested defaults are applied
+    // For other types, apply coerce immediately
+    if (input.config.type === 'object') {
+      return val;
+    }
     return (input.config.coerce as (s: any) => any)?.(val) ?? val;
   } catch (e) {
     if (e instanceof NoValueError) {
@@ -850,13 +872,52 @@ export class ValidationFailedError<T> extends AggregateError {
 }
 
 /**
- * Normalizes and validates nested properties of an object option.
- * Applies default values and checks required properties recursively.
+ * Applies default values to nested properties of an object option recursively.
+ * This is called during normalization, before coerce is applied.
+ * Only applies defaults if the parent object exists (at least one property is set).
+ * @param value The current value of the object
+ * @param config The object option configuration
+ * @returns The object with defaults applied to nested properties
+ */
+function applyNestedObjectDefaults(
+  value: Record<string, any>,
+  config: ObjectOptionConfig<any, any>
+): Record<string, any> {
+  const normalized = { ...value };
+
+  for (const propKey in config.properties) {
+    const propConfig = config.properties[propKey];
+
+    // Apply defaults for undefined properties only if parent object has at least one property set
+    if (normalized[propKey] === undefined && propConfig.default !== undefined) {
+      normalized[propKey] = readDefaultValue(propConfig)[0];
+    }
+
+    // Recursively handle nested objects
+    if (
+      propConfig.type === 'object' &&
+      'properties' in propConfig &&
+      normalized[propKey] !== undefined
+    ) {
+      normalized[propKey] = applyNestedObjectDefaults(
+        normalized[propKey],
+        propConfig
+      );
+    }
+  }
+
+  return normalized;
+}
+
+/**
+ * Validates nested properties of an object option recursively.
+ * This is called during validation, after defaults have been applied and before coerce.
+ * Checks required properties at any depth.
  * @param value The current value of the object
  * @param config The object option configuration
  * @param keyPath The path to this property for error messages
  * @param errors Array to collect validation errors
- * @returns The normalized value with defaults applied
+ * @returns The validated value
  */
 function normalizeAndValidateObjectProperties(
   value: Record<string, any> | undefined,
@@ -874,11 +935,6 @@ function normalizeAndValidateObjectProperties(
   for (const propKey in config.properties) {
     const propConfig = config.properties[propKey];
     const propPath = `${keyPath}.${propKey}`;
-
-    // Apply defaults for undefined properties
-    if (normalized[propKey] === undefined && propConfig.default !== undefined) {
-      normalized[propKey] = readDefaultValue(propConfig)[0];
-    }
 
     // Validate required properties
     if (propConfig.required && normalized[propKey] === undefined) {
