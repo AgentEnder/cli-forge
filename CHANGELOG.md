@@ -1,3 +1,33 @@
+## 0.11.0 (2025-12-04)
+
+### 🚀 Features
+
+- **cli-forge:** add ESM/CJS module detection for documentation generation ([bbc0c85](https://github.com/agentender/cli-forge/commit/bbc0c85))
+- **cli-forge:** add type-safe cli() wrapper with object option overloads ([c160918](https://github.com/agentender/cli-forge/commit/c160918))
+- **core:** allow middleware to return new object instead of mutating original object ([a5db3c7](https://github.com/agentender/cli-forge/commit/a5db3c7))
+- **docs-site:** preliminary support for ts-playground ([#27](https://github.com/agentender/cli-forge/pull/27))
+- **middleware:** add zod middleware ([e34b25f](https://github.com/agentender/cli-forge/commit/e34b25f))
+- **parser:** add object option overloads and improve type safety ([beb2117](https://github.com/agentender/cli-forge/commit/beb2117))
+
+### 🩹 Fixes
+
+- improve local registry package.json reset handling ([e1f3d0d](https://github.com/agentender/cli-forge/commit/e1f3d0d))
+- resolve CI failures on main branch ([bfd4bcb](https://github.com/agentender/cli-forge/commit/bfd4bcb))
+- restore useEffect cleanup for editor in playground component ([7b17e1f](https://github.com/agentender/cli-forge/commit/7b17e1f))
+- **ci:** use npx instead of node to run nx ([5cdc141](https://github.com/agentender/cli-forge/commit/5cdc141))
+- **ci:** configure npm OIDC trusted publishing correctly ([c4fa18f](https://github.com/agentender/cli-forge/commit/c4fa18f))
+- **cli-forge:** improve peerDependenciesMeta type checking ([0140173](https://github.com/agentender/cli-forge/commit/0140173))
+- **cli-forge:** ensure tui exits properly when user types exit ([eea5270](https://github.com/agentender/cli-forge/commit/eea5270))
+- **docs-site:** playground should support full types + expose playground ([e6eb29f](https://github.com/agentender/cli-forge/commit/e6eb29f))
+- **repo:** shim cli-forge to allow pnpm to resolve it prior to build ([df9e9f8](https://github.com/agentender/cli-forge/commit/df9e9f8))
+- **type-tests:** fix failing tests in compiler and query specs ([a329aad](https://github.com/agentender/cli-forge/commit/a329aad))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 0.10.1 (2024-09-20)
 
 
