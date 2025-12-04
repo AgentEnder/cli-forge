@@ -1,0 +1,22 @@
+id: middleware-composition
+title: Middleware Composition
+description: |
+  Demonstrates how to compose middleware from separate modules. Each middleware
+  adds properties to the args object, and TypeScript correctly infers the
+  accumulated type in the final handler.
+
+entryPoint: cli.ts
+fileMap:
+  "./cli.ts": "cli.ts"
+  "./types.ts": "types.ts"
+  "./middleware/auth.ts": "middleware/auth.ts"
+  "./middleware/timing.ts": "middleware/timing.ts"
+
+commands:
+  - command: "{filename} greet --name Developer"
+    title: "With Authentication"
+    description: "The middleware chain adds user context and timing information."
+    assertions:
+      - contains: "Hello, Developer"
+      - contains: "authenticated"
+      - contains: "Request completed in"

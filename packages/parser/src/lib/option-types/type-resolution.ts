@@ -69,7 +69,11 @@ export type BaseType<T> = T extends { type: 'string' }
   ? string[]
   : T extends { type: 'array'; items: 'number' }
   ? number[]
-  : T extends { type: 'object'; properties: infer P; additionalProperties: infer A }
+  : T extends {
+      type: 'object';
+      properties: infer P;
+      additionalProperties: infer A;
+    }
   ? P extends Record<string, unknown>
     ? ResolveProperties<P> & AdditionalPropertiesType<A>
     : never
@@ -107,7 +111,7 @@ export type WithOptional<TResolved, TConfig> = TConfig extends {
  * Resolve all properties of an object option to their types.
  * Each property becomes its resolved type, wrapped with optional handling.
  *
- * Special case: when TProperties is `any` (from OptionConfig<any, any, any, any>),
+ * Special case: when TProperties is `any` (from `OptionConfig<any, any, any, any>`),
  * we return `unknown` to avoid creating an index signature that would hide
  * the actual properties inferred from the value.
  */
@@ -141,8 +145,12 @@ export type AdditionalPropertiesType<T> = IsAny<T> extends true
   ? unknown
   : [T] extends [false]
   ? unknown
-  : [T] extends ['string' | 'number' | 'boolean']
-  ? { [K: string]: unknown }
+  : [T] extends ['string']
+  ? { [K: string]: string }
+  : [T] extends ['number']
+  ? { [K: string]: number }
+  : [T] extends ['boolean']
+  ? { [K: string]: boolean }
   : unknown;
 
 /**

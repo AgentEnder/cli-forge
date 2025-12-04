@@ -1,0 +1,31 @@
+id: multi-command-cli
+title: Multi-Command CLI Structure
+description: |
+  Shows how to organize a CLI with multiple commands in separate files.
+  This structure scales well as your CLI grows, keeping each command
+  focused and testable in isolation.
+
+entryPoint: cli.ts
+fileMap:
+  "./cli.ts": "cli.ts"
+  "./commands/init.ts": "commands/init.ts"
+  "./commands/build.ts": "commands/build.ts"
+  "./commands/serve.ts": "commands/serve.ts"
+
+commands:
+  - command: "{filename} init --name my-project"
+    title: "Initialize Project"
+    assertions:
+      - contains: "Initializing project: my-project"
+
+  - command: "{filename} build --minify"
+    title: "Build with Minification"
+    assertions:
+      - contains: "Building project"
+      - contains: "minify: true"
+
+  - command: "{filename} serve --port 4000 --open"
+    title: "Start Dev Server"
+    assertions:
+      - contains: "Starting server on port 4000"
+      - contains: "Opening browser"
