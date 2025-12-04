@@ -1,5 +1,9 @@
 import { describe, it, expect } from 'vitest';
-import { createTestProgram, createProgramFromFile, findTsConfig } from './compiler.js';
+import {
+  createTestProgram,
+  createProgramFromFile,
+  findTsConfig,
+} from './compiler.js';
 import * as path from 'path';
 
 describe('compiler utilities', () => {
@@ -34,14 +38,14 @@ describe('compiler utilities', () => {
         const person: Person = { name: "Alice", age: 30 };
       `;
 
-      const { typeChecker, sourceFile } = createTestProgram(code);
+      const { program, sourceFile } = createTestProgram(code);
 
       // Find the person variable declaration
       const statements = sourceFile.statements;
       expect(statements.length).toBeGreaterThan(0);
 
       // Verify the type checker works
-      const diagnostics = typeChecker.getSemanticDiagnostics(sourceFile);
+      const diagnostics = program.getSemanticDiagnostics(sourceFile);
       expect(diagnostics.length).toBe(0);
     });
   });
