@@ -1,3 +1,3 @@
-export * from './configuration-loader';
-export * from './json-file-loader';
-export * from './package-json-loader';
+export * from './configuration-loader.js';
+export * from './json-file-loader.js';
+export * from './package-json-loader.js';

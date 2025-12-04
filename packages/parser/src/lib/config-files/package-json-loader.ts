@@ -1,7 +1,7 @@
 import { inspect } from 'node:util';
 
-import { ConfigurationProvider } from './configuration-loader';
-import { getJsonFileConfigLoader } from './json-file-loader';
+import { ConfigurationProvider } from './configuration-loader.js';
+import { getJsonFileConfigLoader } from './json-file-loader.js';
 
 /**
  * A factory function to create a configuration provider that loads configuration from a package.json file.
