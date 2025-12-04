@@ -1,0 +1,27 @@
+id: zod-validation
+title: Zod Schema Validation
+description: |
+  Demonstrates how to use Zod schemas for argument validation and transformation.
+  Schemas are defined in separate files, making them reusable across commands
+  and testable in isolation.
+
+entryPoint: ./cli.ts
+fileMap:
+  './cli.ts': 'cli.ts'
+  './schemas/config.ts': 'schemas/config.ts'
+  './schemas/user.ts': 'schemas/user.ts'
+
+commands:
+  - command: '{filename} deploy --env production --replicas 3'
+    title: 'Deploy Command'
+    description: 'Validates deployment configuration using Zod schema.'
+    assertions:
+      - contains: 'Deploying to production'
+      - contains: 'replicas: 3'
+
+  - command: '{filename} user-info --email test@example.com --role admin'
+    title: 'User Info Command'
+    description: 'Validates user data and transforms email to lowercase.'
+    assertions:
+      - contains: 'Email: test@example.com'
+      - contains: 'Role: admin'

@@ -6,17 +6,31 @@
 
 # CLI Forge
 
+**A type-safe CLI builder for Node.js with first-class TypeScript support.**
+
 ✨ Proudly built with [Nx](https://nx.dev) ✨.
 
-CLI Forge is a library / framework for building command line interfaces (CLI) in Node.js, inspired by projects like [yargs](https://yargs.js.org/), [commander](https://www.npmjs.com/package/commander), and [vorpal](https://vorpal.js.org/).
+CLI Forge is a modern framework for building command-line interfaces in Node.js, designed with TypeScript developers in mind. While inspired by established tools like [yargs](https://yargs.js.org/), [commander](https://www.npmjs.com/package/commander), and [vorpal](https://vorpal.js.org/), CLI Forge prioritizes type safety and developer experience above all else.
 
-## Features
+## Why CLI Forge?
 
-- Full option parsing, with support for flags and positional arguments.
-- TypeScript first, with full type support for parsed arguments.
-- Command and subcommand support.
-- Subshell support to make running complex subcommands easier.
-- `--help` and documentation generation.
+**Type Safety First** — Every option and argument you define is fully typed throughout your application. The library uses TypeScript's type inference to provide accurate intellisense and catch errors at compile time, not runtime.
+
+**Built for Modern Node.js** — Designed from the ground up for TypeScript projects with ESM support, middleware composition, and a clean fluent API that feels natural to use.
+
+**Comprehensive Tooling** — Generate documentation automatically from your CLI definition, test your commands with the built-in test harness, and optionally enable an interactive shell for improved user experience.
+
+## Key Features
+
+- **Full type inference** for parsed arguments based on your option definitions
+- **Flexible option types**: strings, numbers, booleans, arrays, and nested objects
+- **Command hierarchy** with unlimited nesting and inherited options
+- **Middleware system** for transforming arguments before handler execution
+- **Interactive shell** (opt-in) for easier exploration of complex command trees
+- **Automatic documentation generation** to markdown or JSON formats
+- **Configuration file support** with inheritance via `extends`
+- **Built-in test harness** for unit testing your CLI commands
+- **Comprehensive validation** with custom validators, choices, and cross-option constraints
 
 ## Quick Start
 
@@ -114,19 +128,51 @@ npx cli-forge generate-docs my-cli.{js,ts}
 
 By default, this will generate markdown documentation in a folder called `docs`. You can also pass `--format json` to generate a JSON object representation of your CLI instead. This is useful as a middle step if you want to generate documentation in a different format, or just a different style of markdown.
 
-## Why not yargs, commander, or vorpal?
+## How It Compares
 
-The main goal of `cli-forge` is to provide a simple, type-safe, and easy to use CLI framework for building command line interfaces in Node.js. A strong commitment to TypeScript and type safety is a core part of the project, and the library is designed to be as simple and easy to use as possible. Despite this, you'll note several places that there are type casts or type assertions in the codebase. This is due to limitations in TypeScript's type system, and the library is designed with **user** type safety taking priority over type safety within the library itself. We still try to avoid type casts where possible, but they are sometimes necessary to make the library easier to use.
+### vs. Yargs
 
-You'll note that the API is quite similar to both yargs and commander, and that's by design. I love both of those libraries, and just wanted something a bit more friendly. CLI Forge removes some of the features that seem less necessary, and adds a few features that I've found useful in my own projects. The most notable missing features are:
+CLI Forge shares a similar fluent API style with yargs, but makes different tradeoffs:
 
-- Parsing positional options from the usage string.
-- Parsing unknown options.
-- File system based routing / command loading.
+**What CLI Forge adds:**
+- Superior TypeScript inference that tracks every option through the chain
+- Built-in middleware system for argument transformation
+- Interactive shell support (inspired by vorpal)
+- Integrated documentation generation (`cli-forge generate-docs`)
+- Test harness for unit testing CLI commands
+- Configuration file inheritance with `extends`
 
-In order to keep the library's focus on typescript, parsing options out of the usage string would not be feasible. File system based routing is a cool feature, but I've found it to be a bit of a pain to work with in practice. I may add it in the future, but it's not a priority. Parsing unknown options makes it a lot faster to get started as you don't actually have to describe each option type that you're expecting, but that also eliminates the type safety. There are valid use cases for capturing options that you don't know about, but I've found that in practice, you usually wouldn't want to parse them as you will be passing them to another command or process and not want to modify them.
+**Intentional differences:**
+- **No usage string parsing** — To maintain type safety, options must be explicitly declared rather than parsed from usage strings
+- **No unknown option parsing** — Unknown options aren't captured by design; explicit option definitions ensure type safety
+- **No filesystem-based routing** — Commands are registered programmatically for better discoverability and refactoring support
 
-Vorpal can do **a lot**. There are some cool features there that may be considered for the future, and the subshell is a nod to vorpal's interactive shell. That being said, vorpal's last release was 7 years ago, and a lot has changed since then. Its still a great tool and a great project though, so I'd still recommend checking it out for some inspiration.
+### vs. Commander
+
+Commander offers a lightweight API, while CLI Forge provides more structure:
+
+**CLI Forge advantages:**
+- Full TypeScript type inference throughout the argument chain
+- Richer option types (nested objects with typed properties)
+- Middleware composition
+- Built-in configuration file support with inheritance
+- Automatic documentation generation
+- Interactive shell mode
+
+### vs. Vorpal
+
+Vorpal pioneered interactive CLI shells but hasn't been maintained since 2018. CLI Forge brings that concept forward:
+
+**Modern improvements:**
+- Active maintenance with TypeScript-first design
+- Opt-in interactive shell (not required)
+- Contemporary Node.js and TypeScript support
+- Comprehensive testing utilities
+- Documentation generation tooling
+
+### Design Philosophy
+
+CLI Forge prioritizes **user type safety** over internal implementation purity. While the library uses type assertions internally where necessary due to TypeScript limitations, the public API provides full type inference and safety. The goal is a CLI framework that feels natural in TypeScript projects while catching as many errors as possible at compile time.
 
 ## Contributing
 

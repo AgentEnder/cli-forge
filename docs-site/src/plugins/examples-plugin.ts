@@ -35,7 +35,7 @@ export const ExamplesDocsPlugin = async (
 
   for (const example of examples) {
     const relative = (
-      example.files.length > 1
+      example.files.length > 1 || example.multifile
         ? dirname(example.files[0].path)
         : example.files[0].path
     ).replace(examplesRoot, '');
@@ -121,45 +121,80 @@ function getEntryPoint(example: Example) {
   return example.files.find((file) => file.path === example.data.entryPoint);
 }
 
-function formatExampleMd({ files, data }: Example): string {
-  const bodyLines = [h1(data.title)];
-  if (data.description) {
-    bodyLines.push(data.description);
-  }
-  bodyLines.push(h2('Code'));
-  return `---
+function formatCodeBlock(
+  path: string,
+  contents: string,
+  fileMap: Record<string, string>,
+  title: string
+): string {
+  const displayTitle = fileMap[path] ?? title;
+  const ext = path.split('.').pop() ?? 'ts';
+  const lang =
+    ext === 'yml' || ext === 'yaml' ? 'yaml' : ext === 'json' ? 'json' : 'ts';
+  return `\`\`\`${lang} title="${displayTitle}" showLineNumbers
+${contents}
+\`\`\``;
+}
+
+function processContentWithFileTags(
+  content: string,
+  files: Example['files'],
+  data: Example['data']
+): string {
+  // Match {{file:path}} patterns
+  const fileTagPattern = /\{\{file:([^}]+)\}\}/g;
+
+  return content.replace(fileTagPattern, (match, relativePath) => {
+    // Normalize the path for matching
+    const normalizedPath = relativePath.trim();
+
+    // Find the file in the collected files
+    const file = files.find((f) => {
+      // Match against the relative path from fileMap or the path suffix
+      const fileMapMatch = Object.entries(data.fileMap).find(
+        ([fullPath, displayName]) =>
+          displayName === normalizedPath || fullPath.endsWith(normalizedPath)
+      );
+      if (fileMapMatch) {
+        return f.path === fileMapMatch[0];
+      }
+      return f.path.endsWith(normalizedPath);
+    });
+
+    if (!file) {
+      console.warn(
+        `Warning: File "${relativePath}" not found in example "${data.id}"`
+      );
+      return match; // Keep original tag if file not found
+    }
+
+    return formatCodeBlock(file.path, file.contents, data.fileMap, data.title);
+  });
+}
+
+function formatExampleMd({ files, data, content }: Example): string {
+  const frontmatter = `---
 ${stringify({
   id: data.id,
   title: data.title,
   description: data.description,
 })}hide_title: true
----
-${lines(bodyLines)} 
+---`;
 
-${files
-  .map(
-    ({ path, contents }) =>
-      `\`\`\`ts title="${data.fileMap[path] ?? data.title}" showLineNumbers
-${contents}
-    \`\`\``
-  )
-  .join('\n\n')}
+  const playgroundLink = link(
+    `/playground/#${compressToEncodedURIComponent(
+      [
+        "// The following line doesn't do anything really, rather it tells",
+        '// the TypeScript playground that this script should be evaluated as a nodejs script.',
+        "import {} from 'node:fs'",
+        '',
+        getEntryPoint({ files, data })?.contents ?? '',
+      ].join('\n')
+    )}`,
+    'View on TypeScript Playground'
+  );
 
-${link(
-  `/playground/#${compressToEncodedURIComponent(
-    [
-      "// The following line doesn't do anything really, rather it tells",
-      '// the TypeScript playground that this script should be evaluated as a nodejs script.',
-      "import {} from 'node:fs'",
-      '',
-      getEntryPoint({ files, data }).contents,
-    ].join('\n')
-  )}`,
-  'View on TypeScript Playground'
-)}
-
-${
-  data.commands.length
+  const usageSection = data.commands.length
     ? h2(
         'Usage',
         ...data.commands.map((config) => {
@@ -182,11 +217,51 @@ ${
           );
         })
       )
-    : ''
-}
+    : '';
+
+  // If content.md exists, use it with file tag processing
+  if (content) {
+    const processedContent = processContentWithFileTags(content, files, data);
+    return `${frontmatter}
+
+# ${data.title}
+
+${data.description ?? ''}
+
+${processedContent}
+
+${playgroundLink}
+
+${usageSection}
 
 ${e2eExamplesDisclaimer}
-  `;
+`;
+  }
+
+  // Fallback: original behavior (description + all files sequentially)
+  const bodyLines = [h1(data.title)];
+  if (data.description) {
+    bodyLines.push(data.description);
+  }
+  bodyLines.push(h2('Code'));
+
+  const codeBlocks = files
+    .map(({ path, contents }) =>
+      formatCodeBlock(path, contents, data.fileMap, data.title)
+    )
+    .join('\n\n');
+
+  return `${frontmatter}
+${lines(bodyLines)}
+
+${codeBlocks}
+
+${playgroundLink}
+
+${usageSection}
+
+${e2eExamplesDisclaimer}
+`;
 }
 
 function formatIndexMd(examples: ReturnType<typeof collectExamples>): string {

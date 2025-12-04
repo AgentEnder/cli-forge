@@ -8,15 +8,10 @@
     "types": ["node"],
     "resolveJsonModule": true,
     "rootDir": ".",
-    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
+    "tsBuildInfoFile": "tsconfig.fixtures.json.tsbuildinfo"
   },
-  "include": ["src/**/*.ts"],
-  "exclude": [
-    "vitest.config.mts",
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "fixtures/**"
-  ],
+  "include": ["src/**/*.ts", "fixtures/**/*.ts"],
+  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
   "references": [
     {
       "path": "../packages/parser/tsconfig.lib.json"

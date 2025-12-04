@@ -1,0 +1,29 @@
+id: composable-builders
+title: Composable Builders
+description: |
+  Shows how to create reusable option builders that can be shared across
+  commands. This pattern reduces duplication when multiple commands need
+  the same options like verbosity, output format, or configuration paths.
+
+entryPoint: cli.ts
+fileMap:
+  "./cli.ts": "cli.ts"
+  "./builders/common.ts": "builders/common.ts"
+  "./builders/output.ts": "builders/output.ts"
+  "./commands/build.ts": "commands/build.ts"
+  "./commands/serve.ts": "commands/serve.ts"
+
+commands:
+  - command: "{filename} build --verbose --format json"
+    title: "Build with Options"
+    description: "Uses verbose and format options from shared builders."
+    assertions:
+      - contains: "verbose: true"
+      - contains: "format: json"
+
+  - command: "{filename} serve --port 8080 --verbose"
+    title: "Serve with Options"
+    description: "Uses verbose option shared with build command."
+    assertions:
+      - contains: "verbose: true"
+      - contains: "port: 8080"

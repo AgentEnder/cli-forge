@@ -1,4 +1,4 @@
-import { Dirent, readFileSync, readdirSync } from 'node:fs';
+import { Dirent, existsSync, readFileSync, readdirSync } from 'node:fs';
 import { basename, join } from 'node:path';
 import { normalize } from 'node:path/posix';
 
@@ -19,6 +19,7 @@ export type FrontMatter = {
   fileMap: Record<string, string>;
   commands: (string | CommandConfiguration)[];
   entryPoint: string;
+  contentFile?: string;
 };
 
 export type Example = {
@@ -27,6 +28,8 @@ export type Example = {
     contents: string;
   }[];
   data: FrontMatter;
+  content?: string;
+  multifile?: boolean;
 };
 
 function normalizeFrontMatter(
@@ -112,6 +115,19 @@ export function collectMultifileExample(
 ): Example {
   const meta = loadYaml(readFileSync(join(root, 'meta.yml'), 'utf-8'));
 
+  // Check for content file (defaults to content.md)
+  const contentFileName = meta.contentFile ?? 'content.md';
+  const contentFilePath = join(root, contentFileName);
+  const content = existsSync(contentFilePath)
+    ? readFileSync(contentFilePath, 'utf-8')
+    : undefined;
+
+  // Files to exclude from collection
+  const excludedFiles = new Set([
+    normalize(join(root, 'meta.yml')),
+    normalize(contentFilePath),
+  ]);
+
   const collected: {
     path: string;
     contents: string;
@@ -122,7 +138,7 @@ export function collectMultifileExample(
       const path = join(root, file.name);
       if (file.isDirectory()) {
         collectFiles(path, readdirSync(path, { withFileTypes: true }));
-      } else if (path !== join(root, 'meta.yml')) {
+      } else if (!excludedFiles.has(normalize(path))) {
         collected.push({
           path: normalize(path),
           contents: readFileSync(path, 'utf-8'),
@@ -134,22 +150,24 @@ export function collectMultifileExample(
   collectFiles(root, files);
 
   // Ensure's entry point is first file.
-  const entryPointIdx =
-    meta.entryPoint &&
-    collected.findIndex(({ path }) => path === join(root, meta.entryPoint));
+  const entryPointIdx = meta.entryPoint
+    ? collected.findIndex(({ path }) => path === join(root, meta.entryPoint))
+    : null;
 
-  if (entryPointIdx && entryPointIdx !== -1) {
+  if (entryPointIdx !== null && entryPointIdx !== -1) {
     const entryPoint = collected.splice(entryPointIdx, 1);
     collected.unshift(entryPoint[0]);
   } else if (meta.entryPoint) {
     throw new Error(
-      `Entry point "${meta.entryPoint}" not found in multifile example`
+      `Entry point "${meta.entryPoint}" not found in multifile example ${root}.`
     );
   }
 
   return normalizeFrontMatter(root, {
     files: collected,
     data: meta,
+    content,
+    multifile: true,
   });
 }
 
