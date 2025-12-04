@@ -866,6 +866,101 @@ describe('parser', () => {
     });
   });
 
+  it('should apply nested defaults before coerce for object options', () => {
+    const coerceCalls: any[] = [];
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          server: {
+            type: 'object',
+            properties: {
+              host: { type: 'string', default: 'localhost' },
+              port: { type: 'number', default: 3000 },
+            },
+          },
+        },
+        coerce: (val) => {
+          // Track what the value looks like when coerce is called
+          coerceCalls.push(JSON.parse(JSON.stringify(val)));
+          return { ...val, coerced: true };
+        },
+      })
+      .parse(['--config.server.port', '8080']);
+
+    // Coerce should have been called with defaults already applied
+    expect(coerceCalls[0]).toEqual({
+      server: { host: 'localhost', port: 8080 },
+    });
+    
+    // Final result should have coerce applied
+    expect(result).toEqual({
+      config: { server: { host: 'localhost', port: 8080 }, coerced: true },
+      unmatched: [],
+    });
+  });
+
+  it('should only apply nested defaults when parent object has at least one property set', () => {
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          server: {
+            type: 'object',
+            properties: {
+              host: { type: 'string', default: 'localhost' },
+              port: { type: 'number', default: 3000 },
+            },
+          },
+          database: {
+            type: 'object',
+            properties: {
+              host: { type: 'string', default: 'db.local' },
+              port: { type: 'number', default: 5432 },
+            },
+          },
+        },
+      })
+      .parse(['--config.server.port', '8080']);
+
+    // Server defaults should be applied since server.port was set
+    // Database defaults should NOT be applied since no database property was set
+    expect(result).toEqual({
+      config: {
+        server: { host: 'localhost', port: 8080 },
+      },
+      unmatched: [],
+    });
+  });
+
+  it('should not apply top-level object default if no properties are explicitly set', () => {
+    const result = parser()
+      .option('config', {
+        type: 'object',
+        properties: {
+          server: {
+            type: 'object',
+            properties: {
+              host: { type: 'string', default: 'localhost' },
+              port: { type: 'number', default: 3000 },
+            },
+          },
+        },
+        default: {
+          server: { host: 'default-host', port: 9999 },
+        },
+      })
+      .option('other', { type: 'string' })
+      .parse(['--other', 'value']);
+
+    // Top-level default should apply only if config is not set at all
+    expect(result).toEqual({
+      config: { server: { host: 'default-host', port: 9999 } },
+      other: 'value',
+      unmatched: [],
+    });
+  });
+
   it('should read values from config files', () => {
     const configurationLoader = makeMockConfigLoader({
       [join(process.cwd(), '.myclirc')]: {
