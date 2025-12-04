@@ -1,11 +1,22 @@
 import { CommonOptionConfig } from './option-types/common';
 import { hideBin } from './helpers';
-import { OptionConfigToType } from './option-types/option-config-to-type';
+import {
+  OptionConfigToType,
+  ResolveProperties,
+  AdditionalPropertiesType,
+} from './option-types/option-config-to-type';
+import { WithOptional } from './option-types/type-resolution';
 import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
 import {
+  Internal,
   InternalOptionConfig,
   ObjectOptionConfig,
+  StringOptionConfig,
+  NumberOptionConfig,
+  BooleanOptionConfig,
+  ArrayOptionConfig,
   OptionConfig,
+  UnknownOptionConfig,
 } from './option-types';
 import { parserMap } from './parsers/parser-map';
 import { NoValueError, Parser, ParserContext } from './parsers/typings';
@@ -152,16 +163,97 @@ export class ArgvParser<
   /**
    * Registers a new option with the parser.
    * @param name The name of the option
-   * @param config The configuration for the option. See {@link OptionConfig}
+   * @param config The configuration for the option. See {@link UnknownOptionConfig}
    * @returns Updated parser instance with the new option registered.
    */
-  option<TOption extends string, const TOptionConfig extends OptionConfig<any>>(
+  // Object option overload - must come first for proper contextual typing
+  // Uses direct ObjectOptionConfig type (not `extends`) to ensure TypeScript
+  // infers TProps from `properties` BEFORE evaluating the coerce callback type
+  //
+  // The return type uses a conditional to check if TCoerce is unknown (no coerce
+  // function provided) or a specific type (coerce function provided). This avoids
+  // relying on InferCoerce which has issues with optional coerce properties.
+  option<
+    TOption extends string,
+    TCoerce,
+    const TProps extends Record<string, { type: string }>,
+    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  >(
+    name: TOption,
+    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: WithOptional<
+        unknown extends TCoerce
+          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
+          : TCoerce,
+        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+      >;
+    }
+  >;
+  // String option overload
+  option<
+    TOption extends string,
+    const TConfig extends StringOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Number option overload
+  option<
+    TOption extends string,
+    const TConfig extends NumberOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Boolean option overload
+  option<
+    TOption extends string,
+    const TConfig extends BooleanOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Array option overload
+  option<
+    TOption extends string,
+    const TConfig extends ArrayOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Generic fallback overload
+  option<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(
     name: TOption,
     config: TOptionConfig
-  ) {
-    const thisAsNewType = this as any as ArgvParser<
-      TArgs & { [key in TOption]: OptionConfig }
-    >;
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TOptionConfig>;
+    }
+  >;
+  // Implementation
+  option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
+    const thisAsNewType = this as any as ArgvParser<any>;
 
     if (name.includes('-')) {
       config.alias ??= [];
@@ -178,23 +270,98 @@ export class ArgvParser<
       thisAsNewType.configuredPositionals.push(entry);
     }
 
-    return this as any as ArgvParser<
-      TArgs & {
-        [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }
-    >;
+    return this as any;
   }
 
   /**
    * Registers a new positional argument with the parser.
    * @param name The name of the positional argument
-   * @param config The configuration for the positional argument. See {@link OptionConfig}
+   * @param config The configuration for the positional argument. See {@link UnknownOptionConfig}
    * @returns Updated parser instance with the new positional argument registered.
    */
+  // Object option overload - must come first for proper contextual typing
+  // Uses direct ObjectOptionConfig type (not `extends`) to ensure TypeScript
+  // infers TProps from `properties` BEFORE evaluating the coerce callback type
   positional<
     TOption extends string,
-    const TOptionConfig extends OptionConfig<any>
-  >(name: TOption, config: TOptionConfig) {
+    TCoerce,
+    const TProps extends Record<string, { type: string }>,
+    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  >(
+    name: TOption,
+    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: WithOptional<
+        unknown extends TCoerce
+          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
+          : TCoerce,
+        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+      >;
+    }
+  >;
+  // String option overload
+  positional<
+    TOption extends string,
+    const TConfig extends StringOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Number option overload
+  positional<
+    TOption extends string,
+    const TConfig extends NumberOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Boolean option overload
+  positional<
+    TOption extends string,
+    const TConfig extends BooleanOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Array option overload
+  positional<
+    TOption extends string,
+    const TConfig extends ArrayOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TConfig>;
+    }
+  >;
+  // Generic fallback overload
+  positional<
+    TOption extends string,
+    const TOptionConfig extends OptionConfig<any, any, any, any>
+  >(
+    name: TOption,
+    config: TOptionConfig
+  ): ArgvParser<
+    TArgs & {
+      [key in TOption]: OptionConfigToType<TOptionConfig>;
+    }
+  >;
+  // Implementation
+  positional(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     return this.option(name, {
       ...config,
       positional: true,
@@ -401,12 +568,12 @@ export class ArgvParser<
         // Handle nested object properties
         if (
           configuration.type === 'object' &&
-          (configuration as ObjectOptionConfig).properties &&
+          (configuration as ObjectOptionConfig<any, any>).properties &&
           normalized[configuration.key] !== undefined
         ) {
           normalized[configuration.key] = normalizeAndValidateObjectProperties(
             normalized[configuration.key],
-            configuration as ObjectOptionConfig,
+            configuration as ObjectOptionConfig<any, any>,
             configuration.key,
             errors
           );
@@ -580,15 +747,18 @@ export function parser(opts?: ParserOptions) {
   return new ArgvParser(opts);
 }
 
-function validateOption<T>(optionConfig: InternalOptionConfig, value: T) {
+function validateOption<TConfig extends Internal<UnknownOptionConfig>, TVal>(
+  optionConfig: TConfig,
+  value: TVal
+) {
   if ('choices' in optionConfig && optionConfig.choices) {
     const choices = [
-      ...new Set<T>(
+      ...new Set<TVal>(
         [
           typeof optionConfig.choices === 'function'
             ? optionConfig.choices()
             : optionConfig.choices,
-        ].flat() as T[]
+        ].flat() as TVal[]
       ),
     ];
     optionConfig.validate ??= () => true;
@@ -607,7 +777,8 @@ function validateOption<T>(optionConfig: InternalOptionConfig, value: T) {
       return true;
     };
   }
-  if (optionConfig.validate && value !== undefined) {
+  if (optionConfig.validate && value != undefined) {
+    value;
     let result: ReturnType<Required<CommonOptionConfig<any>>['validate']>;
     try {
       result = optionConfig.validate(value);
@@ -689,7 +860,7 @@ export class ValidationFailedError<T> extends AggregateError {
  */
 function normalizeAndValidateObjectProperties(
   value: Record<string, any> | undefined,
-  config: ObjectOptionConfig,
+  config: ObjectOptionConfig<any, any>,
   keyPath: string,
   errors: Error[]
 ): Record<string, any> | undefined {

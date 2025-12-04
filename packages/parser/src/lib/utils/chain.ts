@@ -5,7 +5,7 @@
 // - This isn't maintained or even written by hand, aside from the final implementation. The various
 //   overload signatures are copilot generated.
 
-import { OptionConfig } from '../option-types';
+import { UnknownOptionConfig } from '../option-types';
 import { ArgvParser, ParsedArgs } from '../parser';
 
 type UnaryFunction<T, R> = (arg: T) => R;
@@ -607,7 +607,7 @@ export function chain<T0>(
  */
 export function makeComposableOption<
   const TKey extends string,
-  const TOptionConfig extends OptionConfig
+  const TOptionConfig extends UnknownOptionConfig
 >(name: TKey, config: TOptionConfig) {
   return <const T extends ParsedArgs>(argv: ArgvParser<T>) =>
     argv.option(name, config);

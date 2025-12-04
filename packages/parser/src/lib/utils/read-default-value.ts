@@ -1,11 +1,11 @@
 import {
   Default,
-  OptionConfig,
+  UnknownOptionConfig,
   PlainDefaultValue,
   OptionConfigToType,
 } from '../option-types';
 
-export function readDefaultValue<const T extends OptionConfig>(
+export function readDefaultValue<const T extends UnknownOptionConfig>(
   option: T
 ): [OptionConfigToType<T> | undefined, string | undefined] {
   if (option.default !== undefined) {

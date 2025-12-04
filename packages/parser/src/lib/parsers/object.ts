@@ -1,9 +1,14 @@
-import { Internal, ObjectOptionConfig, OptionConfig } from '../option-types';
+import {
+  Internal,
+  ObjectOptionConfig,
+  UnknownOptionConfig,
+} from '../option-types';
 import { tryParseValue } from '../parser';
 import { parserMap } from './parser-map';
 import { Parser } from './typings';
 
-export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
+export const objectParser: Parser<Internal<ObjectOptionConfig<any, any, any>>> =
+  ({
   tokens,
   config,
   providedFlag,
@@ -23,10 +28,14 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
         `${config.key} is configured as an object, but no value was provided. Pass properties like so: --${config.key}.foo bar --${config.key}.baz qux, or provide a JSON string: --${config.key} '{"foo": "bar"}'`
       );
     }
-    
+
     try {
       const parsed = JSON.parse(token);
-      if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+      if (
+        typeof parsed !== 'object' ||
+        parsed === null ||
+        Array.isArray(parsed)
+      ) {
         throw new Error(
           `Expected ${config.key} to be a JSON object, but got ${typeof parsed}`
         );
@@ -61,13 +70,13 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
   function parsePath(parts: string[]): {
     readValue(): any;
     setValue(v: any): void;
-    config: OptionConfig;
+    config: ObjectOptionConfig<any, any, any>;
   } {
     const propParts = [...parts];
     let currentObject = current;
     let currentKey = propParts.shift();
     let currentValue: any;
-    let currentConfig: OptionConfig = config;
+    let currentConfig: UnknownOptionConfig = config;
     let last: string;
     // eslint-disable-next-line no-constant-condition
     while (true) {
@@ -79,7 +88,7 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
           setValue(v) {
             currentObject[last] = v;
           },
-          config: currentConfig,
+          config: currentConfig as ObjectOptionConfig<any, any, any>,
         };
       }
       const nextKey = propParts.shift();
@@ -98,7 +107,9 @@ export const objectParser: Parser<Internal<ObjectOptionConfig>> = ({
       if (nextKey) {
         currentObject = currentObject[last];
       }
-      const c = (currentConfig as ObjectOptionConfig).properties[last];
+      const c = (currentConfig as ObjectOptionConfig<any, any, any>).properties[
+        last
+      ];
       if (!c) {
         if (
           'additionalProperties' in currentConfig &&
