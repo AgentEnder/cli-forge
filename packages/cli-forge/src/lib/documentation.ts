@@ -1,5 +1,5 @@
 import {
-  OptionConfig,
+  UnknownOptionConfig,
   OptionConfigToType,
   readDefaultValue,
 } from '@cli-forge/parser';
@@ -21,7 +21,7 @@ export type Documentation = {
   subcommands: Documentation[];
 };
 
-function normalizeOptionConfigForDocumentation<T extends OptionConfig>(
+function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
   option: T,
   key: string
 ) {
@@ -41,9 +41,9 @@ function normalizeOptionConfigForDocumentation<T extends OptionConfig>(
   return result;
 }
 
-type NormalizedOptionConfig<T extends OptionConfig = OptionConfig> = ReturnType<
-  typeof normalizeOptionConfigForDocumentation<T>
->;
+type NormalizedOptionConfig<
+  T extends UnknownOptionConfig = UnknownOptionConfig
+> = ReturnType<typeof normalizeOptionConfigForDocumentation<T>>;
 
 export function generateDocumentation(
   cli: InternalCLI,

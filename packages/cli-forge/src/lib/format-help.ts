@@ -1,6 +1,6 @@
 import {
   InternalOptionConfig,
-  OptionConfig,
+  UnknownOptionConfig,
   readDefaultValue,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
@@ -83,7 +83,7 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   return help.join('\n');
 }
 
-function getOptionParts(option: OptionConfig) {
+function getOptionParts(option: UnknownOptionConfig) {
   const parts = [];
   if (option.description) {
     parts.push(option.description);
