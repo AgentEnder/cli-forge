@@ -521,20 +521,19 @@ export class ArgvParser<
         }
       }
       // Apply nested defaults for object options (before coerce)
-      if (
-        configuration.type === 'object' &&
-        (configuration as ObjectOptionConfig<any, any>).properties &&
-        normalized[configuration.key] !== undefined
-      ) {
-        normalized[configuration.key] = applyNestedObjectDefaults(
-          normalized[configuration.key],
-          configuration as ObjectOptionConfig<any, any>
-        );
-        // Now apply coerce after defaults have been applied
-        if (configuration.coerce) {
-          normalized[configuration.key] = (
-            configuration.coerce as (s: any) => any
-          )(normalized[configuration.key]);
+      if (configuration.type === 'object' && normalized[configuration.key] !== undefined) {
+        const objectConfig = configuration as ObjectOptionConfig<any, any>;
+        if (objectConfig.properties) {
+          normalized[configuration.key] = applyNestedObjectDefaults(
+            normalized[configuration.key],
+            objectConfig
+          );
+          // Now apply coerce after defaults have been applied
+          if (configuration.coerce) {
+            normalized[configuration.key] = (
+              configuration.coerce as (s: any) => any
+            )(normalized[configuration.key]);
+          }
         }
       }
       this.reflectEnv(configuration, normalized[configuration.key]);
@@ -874,7 +873,7 @@ export class ValidationFailedError<T> extends AggregateError {
 /**
  * Applies default values to nested properties of an object option recursively.
  * This is called during normalization, before coerce is applied.
- * Only applies defaults if the parent object exists (at least one property is set).
+ * This function is only called when the parent object exists (has at least one property set).
  * @param value The current value of the object
  * @param config The object option configuration
  * @returns The object with defaults applied to nested properties
@@ -888,7 +887,7 @@ function applyNestedObjectDefaults(
   for (const propKey in config.properties) {
     const propConfig = config.properties[propKey];
 
-    // Apply defaults for undefined properties only if parent object has at least one property set
+    // Apply defaults for undefined properties
     if (normalized[propKey] === undefined && propConfig.default !== undefined) {
       normalized[propKey] = readDefaultValue(propConfig)[0];
     }
