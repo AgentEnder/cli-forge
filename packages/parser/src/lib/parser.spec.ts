@@ -256,7 +256,9 @@ describe('parser', () => {
     parsed.qux.reduce((acc, val) => acc + val, 0);
     parsed.env?.foo?.charAt(0);
     parsed.env?.bar?.valueOf();
-    parsed.env?.['blam'].charAt(0);
+    // Additional properties have type `unknown` to avoid intersection conflicts
+    // with nested object types. Runtime validates the type is correct.
+    (parsed.env?.['blam'] as string).charAt(0);
   });
 
   it('should allow customizing unmatched parser', () => {
@@ -556,7 +558,8 @@ describe('parser', () => {
     `);
     // Types should be inferred correctly
     parsed.foo?.bar?.baz?.toFixed();
-    parsed.foo?.['blam'].charAt(0);
+    // Additional properties have type `unknown` to avoid intersection conflicts
+    (parsed.foo?.['blam'] as string).charAt(0);
     // It's an array of numbers
     parsed.foo?.arr?.reduce((acc, val) => acc + val, 0);
   });
@@ -611,11 +614,33 @@ describe('parser', () => {
       .option('env', {
         type: 'object',
         properties: {
-          foo: { type: 'string' },
+          foo: { type: 'string', required: true },
+          bar: { type: 'string', required: false },
         },
-        coerce: (val) => ({ ...val, coerced: true }),
+        default: {
+          description: 'Default env object',
+          value: { foo: 'default-foo', bar: 'default-bar', bax: 'default-bax' },
+        },
+        coerce: (val) => {
+          return {
+            ...val,
+            baz: val.bar,
+            foo: val.foo,
+            coerced: true,
+          };
+        },
       })
       .parse(['--env.foo', 'test']);
+    // The below lines test that types are inferred correctly
+    // Foo is required, so it can't be undefined
+    result.env?.foo.charAt(0);
+    // Bar and baz are optional (baz is val.bar, bar is optional)
+    result.env?.bar?.charAt(0);
+    result.env?.baz?.charAt(0);
+    //@ts-expect-error bax isn't on T, was only in default...
+    result.env.bax;
+
+    // The below tests that coercion was correctly applied
     expect(result.env).toEqual({ foo: 'test', coerced: true });
   });
 
@@ -758,7 +783,7 @@ describe('parser', () => {
         },
       })
       .parse(['--config', '{"host": "example.com", "port": 8080}']);
-    
+
     expect(result).toEqual({
       config: { host: 'example.com', port: 8080 },
       unmatched: [],
@@ -781,7 +806,7 @@ describe('parser', () => {
         '--config',
         '{"host": "example.com", "port": 8080}',
       ]);
-    
+
     expect(result).toEqual({
       config: { host: 'example.com', port: 8080, ssl: true },
       unmatched: [],
@@ -834,7 +859,7 @@ describe('parser', () => {
         '--config.server.port',
         '9000',
       ]);
-    
+
     expect(result).toEqual({
       config: { server: { host: 'json.example.com', port: 9000 } },
       unmatched: [],

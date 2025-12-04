@@ -1,9 +1,9 @@
-import { OptionConfig } from '../option-types';
+import { UnknownOptionConfig } from '../option-types';
 import { ParsedArgs } from '../parser';
 
 export function getConfiguredOptionKey<T extends ParsedArgs>(
   key: string,
-  configuredOptions: Partial<Record<keyof T, OptionConfig>>
+  configuredOptions: Partial<Record<keyof T, UnknownOptionConfig>>
 ): keyof T | undefined {
   if (key in configuredOptions) {
     return key as keyof T;
