@@ -1,8 +1,8 @@
 import { readFileSync } from 'fs';
 import { inspect } from 'util';
 
-import { ConfigurationProvider } from './configuration-loader';
-import { traverseForFile } from './utils';
+import { ConfigurationProvider } from './configuration-loader.js';
+import { traverseForFile } from './utils.js';
 
 /**
  * A factory function to create simple configuration providers that load configuration from a JSON file.
