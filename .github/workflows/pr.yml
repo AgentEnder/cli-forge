@@ -39,3 +39,6 @@ jobs:
 
       - name: Run tests
         run: npx nx run-many -t build test e2e
+
+      - run: npx nx fix-ci
+        if: always()
