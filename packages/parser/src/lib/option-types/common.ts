@@ -34,7 +34,7 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
    *
    * If the default value is a tuple, the first value will be used as the default value, and the second value will be used as the description.
    */
-  default?: Default<T>;
+  default?: Default<NoInfer<T>>;
 
   /**
    * Provide a description for the option.
