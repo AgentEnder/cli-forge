@@ -29,27 +29,27 @@ interface SeedResult {
 }
 
 const dbCli = cli('db')
-  .command('empty', {
+  .command<'empty', EmptyResult>('empty', {
     description: 'Empty the database',
-    handler: (args, _ctx): EmptyResult => {
+    handler: (args, _ctx) => {
       const cleared = 150;
       console.log(`Cleared ${cleared} records`);
       return { clearedCount: cleared };
     }
   })
 
-  .command('migrate', {
+  .command<'migrate', Promise<MigrateResult>>('migrate', {
     description: 'Run migrations',
-    handler: async (args, _ctx): Promise<MigrateResult> => {
+    handler: async (args, _ctx) => {
       const applied = 3;
       console.log(`Applied ${applied} migrations`);
       return { appliedMigrations: applied, currentVersion: '2024.1.3' };
     }
   })
 
-  .command('seed', {
+  .command<'seed', SeedResult>('seed', {
     description: 'Seed initial data',
-    handler: (args, _ctx): SeedResult => {
+    handler: (args, _ctx) => {
       const seeded = 50;
       console.log(`Seeded ${seeded} records`);
       return { seededCount: seeded };

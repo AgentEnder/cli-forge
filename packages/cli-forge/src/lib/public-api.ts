@@ -80,10 +80,10 @@ export interface CLI<
    * @param options Settings for the new command without a builder.
    * @returns Updated CLI instance with the new command registered.
    */
-  command<TKey extends string, TOptions extends Omit<CLICommandOptions<TArgs, TArgs, any>, 'builder'> & { builder?: never }>(
+  command<TKey extends string, TReturn = void>(
     key: TKey,
-    options: TOptions
-  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TArgs, InferHandlerReturn<TOptions>> }, THandlerReturn>;
+    options: Omit<CLICommandOptions<TArgs, TArgs, TReturn>, 'builder'> & { builder?: never }
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TArgs, TReturn> }, THandlerReturn>;
 
   /**
    * Registers a new command with the CLI.
@@ -95,10 +95,10 @@ export interface CLI<
    * For generic helper functions that wrap command registration, the registerCommand 
    * pattern works best when chaining calls directly without intermediate variables.
    */
-  command<TCommandArgs extends TArgs, TKey extends string, TOptions extends CLICommandOptions<TArgs, TCommandArgs, any>>(
+  command<TCommandArgs extends TArgs, TKey extends string, TReturn = void>(
     key: TKey,
-    options: TOptions
-  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, InferHandlerReturn<TOptions>> }, THandlerReturn>;
+    options: CLICommandOptions<TArgs, TCommandArgs, TReturn>
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, TReturn> }, THandlerReturn>;
 
   /**
    * Registers multiple subcommands with the CLI.

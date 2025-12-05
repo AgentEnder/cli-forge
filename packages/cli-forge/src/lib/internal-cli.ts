@@ -160,10 +160,10 @@ export class InternalCLI<
     return this as any;
   }
 
-  command<TCommandArgs extends TArgs, TKey extends string = string, TReturn = void>(
+  command<TCommandArgs extends TArgs, TKey extends string = string>(
     keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs, TReturn>
-  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, TReturn> }, THandlerReturn> {
+    options?: CLICommandOptions<TArgs, TCommandArgs, any>
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, any> }, THandlerReturn> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
