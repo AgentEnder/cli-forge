@@ -37,7 +37,7 @@ export class InteractiveShell {
   private readonly rl: readline.Interface;
   private listeners: any[] = [];
 
-  constructor(cli: InternalCLI<any>, opts?: InteractiveShellOptions) {
+  constructor(cli: InternalCLI<any, any, any>, opts?: InteractiveShellOptions) {
     if (INTERACTIVE_SHELL) {
       throw new Error(
         'Only one interactive shell can be created at a time. Make sure the other instance is closed.'

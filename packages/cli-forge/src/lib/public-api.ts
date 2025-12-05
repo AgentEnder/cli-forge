@@ -17,11 +17,32 @@ import {
 import { InternalCLI } from './internal-cli';
 
 /**
- * Registry of child commands with their typed CLI instances.
- * TChildren maps command names to their argument types.
+ * Information about a command, including its argument type and return type.
  */
-export type ChildCommandsRegistry<TChildren extends Record<string, ParsedArgs>> = {
-  [K in keyof TChildren]: CLI<TChildren[K]>;
+export type CommandInfo<TArgs extends ParsedArgs = ParsedArgs, TReturn = void> = {
+  args: TArgs;
+  return: TReturn;
+};
+
+/**
+ * Extract the return type from a handler function.
+ * If handler is missing/undefined, returns void.
+ * Preserves Promise types so callers know whether to await.
+ */
+export type InferHandlerReturn<T> = T extends {
+  handler: infer H;
+}
+  ? H extends (...args: any[]) => any
+    ? ReturnType<H>
+    : void
+  : void;
+
+/**
+ * Registry of child commands with their typed CLI instances.
+ * TChildren maps command names to CommandInfo containing args and return types.
+ */
+export type ChildCommandsRegistry<TChildren extends Record<string, CommandInfo>> = {
+  [K in keyof TChildren]: CLI<TChildren[K]['args'], Record<string, CommandInfo>, TChildren[K]['return']>;
 };
 
 /**
@@ -45,11 +66,12 @@ export type ChildCommandsRegistry<TChildren extends Record<string, ParsedArgs>> 
  */
 export interface CLI<
   TArgs extends ParsedArgs = ParsedArgs,
-  TChildren extends Record<string, ParsedArgs> = {}
+  TChildren extends Record<string, CommandInfo> = {},
+  THandlerReturn = void
 > {
   command<TCommandArgs extends TArgs>(
     cmd: Command<TArgs, TCommandArgs>
-  ): CLI<TArgs, TChildren>;
+  ): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Registers a new command with the CLI (no builder - handler only).
@@ -58,10 +80,10 @@ export interface CLI<
    * @param options Settings for the new command without a builder.
    * @returns Updated CLI instance with the new command registered.
    */
-  command<TKey extends string>(
+  command<TKey extends string, TOptions extends Omit<CLICommandOptions<TArgs, TArgs, any>, 'builder'> & { builder?: never }>(
     key: TKey,
-    options: Omit<CLICommandOptions<TArgs, TArgs>, 'builder'> & { builder?: never }
-  ): CLI<TArgs, TChildren & { [K in TKey]: TArgs }>;
+    options: TOptions
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TArgs, InferHandlerReturn<TOptions>> }, THandlerReturn>;
 
   /**
    * Registers a new command with the CLI.
@@ -73,35 +95,35 @@ export interface CLI<
    * For generic helper functions that wrap command registration, the registerCommand 
    * pattern works best when chaining calls directly without intermediate variables.
    */
-  command<TCommandArgs extends TArgs, TKey extends string>(
+  command<TCommandArgs extends TArgs, TKey extends string, TOptions extends CLICommandOptions<TArgs, TCommandArgs, any>>(
     key: TKey,
-    options: CLICommandOptions<TArgs, TCommandArgs>
-  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }>;
+    options: TOptions
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, InferHandlerReturn<TOptions>> }, THandlerReturn>;
 
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(commands: Command[]): CLI<TArgs, TChildren>;
+  commands(commands: Command[]): CLI<TArgs, TChildren, THandlerReturn>;
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(...commands: Command[]): CLI<TArgs, TChildren>;
+  commands(...commands: Command[]): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
    *
    * @param provider Provider to register.
    */
-  config(provider: ConfigurationFiles.ConfigurationProvider<TArgs>): CLI<TArgs, TChildren>;
+  config(provider: ConfigurationFiles.ConfigurationProvider<TArgs>): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
    * This presents as a small shell that only knows the current command and its subcommands.
    * Any flags already consumed by the command will be passed to every subcommand invocation.
    */
-  enableInteractiveShell(): CLI<TArgs, TChildren>;
+  enableInteractiveShell(): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Registers a custom global error handler for the CLI. This handler will be called when an error is thrown
@@ -111,7 +133,7 @@ export interface CLI<
    * @param handler Typically called with an Error object, but you should be prepared to handle any type of error.
    * @param actions Actions that can be taken by the error handler. Prefer using these over process.exit for better support of interactive shells.
    */
-  errorHandler(handler: ErrorHandler): CLI<TArgs, TChildren>;
+  errorHandler(handler: ErrorHandler): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Registers a new option for the CLI command. This option will be accessible
@@ -141,7 +163,7 @@ export interface CLI<
         ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
       >;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // String option overload
   option<
@@ -154,7 +176,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Number option overload
   option<
@@ -167,7 +189,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Boolean option overload
   option<
@@ -180,7 +202,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Array option overload
   option<
@@ -193,7 +215,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Generic fallback overload
   option<
@@ -206,7 +228,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TOptionConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
 
   /**
@@ -236,7 +258,7 @@ export interface CLI<
         ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
       >;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // String option overload
   positional<
@@ -249,7 +271,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Number option overload
   positional<
@@ -262,7 +284,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Boolean option overload
   positional<
@@ -275,7 +297,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Array option overload
   positional<
@@ -288,7 +310,7 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
   // Generic fallback overload
   positional<
@@ -301,55 +323,55 @@ export interface CLI<
     TArgs & {
       [key in TOption]: OptionConfigToType<TOptionConfig>;
     },
-    TChildren
+    TChildren, THandlerReturn
   >;
 
   /**
    * Adds support for reading CLI options from environment variables.
    * @param prefix The prefix to use when looking up environment variables. Defaults to the command name.
    */
-  env(prefix?: string): CLI<TArgs, TChildren>;
+  env(prefix?: string): CLI<TArgs, TChildren, THandlerReturn>;
 
-  env(options: EnvOptionConfig): CLI<TArgs, TChildren>;
+  env(options: EnvOptionConfig): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.
    * @param options The options that should be mutually exclusive.
    */
-  conflicts(...options: [string, string, ...string[]]): CLI<TArgs, TChildren>;
+  conflicts(...options: [string, string, ...string[]]): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Sets a group of options as mutually inclusive. If one option is provided, all other options must also be provided.
    * @param option The option that implies the other options.
    * @param impliedOptions The options which become required when the option is provided.
    */
-  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren>;
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Requires a command to be provided when executing the CLI. Useful if your parent command
    * cannot be executed on its own.
    * @returns Updated CLI instance.
    */
-  demandCommand(): CLI<TArgs, TChildren>;
+  demandCommand(): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Sets the usage text for the CLI. This text will be displayed in place of the default usage text
    * @param usageText Text displayed in place of the default usage text for `--help` and in generated docs.
    */
-  usage(usageText: string): CLI<TArgs, TChildren>;
+  usage(usageText: string): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Sets the description for the CLI. This text will be displayed in the help text and generated docs.
    * @param examples Examples to display in the help text and generated docs.
    */
-  examples(...examples: string[]): CLI<TArgs, TChildren>;
+  examples(...examples: string[]): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Allows overriding the version displayed when passing `--version`. Defaults to crawling
    * the file system to get the package.json of the currently executing command.
    * @param override
    */
-  version(override?: string): CLI<TArgs, TChildren>;
+  version(override?: string): CLI<TArgs, TChildren, THandlerReturn>;
 
   /**
    * Prints help text to stdout.
@@ -364,12 +386,12 @@ export interface CLI<
     label: string;
     keys: (keyof TArgs)[];
     sortOrder: number;
-  }): CLI<TArgs, TChildren>;
-  group(label: string, keys: (keyof TArgs)[]): CLI<TArgs, TChildren>;
+  }): CLI<TArgs, TChildren, THandlerReturn>;
+  group(label: string, keys: (keyof TArgs)[]): CLI<TArgs, TChildren, THandlerReturn>;
 
   middleware<TArgs2>(
     callback: MiddlewareFunction<TArgs, TArgs2>
-  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren>;
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren, THandlerReturn>;
 
   /**
    * Returns the builder function for this command, if defined.
@@ -381,10 +403,9 @@ export interface CLI<
    * Returns a handler function with context already bound.
    * Only requires args to be passed - context is baked in.
    * Returns undefined if no handler is defined.
-   *
-   * TReturn is the return type of the handler (can be any value).
+   * The return type is automatically inferred from the command's handler.
    */
-  getHandler<TReturn = void>(): ((args: TArgs) => TReturn | Promise<TReturn>) | undefined;
+  getHandler(): ((args: TArgs) => THandlerReturn) | undefined;
 
   /**
    * Returns child commands with full type inference.
@@ -395,7 +416,7 @@ export interface CLI<
    * Returns the parent command's CLI instance.
    * Throws an error if called on a root command (no parent).
    */
-  getParentCommand(): CLI<ParsedArgs>;
+  getParentCommand(): CLI<ParsedArgs, Record<string, CommandInfo>, any>;
 
   /**
    * Parses argv and executes the CLI
@@ -413,7 +434,7 @@ export interface CLIBuilderContext {
    * Returns the parent command's CLI instance.
    * Call getChildCommands() on the parent to access siblings.
    */
-  getParentCommand(): CLI<any, any>;
+  getParentCommand(): CLI<any, Record<string, CommandInfo>, any>;
 }
 
 /**
@@ -422,13 +443,13 @@ export interface CLIBuilderContext {
  */
 export interface CLIHandlerContext<TArgs extends ParsedArgs = ParsedArgs> {
   /** Reference to the current command's CLI instance */
-  command: CLI<TArgs>;
+  command: CLI<TArgs, Record<string, CommandInfo>, any>;
 
   /**
    * Returns the parent command's CLI instance.
    * Call getChildCommands() on the parent to access siblings.
    */
-  getParentCommand(): CLI<any, any>;
+  getParentCommand(): CLI<any, Record<string, CommandInfo>, any>;
 }
 
 /**
@@ -442,7 +463,11 @@ export interface CLICommandOptions<
   /**
    * The type of the arguments that are registered after `builder` is invoked, and the type that is passed to the handler.
    */
-  TArgs extends TInitial = TInitial
+  TArgs extends TInitial = TInitial,
+  /**
+   * The return type of the handler function.
+   */
+  TReturn = void
 > {
   /**
    * If set the command will be registered under the provided name and any aliases.
@@ -467,10 +492,10 @@ export interface CLICommandOptions<
    * The command handler. This function is called when the command is executed.
    * @param args The parsed arguments.
    * @param context Context for the handler. Contains the command instance and parent access.
-   *                NoInfer prevents TypeScript from inferring TArgs from the context, allowing
-   *                proper type inference for nested subcommands.
+   *                NoInfer on context prevents TypeScript from inferring TArgs from it,
+   *                allowing proper type inference for nested subcommands.
    */
-  handler?: (args: TArgs, context: NoInfer<CLIHandlerContext<TArgs>>) => void | Promise<void> | any;
+  handler?: (args: TArgs, context: NoInfer<CLIHandlerContext<TArgs>>) => TReturn | Promise<TReturn>;
 
   /**
    * The usage text for the command. This text will be displayed in place of the default usage text in the help text and generated docs.

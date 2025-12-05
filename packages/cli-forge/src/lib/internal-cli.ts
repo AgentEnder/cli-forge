@@ -10,7 +10,7 @@ import {
 } from '@cli-forge/parser';
 import { getCallingFile, getParentPackageJson } from './utils';
 import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
-import { CLI, CLICommandOptions, Command, ErrorHandler } from './public-api';
+import { CLI, CLICommandOptions, Command, CommandInfo, ErrorHandler } from './public-api';
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { formatHelp } from './format-help';
 
@@ -35,19 +35,20 @@ import { formatHelp } from './format-help';
  */
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
-  TChildren extends Record<string, ParsedArgs> = {}
-> implements CLI<TArgs, TChildren>
+  TChildren extends Record<string, CommandInfo> = {},
+  THandlerReturn = void
+> implements CLI<TArgs, TChildren, THandlerReturn>
 {
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
-  registeredCommands: Record<string, InternalCLI<any, any>> = {};
+  registeredCommands: Record<string, InternalCLI<any, any, any>> = {};
 
   /**
    * Reference to the parent command, used for command composition.
    * For internal use only.
    */
-  private parentCommand: InternalCLI<any, any> | null = null;
+  private parentCommand: InternalCLI<any, any, any> | null = null;
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -108,7 +109,7 @@ export class InternalCLI<
   parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any> = this;
+      let currentCommand: InternalCLI<any, any, any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
@@ -159,10 +160,10 @@ export class InternalCLI<
     return this as any;
   }
 
-  command<TCommandArgs extends TArgs, TKey extends string = string>(
+  command<TCommandArgs extends TArgs, TKey extends string = string, TReturn = void>(
     keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs>
-  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }> {
+    options?: CLICommandOptions<TArgs, TCommandArgs, TReturn>
+  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, TReturn> }, THandlerReturn> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -206,7 +207,7 @@ export class InternalCLI<
     return this as any;
   }
 
-  commands(...a0: Command[] | Command[][]): CLI<TArgs, TChildren> {
+  commands(...a0: Command[] | Command[][]): CLI<TArgs, TChildren, THandlerReturn> {
     const commands = a0.flat();
     for (const val of commands) {
       if (val instanceof InternalCLI) {
@@ -221,7 +222,7 @@ export class InternalCLI<
         this.command(name, configuration);
       }
     }
-    return this;
+    return this as any;
   }
 
   option<
@@ -242,14 +243,14 @@ export class InternalCLI<
     return this as any;
   }
 
-  conflicts(...args: [string, string, ...string[]]): CLI<TArgs, TChildren> {
+  conflicts(...args: [string, string, ...string[]]): CLI<TArgs, TChildren, THandlerReturn> {
     this.parser.conflicts(...args);
-    return this;
+    return this as any;
   }
 
-  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren> {
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren, THandlerReturn> {
     this.parser.implies(option, ...impliedOptions);
-    return this;
+    return this as any;
   }
 
   env(
@@ -263,30 +264,30 @@ export class InternalCLI<
       a0.prefix ??= fromCamelOrDashedCaseToConstCase(this.name);
       this.parser.env(a0);
     }
-    return this;
+    return this as any;
   }
 
   demandCommand() {
     this.requiresCommand = 'EXPLICIT';
-    return this;
+    return this as any;
   }
 
   usage(usageText: string) {
     this.configuration ??= {};
     this.configuration.usage = usageText;
-    return this;
+    return this as any;
   }
 
   examples(...examples: string[]) {
     this.configuration ??= {};
     this.configuration.examples ??= [];
     this.configuration.examples.push(...examples);
-    return this;
+    return this as any;
   }
 
   version(version?: string) {
     this._versionOverride = version;
-    return this;
+    return this as any;
   }
 
   /**
@@ -306,7 +307,7 @@ export class InternalCLI<
 
   middleware<TArgs2>(
     callback: (args: TArgs) => TArgs2 | Promise<TArgs2>
-  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren> {
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren, THandlerReturn> {
     this.registeredMiddleware.push(callback);
     // If middleware returns void, TArgs doesn't change...
     // If it returns something, we need to merge it into TArgs...
@@ -324,7 +325,7 @@ export class InternalCLI<
       ...this.registeredMiddleware,
     ];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let cmd: InternalCLI<any> = this;
+    let cmd: InternalCLI<any, any, any> = this;
     for (const command of this.commandChain) {
       cmd = cmd.registeredCommands[command];
       middlewares.push(...cmd.registeredMiddleware);
@@ -394,7 +395,7 @@ export class InternalCLI<
     } else if (process.stdout.isTTY) {
       this.requiresCommand = false;
     }
-    return this;
+    return this as any;
   }
 
   private versionHandler() {
@@ -435,7 +436,7 @@ export class InternalCLI<
 
   errorHandler(handler: ErrorHandler) {
     this.registeredErrorHandlers.unshift(handler);
-    return this;
+    return this as any;
   }
 
   group(
@@ -443,7 +444,7 @@ export class InternalCLI<
       | string
       | { label: string; keys: (keyof TArgs)[]; sortOrder: number },
     keys?: (keyof TArgs)[]
-  ): CLI<TArgs, TChildren> {
+  ): CLI<TArgs, TChildren, THandlerReturn> {
     const config =
       typeof labelOrConfigObject === 'object'
         ? labelOrConfigObject
@@ -458,16 +459,16 @@ export class InternalCLI<
     }
 
     this.registeredOptionGroups.push(config);
-    return this;
+    return this as any;
   }
 
   config(
     provider: ConfigurationFiles.ConfigurationProvider<TArgs>
-  ): CLI<TArgs, TChildren> {
+  ): CLI<TArgs, TChildren, THandlerReturn> {
     this.parser.config(
       provider as ConfigurationFiles.ConfigurationProvider<any>
     );
-    return this;
+    return this as any;
   }
 
   /**
@@ -493,7 +494,7 @@ export class InternalCLI<
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any> = this;
+      let currentCommand: InternalCLI<any, any, any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
@@ -539,7 +540,7 @@ export class InternalCLI<
     return this._configuration?.builder as any;
   }
 
-  getHandler<TReturn = void>(): ((args: TArgs) => TReturn | Promise<TReturn>) | undefined {
+  getHandler(): ((args: TArgs) => THandlerReturn) | undefined {
     const handler = this._configuration?.handler;
     if (!handler) return undefined;
 
@@ -549,7 +550,7 @@ export class InternalCLI<
         command: this,
         getParentCommand: () => this.getParentCommand()
       };
-      return handler(args, context as any) as TReturn | Promise<TReturn>;
+      return handler(args, context as any) as THandlerReturn;
     };
   }
 
