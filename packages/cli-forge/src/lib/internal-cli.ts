@@ -10,7 +10,7 @@ import {
 } from '@cli-forge/parser';
 import { getCallingFile, getParentPackageJson } from './utils';
 import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
-import { CLI, CLICommandOptions, Command, CommandInfo, ErrorHandler } from './public-api';
+import { CLI, CLICommandOptions, CLIHandlerContext, Command, ErrorHandler } from './public-api';
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { formatHelp } from './format-help';
 
@@ -33,22 +33,19 @@ import { formatHelp } from './format-help';
  *   }).forge();
  * ```
  */
-export class InternalCLI<
-  TArgs extends ParsedArgs = ParsedArgs,
-  TChildren extends Record<string, CommandInfo> = {},
-  THandlerReturn = void
-> implements CLI<TArgs, TChildren, THandlerReturn>
+export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
+  implements CLI<TArgs>
 {
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
-  registeredCommands: Record<string, InternalCLI<any, any, any>> = {};
+  registeredCommands: Record<string, InternalCLI<any>> = {};
 
   /**
    * Reference to the parent command, used for command composition.
    * For internal use only.
    */
-  private parentCommand: InternalCLI<any, any, any> | null = null;
+  private parentCommand: InternalCLI<any> | null = null;
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -109,18 +106,14 @@ export class InternalCLI<
   parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any, any> = this;
+      let currentCommand: InternalCLI<any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
       const command = currentCommand.registeredCommands[arg];
       if (command && command.configuration) {
         command.parser = this.parser;
-        // Create builder context - getParentCommand delegates to the command's method
-        const builderContext = {
-          getParentCommand: () => command.getParentCommand()
-        };
-        command.configuration.builder?.(command, builderContext as any);
+        command.configuration.builder?.(command);
         this.commandChain.push(arg);
         return true;
       }
@@ -143,7 +136,7 @@ export class InternalCLI<
    */
   constructor(
     public name: string,
-    rootCommandConfiguration?: CLICommandOptions<TArgs, TArgs>
+    rootCommandConfiguration?: CLICommandOptions<TArgs>
   ) {
     if (rootCommandConfiguration) {
       this.withRootCommandConfiguration(rootCommandConfiguration);
@@ -154,16 +147,16 @@ export class InternalCLI<
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
-  ): InternalCLI<TRootCommandArgs, TChildren> {
+  ): InternalCLI<TArgs> {
     this.configuration = configuration;
     this.requiresCommand = false;
-    return this as any;
+    return this;
   }
 
-  command<TCommandArgs extends TArgs, TKey extends string = string>(
-    keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs, any>
-  ): CLI<TArgs, TChildren & { [K in TKey]: CommandInfo<TCommandArgs, any> }, THandlerReturn> {
+  command<TCommandArgs extends TArgs>(
+    keyOrCommand: string | Command<TArgs, TCommandArgs>,
+    options?: CLICommandOptions<TArgs, TCommandArgs>
+  ): CLI<TArgs> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -179,8 +172,8 @@ export class InternalCLI<
           description: options.description,
         });
       }
-      const cmd = new InternalCLI<TCommandArgs>(key).withRootCommandConfiguration(
-        options as any
+      const cmd = new InternalCLI<TArgs>(key).withRootCommandConfiguration(
+        options
       );
       cmd.parentCommand = this; // Set parent reference
       this.registeredCommands[key] = cmd;
@@ -199,15 +192,15 @@ export class InternalCLI<
         }
       }
     } else {
-      const { name, ...configuration} = keyOrCommand as {
+      const { name, ...configuration } = keyOrCommand as {
         name: string;
       } & CLICommandOptions<TArgs, TCommandArgs>;
-      this.command<TCommandArgs, typeof name>(name, configuration);
+      this.command<TCommandArgs>(name, configuration);
     }
-    return this as any;
+    return this;
   }
 
-  commands(...a0: Command[] | Command[][]): CLI<TArgs, TChildren, THandlerReturn> {
+  commands(...a0: Command[] | Command[][]): CLI<TArgs> {
     const commands = a0.flat();
     for (const val of commands) {
       if (val instanceof InternalCLI) {
@@ -222,7 +215,7 @@ export class InternalCLI<
         this.command(name, configuration);
       }
     }
-    return this as any;
+    return this;
   }
 
   option<
@@ -243,14 +236,14 @@ export class InternalCLI<
     return this as any;
   }
 
-  conflicts(...args: [string, string, ...string[]]): CLI<TArgs, TChildren, THandlerReturn> {
+  conflicts(...args: [string, string, ...string[]]): CLI<TArgs> {
     this.parser.conflicts(...args);
-    return this as any;
+    return this;
   }
 
-  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren, THandlerReturn> {
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs> {
     this.parser.implies(option, ...impliedOptions);
-    return this as any;
+    return this;
   }
 
   env(
@@ -264,30 +257,30 @@ export class InternalCLI<
       a0.prefix ??= fromCamelOrDashedCaseToConstCase(this.name);
       this.parser.env(a0);
     }
-    return this as any;
+    return this;
   }
 
   demandCommand() {
     this.requiresCommand = 'EXPLICIT';
-    return this as any;
+    return this;
   }
 
   usage(usageText: string) {
     this.configuration ??= {};
     this.configuration.usage = usageText;
-    return this as any;
+    return this;
   }
 
   examples(...examples: string[]) {
     this.configuration ??= {};
     this.configuration.examples ??= [];
     this.configuration.examples.push(...examples);
-    return this as any;
+    return this;
   }
 
   version(version?: string) {
     this._versionOverride = version;
-    return this as any;
+    return this;
   }
 
   /**
@@ -307,7 +300,7 @@ export class InternalCLI<
 
   middleware<TArgs2>(
     callback: (args: TArgs) => TArgs2 | Promise<TArgs2>
-  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren, THandlerReturn> {
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2> {
     this.registeredMiddleware.push(callback);
     // If middleware returns void, TArgs doesn't change...
     // If it returns something, we need to merge it into TArgs...
@@ -325,7 +318,7 @@ export class InternalCLI<
       ...this.registeredMiddleware,
     ];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let cmd: InternalCLI<any, any, any> = this;
+    let cmd: InternalCLI<any> = this;
     for (const command of this.commandChain) {
       cmd = cmd.registeredCommands[command];
       middlewares.push(...cmd.registeredMiddleware);
@@ -346,12 +339,15 @@ export class InternalCLI<
             args = middlewareResult as T;
           }
         }
-        // Create enhanced handler context - getParentCommand delegates to the command's method
-        const handlerContext = {
+        await cmd.configuration.handler(args, {
           command: cmd,
-          getParentCommand: () => cmd.getParentCommand()
-        };
-        await cmd.configuration.handler(args, handlerContext as any);
+          getParentCommand: () => {
+            if (!cmd.parentCommand) {
+              throw new Error('No parent command available');
+            }
+            return cmd.parentCommand;
+          }
+        });
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
@@ -395,7 +391,7 @@ export class InternalCLI<
     } else if (process.stdout.isTTY) {
       this.requiresCommand = false;
     }
-    return this as any;
+    return this;
   }
 
   private versionHandler() {
@@ -436,7 +432,7 @@ export class InternalCLI<
 
   errorHandler(handler: ErrorHandler) {
     this.registeredErrorHandlers.unshift(handler);
-    return this as any;
+    return this;
   }
 
   group(
@@ -444,7 +440,7 @@ export class InternalCLI<
       | string
       | { label: string; keys: (keyof TArgs)[]; sortOrder: number },
     keys?: (keyof TArgs)[]
-  ): CLI<TArgs, TChildren, THandlerReturn> {
+  ): CLI<TArgs> {
     const config =
       typeof labelOrConfigObject === 'object'
         ? labelOrConfigObject
@@ -459,16 +455,16 @@ export class InternalCLI<
     }
 
     this.registeredOptionGroups.push(config);
-    return this as any;
+    return this;
   }
 
   config(
     provider: ConfigurationFiles.ConfigurationProvider<TArgs>
-  ): CLI<TArgs, TChildren, THandlerReturn> {
+  ): CLI<TArgs> {
     this.parser.config(
       provider as ConfigurationFiles.ConfigurationProvider<any>
     );
-    return this as any;
+    return this;
   }
 
   /**
@@ -494,7 +490,7 @@ export class InternalCLI<
         }
       }
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any, any> = this;
+      let currentCommand: InternalCLI<any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
@@ -514,13 +510,7 @@ export class InternalCLI<
       const finalArgV =
         this.commandChain.length === 0 && this.configuration?.builder
           ? (
-              (() => {
-                // Create builder context - getParentCommand delegates to this command's method
-                const builderContext = {
-                  getParentCommand: () => this.getParentCommand()
-                };
-                return this.configuration!.builder!(this as any, builderContext as any) as InternalCLI<TArgs>;
-              })()
+              this.configuration.builder?.(this as any) as InternalCLI<TArgs>
             ).parser.parse(args)
           : argv;
 
@@ -540,29 +530,27 @@ export class InternalCLI<
     return this._configuration?.builder as any;
   }
 
-  getHandler(): ((args: TArgs) => THandlerReturn) | undefined {
+  getHandler(): ((args: TArgs) => any) | undefined {
     const handler = this._configuration?.handler;
     if (!handler) return undefined;
 
-    // Bind context so caller only needs to pass args - getParentCommand delegates to this command's method
+    // Bind context so caller only needs to pass args
     return (args: TArgs) => {
-      const context = {
+      const context: CLIHandlerContext = {
         command: this,
-        getParentCommand: () => this.getParentCommand()
+        getParentCommand: () => {
+          if (!this.parentCommand) {
+            throw new Error('No parent command available');
+          }
+          return this.parentCommand;
+        }
       };
-      return handler(args, context as any) as THandlerReturn;
+      return handler(args, context);
     };
   }
 
-  getChildCommands(): import('./public-api').ChildCommandsRegistry<TChildren> {
-    return this.registeredCommands as any;
-  }
-
-  getParentCommand(): CLI<any> {
-    if (!this.parentCommand) {
-      throw new Error('No parent command available');
-    }
-    return this.parentCommand;
+  getChildCommands(): Record<string, CLI<any>> {
+    return this.registeredCommands;
   }
 
   clone() {
