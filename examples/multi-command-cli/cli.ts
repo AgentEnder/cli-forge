@@ -1,4 +1,4 @@
-import { cli } from 'cli-forge';
+import { cli, chain } from 'cli-forge';
 
 import { registerInitCommand } from './commands/init';
 import { registerBuildCommand } from './commands/build';
@@ -13,8 +13,8 @@ import { registerServeCommand } from './commands/serve';
 const app = cli('project-cli', {
   description: 'Project management CLI',
   builder: (args) => {
-    // Register all commands. The order determines help text order.
-    return registerServeCommand(registerBuildCommand(registerInitCommand(args)));
+    // Register all commands using chain. The order determines help text order.
+    return chain(args, registerInitCommand, registerBuildCommand, registerServeCommand);
   },
 }).demandCommand();
 

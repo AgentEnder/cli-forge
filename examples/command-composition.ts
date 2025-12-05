@@ -53,9 +53,9 @@ const dbCli = cli('db', { description: 'Database management CLI' })
       // siblings.empty, siblings.migrate, siblings.seed are all fully typed
 
       // Execute siblings in sequence - context is baked in, just pass args
-      await siblings.empty.getHandler()?.(args as any);
-      await siblings.migrate.getHandler()?.(args as any);
-      await siblings.seed.getHandler()?.(args as any);
+      await siblings.empty.getHandler()?.(args);
+      await siblings.migrate.getHandler()?.(args);
+      await siblings.seed.getHandler()?.(args);
 
       console.log('Reset complete!');
     }

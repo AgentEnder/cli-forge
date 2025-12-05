@@ -62,7 +62,7 @@ const dbCli = cli('db')
       // Full inference - no type parameter needed for getChildCommands!
       const siblings = ctx.getParentCommand().getChildCommands();
 
-      // Execute and capture return values (return type still needs explicit param)
+      // Execute and capture return values
       const emptyResult = await siblings.empty.getHandler<EmptyResult>()?.(args);
       const migrateResult = await siblings.migrate.getHandler<MigrateResult>()?.(args);
       const seedResult = await siblings.seed.getHandler<SeedResult>()?.(args);

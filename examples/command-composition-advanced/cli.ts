@@ -36,7 +36,6 @@ const app = cli('pipeline-app')
     }),
     handler: async (args, ctx) => {
       console.log('Running pipeline...');
-
       const parent = ctx.getParentCommand();
       const commands = parent.getChildCommands();
 
@@ -44,10 +43,10 @@ const app = cli('pipeline-app')
       const steps = args.steps.split(',').map(s => s.trim());
 
       for (const step of steps) {
-        const cmd = commands[step as keyof typeof commands];
+        const cmd = commands[step];
         if (cmd) {
           // Context is baked in - just pass args
-          await cmd.getHandler()?.(args as any);
+          await cmd.getHandler()?.(args);
         } else {
           console.error(`Unknown step: ${step}`);
         }

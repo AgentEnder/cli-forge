@@ -52,6 +52,18 @@ export interface CLI<
   ): CLI<TArgs, TChildren>;
 
   /**
+   * Registers a new command with the CLI (no builder - handler only).
+   * When no builder is provided, the command inherits all parent options.
+   * @param key What should the new command be called?
+   * @param options Settings for the new command without a builder.
+   * @returns Updated CLI instance with the new command registered.
+   */
+  command<TKey extends string>(
+    key: TKey,
+    options: Omit<CLICommandOptions<TArgs, TArgs>, 'builder'> & { builder?: never }
+  ): CLI<TArgs, TChildren & { [K in TKey]: TArgs }>;
+
+  /**
    * Registers a new command with the CLI.
    * @param key What should the new command be called?
    * @param options Settings for the new command. See {@link CLICommandOptions}.
@@ -63,7 +75,7 @@ export interface CLI<
    */
   command<TCommandArgs extends TArgs, TKey extends string>(
     key: TKey,
-    options: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
+    options: CLICommandOptions<TArgs, TCommandArgs>
   ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }>;
 
   /**
@@ -395,39 +407,28 @@ export interface CLI<
 
 /**
  * Context passed to the builder function.
- * TParentArgs: The argument type of the parent command
- * TSiblings: Record mapping sibling command names to their argument types
  */
-export interface CLIBuilderContext<
-  TParentArgs extends ParsedArgs = ParsedArgs,
-  TSiblings extends Record<string, ParsedArgs> = {}
-> {
+export interface CLIBuilderContext {
   /**
-   * Returns the parent command's CLI instance with fully typed children.
+   * Returns the parent command's CLI instance.
    * Call getChildCommands() on the parent to access siblings.
    */
-  getParentCommand(): CLI<TParentArgs, TSiblings>;
+  getParentCommand(): CLI<any, any>;
 }
 
 /**
  * Enhanced handler context with parent/sibling access.
  * TArgs: The current command's argument type
- * TParentArgs: The parent command's argument type
- * TSiblings: Record mapping sibling command names to their argument types
  */
-export interface CLIHandlerContext<
-  TArgs extends ParsedArgs = ParsedArgs,
-  TParentArgs extends ParsedArgs = ParsedArgs,
-  TSiblings extends Record<string, ParsedArgs> = {}
-> {
+export interface CLIHandlerContext<TArgs extends ParsedArgs = ParsedArgs> {
   /** Reference to the current command's CLI instance */
   command: CLI<TArgs>;
 
   /**
-   * Returns the parent command's CLI instance with fully typed children.
+   * Returns the parent command's CLI instance.
    * Call getChildCommands() on the parent to access siblings.
    */
-  getParentCommand(): CLI<TParentArgs, TSiblings>;
+  getParentCommand(): CLI<any, any>;
 }
 
 /**
@@ -441,15 +442,7 @@ export interface CLICommandOptions<
   /**
    * The type of the arguments that are registered after `builder` is invoked, and the type that is passed to the handler.
    */
-  TArgs extends TInitial = TInitial,
-  /**
-   * The type of the parent command's arguments.
-   */
-  TParentArgs extends ParsedArgs = ParsedArgs,
-  /**
-   * Record mapping sibling command names to their argument types.
-   */
-  TSiblings extends Record<string, ParsedArgs> = {}
+  TArgs extends TInitial = TInitial
 > {
   /**
    * If set the command will be registered under the provided name and any aliases.
@@ -468,14 +461,16 @@ export interface CLICommandOptions<
    * @param parser The parser instance to register options and positionals with.
    * @param context Context for the builder. Contains parent command access.
    */
-  builder?: (parser: CLI<TInitial>, context: CLIBuilderContext<TParentArgs, TSiblings>) => CLI<TArgs>;
+  builder?: (parser: CLI<TInitial>, context: CLIBuilderContext) => CLI<TArgs>;
 
   /**
    * The command handler. This function is called when the command is executed.
    * @param args The parsed arguments.
    * @param context Context for the handler. Contains the command instance and parent access.
+   *                NoInfer prevents TypeScript from inferring TArgs from the context, allowing
+   *                proper type inference for nested subcommands.
    */
-  handler?: (args: TArgs, context: CLIHandlerContext<TArgs, TParentArgs, TSiblings>) => void | Promise<void> | any;
+  handler?: (args: TArgs, context: NoInfer<CLIHandlerContext<TArgs>>) => void | Promise<void> | any;
 
   /**
    * The usage text for the command. This text will be displayed in place of the default usage text in the help text and generated docs.
@@ -504,7 +499,7 @@ export type Command<
 > =
   | ({
       name: string;
-    } & CLICommandOptions<TInitial, TArgs, any, any>)
+    } & CLICommandOptions<TInitial, TArgs>)
   | CLI<TArgs>;
 
 /**
@@ -536,7 +531,7 @@ export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
  */
 export function cli<TArgs extends ParsedArgs>(
   name: string,
-  rootCommandConfiguration?: CLICommandOptions<ParsedArgs, TArgs, ParsedArgs, {}>
+  rootCommandConfiguration?: CLICommandOptions<ParsedArgs, TArgs>
 ) {
   return new InternalCLI(name, rootCommandConfiguration as any) as any as CLI<TArgs>;
 }

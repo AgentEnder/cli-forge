@@ -69,7 +69,7 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
 export const initCommand = cli('init', {
   description: 'Generate a new CLI',
   builder: (b) => withInitArgs(b),
-  handler: async (args, _context) => {
+  handler: async (args) => {
     args.output ??= join(process.cwd(), args.cliName);
     ensureDirSync(args.output);
     const packageJsonPath = join(args.output, 'package.json');

@@ -116,10 +116,10 @@ export class InternalCLI<
       if (command && command.configuration) {
         command.parser = this.parser;
         // Create builder context - getParentCommand delegates to the command's method
-        const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
+        const builderContext = {
           getParentCommand: () => command.getParentCommand()
         };
-        command.configuration.builder?.(command, builderContext);
+        command.configuration.builder?.(command, builderContext as any);
         this.commandChain.push(arg);
         return true;
       }
@@ -142,7 +142,7 @@ export class InternalCLI<
    */
   constructor(
     public name: string,
-    rootCommandConfiguration?: CLICommandOptions<TArgs, TArgs, any, any>
+    rootCommandConfiguration?: CLICommandOptions<TArgs, TArgs>
   ) {
     if (rootCommandConfiguration) {
       this.withRootCommandConfiguration(rootCommandConfiguration);
@@ -152,16 +152,16 @@ export class InternalCLI<
   }
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
-    configuration: CLICommandOptions<TArgs, TRootCommandArgs, any, any>
-  ): InternalCLI<TArgs, TChildren> {
+    configuration: CLICommandOptions<TArgs, TRootCommandArgs>
+  ): InternalCLI<TRootCommandArgs, TChildren> {
     this.configuration = configuration;
     this.requiresCommand = false;
-    return this;
+    return this as any;
   }
 
   command<TCommandArgs extends TArgs, TKey extends string = string>(
     keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
+    options?: CLICommandOptions<TArgs, TCommandArgs>
   ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
@@ -198,9 +198,9 @@ export class InternalCLI<
         }
       }
     } else {
-      const { name, ...configuration } = keyOrCommand as {
+      const { name, ...configuration} = keyOrCommand as {
         name: string;
-      } & CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>;
+      } & CLICommandOptions<TArgs, TCommandArgs>;
       this.command<TCommandArgs, typeof name>(name, configuration);
     }
     return this as any;
@@ -217,7 +217,7 @@ export class InternalCLI<
       } else {
         const { name, ...configuration } = val as {
           name: string;
-        } & CLICommandOptions<any, any, any, any>;
+        } & CLICommandOptions<any, any>;
         this.command(name, configuration);
       }
     }
@@ -346,11 +346,11 @@ export class InternalCLI<
           }
         }
         // Create enhanced handler context - getParentCommand delegates to the command's method
-        const handlerContext: import('./public-api').CLIHandlerContext<any, any, any> = {
+        const handlerContext = {
           command: cmd,
           getParentCommand: () => cmd.getParentCommand()
         };
-        await cmd.configuration.handler(args, handlerContext);
+        await cmd.configuration.handler(args, handlerContext as any);
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
@@ -515,10 +515,10 @@ export class InternalCLI<
           ? (
               (() => {
                 // Create builder context - getParentCommand delegates to this command's method
-                const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
+                const builderContext = {
                   getParentCommand: () => this.getParentCommand()
                 };
-                return this.configuration!.builder!(this as any, builderContext) as InternalCLI<TArgs>;
+                return this.configuration!.builder!(this as any, builderContext as any) as InternalCLI<TArgs>;
               })()
             ).parser.parse(args)
           : argv;
@@ -545,11 +545,11 @@ export class InternalCLI<
 
     // Bind context so caller only needs to pass args - getParentCommand delegates to this command's method
     return (args: TArgs) => {
-      const context: import('./public-api').CLIHandlerContext<TArgs, any, any> = {
+      const context = {
         command: this,
         getParentCommand: () => this.getParentCommand()
       };
-      return handler(args, context) as TReturn | Promise<TReturn>;
+      return handler(args, context as any) as TReturn | Promise<TReturn>;
     };
   }
 
