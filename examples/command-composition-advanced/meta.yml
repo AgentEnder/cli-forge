@@ -1,0 +1,15 @@
+id: command-composition-advanced
+title: Advanced Command Composition
+description: |
+  A more complex example showing how to compose commands with
+  different argument types and share state between them.
+entryPoint: ./cli.ts
+fileMap:
+  './cli.ts': 'cli.ts'
+commands:
+  - command: '{filename} pipeline --steps empty,migrate,seed'
+    assertions:
+      - contains: 'Running pipeline'
+      - contains: 'Step: empty'
+      - contains: 'Step: migrate'
+      - contains: 'Step: seed'
