@@ -380,6 +380,12 @@ export interface CLI<
   getChildCommands(): ChildCommandsRegistry<TChildren>;
 
   /**
+   * Returns the parent command's CLI instance.
+   * Throws an error if called on a root command (no parent).
+   */
+  getParentCommand(): CLI<ParsedArgs>;
+
+  /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.

@@ -115,14 +115,9 @@ export class InternalCLI<
       const command = currentCommand.registeredCommands[arg];
       if (command && command.configuration) {
         command.parser = this.parser;
-        // Create builder context
+        // Create builder context - getParentCommand delegates to the command's method
         const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
-          getParentCommand: () => {
-            return {
-              ...currentCommand,
-              getChildCommands: () => currentCommand.getChildCommands()
-            } as any;
-          }
+          getParentCommand: () => command.getParentCommand()
         };
         command.configuration.builder?.(command, builderContext);
         this.commandChain.push(arg);
@@ -350,19 +345,10 @@ export class InternalCLI<
             args = middlewareResult as T;
           }
         }
-        // Create enhanced handler context
+        // Create enhanced handler context - getParentCommand delegates to the command's method
         const handlerContext: import('./public-api').CLIHandlerContext<any, any, any> = {
           command: cmd,
-          getParentCommand: () => {
-            const parent = cmd.parentCommand;
-            if (!parent) {
-              throw new Error('No parent command available');
-            }
-            return {
-              ...parent,
-              getChildCommands: () => parent.getChildCommands()
-            } as any;
-          }
+          getParentCommand: () => cmd.getParentCommand()
         };
         await cmd.configuration.handler(args, handlerContext);
       } else {
@@ -528,16 +514,9 @@ export class InternalCLI<
         this.commandChain.length === 0 && this.configuration?.builder
           ? (
               (() => {
+                // Create builder context - getParentCommand delegates to this command's method
                 const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
-                  getParentCommand: () => {
-                    if (!this.parentCommand) {
-                      throw new Error('No parent command available');
-                    }
-                    return {
-                      ...this.parentCommand,
-                      getChildCommands: () => this.parentCommand!.getChildCommands()
-                    } as any;
-                  }
+                  getParentCommand: () => this.getParentCommand()
                 };
                 return this.configuration!.builder!(this as any, builderContext) as InternalCLI<TArgs>;
               })()
@@ -564,19 +543,11 @@ export class InternalCLI<
     const handler = this._configuration?.handler;
     if (!handler) return undefined;
 
-    // Bind context so caller only needs to pass args
+    // Bind context so caller only needs to pass args - getParentCommand delegates to this command's method
     return (args: TArgs) => {
       const context: import('./public-api').CLIHandlerContext<TArgs, any, any> = {
         command: this,
-        getParentCommand: () => {
-          if (!this.parentCommand) {
-            throw new Error('No parent command available');
-          }
-          return {
-            ...this.parentCommand,
-            getChildCommands: () => this.parentCommand!.getChildCommands()
-          } as any;
-        }
+        getParentCommand: () => this.getParentCommand()
       };
       return handler(args, context) as TReturn | Promise<TReturn>;
     };
@@ -584,6 +555,13 @@ export class InternalCLI<
 
   getChildCommands(): import('./public-api').ChildCommandsRegistry<TChildren> {
     return this.registeredCommands as any;
+  }
+
+  getParentCommand(): CLI<any> {
+    if (!this.parentCommand) {
+      throw new Error('No parent command available');
+    }
+    return this.parentCommand;
   }
 
   clone() {
