@@ -49,29 +49,33 @@ export interface CLI<
 > {
   command<TCommandArgs extends TArgs>(
     cmd: Command<TArgs, TCommandArgs>
-  ): CLI<TArgs, any>;
+  ): CLI<TArgs, TChildren>;
 
   /**
    * Registers a new command with the CLI.
    * @param key What should the new command be called?
    * @param options Settings for the new command. See {@link CLICommandOptions}.
    * @returns Updated CLI instance with the new command registered.
+   * 
+   * Note: The return type preserves type accumulation for direct fluent usage.
+   * For generic helper functions that wrap command registration, the registerCommand 
+   * pattern works best when chaining calls directly without intermediate variables.
    */
   command<TCommandArgs extends TArgs, TKey extends string>(
     key: TKey,
     options: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
-  ): CLI<TArgs, any>;
+  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }>;
 
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(commands: Command[]): CLI<TArgs, any>;
+  commands(commands: Command[]): CLI<TArgs, TChildren>;
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(...commands: Command[]): CLI<TArgs, any>;
+  commands(...commands: Command[]): CLI<TArgs, TChildren>;
 
   /**
    * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.

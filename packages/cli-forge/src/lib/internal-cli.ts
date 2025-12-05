@@ -167,7 +167,7 @@ export class InternalCLI<
   command<TCommandArgs extends TArgs, TKey extends string = string>(
     keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
     options?: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
-  ) {
+  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -208,11 +208,10 @@ export class InternalCLI<
       } & CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>;
       this.command<TCommandArgs, typeof name>(name, configuration);
     }
-    // Cast to make both patterns work - registerCommand and fluent chaining
     return this as any;
   }
 
-  commands(...a0: Command[] | Command[][]) {
+  commands(...a0: Command[] | Command[][]): CLI<TArgs, TChildren> {
     const commands = a0.flat();
     for (const val of commands) {
       if (val instanceof InternalCLI) {
@@ -227,8 +226,7 @@ export class InternalCLI<
         this.command(name, configuration);
       }
     }
-    // Cast to make patterns work
-    return this as any;
+    return this;
   }
 
   option<
