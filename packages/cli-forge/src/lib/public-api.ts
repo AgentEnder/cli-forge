@@ -49,7 +49,7 @@ export interface CLI<
 > {
   command<TCommandArgs extends TArgs>(
     cmd: Command<TArgs, TCommandArgs>
-  ): CLI<TArgs, TChildren>;
+  ): CLI<TArgs, any>;
 
   /**
    * Registers a new command with the CLI.
@@ -60,18 +60,18 @@ export interface CLI<
   command<TCommandArgs extends TArgs, TKey extends string>(
     key: TKey,
     options: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
-  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }>;
+  ): CLI<TArgs, any>;
 
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(commands: Command[]): CLI<TArgs, TChildren>;
+  commands(commands: Command[]): CLI<TArgs, any>;
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
    */
-  commands(...commands: Command[]): CLI<TArgs, TChildren>;
+  commands(...commands: Command[]): CLI<TArgs, any>;
 
   /**
    * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
