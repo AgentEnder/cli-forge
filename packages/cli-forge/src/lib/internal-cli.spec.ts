@@ -342,4 +342,176 @@ describe('cliForge', () => {
       // - 'bar' handler
     ]);
   });
+
+  describe('command composition helpers', () => {
+    it('should provide getBuilder() method', () => {
+      const app = cli('test').command('sub', {
+        builder: (p) => p.option('count', { type: 'number' }),
+        handler: () => {},
+      });
+
+      const builder = app.getBuilder();
+      expect(builder).toBeUndefined(); // root command has no builder
+
+      const subcommands = app.getChildCommands();
+      const subBuilder = subcommands.sub.getBuilder();
+      expect(subBuilder).toBeDefined();
+      expect(typeof subBuilder).toBe('function');
+    });
+
+    it('should provide getHandler() method', () => {
+      let executed = false;
+      const app = cli('test').command('sub', {
+        builder: (p) => p.option('count', { type: 'number' }),
+        handler: () => {
+          executed = true;
+        },
+      });
+
+      const handler = app.getHandler();
+      expect(handler).toBeUndefined(); // root command has no handler
+
+      const subcommands = app.getChildCommands();
+      const subHandler = subcommands.sub.getHandler();
+      expect(subHandler).toBeDefined();
+      expect(typeof subHandler).toBe('function');
+
+      // Execute handler
+      subHandler?.({ count: 5, unmatched: [], '--': [] });
+      expect(executed).toBe(true);
+    });
+
+    it('should provide getChildCommands() method with type safety', () => {
+      const app = cli('test')
+        .command('first', {
+          builder: (p) => p.option('a', { type: 'string' }),
+          handler: () => {},
+        })
+        .command('second', {
+          builder: (p) => p.option('b', { type: 'number' }),
+          handler: () => {},
+        });
+
+      const children = app.getChildCommands();
+      expect(children.first).toBeDefined();
+      expect(children.second).toBeDefined();
+      expect(children.first.getBuilder()).toBeDefined();
+      expect(children.second.getBuilder()).toBeDefined();
+    });
+
+    it('should allow commands to access siblings via context', async () => {
+      const executionOrder: string[] = [];
+
+      await cli('db')
+        .command('empty', {
+          handler: () => {
+            executionOrder.push('empty');
+          },
+        })
+        .command('migrate', {
+          handler: () => {
+            executionOrder.push('migrate');
+          },
+        })
+        .command('reset', {
+          handler: async (args, ctx) => {
+            executionOrder.push('reset-start');
+            const siblings = ctx.getParentCommand().getChildCommands();
+            await siblings.empty.getHandler()?.(args);
+            await siblings.migrate.getHandler()?.(args);
+            executionOrder.push('reset-end');
+          },
+        })
+        .forge(['reset']);
+
+      expect(executionOrder).toEqual([
+        'reset-start',
+        'empty',
+        'migrate',
+        'reset-end',
+      ]);
+    });
+
+    it('should provide handler return values', async () => {
+      interface QueryResult {
+        rows: number;
+        data: string[];
+      }
+
+      let capturedResult: QueryResult | undefined;
+
+      await cli('app')
+        .command('query', {
+          handler: (): QueryResult => {
+            return { rows: 10, data: ['a', 'b'] };
+          },
+        })
+        .command('report', {
+          handler: async (args, ctx) => {
+            const siblings = ctx.getParentCommand().getChildCommands();
+            const queryHandler = siblings.query.getHandler<QueryResult>();
+            capturedResult = await queryHandler?.({ unmatched: [], '--': [] });
+          },
+        })
+        .forge(['report']);
+
+      expect(capturedResult).toEqual({ rows: 10, data: ['a', 'b'] });
+    });
+
+    it('should throw error when getParentCommand called on root', async () => {
+      let errorThrown = false;
+
+      await cli('test')
+        .command('sub', {
+          handler: (args, ctx) => {
+            try {
+              // Get parent (root command), then try to get its parent (should throw)
+              ctx.getParentCommand().getParentCommand();
+            } catch (e) {
+              if (e instanceof Error && e.message.includes('No parent command available')) {
+                errorThrown = true;
+              }
+            }
+          },
+        })
+        .forge(['sub']);
+
+      expect(errorThrown).toBe(true);
+    });
+
+    it('should return undefined when getHandler called on command without handler', () => {
+      const app = cli('test').command('sub', {
+        builder: (p) => p.option('count', { type: 'number' }),
+        // No handler defined
+      });
+
+      const subcommands = app.getChildCommands();
+      const handler = subcommands.sub.getHandler();
+      expect(handler).toBeUndefined();
+    });
+
+    it('should pass builder context with parent access', async () => {
+      let contextReceived = false;
+
+      await cli('app')
+        .option('verbose', { type: 'boolean' })
+        .command('first', {
+          builder: (p) => p.option('firstOpt', { type: 'string' }),
+          handler: () => {},
+        })
+        .command('second', {
+          builder: (parser, ctx) => {
+            contextReceived = true;
+            // Context should have getParentCommand
+            expect(ctx.getParentCommand).toBeDefined();
+            expect(typeof ctx.getParentCommand).toBe('function');
+            return parser;
+          },
+          handler: () => {},
+        })
+        .forge(['second']);
+
+      expect(contextReceived).toBe(true);
+    });
+  });
 });
