@@ -5,5 +5,5 @@ export function makeComposableBuilder<T2 extends ParsedArgs>(
   fn: (init: CLI<ParsedArgs>) => CLI<T2>
 ) {
   return <TInit extends ParsedArgs>(init: CLI<TInit>) =>
-    fn(init) as CLI<TInit & T2>;
+    fn(init as any) as CLI<TInit & T2>;
 }

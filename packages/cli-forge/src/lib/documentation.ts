@@ -54,7 +54,12 @@ export function generateDocumentation(
     // The cli instance here is typed a bit too well
     // for the builder function, so we need to cast it to
     // a more generic form.
-    cli.configuration.builder(cli as CLI);
+    const builderContext = {
+      getParentCommand: () => {
+        throw new Error('Parent command not available in documentation generation');
+      }
+    };
+    cli.configuration.builder(cli as CLI, builderContext);
   }
   const parser = cli.getParser();
 

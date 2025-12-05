@@ -33,13 +33,21 @@ import { formatHelp } from './format-help';
  *   }).forge();
  * ```
  */
-export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
-  implements CLI<TArgs>
+export class InternalCLI<
+  TArgs extends ParsedArgs = ParsedArgs,
+  TChildren extends Record<string, ParsedArgs> = {}
+> implements CLI<TArgs, TChildren>
 {
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
-  registeredCommands: Record<string, InternalCLI<any>> = {};
+  registeredCommands: Record<string, InternalCLI<any, any>> = {};
+
+  /**
+   * Reference to the parent command, used for command composition.
+   * For internal use only.
+   */
+  private parentCommand: InternalCLI<any, any> | null = null;
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -100,14 +108,23 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
   parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any> = this;
+      let currentCommand: InternalCLI<any, any> = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
       const command = currentCommand.registeredCommands[arg];
       if (command && command.configuration) {
         command.parser = this.parser;
-        command.configuration.builder?.(command);
+        // Create builder context
+        const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
+          getParentCommand: () => {
+            return {
+              ...currentCommand,
+              getChildCommands: () => currentCommand.getChildCommands()
+            } as any;
+          }
+        };
+        command.configuration.builder?.(command, builderContext);
         this.commandChain.push(arg);
         return true;
       }
@@ -130,7 +147,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
    */
   constructor(
     public name: string,
-    rootCommandConfiguration?: CLICommandOptions<TArgs>
+    rootCommandConfiguration?: CLICommandOptions<TArgs, TArgs, any, any>
   ) {
     if (rootCommandConfiguration) {
       this.withRootCommandConfiguration(rootCommandConfiguration);
@@ -140,17 +157,17 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
   }
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
-    configuration: CLICommandOptions<TArgs, TRootCommandArgs>
-  ): InternalCLI<TArgs> {
+    configuration: CLICommandOptions<TArgs, TRootCommandArgs, any, any>
+  ): InternalCLI<TArgs, TChildren> {
     this.configuration = configuration;
     this.requiresCommand = false;
     return this;
   }
 
-  command<TCommandArgs extends TArgs>(
-    keyOrCommand: string | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs>
-  ): CLI<TArgs> {
+  command<TCommandArgs extends TArgs, TKey extends string = string>(
+    keyOrCommand: TKey | Command<TArgs, TCommandArgs>,
+    options?: CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>
+  ): CLI<TArgs, TChildren & { [K in TKey]: TCommandArgs }> {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -166,9 +183,10 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
           description: options.description,
         });
       }
-      const cmd = new InternalCLI<TArgs>(key).withRootCommandConfiguration(
-        options
+      const cmd = new InternalCLI<TCommandArgs>(key).withRootCommandConfiguration(
+        options as any
       );
+      cmd.parentCommand = this; // Set parent reference
       this.registeredCommands[key] = cmd;
       if (options.alias) {
         for (const alias of options.alias) {
@@ -177,6 +195,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       }
     } else if (keyOrCommand instanceof InternalCLI) {
       const cmd = keyOrCommand;
+      cmd.parentCommand = this; // Set parent reference
       this.registeredCommands[cmd.name] = cmd;
       if (cmd.configuration?.alias) {
         for (const alias of cmd.configuration.alias) {
@@ -186,23 +205,24 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     } else {
       const { name, ...configuration } = keyOrCommand as {
         name: string;
-      } & CLICommandOptions<TArgs, TCommandArgs>;
-      this.command<TCommandArgs>(name, configuration);
+      } & CLICommandOptions<TArgs, TCommandArgs, TArgs, TChildren>;
+      this.command<TCommandArgs, typeof name>(name, configuration);
     }
-    return this;
+    return this as any;
   }
 
-  commands(...a0: Command[] | Command[][]): CLI<TArgs> {
+  commands(...a0: Command[] | Command[][]): CLI<TArgs, TChildren> {
     const commands = a0.flat();
     for (const val of commands) {
       if (val instanceof InternalCLI) {
+        val.parentCommand = this; // Set parent reference
         this.registeredCommands[val.name] = val;
         // Include any options that were defined via cli(...).option() instead of via builder
         this.parser.augment(val.parser);
       } else {
         const { name, ...configuration } = val as {
           name: string;
-        } & CLICommandOptions<any, any>;
+        } & CLICommandOptions<any, any, any, any>;
         this.command(name, configuration);
       }
     }
@@ -227,12 +247,12 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
     return this as any;
   }
 
-  conflicts(...args: [string, string, ...string[]]): CLI<TArgs> {
+  conflicts(...args: [string, string, ...string[]]): CLI<TArgs, TChildren> {
     this.parser.conflicts(...args);
     return this;
   }
 
-  implies(option: string, ...impliedOptions: string[]): CLI<TArgs> {
+  implies(option: string, ...impliedOptions: string[]): CLI<TArgs, TChildren> {
     this.parser.implies(option, ...impliedOptions);
     return this;
   }
@@ -291,7 +311,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   middleware<TArgs2>(
     callback: (args: TArgs) => TArgs2 | Promise<TArgs2>
-  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2> {
+  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2, TChildren> {
     this.registeredMiddleware.push(callback);
     // If middleware returns void, TArgs doesn't change...
     // If it returns something, we need to merge it into TArgs...
@@ -330,9 +350,21 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
             args = middlewareResult as T;
           }
         }
-        await cmd.configuration.handler(args, {
+        // Create enhanced handler context
+        const handlerContext: import('./public-api').CLIHandlerContext<any, any, any> = {
           command: cmd,
-        });
+          getParentCommand: () => {
+            const parent = cmd.parentCommand;
+            if (!parent) {
+              throw new Error('No parent command available');
+            }
+            return {
+              ...parent,
+              getChildCommands: () => parent.getChildCommands()
+            } as any;
+          }
+        };
+        await cmd.configuration.handler(args, handlerContext);
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
@@ -425,7 +457,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       | string
       | { label: string; keys: (keyof TArgs)[]; sortOrder: number },
     keys?: (keyof TArgs)[]
-  ): CLI<TArgs> {
+  ): CLI<TArgs, TChildren> {
     const config =
       typeof labelOrConfigObject === 'object'
         ? labelOrConfigObject
@@ -445,7 +477,7 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   config(
     provider: ConfigurationFiles.ConfigurationProvider<TArgs>
-  ): CLI<TArgs> {
+  ): CLI<TArgs, TChildren> {
     this.parser.config(
       provider as ConfigurationFiles.ConfigurationProvider<any>
     );
@@ -495,7 +527,20 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
       const finalArgV =
         this.commandChain.length === 0 && this.configuration?.builder
           ? (
-              this.configuration.builder?.(this as any) as InternalCLI<TArgs>
+              (() => {
+                const builderContext: import('./public-api').CLIBuilderContext<any, any> = {
+                  getParentCommand: () => {
+                    if (!this.parentCommand) {
+                      throw new Error('No parent command available');
+                    }
+                    return {
+                      ...this.parentCommand,
+                      getChildCommands: () => this.parentCommand!.getChildCommands()
+                    } as any;
+                  }
+                };
+                return this.configuration!.builder!(this as any, builderContext) as InternalCLI<TArgs>;
+              })()
             ).parser.parse(args)
           : argv;
 
@@ -509,6 +554,36 @@ export class InternalCLI<TArgs extends ParsedArgs = ParsedArgs>
 
   getSubcommands() {
     return this.registeredCommands as Readonly<Record<string, InternalCLI>>;
+  }
+
+  getBuilder(): ((parser: CLI<any>) => CLI<TArgs>) | undefined {
+    return this._configuration?.builder as any;
+  }
+
+  getHandler<TReturn = void>(): ((args: TArgs) => TReturn | Promise<TReturn>) | undefined {
+    const handler = this._configuration?.handler;
+    if (!handler) return undefined;
+
+    // Bind context so caller only needs to pass args
+    return (args: TArgs) => {
+      const context: import('./public-api').CLIHandlerContext<TArgs, any, any> = {
+        command: this,
+        getParentCommand: () => {
+          if (!this.parentCommand) {
+            throw new Error('No parent command available');
+          }
+          return {
+            ...this.parentCommand,
+            getChildCommands: () => this.parentCommand!.getChildCommands()
+          } as any;
+        }
+      };
+      return handler(args, context) as TReturn | Promise<TReturn>;
+    };
+  }
+
+  getChildCommands(): import('./public-api').ChildCommandsRegistry<TChildren> {
+    return this.registeredCommands as any;
   }
 
   clone() {

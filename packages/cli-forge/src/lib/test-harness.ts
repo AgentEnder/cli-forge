@@ -59,9 +59,9 @@ export class TestHarness<T extends ParsedArgs> {
 
 function mockHandler(cli: InternalCLI) {
   if (cli.configuration?.handler) {
-    cli.configuration.handler = () => {
+    cli.configuration.handler = (() => {
       // Mocked, should do nothing.
-    };
+    }) as any;
   }
   for (const command in cli.registeredCommands) {
     mockHandler(cli.registeredCommands[command]);
