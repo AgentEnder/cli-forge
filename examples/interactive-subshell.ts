@@ -40,8 +40,8 @@ const cli = cliForge('interactive-subshell')
         })
         .command('logout', {
           handler: (args) => {
-            delete state.auth[args.host];
-            console.log('Logged out of', args.host);
+            delete state.auth[(args as any).host];
+            console.log('Logged out of', (args as any).host);
           },
         }),
   })

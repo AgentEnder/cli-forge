@@ -14,7 +14,7 @@ const app = cli('project-cli', {
   description: 'Project management CLI',
   builder: (args) => {
     // Register all commands. The order determines help text order.
-    let result = registerInitCommand(args);
+    let result: any = registerInitCommand(args);
     result = registerBuildCommand(result);
     result = registerServeCommand(result);
     return result;
