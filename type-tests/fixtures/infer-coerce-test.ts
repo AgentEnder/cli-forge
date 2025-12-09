@@ -45,12 +45,15 @@ const test1 = testInference({
 
 // What is TCoerce?
 type InferredCoerce = typeof test1.coerce;
+// @ts-expect-error: Intentional error to see type
 const _inferredCoerce: InferredCoerce = 'force error';
 
 // Is coerce unknown or specific?
 type CoerceCheck = typeof test1.check;
+// @ts-expect-error: Intentional error to see type
 const _coerceCheck: CoerceCheck = 'force error';
 
 // What is the result type?
 type ResultType = typeof test1.result;
-const _resultType: ResultType = { server: undefined };  // Should work if database is optional
+// Both server and database are required keys in the type (though their values can be undefined)
+const _resultType: ResultType = { server: undefined, database: undefined };

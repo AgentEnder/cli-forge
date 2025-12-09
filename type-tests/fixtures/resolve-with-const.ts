@@ -25,7 +25,7 @@ type Resolved = ResolveProperties<ConstProps>;
 // Check if nested properties are optional
 const test1: Resolved = { server: undefined, database: undefined };  // Should work
 
-// Check what the resolved type looks like
+// @ts-expect-error: Intentional error to see type
 const test2: Resolved = 'force error';
 
 // Also test without readonly
@@ -48,4 +48,5 @@ type MutableProps = {
 type ResolvedMutable = ResolveProperties<MutableProps>;
 
 const test3: ResolvedMutable = { server: undefined, database: undefined };  // Should work
+// @ts-expect-error: Intentional error to see type
 const test4: ResolvedMutable = 'force error';

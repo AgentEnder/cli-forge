@@ -15,5 +15,5 @@ type Resolved = { host: string };
 
 type ResultDist = WithOptionalDist<Resolved, Config>;
 
-// Force error
+// @ts-expect-error: Intentional error to see type
 const _result: ResultDist = 'force error';

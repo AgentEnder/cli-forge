@@ -9,25 +9,31 @@ type Props = {
 
 // Keys without NoInfer
 type KeysWithout = keyof Props;
+// @ts-expect-error: Intentional error to see type
 const _keysWithout: KeysWithout = 'force error';
 
 // Keys with NoInfer
 type KeysWith = keyof NoInfer<Props>;
+// @ts-expect-error: Intentional error to see type
 const _keysWith: KeysWith = 'force error';
 
 // Mapped type without NoInfer
 type MappedWithout = { [K in keyof Props]: K };
+// @ts-expect-error: Intentional error to see type
 const _mappedWithout: MappedWithout = 'force error';
 
 // Mapped type with NoInfer
 type MappedWith = { [K in keyof NoInfer<Props>]: K };
+// @ts-expect-error: Intentional error to see type
 const _mappedWith: MappedWith = 'force error';
 
 // Full ResolveProperties simulation
 type Simulated<T> = { [K in keyof T]: T[K] extends { type: 'object' } ? 'object found' : 'other' };
 
 type SimWithout = Simulated<Props>;
+// @ts-expect-error: Intentional error to see type
 const _simWithout: SimWithout = 'force error';
 
 type SimWith = Simulated<NoInfer<Props>>;
+// @ts-expect-error: Intentional error to see type
 const _simWith: SimWith = 'force error';

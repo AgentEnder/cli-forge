@@ -13,7 +13,7 @@ type ConfigNoDefault = {
 // Does this extend { default: unknown }?
 type HasDefault = ConfigNoDefault extends { default: unknown } ? 'yes' : 'no';
 
-// Force error to see the result
+// @ts-expect-error: Intentional error to see type
 const _hasDefault: HasDefault = 'force error';
 
 // Also test without readonly
@@ -26,6 +26,7 @@ type ConfigNoDefaultMutable = {
 
 type HasDefaultMutable = ConfigNoDefaultMutable extends { default: unknown } ? 'yes' : 'no';
 
+// @ts-expect-error: Intentional error to see type
 const _hasDefaultMutable: HasDefaultMutable = 'force error';
 
 // Test with actual top-level default
@@ -36,4 +37,5 @@ type ConfigWithDefault = {
 
 type HasDefaultActual = ConfigWithDefault extends { default: unknown } ? 'yes' : 'no';
 
+// @ts-expect-error: Intentional error to see type
 const _hasDefaultActual: HasDefaultActual = 'force error';

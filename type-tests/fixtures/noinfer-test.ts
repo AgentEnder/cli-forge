@@ -27,5 +27,7 @@ type ResolvedWith = ResolveProperties<NoInfer<Props>>;
 const test2: ResolvedWith = { server: undefined, database: undefined };  // Should work?
 
 // Force errors to see the types
+// @ts-expect-error: Intentional error to see type
 const _test1: ResolvedWithout = 'force error';
+// @ts-expect-error: Intentional error to see type
 const _test2: ResolvedWith = 'force error';

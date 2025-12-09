@@ -23,11 +23,12 @@ type TwoNestedProps = {
 // Get the resolved type
 type Resolved = ResolveProperties<TwoNestedProps>;
 
-// Force an error to see the actual type
+// @ts-expect-error: Intentional error to see type
 const _resolved: Resolved = 'force error to see type';
 
 // Also check WithOptional for server
 type ServerResolved = ResolveOptionType<TwoNestedProps['server']>;
 type ServerOptional = WithOptional<ServerResolved, TwoNestedProps['server']>;
 
+// @ts-expect-error: Intentional error to see type
 const _serverOptional: ServerOptional = 'force error to see type';

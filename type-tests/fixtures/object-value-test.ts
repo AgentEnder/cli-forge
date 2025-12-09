@@ -32,7 +32,9 @@ type OV2 = ObjectValue<NoInfer<TProps>, NoInfer<false>>;
 const test2: OV2 = { server: undefined, database: undefined };  // Should work
 
 // Force errors to see types
+// @ts-expect-error: Intentional error to see type
 const _ov1: OV1 = 'force error';
+// @ts-expect-error: Intentional error to see type
 const _ov2: OV2 = 'force error';
 
 // Test 3: What about Default type?
@@ -40,4 +42,5 @@ type Default<T> = T;  // Simplified
 
 type D1 = Default<NoInfer<OV1>>;
 const test3: D1 = { server: undefined, database: undefined };  // Should work
+// @ts-expect-error: Intentional error to see type
 const _d1: D1 = 'force error';

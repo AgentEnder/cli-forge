@@ -15,7 +15,7 @@ type ConfigNoDefault = {
 // Apply WithOptional
 type Result = WithOptional<ResolvedType, ConfigNoDefault>;
 
-// Force error to see the type - should be ResolvedType | undefined
+// @ts-expect-error: Intentional error to see type (should be ResolvedType | undefined)
 const _result: Result = 'force error';
 
 // Also test manually
@@ -25,4 +25,5 @@ type ManualCheck = ConfigNoDefault extends { required: true }
   ? 'has default'
   : 'neither';
 
+// @ts-expect-error: Intentional error to see type
 const _manualCheck: ManualCheck = 'force error';
