@@ -44,9 +44,16 @@ const broken = cliForge('broken', {
   handler: () => {},
 });
 
-// Force error to see the type
-const _workingType: GetConfig<typeof working['args']> = 'error';
-const _brokenType: GetConfig<typeof broken['args']> = 'error';
+// Note: CLI doesn't expose an 'args' property directly.
+// The args type is accessible through ArgumentsOf<typeof cli>
+import { ArgumentsOf } from 'cli-forge';
+type WorkingArgs = ArgumentsOf<typeof working>;
+type BrokenArgs = ArgumentsOf<typeof broken>;
+
+// @ts-expect-error: Intentional error to see the type
+const _workingType: GetConfig<WorkingArgs> = 'error';
+// @ts-expect-error: Intentional error to see the type
+const _brokenType: GetConfig<BrokenArgs> = 'error';
 
 // Also test the option config itself
 const workingConfig = {

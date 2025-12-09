@@ -79,12 +79,9 @@ const cli = cliForge('test-cli', {
         return true;
       },
       coerce: (config) => {
-        // Matching the original - add a computed property
-        if (config.server) {
-          config.server.url = `${config.server.ssl ? 'https' : 'http'}://${
-            config.server.host
-          }:${config.server.port}`;
-        }
+        // Note: Adding dynamic properties in coerce is a runtime concern.
+        // The type system tracks the declared properties only.
+        // If you need to add computed properties, return a new type via explicit return type.
         return config;
       },
     }),

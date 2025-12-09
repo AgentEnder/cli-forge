@@ -45,7 +45,7 @@ const test3Config = {
   properties: {
     foo: { type: 'string' },
   },
-  coerce: (val) => {
+  coerce: (val: { foo: string | undefined }) => {
     return val;
   },
 } as const;
