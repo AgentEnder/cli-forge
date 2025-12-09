@@ -3,9 +3,12 @@ import { hideBin } from './helpers';
 import {
   OptionConfigToType,
   ResolveProperties,
-  AdditionalPropertiesType,
 } from './option-types/option-config-to-type';
-import { WithOptional } from './option-types/type-resolution';
+import {
+  MakeUndefinedPropertiesOptional,
+  WithAdditionalProperties,
+  WithOptional,
+} from './option-types/type-resolution';
 import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
 import {
   Internal,
@@ -182,14 +185,18 @@ export class ArgvParser<
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: WithOptional<
-        unknown extends TCoerce
-          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
-          : TCoerce,
-        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
-      >;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: WithOptional<
+          unknown extends TCoerce
+            ? WithAdditionalProperties<
+                ResolveProperties<TProps>,
+                TAdditionalProps
+              >
+            : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+        >;
+      }>
   >;
   // String option overload
   option<
@@ -199,9 +206,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Number option overload
   option<
@@ -211,9 +219,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Boolean option overload
   option<
@@ -235,9 +244,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Generic fallback overload
   option<
@@ -247,9 +257,10 @@ export class ArgvParser<
     name: TOption,
     config: TOptionConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TOptionConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TOptionConfig>;
+      }>
   >;
   // Implementation
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
@@ -291,14 +302,18 @@ export class ArgvParser<
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: WithOptional<
-        unknown extends TCoerce
-          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
-          : TCoerce,
-        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
-      >;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: WithOptional<
+          unknown extends TCoerce
+            ? WithAdditionalProperties<
+                ResolveProperties<TProps>,
+                TAdditionalProps
+              >
+            : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+        >;
+      }>
   >;
   // String option overload
   positional<
@@ -308,9 +323,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Number option overload
   positional<
@@ -320,9 +336,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Boolean option overload
   positional<
@@ -332,9 +349,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Array option overload
   positional<
@@ -344,9 +362,10 @@ export class ArgvParser<
     name: TOption,
     config: TConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Generic fallback overload
   positional<
@@ -356,9 +375,10 @@ export class ArgvParser<
     name: TOption,
     config: TOptionConfig
   ): ArgvParser<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TOptionConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TOptionConfig>;
+      }>
   >;
   // Implementation
   positional(name: string, config: UnknownOptionConfig): ArgvParser<any> {
@@ -521,7 +541,10 @@ export class ArgvParser<
         }
       }
       // Apply nested defaults for object options (before coerce)
-      if (configuration.type === 'object' && normalized[configuration.key] !== undefined) {
+      if (
+        configuration.type === 'object' &&
+        normalized[configuration.key] !== undefined
+      ) {
         const objectConfig = configuration as ObjectOptionConfig<any, any>;
         if (objectConfig.properties) {
           normalized[configuration.key] = applyNestedObjectDefaults(

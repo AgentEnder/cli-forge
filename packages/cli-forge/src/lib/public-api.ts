@@ -10,8 +10,9 @@ import {
   BooleanOptionConfig,
   ArrayOptionConfig,
   ResolveProperties,
-  AdditionalPropertiesType,
   WithOptional,
+  MakeUndefinedPropertiesOptional,
+  WithAdditionalProperties,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -106,14 +107,18 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
   ): CLI<
-    TArgs & {
-      [key in TOption]: WithOptional<
-        unknown extends TCoerce
-          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
-          : TCoerce,
-        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
-      >;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: WithOptional<
+          unknown extends TCoerce
+            ? WithAdditionalProperties<
+                ResolveProperties<TProps>,
+                TAdditionalProps
+              >
+            : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+        >;
+      }>
   >;
   // String option overload
   option<
@@ -123,9 +128,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Number option overload
   option<
@@ -135,9 +141,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Boolean option overload
   option<
@@ -147,9 +154,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Array option overload
   option<
@@ -159,9 +167,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Generic fallback overload
   option<
@@ -171,9 +180,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TOptionConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TOptionConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TOptionConfig>;
+      }>
   >;
 
   /**
@@ -195,14 +205,18 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
   ): CLI<
-    TArgs & {
-      [key in TOption]: WithOptional<
-        unknown extends TCoerce
-          ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
-          : TCoerce,
-        ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
-      >;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: WithOptional<
+          unknown extends TCoerce
+            ? WithAdditionalProperties<
+                ResolveProperties<TProps>,
+                TAdditionalProps
+              >
+            : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+        >;
+      }>
   >;
   // String option overload
   positional<
@@ -212,9 +226,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Number option overload
   positional<
@@ -224,9 +239,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Boolean option overload
   positional<
@@ -236,9 +252,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Array option overload
   positional<
@@ -248,9 +265,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>
   >;
   // Generic fallback overload
   positional<
@@ -260,9 +278,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     name: TOption,
     config: TOptionConfig
   ): CLI<
-    TArgs & {
-      [key in TOption]: OptionConfigToType<TOptionConfig>;
-    }
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TOptionConfig>;
+      }>
   >;
 
   /**
