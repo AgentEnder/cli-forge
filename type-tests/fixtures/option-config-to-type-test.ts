@@ -1,9 +1,8 @@
 /**
  * Test OptionConfigToType with complex object config
  */
-import { OptionConfigToType, OptionConfig } from '@cli-forge/parser';
+import { OptionConfigToType } from '@cli-forge/parser';
 
-// The exact config from the example
 type ExampleConfig = {
   type: 'object';
   description: 'Configuration object with nested properties';
@@ -12,16 +11,25 @@ type ExampleConfig = {
       type: 'object';
       description: 'Server configuration';
       properties: {
-        host: { type: 'string'; description: 'Server hostname'; default: 'localhost' };
+        host: {
+          type: 'string';
+          description: 'Server hostname';
+          default: 'localhost';
+        };
         port: { type: 'number'; description: 'Server port'; default: 3000 };
         ssl: { type: 'boolean'; description: 'Enable SSL'; default: false };
       };
+      additionalProperties: 'string';
     };
     database: {
       type: 'object';
       description: 'Database configuration';
       properties: {
-        host: { type: 'string'; description: 'Database hostname'; required: true };
+        host: {
+          type: 'string';
+          description: 'Database hostname';
+          required: true;
+        };
         port: { type: 'number'; description: 'Database port'; default: 5432 };
         name: { type: 'string'; description: 'Database name'; required: true };
       };
@@ -33,7 +41,6 @@ type ExampleConfig = {
       default: ['basic'];
     };
   };
-  additionalProperties: 'string';
   default: {
     server: { host: 'localhost'; port: 3000; ssl: false };
     features: ['basic'];
@@ -43,8 +50,20 @@ type ExampleConfig = {
 // What does OptionConfigToType give us?
 type Result = OptionConfigToType<ExampleConfig>;
 
-// Can we assign undefined to nested properties?
-const test1: Result = { server: undefined, database: undefined, features: undefined };
+// Nested object properties can be undefined (no required:true at object level)
+// features has a default so it's always present
+const test1: Result = {
+  server: undefined,
+  database: undefined,
+  features: ['test'],
+};
 
-// Force error to see the type
+// Can also provide full values
+const test2: Result = {
+  server: { host: 'localhost', port: 3000, ssl: false, foo: 'hello' },
+  database: { host: 'db', port: 5432, name: 'mydb' },
+  features: ['test'],
+};
+
+// @ts-expect-error: Intentional error to see type
 const _result: Result = 'force error';

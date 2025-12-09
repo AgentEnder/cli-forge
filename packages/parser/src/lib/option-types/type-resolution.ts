@@ -75,7 +75,7 @@ export type BaseType<T> = T extends { type: 'string' }
       additionalProperties: infer A;
     }
   ? P extends Record<string, unknown>
-    ? ResolveProperties<P> & AdditionalPropertiesType<A>
+    ? WithAdditionalProperties<ResolveProperties<P>, A>
     : never
   : T extends { type: 'object'; properties: infer P }
   ? P extends Record<string, unknown>
@@ -124,39 +124,56 @@ export type ResolveProperties<TProperties> = IsAny<TProperties> extends true
       >;
     };
 
-/**
- * Map the additionalProperties field to an index signature type.
- * If false, undefined, or any, contributes nothing to the type.
- *
- * IMPORTANT: We use `unknown` in the index signature instead of the strict
- * primitive type (e.g., `Record<string, string>`) to avoid conflicts with
- * explicit nested properties. TypeScript's index signatures require ALL values
- * (including explicit properties) to be assignable to the index type. Using
- * `Record<string, string>` would make `{ server: {...} } & Record<string, string>`
- * impossible since the nested object isn't a string.
- *
- * By using `{ [K: string]: unknown }`, the type is "open" - explicit properties
- * retain their types while additional dynamic keys are allowed. Type safety
- * for additional properties is enforced at runtime during parsing.
- *
- * Uses tuple wrapping to prevent distribution over unions.
- */
-export type AdditionalPropertiesType<T> = IsAny<T> extends true
-  ? unknown
-  : [T] extends [false]
-  ? unknown
-  : [T] extends ['string']
-  ? { [K: string]: string }
-  : [T] extends ['number']
-  ? { [K: string]: number }
-  : [T] extends ['boolean']
-  ? { [K: string]: boolean }
-  : unknown;
+type BaseLevelAdditionalProperties<TAdditional> =
+  IsAny<TAdditional> extends true
+    ? unknown
+    : [TAdditional] extends [false]
+    ? never
+    : [TAdditional] extends ['string']
+    ? string
+    : [TAdditional] extends ['number']
+    ? number
+    : [TAdditional] extends ['boolean']
+    ? boolean
+    : never;
 
 /**
+ * Combines explicit properties with an index signature for additional properties.
+ * The index signature value is a union of all possible values (explicit + additional)
+ * to satisfy TypeScript's constraint that index signatures must be compatible with
+ * all explicit properties.
+ */
+export type WithAdditionalProperties<TProperties, TAdditionalProperties> =
+  | {
+      [key in keyof TProperties]: TProperties[key];
+    }
+  | {
+      [key: string]: BaseLevelAdditionalProperties<TAdditionalProperties>;
+    };
+/**
  * Compute the full value type for an object option.
- * Combines resolved properties with additional properties index signature.
+ * Uses WithAdditionalProperties when additionalProperties is specified,
+ * which creates a compatible index signature.
  */
 export type ObjectValueType<TProperties, TAdditionalProperties> =
-  ResolveProperties<TProperties> &
-    AdditionalPropertiesType<TAdditionalProperties>;
+  IsAny<TAdditionalProperties> extends true
+    ? ResolveProperties<TProperties>
+    : [TAdditionalProperties] extends [false]
+    ? ResolveProperties<TProperties>
+    : WithAdditionalProperties<
+        ResolveProperties<TProperties>,
+        TAdditionalProperties
+      >;
+
+type PickUndefinedKeys<T> = {
+  [K in keyof T]: undefined extends T[K] ? K : never;
+}[keyof T];
+
+type PickRequiredKeys<T> = {
+  [K in keyof T]: undefined extends T[K] ? never : K;
+}[keyof T];
+
+export type MakeUndefinedPropertiesOptional<T> = Partial<
+  Pick<T, PickUndefinedKeys<T>>
+> &
+  Pick<T, PickRequiredKeys<T>>;

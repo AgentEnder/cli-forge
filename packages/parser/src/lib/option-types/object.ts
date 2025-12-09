@@ -1,18 +1,27 @@
 import { CommonOptionConfig, Default } from './common';
-import { ResolveProperties, AdditionalPropertiesType } from './type-resolution';
+import {
+  ResolveProperties,
+  WithAdditionalProperties,
+} from './type-resolution';
 
 /**
  * Compute the full value type for an object option.
  * Resolves each property to its final type (respecting optional/required)
  * and adds an index signature if additionalProperties is set.
  *
- * Uses a structural constraint for TProperties to avoid circular imports
- * with option-config.ts.
+ * Uses WithAdditionalProperties when additionalProperties is specified,
+ * which creates a compatible index signature that doesn't conflict with
+ * explicit property types.
  */
 type ObjectValue<
   TProperties extends Record<string, { type: string }>,
   TAdditionalProperties extends false | 'string' | 'number' | 'boolean'
-> = ResolveProperties<TProperties> & AdditionalPropertiesType<TAdditionalProperties>;
+> = [TAdditionalProperties] extends [false]
+  ? ResolveProperties<TProperties>
+  : WithAdditionalProperties<
+      ResolveProperties<TProperties>,
+      TAdditionalProperties
+    >;
 
 /**
  * Configuration for object options. Objects are parsed from dot notation
