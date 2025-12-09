@@ -139,17 +139,21 @@ type BaseLevelAdditionalProperties<TAdditional> =
 
 /**
  * Combines explicit properties with an index signature for additional properties.
+ *
  * The index signature value is a union of all possible values (explicit + additional)
  * to satisfy TypeScript's constraint that index signatures must be compatible with
  * all explicit properties.
+ *
+ * This allows:
+ * - Explicit properties to keep their exact types via the intersection
+ * - Additional string keys to be added with the additionalProperties type
+ * - Bracket notation access returns the union of all possible types
  */
 export type WithAdditionalProperties<TProperties, TAdditionalProperties> =
-  | {
-      [key in keyof TProperties]: TProperties[key];
-    }
-  | {
-      [key: string]: BaseLevelAdditionalProperties<TAdditionalProperties>;
-    };
+  TProperties & {
+    [key: string]: // | TProperties[keyof TProperties]
+    BaseLevelAdditionalProperties<TAdditionalProperties> | undefined;
+  };
 /**
  * Compute the full value type for an object option.
  * Uses WithAdditionalProperties when additionalProperties is specified,
@@ -165,15 +169,15 @@ export type ObjectValueType<TProperties, TAdditionalProperties> =
         TAdditionalProperties
       >;
 
-type PickUndefinedKeys<T> = {
-  [K in keyof T]: undefined extends T[K] ? K : never;
-}[keyof T];
-
-type PickRequiredKeys<T> = {
-  [K in keyof T]: undefined extends T[K] ? never : K;
-}[keyof T];
-
-export type MakeUndefinedPropertiesOptional<T> = Partial<
-  Pick<T, PickUndefinedKeys<T>>
-> &
-  Pick<T, PickRequiredKeys<T>>;
+/**
+ * Makes properties whose type includes `undefined` optional.
+ * This allows omitting properties like `{ foo?: string | undefined }` from object literals
+ * instead of requiring `{ foo: undefined }`.
+ *
+ * Uses a simpler mapped type approach that works better with generic keys in .d.ts generation.
+ */
+export type MakeUndefinedPropertiesOptional<T> = {
+  [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
+} & {
+  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
+};
