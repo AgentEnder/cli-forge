@@ -67,6 +67,9 @@ const test2: Result = {
     ssl: false,
     foo: 'hello',
     bar: 'world',
+    // This typing doesn't work for assignment due to index signature constraints
+    // but, it does seem to work fine for access via bracket notation... so we'll roll
+    // with it.
   } as any as Result['server'],
   database: { host: 'db', port: 5432, name: 'mydb' },
   features: ['test'],
