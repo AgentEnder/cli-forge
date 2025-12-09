@@ -11,12 +11,7 @@
     "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
   },
   "include": ["src/**/*.ts"],
-  "exclude": [
-    "vitest.config.mts",
-    "**/*.spec.ts",
-    "**/*.test.ts",
-    "fixtures/**"
-  ],
+  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
   "references": [
     {
       "path": "../packages/parser/tsconfig.lib.json"
