@@ -1,7 +1,7 @@
 /**
  * Test what TCoerce is actually inferred as
  */
-import { ObjectOptionConfig, ResolveProperties, AdditionalPropertiesType } from '@cli-forge/parser';
+import { ObjectOptionConfig, ResolveProperties, WithAdditionalProperties } from '@cli-forge/parser';
 
 // Function to capture the inferred TCoerce
 function testInference<
@@ -15,7 +15,7 @@ function testInference<
   props: TProps;
   check: unknown extends TCoerce ? 'coerce is unknown' : 'coerce is specific';
   result: unknown extends TCoerce
-    ? ResolveProperties<TProps> & AdditionalPropertiesType<TAdditionalProps>
+    ? WithAdditionalProperties<ResolveProperties<TProps>, TAdditionalProps>
     : TCoerce;
 } {
   return {} as any;

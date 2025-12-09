@@ -1,7 +1,7 @@
 /**
  * Test default type for nested objects
  */
-import { ObjectOptionConfig, ResolveProperties, AdditionalPropertiesType } from '@cli-forge/parser';
+import { ObjectOptionConfig, ResolveProperties, WithAdditionalProperties } from '@cli-forge/parser';
 
 // Test what the default type should be
 type TestProps = {
@@ -19,7 +19,7 @@ type TestProps = {
   };
 };
 
-type ObjectValue = ResolveProperties<TestProps> & AdditionalPropertiesType<'string'>;
+type ObjectValue = WithAdditionalProperties<ResolveProperties<TestProps>, 'string'>;
 //   ^?
 
 // What does ObjectOptionConfig expect for default?

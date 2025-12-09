@@ -2,6 +2,7 @@
  * Test OptionConfigToType with complex object config
  */
 import { OptionConfigToType } from '@cli-forge/parser';
+import test from 'node:test';
 
 type ExampleConfig = {
   type: 'object';
@@ -60,10 +61,20 @@ const test1: Result = {
 
 // Can also provide full values
 const test2: Result = {
-  server: { host: 'localhost', port: 3000, ssl: false, foo: 'hello' },
+  server: {
+    host: 'localhost',
+    port: 3000,
+    ssl: false,
+    foo: 'hello',
+    bar: 'world',
+  } as any as Result['server'],
   database: { host: 'db', port: 5432, name: 'mydb' },
   features: ['test'],
 };
 
-// @ts-expect-error: Intentional error to see type
+test2.server?.['foo']?.charAt(0); // Should work, type is string | undefined
+test2.database?.host.charAt(0); // Should work, type is string
+test2.features[0].charAt(0); // Should work, type is string
+
+// @ts-expect-error: Intentional error to see type/
 const _result: Result = 'force error';

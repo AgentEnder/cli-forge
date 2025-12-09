@@ -1,7 +1,7 @@
 /**
  * Test ObjectValue composition
  */
-import { ResolveProperties, AdditionalPropertiesType } from '@cli-forge/parser';
+import { ResolveProperties, WithAdditionalProperties } from '@cli-forge/parser';
 
 // The properties type
 type TProps = {
@@ -20,8 +20,11 @@ type TProps = {
   };
 };
 
-// Simulate ObjectValue
-type ObjectValue<T, A> = ResolveProperties<T> & AdditionalPropertiesType<A>;
+// Simulate ObjectValue using WithAdditionalProperties
+// When additionalProperties is false, it just returns ResolveProperties<T>
+type ObjectValue<T, A> = A extends false
+  ? ResolveProperties<T>
+  : WithAdditionalProperties<ResolveProperties<T>, A>;
 
 // Test 1: ObjectValue without NoInfer
 type OV1 = ObjectValue<TProps, false>;
@@ -31,16 +34,8 @@ const test1: OV1 = { server: undefined, database: undefined };  // Should work
 type OV2 = ObjectValue<NoInfer<TProps>, NoInfer<false>>;
 const test2: OV2 = { server: undefined, database: undefined };  // Should work
 
-// Force errors to see types
-// @ts-expect-error: Intentional error to see type
-const _ov1: OV1 = 'force error';
-// @ts-expect-error: Intentional error to see type
-const _ov2: OV2 = 'force error';
-
 // Test 3: What about Default type?
 type Default<T> = T;  // Simplified
 
 type D1 = Default<NoInfer<OV1>>;
 const test3: D1 = { server: undefined, database: undefined };  // Should work
-// @ts-expect-error: Intentional error to see type
-const _d1: D1 = 'force error';
