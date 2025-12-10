@@ -2,35 +2,29 @@
 // id: composable-options
 // title: Composable Options
 // description: |
-//   This example demonstrates how to extract common options into a reusable function, to share
-//   across multiple commands.
+//   This example demonstrates how to extract common options into reusable functions
+//   and compose them across multiple commands. It also shows how to access child
+//   commands with full type safety, including their handlers and return types.
 //
-//   The main idea is to create a function that takes an initial CLI and performs some operations on it to be used in a command's builder function. If you extract multiple of these, you can use `chain` to compose them together. There is also a helper called `makeComposableBuilder` that can be used to create these composable builders, without having to worry about getting the type annotations correct.
-//
-//   If you are only useing @cli-forge/parser, `chain` is still available to use and a different helper, `makeComposableOption` is available to create composable options. These would be used like below:
-//   ```typescript
-//   const withName = makeComposableOption('name', {
-//     type: 'string',
-//   });
-//   const initialParser = new ArgvParser();
-//   const parser = chain(initialParser, withName, /* ... */);
-//   ```
-//
-//   Note: This example goes really far with the composable options, and is likely overkill for most CLI commands. In general, I'd only recommend extracting options into a composable builder if they are shared across multiple commands. If the options are only used in a single command, it's probably best to keep them in the command builder directly.
+//   Key concepts demonstrated:
+//   - `makeComposableBuilder` for creating reusable option/command builders
+//   - `chain` for composing multiple builders together
+//   - Typed handler return values that flow through `getHandler()`
+//   - Accessing child commands via `getChildren()` with full type inference
 //
 // commands:
 //   - '{filename} greet --name sir --greeting "Good day"'
 //   - '{filename} farewell --name madame --farewell "Goodbye"'
 //   - '{filename} converse --name sir'
 // ---
-import { CLI, chain, cli, makeComposableBuilder } from 'cli-forge';
+import { UnknownCLI, chain, cli, makeComposableBuilder } from 'cli-forge';
 
-// The generic type parameter `T` allows typescript to carry the types
-// of the options through the chain of composable options.
-// If we have a command that uses multiple composable options, the type
-// of argv in the handler will correctly reflect the options that were
-// supplied both directly and through the composable options.
-function withName<T extends CLI>(argv: T) {
+// =============================================================================
+// Composable Options - Reusable option definitions
+// =============================================================================
+
+// Manual generic approach - gives you full control over type parameters
+function withName<T extends UnknownCLI>(argv: T) {
   return argv.option('name', {
     type: 'string',
     description: 'Your name',
@@ -38,10 +32,7 @@ function withName<T extends CLI>(argv: T) {
   });
 }
 
-// For convenience, cli-forge provides a helper function to create composable
-// builders. This function takes a function that takes an initial CLI instance
-// and returns a new CLI instance with additional options, commands etc.
-// This can then be used with the `chain` function to compose multiple builders.
+// Helper-based approach - simpler syntax, types are inferred automatically
 const withGreeting = makeComposableBuilder((args) =>
   args.option('greeting', {
     type: 'string',
@@ -58,23 +49,21 @@ const withFarewell = makeComposableBuilder((args) =>
   })
 );
 
-const subcommand = cli('converse', {
-  description: 'A quick chat',
-  builder: (args) => chain(args, withName),
-  handler: (args) => {
-    console.log(`[${args.name}]: hello!`);
-  },
-});
+// =============================================================================
+// Commands with Typed Return Values
+// =============================================================================
 
-const withSubcommand = makeComposableBuilder((args) =>
-  args.commands(subcommand)
-);
+// Commands can return values from their handlers. These return types are
+// tracked and accessible via getHandler().
 
 const withGreetCommand = makeComposableBuilder((args) =>
   args.command('greet', {
     builder: (args) => chain(args, withName, withGreeting),
-    handler: (args) => {
-      console.log(`${args.greeting}, ${args.name}!`);
+    // Handler returns a string - this type is tracked!
+    handler: (args): string => {
+      const message = `${args.greeting}, ${args.name}!`;
+      console.log(message);
+      return message;
     },
   })
 );
@@ -82,13 +71,56 @@ const withGreetCommand = makeComposableBuilder((args) =>
 const withFarewellCommand = makeComposableBuilder((args) =>
   args.command('farewell', {
     builder: (args) => chain(args, withName, withFarewell),
-    handler: (args) => {
-      console.log(`${args.farewell}, ${args.name}!`);
+    // Handler returns a string
+    handler: (args): string => {
+      const message = `${args.farewell}, ${args.name}!`;
+      console.log(message);
+      return message;
     },
   })
 );
 
+// A simpler command without return value (returns void)
+const withConverseCommand = makeComposableBuilder((args) =>
+  args.command('converse', {
+    description: 'A quick chat',
+    builder: (args) => chain(args, withName),
+    handler: (args) => {
+      console.log(`[${args.name}]: hello!`);
+    },
+  })
+);
+
+// =============================================================================
+// Parent Command - Demonstrating Child Access
+// =============================================================================
+
 cli('composable-options', {
+  // Compose all commands together using chain
   builder: (args) =>
-    chain(args, withGreetCommand, withFarewellCommand, withSubcommand),
+    chain(args, withGreetCommand, withFarewellCommand, withConverseCommand),
+
+  // The handler receives fully typed access to children
+  handler: async (args, ctx) => {
+    // getChildren() returns an object with all registered child commands
+    const children = ctx.command.getChildren();
+
+    // Each child is a fully typed CLI instance
+    // You can access their handlers, builders, and metadata
+    const greetHandler = children.greet.getHandler();
+    const farewellHandler = children.farewell.getHandler();
+    const converseHandler = children.converse.getHandler();
+
+    // The handler types are preserved - greetHandler returns string | Promise<string>
+    // This enables programmatic command invocation with type safety
+    if (greetHandler) {
+      const greetResult = greetHandler({ name: 'Alice', greeting: 'Hi' });
+
+      // TypeScript knows greetHandler takes { name: string, greeting: string, ... }
+      // and returns string
+      const endsWithExclamation = greetResult.endsWith('!');
+    }
+
+    console.log('Available commands:', Object.keys(children).join(', '));
+  },
 }).forge();
