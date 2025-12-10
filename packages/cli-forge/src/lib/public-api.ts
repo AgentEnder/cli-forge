@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/ban-types */
 import {
   type ConfigurationFiles,
   OptionConfig,
@@ -18,6 +19,52 @@ import {
 import { InternalCLI } from './internal-cli';
 
 /**
+ * Extracts the command name from a Command type.
+ * Works with both CLI instances and command config objects.
+ */
+export type ExtractCommandName<T> = T extends CLI<any, any, any>
+  ? T extends InternalCLI<any, any, any>
+    ? string
+    : string
+  : T extends { name: infer N }
+  ? N extends string
+    ? N
+    : string
+  : string;
+
+/**
+ * Extracts the args type from a Command.
+ * Works with both CLI instances and command config objects.
+ */
+export type ExtractCommandArgs<T> = T extends CLI<infer A, any, any>
+  ? A
+  : T extends CLICommandOptions<any, infer A, any, any>
+  ? A
+  : ParsedArgs;
+
+/**
+ * Extracts the handler return type from a Command.
+ */
+export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any>
+  ? R
+  : T extends CLICommandOptions<any, any, infer R, any>
+  ? R
+  : void;
+
+/**
+ * Converts a Command to its child CLI entry for TChildren tracking.
+ * TParentCLI is the parent CLI type that will be set as the child's TParent.
+ */
+export type CommandToChildEntry<T, TParentCLI = undefined> = {
+  [K in ExtractCommandName<T>]: CLI<
+    ExtractCommandArgs<T>,
+    ExtractCommandHandlerReturn<T>,
+    {},
+    TParentCLI
+  >;
+};
+
+/**
  * The interface for a CLI application or subcommands.
  *
  * {@link cli} is provided as a small helper function to create a new CLI instance.
@@ -36,10 +83,31 @@ import { InternalCLI } from './internal-cli';
  *   }).forge();
  * ```
  */
-export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
+export interface CLI<
+  TArgs extends ParsedArgs = ParsedArgs,
+  THandlerReturn = void,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  TChildren = {},
+  TParent = undefined
+> {
   command<TCommandArgs extends TArgs>(
     cmd: Command<TArgs, TCommandArgs>
-  ): CLI<TArgs>;
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      (typeof cmd extends Command<TArgs, infer TCommandArgs, infer TCmdName>
+        ? {
+            [key in TCmdName]: CLI<
+              TCommandArgs,
+              void,
+              {},
+              CLI<TArgs, THandlerReturn, TChildren, TParent>
+            >;
+          }
+        : {}),
+    TParent
+  >;
 
   /**
    * Registers a new command with the CLI.
@@ -47,35 +115,300 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param options Settings for the new command. See {@link CLICommandOptions}.
    * @returns Updated CLI instance with the new command registered.
    */
-  command<TCommandArgs extends TArgs>(
-    key: string,
-    options: CLICommandOptions<TArgs, TCommandArgs>
-  ): CLI<TArgs>;
+  command<
+    TCommandArgs extends TArgs,
+    TChildHandlerReturn,
+    TKey extends string,
+    // eslint-disable-next-line @typescript-eslint/ban-types
+    TChildChildren = {}
+  >(
+    key: TKey,
+    options: CLICommandOptions<
+      TArgs,
+      TCommandArgs,
+      TChildHandlerReturn,
+      any,
+      CLI<TArgs, THandlerReturn, TChildren, TParent>,
+      TChildChildren
+    >
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren & {
+      [key in TKey]: CLI<
+        TCommandArgs,
+        TChildHandlerReturn,
+        TChildChildren,
+        CLI<TArgs, THandlerReturn, TChildren, TParent>
+      >;
+    },
+    TParent
+  >;
 
   /**
    * Registers multiple subcommands with the CLI.
    * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
+   * @returns Updated CLI instance with the commands registered and their types tracked in TChildren.
    */
-  commands(commands: Command[]): CLI<TArgs>;
-  /**
-   * Registers multiple subcommands with the CLI.
-   * @param commands Several commands to register. Can be the result of a call to {@link cli} or a configuration object.
-   */
-  commands(...commands: Command[]): CLI<TArgs>;
+  // Typed overloads for 1-10 commands to preserve individual command types
+  // Each child command gets this CLI as its TParent
+  commands<C1 extends Command>(
+    c1: C1
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<C1 extends Command, C2 extends Command>(
+    c1: C1,
+    c2: C2
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<C1 extends Command, C2 extends Command, C3 extends Command>(
+    c1: C1,
+    c2: C2,
+    c3: C3
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command,
+    C6 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5,
+    c6: C6
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command,
+    C6 extends Command,
+    C7 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5,
+    c6: C6,
+    c7: C7
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command,
+    C6 extends Command,
+    C7 extends Command,
+    C8 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5,
+    c6: C6,
+    c7: C7,
+    c8: C8
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command,
+    C6 extends Command,
+    C7 extends Command,
+    C8 extends Command,
+    C9 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5,
+    c6: C6,
+    c7: C7,
+    c8: C8,
+    c9: C9
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  commands<
+    C1 extends Command,
+    C2 extends Command,
+    C3 extends Command,
+    C4 extends Command,
+    C5 extends Command,
+    C6 extends Command,
+    C7 extends Command,
+    C8 extends Command,
+    C9 extends Command,
+    C10 extends Command
+  >(
+    c1: C1,
+    c2: C2,
+    c3: C3,
+    c4: C4,
+    c5: C5,
+    c6: C6,
+    c7: C7,
+    c8: C8,
+    c9: C9,
+    c10: C10
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren &
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent>> &
+      CommandToChildEntry<C10, CLI<TArgs, THandlerReturn, TChildren, TParent>>,
+    TParent
+  >;
+  // Fallback for arrays or more than 10 commands (loses individual type tracking)
+  commands(commands: Command[]): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  commands(
+    ...commands: Command[]
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
    *
    * @param provider Provider to register.
    */
-  config(provider: ConfigurationFiles.ConfigurationProvider<TArgs>): CLI<TArgs>;
+  config(
+    provider: ConfigurationFiles.ConfigurationProvider<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
    * This presents as a small shell that only knows the current command and its subcommands.
    * Any flags already consumed by the command will be passed to every subcommand invocation.
    */
-  enableInteractiveShell(): CLI<TArgs>;
+  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Registers a custom global error handler for the CLI. This handler will be called when an error is thrown
@@ -85,7 +418,9 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @param handler Typically called with an Error object, but you should be prepared to handle any type of error.
    * @param actions Actions that can be taken by the error handler. Prefer using these over process.exit for better support of interactive shells.
    */
-  errorHandler(handler: ErrorHandler): CLI<TArgs>;
+  errorHandler(
+    handler: ErrorHandler
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Registers a new option for the CLI command. This option will be accessible
@@ -118,7 +453,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
             : TCoerce,
           ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
         >;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // String option overload
   option<
@@ -131,7 +469,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Number option overload
   option<
@@ -144,7 +485,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Boolean option overload
   option<
@@ -157,7 +501,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Array option overload
   option<
@@ -170,7 +517,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Generic fallback overload
   option<
@@ -183,7 +533,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
 
   /**
@@ -216,7 +569,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
             : TCoerce,
           ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
         >;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // String option overload
   positional<
@@ -229,7 +585,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Number option overload
   positional<
@@ -242,7 +601,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Boolean option overload
   positional<
@@ -255,7 +617,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Array option overload
   positional<
@@ -268,7 +633,10 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
   // Generic fallback overload
   positional<
@@ -281,55 +649,65 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
   >;
 
   /**
    * Adds support for reading CLI options from environment variables.
    * @param prefix The prefix to use when looking up environment variables. Defaults to the command name.
    */
-  env(prefix?: string): CLI<TArgs>;
+  env(prefix?: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
-  env(options: EnvOptionConfig): CLI<TArgs>;
+  env(options: EnvOptionConfig): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.
    * @param options The options that should be mutually exclusive.
    */
-  conflicts(...options: [string, string, ...string[]]): CLI<TArgs>;
+  conflicts(
+    ...options: [string, string, ...string[]]
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets a group of options as mutually inclusive. If one option is provided, all other options must also be provided.
    * @param option The option that implies the other options.
    * @param impliedOptions The options which become required when the option is provided.
    */
-  implies(option: string, ...impliedOptions: string[]): CLI<TArgs>;
+  implies(
+    option: string,
+    ...impliedOptions: string[]
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Requires a command to be provided when executing the CLI. Useful if your parent command
    * cannot be executed on its own.
    * @returns Updated CLI instance.
    */
-  demandCommand(): CLI<TArgs>;
+  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets the usage text for the CLI. This text will be displayed in place of the default usage text
    * @param usageText Text displayed in place of the default usage text for `--help` and in generated docs.
    */
-  usage(usageText: string): CLI<TArgs>;
+  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets the description for the CLI. This text will be displayed in the help text and generated docs.
    * @param examples Examples to display in the help text and generated docs.
    */
-  examples(...examples: string[]): CLI<TArgs>;
+  examples(
+    ...examples: string[]
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Allows overriding the version displayed when passing `--version`. Defaults to crawling
    * the file system to get the package.json of the currently executing command.
    * @param override
    */
-  version(override?: string): CLI<TArgs>;
+  version(override?: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Prints help text to stdout.
@@ -344,12 +722,20 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
     label: string;
     keys: (keyof TArgs)[];
     sortOrder: number;
-  }): CLI<TArgs>;
-  group(label: string, keys: (keyof TArgs)[]): CLI<TArgs>;
+  }): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  group(
+    label: string,
+    keys: (keyof TArgs)[]
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   middleware<TArgs2>(
     callback: MiddlewareFunction<TArgs, TArgs2>
-  ): CLI<TArgs2 extends void ? TArgs : TArgs & TArgs2>;
+  ): CLI<
+    TArgs2 extends void ? TArgs : TArgs & TArgs2,
+    THandlerReturn,
+    TChildren,
+    TParent
+  >;
 
   /**
    * Parses argv and executes the CLI
@@ -357,11 +743,61 @@ export interface CLI<TArgs extends ParsedArgs = ParsedArgs> {
    * @returns Promise that resolves when the handler completes.
    */
   forge(args?: string[]): Promise<TArgs>;
+
+  /**
+   * Returns the typed children commands registered with this CLI.
+   * The return type is determined by the commands registered via `command()` or `commands()`.
+   *
+   * @example
+   * ```ts
+   * const app = cli('app')
+   *   .command('init', { ... })
+   *   .command('build', { ... });
+   *
+   * const children = app.getChildren();
+   * // children.init and children.build are typed CLI instances
+   * const initHandler = children.init.getHandler();
+   * ```
+   */
+  getChildren(): TChildren;
+
+  /**
+   * Returns the parent CLI instance, if this command was registered as a subcommand.
+   * Returns undefined for root-level CLI instances.
+   *
+   * @example
+   * ```ts
+   * const build = cli('build', {
+   *   handler: (args, ctx) => {
+   *     const parent = ctx.command.getParent();
+   *     const siblings = parent?.getChildren();
+   *     // Access sibling commands
+   *   }
+   * });
+   * ```
+   */
+  getParent(): TParent;
+
+  getBuilder<T extends ParsedArgs = ParsedArgs>(
+    initialCli?: CLI<T, any, any>
+  ):
+    | ((parser: CLI<T, any, any>) => CLI<TArgs, THandlerReturn, TChildren>)
+    | undefined;
+  getHandler():
+    | ((args: Omit<TArgs, keyof ParsedArgs>) => THandlerReturn)
+    | undefined;
 }
 
-export interface CLIHandlerContext {
-  command: CLI<any>;
+export interface CLIHandlerContext<TChildren = {}, TParent = any> {
+  command: CLI<any, any, TChildren, TParent>;
 }
+
+/**
+ * Extracts the TChildren type parameter from a CLI type.
+ */
+export type ExtractCLIChildren<T> = T extends CLI<any, any, infer C, any>
+  ? C
+  : {};
 
 /**
  * Represents the configuration needed to create a CLI command.
@@ -374,7 +810,19 @@ export interface CLICommandOptions<
   /**
    * The type of the arguments that are registered after `builder` is invoked, and the type that is passed to the handler.
    */
-  TArgs extends TInitial = TInitial
+  TArgs extends TInitial = TInitial,
+  THandlerReturn = void,
+  /**
+   * The children commands that exist before the builder runs.
+   */
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  TInitialChildren = {},
+  TParent = any,
+  /**
+   * The children commands after the builder runs (includes TInitialChildren plus any added by builder).
+   */
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  TChildren = {}
 > {
   /**
    * If set the command will be registered under the provided name and any aliases.
@@ -392,14 +840,21 @@ export interface CLICommandOptions<
    * The command builder. This function is called before the command is executed, and is used to register options and positional parameters.
    * @param parser The parser instance to register options and positionals with.
    */
-  builder?: (parser: CLI<TInitial>) => CLI<TArgs>;
+  // Note: Builder uses 'any' for THandlerReturn to avoid inference conflicts with the handler.
+  // The handler's return type is inferred independently from the handler function itself.
+  builder?: (
+    parser: CLI<TInitial, any, TInitialChildren, TParent>
+  ) => CLI<TArgs, any, TChildren, any>;
 
   /**
    * The command handler. This function is called when the command is executed.
    * @param args The parsed arguments.
    * @param context Context for the handler. Contains the command instance.
    */
-  handler?: (args: TArgs, context: CLIHandlerContext) => void | Promise<void>;
+  handler?: (
+    args: NoInfer<TArgs>,
+    context: CLIHandlerContext<NoInfer<TChildren>, TParent>
+  ) => THandlerReturn;
 
   /**
    * The usage text for the command. This text will be displayed in place of the default usage text in the help text and generated docs.
@@ -424,10 +879,11 @@ export interface CLICommandOptions<
 
 export type Command<
   TInitial extends ParsedArgs = any,
-  TArgs extends TInitial = TInitial
+  TArgs extends TInitial = TInitial,
+  TCommandName extends string = string
 > =
   | ({
-      name: string;
+      name: TCommandName;
     } & CLICommandOptions<TInitial, TArgs>)
   | CLI<TArgs>;
 
@@ -448,6 +904,8 @@ export type ErrorHandler = (
   }
 ) => void;
 
+export type UnknownCLI = CLI<ParsedArgs, any, any, any>;
+
 export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
   args: TArgs
 ) => TArgs2 | Promise<TArgs2>;
@@ -458,11 +916,28 @@ export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
  * @param rootCommandConfiguration Configuration used when running the bare CLI. e.g. npx my-cli, rather than npx my-cli [cmd]
  * @returns A {@link CLI} instance.
  */
-export function cli<TArgs extends ParsedArgs>(
-  name: string,
-  rootCommandConfiguration?: CLICommandOptions<ParsedArgs, TArgs>
+export function cli<
+  TArgs extends ParsedArgs,
+  THandlerReturn = void,
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  TChildren = {},
+  TName extends string = string
+>(
+  name: TName,
+  rootCommandConfiguration?: CLICommandOptions<
+    ParsedArgs,
+    TArgs,
+    THandlerReturn,
+    {},
+    any,
+    TChildren
+  >
 ) {
-  return new InternalCLI(name, rootCommandConfiguration) as any as CLI<TArgs>;
+  return new InternalCLI(name, rootCommandConfiguration as any) as any as CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren
+  >;
 }
 
 export default cli;
