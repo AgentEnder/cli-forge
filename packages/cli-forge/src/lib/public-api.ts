@@ -778,6 +778,38 @@ export interface CLI<
    */
   getParent(): TParent;
 
+  /**
+   * Returns a programmatic SDK for invoking this CLI and its subcommands.
+   * The SDK provides typed function calls instead of argv parsing.
+   *
+   * @example
+   * ```ts
+   * const myCLI = cli('my-app')
+   *   .option('verbose', { type: 'boolean' })
+   *   .command('build', {
+   *     builder: (cmd) => cmd.option('watch', { type: 'boolean' }),
+   *     handler: (args) => ({ success: true, files: ['a.js'] })
+   *   });
+   *
+   * const sdk = myCLI.sdk();
+   *
+   * // Invoke root command (if it has a handler)
+   * await sdk({ verbose: true });
+   *
+   * // Invoke subcommand with typed args
+   * const result = await sdk.build({ watch: true });
+   * console.log(result.files);       // ['a.js']
+   * console.log(result.$args.watch); // true
+   *
+   * // Use CLI-style args for -- support
+   * await sdk.build(['--watch', '--', 'extra-arg']);
+   * ```
+   *
+   * @returns An SDK object that is callable (if this command has a handler)
+   *          and has properties for each subcommand.
+   */
+  sdk(): SDKCommand<TArgs, THandlerReturn, TChildren>;
+
   getBuilder<T extends ParsedArgs = ParsedArgs>(
     initialCli?: CLI<T, any, any>
   ):
@@ -909,6 +941,65 @@ export type UnknownCLI = CLI<ParsedArgs, any, any, any>;
 export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
   args: TArgs
 ) => TArgs2 | Promise<TArgs2>;
+
+// ============================================================================
+// SDK Types
+// ============================================================================
+
+/**
+ * Result type that conditionally includes $args.
+ * Only attaches $args when result is an object type.
+ */
+export type SDKResult<TArgs, THandlerReturn> = THandlerReturn extends object
+  ? THandlerReturn & { $args: TArgs }
+  : THandlerReturn;
+
+/**
+ * The callable signature for a command with a handler.
+ * Supports both object-style args (typed, skips validation) and
+ * string array args (CLI-style, full validation pipeline).
+ */
+export type SDKInvokable<TArgs, THandlerReturn> = {
+  /**
+   * Invoke the command with typed object args.
+   * Skips validation (TypeScript handles it), applies defaults, runs middleware.
+   */
+  (args?: Partial<Omit<TArgs, 'unmatched' | '--'>>): Promise<
+    SDKResult<TArgs, THandlerReturn>
+  >;
+  /**
+   * Invoke the command with CLI-style string args.
+   * Runs full pipeline: parse → validate → middleware → handler.
+   * Use this when you need to pass `--` extra args.
+   */
+  (args: string[]): Promise<SDKResult<TArgs, THandlerReturn>>;
+};
+
+/**
+ * Recursively builds SDK type from TChildren.
+ * Each child command becomes a property on the SDK object.
+ */
+export type SDKChildren<TChildren> = {
+  [K in keyof TChildren]: TChildren[K] extends CLI<
+    infer A,
+    infer R,
+    infer C,
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    infer _P
+  >
+    ? SDKCommand<A, R, C>
+    : never;
+};
+
+/**
+ * A single SDK command - callable if it has a handler, with nested children as properties.
+ * Container commands (no handler) are not callable but still provide access to children.
+ */
+export type SDKCommand<TArgs, THandlerReturn, TChildren> =
+  // eslint-disable-next-line @typescript-eslint/ban-types
+  THandlerReturn extends void | undefined
+    ? SDKChildren<TChildren> // No handler = just children (not callable)
+    : SDKInvokable<TArgs, THandlerReturn> & SDKChildren<TChildren>;
 
 /**
  * Constructs a CLI instance. See {@link CLI} for more information.

@@ -17,6 +17,7 @@ import {
   CLIHandlerContext,
   Command,
   ErrorHandler,
+  SDKCommand,
 } from './public-api';
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { formatHelp } from './format-help';
@@ -521,6 +522,119 @@ export class InternalCLI<
         args as TArgs,
         context as CLIHandlerContext<any, any>
       ) as THandlerReturn;
+  }
+
+  sdk(): SDKCommand<TArgs, THandlerReturn, TChildren> {
+    return this.buildSDKProxy(this) as SDKCommand<TArgs, THandlerReturn, TChildren>;
+  }
+
+  private buildSDKProxy(
+    targetCmd: InternalCLI<any, any, any, any>
+  ): unknown {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    const self = this;
+
+    const invoke = async (argsOrArgv?: Record<string, unknown> | string[]) => {
+      // Clone the target command to avoid mutating the original
+      const cmd = targetCmd.clone();
+
+      const handler = cmd._configuration?.handler;
+      if (!handler) {
+        throw new Error(`Command '${cmd.name}' has no handler`);
+      }
+
+      let parsedArgs: any;
+
+      if (Array.isArray(argsOrArgv)) {
+        // String array: full pipeline (parse → validate → middleware)
+        // Run the builder first if present
+        if (cmd._configuration?.builder) {
+          cmd._configuration.builder(cmd as any);
+        }
+        parsedArgs = cmd.parser.parse(argsOrArgv);
+      } else {
+        // Object args: skip validation, apply defaults, run middleware
+        // Run the builder first to register options and get defaults
+        if (cmd._configuration?.builder) {
+          cmd._configuration.builder(cmd as any);
+        }
+        // Build defaults from configured options
+        const defaults: Record<string, unknown> = {};
+        for (const [key, config] of Object.entries(cmd.parser.configuredOptions)) {
+          if (config.default !== undefined) {
+            defaults[key] = config.default;
+          }
+        }
+        parsedArgs = {
+          ...defaults,
+          ...argsOrArgv,
+          unmatched: [],
+        };
+      }
+
+      // Collect and run middleware from the command chain
+      const middlewares = self.collectMiddlewareChain(targetCmd);
+      for (const mw of middlewares) {
+        const middlewareResult = await mw(parsedArgs);
+        if (
+          middlewareResult !== void 0 &&
+          typeof middlewareResult === 'object'
+        ) {
+          parsedArgs = middlewareResult;
+        }
+      }
+
+      // Execute handler
+      const context: CLIHandlerContext<any, any> = {
+        command: cmd as unknown as CLI<any, any, any, any>,
+      };
+      const result = await handler(parsedArgs, context);
+
+      // Try to attach $args to the result (fails silently for primitives)
+      if (result !== null && typeof result === 'object') {
+        try {
+          (result as any).$args = parsedArgs;
+        } catch {
+          // Cannot attach to frozen objects or primitives, return as-is
+        }
+      }
+
+      return result;
+    };
+
+    // Ensure builder has run to register all subcommands
+    if (targetCmd._configuration?.builder) {
+      targetCmd._configuration.builder(targetCmd as any);
+    }
+
+    // Create proxy that is both callable and has child properties
+    return new Proxy(invoke, {
+      get(_, prop: string) {
+        // Handle special properties
+        if (prop === 'then' || prop === 'catch' || prop === 'finally') {
+          // Don't intercept Promise methods - this prevents issues with await
+          return undefined;
+        }
+
+        const child = targetCmd.registeredCommands[prop];
+        if (child) {
+          return self.buildSDKProxy(child);
+        }
+        return undefined;
+      },
+    });
+  }
+
+  private collectMiddlewareChain(
+    cmd: InternalCLI<any, any, any, any>
+  ): Array<(args: any) => unknown | Promise<unknown>> {
+    const chain: InternalCLI<any, any, any, any>[] = [];
+    let current: InternalCLI<any, any, any, any> | undefined = cmd;
+    while (current) {
+      chain.unshift(current);
+      current = current._parent;
+    }
+    return chain.flatMap((c) => c.registeredMiddleware);
   }
 
   enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
