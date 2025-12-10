@@ -47,7 +47,7 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
     });
 }
 
-export const generateDocumentationCommand: CLI = cli('generate-documentation', {
+export const generateDocumentationCommand: CLI<any, any, any> = cli('generate-documentation', {
   description: 'Generate documentation for the given CLI',
   examples: [
     'cli-forge generate-documentation ./bin/my-cli',

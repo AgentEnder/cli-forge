@@ -54,7 +54,7 @@ export function generateDocumentation(
     // The cli instance here is typed a bit too well
     // for the builder function, so we need to cast it to
     // a more generic form.
-    cli.configuration.builder(cli as CLI);
+    cli.configuration.builder(cli as unknown as CLI);
   }
   const parser = cli.getParser();
 
