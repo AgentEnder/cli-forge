@@ -1,11 +1,11 @@
-import type { CLI } from 'cli-forge';
+import { makeComposableBuilder, chain } from 'cli-forge';
 
 /**
- * Register the init command on the given CLI instance.
- * This pattern allows commands to be imported and registered modularly.
+ * Composable builder that adds the init command.
+ * Returns an object with initialization details for programmatic access.
  */
-export function registerInitCommand<T extends CLI>(cli: T) {
-  return cli.command('init', {
+export const withInitCommand = makeComposableBuilder((args) =>
+  args.command('init', {
     description: 'Initialize a new project',
     builder: (cmd) =>
       cmd
@@ -17,8 +17,8 @@ export function registerInitCommand<T extends CLI>(cli: T) {
         .option('template', {
           type: 'string',
           description: 'Template to use',
-          choices: ['basic', 'typescript', 'react'],
-          default: 'basic',
+          choices: ['basic', 'typescript', 'react'] as const,
+          default: 'basic' as const,
         })
         .option('git', {
           type: 'boolean',
@@ -26,10 +26,16 @@ export function registerInitCommand<T extends CLI>(cli: T) {
           default: true,
         }),
 
-    handler: (args) => {
+    // Handler returns initialization info - useful for programmatic use
+    handler: (args): { projectPath: string; template: string } => {
       console.log(`Initializing project: ${args.name}`);
       console.log(`  Template: ${args.template}`);
       console.log(`  Git: ${args.git ? 'yes' : 'no'}`);
+
+      return {
+        projectPath: `./${args.name}`,
+        template: args.template,
+      };
     },
-  });
-}
+  })
+);

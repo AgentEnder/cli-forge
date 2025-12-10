@@ -1,10 +1,20 @@
-import type { CLI } from 'cli-forge';
+import { makeComposableBuilder } from 'cli-forge';
 
 /**
- * Register the build command.
+ * Build result type - returned by the handler for programmatic access.
  */
-export function registerBuildCommand<T extends CLI>(cli: T) {
-  return cli.command('build', {
+export interface BuildResult {
+  success: boolean;
+  outputDir: string;
+  files: string[];
+}
+
+/**
+ * Composable builder that adds the build command.
+ * Returns build result information.
+ */
+export const withBuildCommand = makeComposableBuilder((args) =>
+  args.command('build', {
     description: 'Build the project for production',
     builder: (cmd) =>
       cmd
@@ -24,11 +34,18 @@ export function registerBuildCommand<T extends CLI>(cli: T) {
           default: true,
         }),
 
-    handler: (args) => {
+    handler: (args): BuildResult => {
       console.log('Building project...');
       console.log(`  outDir: ${args.outDir}`);
       console.log(`  minify: ${args.minify}`);
       console.log(`  sourcemap: ${args.sourcemap}`);
+
+      // Simulated build result
+      return {
+        success: true,
+        outputDir: args.outDir,
+        files: ['index.js', 'styles.css'],
+      };
     },
-  });
-}
+  })
+);

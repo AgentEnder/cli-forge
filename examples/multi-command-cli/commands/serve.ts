@@ -1,10 +1,20 @@
-import type { CLI } from 'cli-forge';
+import { makeComposableBuilder } from 'cli-forge';
 
 /**
- * Register the serve command.
+ * Server info returned by the serve command handler.
  */
-export function registerServeCommand<T extends CLI>(cli: T) {
-  return cli.command('serve', {
+export interface ServerInfo {
+  url: string;
+  port: number;
+  host: string;
+}
+
+/**
+ * Composable builder that adds the serve command.
+ * Returns server information for programmatic use.
+ */
+export const withServeCommand = makeComposableBuilder((args) =>
+  args.command('serve', {
     description: 'Start development server',
     builder: (cmd) =>
       cmd
@@ -25,13 +35,21 @@ export function registerServeCommand<T extends CLI>(cli: T) {
           default: false,
         }),
 
-    handler: (args) => {
+    handler: (args): ServerInfo => {
+      const url = `http://${args.host}:${args.port}`;
       console.log(`Starting server on port ${args.port}...`);
       console.log(`  Host: ${args.host}`);
+      console.log(`  URL: ${url}`);
 
       if (args.open) {
         console.log('Opening browser...');
       }
+
+      return {
+        url,
+        port: args.port,
+        host: args.host,
+      };
     },
-  });
-}
+  })
+);
