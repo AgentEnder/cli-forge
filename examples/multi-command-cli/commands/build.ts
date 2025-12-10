@@ -1,18 +1,11 @@
 import { makeComposableBuilder } from 'cli-forge';
 
-/**
- * Build result type - returned by the handler for programmatic access.
- */
 export interface BuildResult {
   success: boolean;
   outputDir: string;
   files: string[];
 }
 
-/**
- * Composable builder that adds the build command.
- * Returns build result information.
- */
 export const withBuildCommand = makeComposableBuilder((args) =>
   args.command('build', {
     description: 'Build the project for production',
@@ -40,7 +33,6 @@ export const withBuildCommand = makeComposableBuilder((args) =>
       console.log(`  minify: ${args.minify}`);
       console.log(`  sourcemap: ${args.sourcemap}`);
 
-      // Simulated build result
       return {
         success: true,
         outputDir: args.outDir,

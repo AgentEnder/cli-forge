@@ -2,16 +2,8 @@
 // id: orchestrated-workflow
 // title: Orchestrated Workflow
 // description: |
-//   Demonstrates a parent command that programmatically executes its child
-//   commands in sequence, passing data from one step to the next. This pattern
-//   is useful for building multi-step workflows like release pipelines, build
-//   systems, or deployment scripts.
-//
-//   The example shows:
-//   - Accessing child command handlers via `getChildren()`
-//   - Typed handler return values that flow between steps
-//   - Composing reusable option builders with `makeComposableBuilder`
-//   - Error handling across the workflow
+//   A parent command that executes child commands in sequence, passing data
+//   between steps. Useful for release pipelines, build systems, or deployments.
 //
 // commands:
 //   - command: '{filename} --project my-app'
@@ -31,7 +23,7 @@
 // ---
 import { cli, makeComposableBuilder, chain } from 'cli-forge';
 
-// Shared options used across multiple commands
+// Shared options
 const withProjectOption = makeComposableBuilder((args) =>
   args.option('project', {
     type: 'string',
@@ -48,7 +40,7 @@ const withDryRunOption = makeComposableBuilder((args) =>
   })
 );
 
-// Types for data passed between workflow steps
+// Result types for each step
 interface ValidationResult {
   project: string;
   isClean: boolean;
@@ -67,8 +59,6 @@ interface PublishResult {
   registry: string;
 }
 
-// Child command: validate
-// Checks preconditions and returns validation state
 const withValidateCommand = makeComposableBuilder((args) =>
   args.command('validate', {
     description: 'Check that the project is ready for release',
@@ -76,7 +66,6 @@ const withValidateCommand = makeComposableBuilder((args) =>
     handler: (args): ValidationResult => {
       console.log(`Validating ${args.project}...`);
 
-      // In a real CLI, you'd check git status, run tests, etc.
       const result: ValidationResult = {
         project: args.project,
         isClean: true,
@@ -89,8 +78,6 @@ const withValidateCommand = makeComposableBuilder((args) =>
   })
 );
 
-// Child command: build
-// Compiles the project and returns build artifacts
 const withBuildCommand = makeComposableBuilder((args) =>
   args.command('build', {
     description: 'Build the project for distribution',
@@ -98,7 +85,6 @@ const withBuildCommand = makeComposableBuilder((args) =>
     handler: (args): BuildResult => {
       console.log(`Building ${args.project}...`);
 
-      // Simulate build process
       const result: BuildResult = {
         project: args.project,
         outputPath: `dist/${args.project}`,
@@ -112,8 +98,6 @@ const withBuildCommand = makeComposableBuilder((args) =>
   })
 );
 
-// Child command: publish
-// Publishes build artifacts to a registry
 const withPublishCommand = makeComposableBuilder((args) =>
   args.command('publish', {
     description: 'Publish the built package to npm',
@@ -141,9 +125,8 @@ const withPublishCommand = makeComposableBuilder((args) =>
   })
 );
 
-// Main CLI: orchestrates the full release workflow
 cli('release', {
-  description: 'Release workflow that validates, builds, and publishes',
+  description: 'Validate, build, and publish a project',
   builder: (args) =>
     chain(
       args,
@@ -158,7 +141,6 @@ cli('release', {
     const { project, dryRun } = args;
     const children = ctx.command.getChildren();
 
-    // Get typed handlers for each step
     const validateHandler = children.validate.getHandler();
     const buildHandler = children.build.getHandler();
     const publishHandler = children.publish.getHandler();
@@ -170,10 +152,7 @@ cli('release', {
     console.log(`Starting release workflow for ${project}`);
     console.log(dryRun ? '(dry run mode)\n' : '\n');
 
-    // Step 1: Validate
-    // The return type is inferred as ValidationResult
     const validation = await validateHandler({ project });
-
     if (!validation.isClean) {
       console.error('Validation failed - aborting release');
       process.exitCode = 1;
@@ -181,13 +160,9 @@ cli('release', {
     }
     console.log('');
 
-    // Step 2: Build
-    // We can use data from the previous step
     const build = await buildHandler({ project: validation.project });
     console.log('');
 
-    // Step 3: Publish
-    // Combines data from validation and build steps
     const publish = await publishHandler({
       project: build.project,
       dryRun,
@@ -195,7 +170,6 @@ cli('release', {
     });
     console.log('');
 
-    // Summary using typed results from all steps
     console.log('='.repeat(40));
     console.log('Release complete!');
     console.log(`  Project: ${publish.project}`);

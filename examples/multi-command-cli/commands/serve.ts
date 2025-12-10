@@ -1,18 +1,11 @@
 import { makeComposableBuilder } from 'cli-forge';
 
-/**
- * Server info returned by the serve command handler.
- */
 export interface ServerInfo {
   url: string;
   port: number;
   host: string;
 }
 
-/**
- * Composable builder that adds the serve command.
- * Returns server information for programmatic use.
- */
 export const withServeCommand = makeComposableBuilder((args) =>
   args.command('serve', {
     description: 'Start development server',

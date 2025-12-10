@@ -1,14 +1,9 @@
 id: multi-command-cli
 title: Multi-Command CLI Structure
 description: |
-  Shows how to organize a CLI with multiple commands in separate files
-  using `makeComposableBuilder` and `chain` for fully typed composition.
-
-  Key features demonstrated:
-  - Commands defined in separate files using `makeComposableBuilder`
-  - Type-safe composition with `chain` (no `as any` needed)
-  - Typed handler return values (BuildResult, ServerInfo, etc.)
-  - Parent handler accessing children via `getChildren()` with full types
+  Organize a CLI with multiple commands in separate files using
+  `makeComposableBuilder` and `chain`. Each command returns typed
+  results that can be accessed programmatically via `getChildren()`.
 
 entryPoint: cli.ts
 fileMap:
