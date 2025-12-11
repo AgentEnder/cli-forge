@@ -1,3 +1,30 @@
+## 0.12.0 (2025-12-11)
+
+### 🚀 Features
+
+- **cli-forge:** add TChildren, THandlerReturn, TParent type parameters to CLI interface ([d59c213](https://github.com/agentender/cli-forge/commit/d59c213))
+- **cli-forge:** implement getChildren, getParent, getHandler methods ([d9ed677](https://github.com/agentender/cli-forge/commit/d9ed677))
+- **cli-forge:** enhance makeComposableBuilder to track children types ([04cf6be](https://github.com/agentender/cli-forge/commit/04cf6be))
+
+### 🩹 Fixes
+
+- **cli-forge:** update CLI type annotations in documentation tools ([3bfda46](https://github.com/agentender/cli-forge/commit/3bfda46))
+- **e2e:** prevent flaky module resolution in examples ([4462654](https://github.com/agentender/cli-forge/commit/4462654))
+- **e2e:** use --build mode for tsc --force flag ([56eec7c](https://github.com/agentender/cli-forge/commit/56eec7c))
+- **parser:** use explicit .js extensions in config-files imports ([3289c84](https://github.com/agentender/cli-forge/commit/3289c84))
+- **parser:** fix additionalProperties type compatibility with nested objects ([79b7b0a](https://github.com/agentender/cli-forge/commit/79b7b0a))
+- **parser:** update option overloads to use new additionalProperties types ([f1e6247](https://github.com/agentender/cli-forge/commit/f1e6247))
+- **parser:** improve WithAdditionalProperties type to use intersection ([8d7da19](https://github.com/agentender/cli-forge/commit/8d7da19))
+- **type-tests:** add @ts-expect-error comments to intentional type errors ([3f94e79](https://github.com/agentender/cli-forge/commit/3f94e79))
+- **type-tests:** update fixtures for correct type usage patterns ([27904be](https://github.com/agentender/cli-forge/commit/27904be))
+- **type-tests:** update fixtures for new additionalProperties semantics ([5dcba96](https://github.com/agentender/cli-forge/commit/5dcba96))
+
+### ❤️ Thank You
+
+- Claude
+- Claude Opus 4.5
+- Craigory Coppola @AgentEnder
+
 ## 0.11.0 (2025-12-04)
 
 ### 🚀 Features
