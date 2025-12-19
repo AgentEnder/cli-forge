@@ -1,3 +1,4 @@
+import { it, describe, expect } from 'vitest';
 import { chain } from './chain';
 
 function addB<T>(a: T) {

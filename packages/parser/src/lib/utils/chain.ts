@@ -29,7 +29,10 @@ type UnaryFunction<T, R> = (arg: T) => R;
  * @returns Updated value after all functions have been applied
  * @hidden docs for {@link chain} are found on the main signature.
  */
-export function chain<T0, R>(initial: T0, fn0: UnaryFunction<T0, R>): R;
+export function chain<T0, R>(
+  initial: T0,
+  fn0: UnaryFunction<NoInfer<T0>, R>
+): R;
 
 /**
  * Applies a series of functions to an initial value, passing the result of each function to the next.
@@ -52,8 +55,8 @@ export function chain<T0, R>(initial: T0, fn0: UnaryFunction<T0, R>): R;
  */
 export function chain<T0, T1, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, R>
 ): R;
 
 /**
@@ -77,9 +80,9 @@ export function chain<T0, T1, R>(
  */
 export function chain<T0, T1, T2, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, R>
 ): R;
 
 /**
@@ -103,10 +106,10 @@ export function chain<T0, T1, T2, R>(
  */
 export function chain<T0, T1, T2, T3, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, R>
 ): R;
 
 /**
@@ -130,11 +133,11 @@ export function chain<T0, T1, T2, T3, R>(
  */
 export function chain<T0, T1, T2, T3, T4, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, R>
 ): R;
 
 /**
@@ -158,12 +161,12 @@ export function chain<T0, T1, T2, T3, T4, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, R>
 ): R;
 
 /**
@@ -187,13 +190,13 @@ export function chain<T0, T1, T2, T3, T4, T5, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, R>
 ): R;
 
 /**
@@ -217,14 +220,14 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, R>
 ): R;
 
 /**
@@ -248,15 +251,15 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, R>
 ): R;
 
 /**
@@ -280,16 +283,16 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, R>
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, R>
 ): R;
 
 /**
@@ -313,16 +316,16 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, R>
 ): R;
 
@@ -347,16 +350,16 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, T11>,
   fn11: UnaryFunction<T11, R>
 ): R;
@@ -382,16 +385,16 @@ export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, R>(
  */
 export function chain<T0, T1, T2, T3, T4, T5, T6, T7, T8, T9, T10, T11, T12, R>(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, T11>,
   fn11: UnaryFunction<T11, T12>,
   fn12: UnaryFunction<T12, R>
@@ -434,16 +437,16 @@ export function chain<
   R
 >(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, T11>,
   fn11: UnaryFunction<T11, T12>,
   fn12: UnaryFunction<T12, T13>,
@@ -488,16 +491,16 @@ export function chain<
   R
 >(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, T11>,
   fn11: UnaryFunction<T11, T12>,
   fn12: UnaryFunction<T12, T13>,
@@ -543,16 +546,16 @@ export function chain<
   R
 >(
   initial: T0,
-  fn0: UnaryFunction<T0, T1>,
-  fn1: UnaryFunction<T1, T2>,
-  fn2: UnaryFunction<T2, T3>,
-  fn3: UnaryFunction<T3, T4>,
-  fn4: UnaryFunction<T4, T5>,
-  fn5: UnaryFunction<T5, T6>,
-  fn6: UnaryFunction<T6, T7>,
-  fn7: UnaryFunction<T7, T8>,
-  fn8: UnaryFunction<T8, T9>,
-  fn9: UnaryFunction<T9, T10>,
+  fn0: UnaryFunction<NoInfer<T0>, T1>,
+  fn1: UnaryFunction<NoInfer<T1>, T2>,
+  fn2: UnaryFunction<NoInfer<T2>, T3>,
+  fn3: UnaryFunction<NoInfer<T3>, T4>,
+  fn4: UnaryFunction<NoInfer<T4>, T5>,
+  fn5: UnaryFunction<NoInfer<T5>, T6>,
+  fn6: UnaryFunction<NoInfer<T6>, T7>,
+  fn7: UnaryFunction<NoInfer<T7>, T8>,
+  fn8: UnaryFunction<NoInfer<T8>, T9>,
+  fn9: UnaryFunction<NoInfer<T9>, T10>,
   fn10: UnaryFunction<T10, T11>,
   fn11: UnaryFunction<T11, T12>,
   fn12: UnaryFunction<T12, T13>,
