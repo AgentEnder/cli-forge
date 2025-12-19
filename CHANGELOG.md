@@ -1,3 +1,13 @@
+## 1.0.2 (2025-12-19)
+
+### 🩹 Fixes
+
+- **cli-forge:** ensure handler return types flow through sdk typings properly ([36c6a12](https://github.com/agentender/cli-forge/commit/36c6a12))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.0.1 (2025-12-19)
 
 ### 🩹 Fixes
