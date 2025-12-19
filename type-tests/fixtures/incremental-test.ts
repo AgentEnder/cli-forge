@@ -31,35 +31,8 @@ const cli5 = cliForge('test5', {
   },
 });
 
-// Test 6: Nested object with default + additionalProperties
+// Test 6: Nested object with coerce (no default)
 const cli6 = cliForge('test6', {
-  builder: (args) =>
-    args.option('config', {
-      type: 'object',
-      properties: {
-        server: {
-          type: 'object',
-          properties: {
-            host: { type: 'string', default: 'localhost' },
-            port: { type: 'number', default: 3000 },
-          },
-        },
-      },
-      additionalProperties: 'string',
-      default: {
-        server: {
-          host: 'localhost',
-          port: 3000,
-        },
-      },
-    }),
-  handler: (args) => {
-    console.log(args.config);
-  },
-});
-
-// Test 7: Nested object with coerce (no default)
-const cli7 = cliForge('test7', {
   builder: (args) =>
     args.option('config', {
       type: 'object',
@@ -82,8 +55,8 @@ const cli7 = cliForge('test7', {
   },
 });
 
-// Test 8: Nested object with coerce AND default
-const cli8 = cliForge('test8', {
+// Test 7: Nested object with coerce AND default
+const cli7 = cliForge('test7', {
   builder: (args) =>
     args.option('config', {
       type: 'object',
@@ -111,8 +84,8 @@ const cli8 = cliForge('test8', {
   },
 });
 
-// Test 9: Nested object with validate (no default)
-const cli9 = cliForge('test9', {
+// Test 8: Nested object with validate (no default)
+const cli8 = cliForge('test8', {
   builder: (args) =>
     args.option('config', {
       type: 'object',

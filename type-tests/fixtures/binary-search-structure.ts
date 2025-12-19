@@ -47,7 +47,7 @@ const test2 = cliForge('test2', {
   handler: () => {},
 });
 
-// Test 3: Two nested + additionalProperties
+// Test 3: Two nested
 const test3 = cliForge('test3', {
   builder: (args) =>
     args.option('config', {
@@ -66,13 +66,12 @@ const test3 = cliForge('test3', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (config) => config.server?.host !== undefined,
     }),
   handler: () => {},
 });
 
-// Test 4: Two nested + default (no additionalProperties)
+// Test 4: Two nested + default
 const test4 = cliForge('test4', {
   builder: (args) =>
     args.option('config', {

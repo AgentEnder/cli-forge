@@ -17,7 +17,6 @@ const cli = cliForge('test', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => {
         // What is val typed as?
         console.log(val);

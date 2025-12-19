@@ -9,7 +9,6 @@
  * 2. coerce callback parameter type (should get ObjectValue type)
  * 3. default property doesn't break inference
  * 4. nested objects resolve correctly
- * 5. additionalProperties handling
  */
 import { describe, it, expect } from 'vitest';
 import { createTestProgram } from './compiler.js';
@@ -344,57 +343,8 @@ describe('Object Option Type Inference', () => {
     });
   });
 
-  describe('additionalProperties handling', () => {
-    it('should not break inference when additionalProperties is set', () => {
-      const code = `
-        import { parser } from '@cli-forge/parser';
-
-        const result = parser()
-          .option('config', {
-            type: 'object',
-            properties: {
-              name: { type: 'string' },
-            },
-            additionalProperties: 'string',
-            validate: (config) => config.name !== undefined,
-          })
-          .parse([]);
-      `;
-
-      const paramType = findCallbackParamType(code, 'validate');
-      expect(paramType).not.toBeNull();
-      expect(containsUnknown(paramType!.typeString)).toBe(false);
-    });
-
-    it('should work with nested objects + additionalProperties', () => {
-      const code = `
-        import { parser } from '@cli-forge/parser';
-
-        const result = parser()
-          .option('config', {
-            type: 'object',
-            properties: {
-              server: {
-                type: 'object',
-                properties: {
-                  host: { type: 'string' },
-                },
-              },
-            },
-            additionalProperties: 'string',
-            validate: (config) => config.server?.host !== undefined,
-          })
-          .parse([]);
-      `;
-
-      const paramType = findCallbackParamType(code, 'validate');
-      expect(paramType).not.toBeNull();
-      expect(containsUnknown(paramType!.typeString)).toBe(false);
-    });
-  });
-
   describe('complete scenarios', () => {
-    it('should handle full config with nested objects, callbacks, default, and additionalProperties', () => {
+    it('should handle full config with nested objects, callbacks, and default', () => {
       const code = `
         import { parser } from '@cli-forge/parser';
 
@@ -422,7 +372,6 @@ describe('Object Option Type Inference', () => {
                 default: ['basic'],
               },
             },
-            additionalProperties: 'string',
             default: {
               server: { host: 'localhost', port: 3000 },
               features: ['basic'],

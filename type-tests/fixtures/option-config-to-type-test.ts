@@ -20,7 +20,6 @@ type ExampleConfig = {
         port: { type: 'number'; description: 'Server port'; default: 3000 };
         ssl: { type: 'boolean'; description: 'Enable SSL'; default: false };
       };
-      additionalProperties: 'string';
     };
     database: {
       type: 'object';
@@ -65,17 +64,12 @@ const test2: Result = {
     host: 'localhost',
     port: 3000,
     ssl: false,
-    foo: 'hello',
-    bar: 'world',
-    // This typing doesn't work for assignment due to index signature constraints
-    // but, it does seem to work fine for access via bracket notation... so we'll roll
-    // with it.
-  } as any as Result['server'],
+  },
   database: { host: 'db', port: 5432, name: 'mydb' },
   features: ['test'],
 };
 
-test2.server?.['foo']?.charAt(0); // Should work, type is string | undefined
+test2.server?.host?.charAt(0); // Should work, type is string
 test2.database?.host.charAt(0); // Should work, type is string
 test2.features[0].charAt(0); // Should work, type is string
 

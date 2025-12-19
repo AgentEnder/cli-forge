@@ -1,7 +1,7 @@
 /**
  * Test default type for nested objects
  */
-import { ObjectOptionConfig, ResolveProperties, WithAdditionalProperties } from '@cli-forge/parser';
+import { ObjectOptionConfig, ResolveProperties } from '@cli-forge/parser';
 
 // Test what the default type should be
 type TestProps = {
@@ -19,11 +19,11 @@ type TestProps = {
   };
 };
 
-type ObjectValue = WithAdditionalProperties<ResolveProperties<TestProps>, 'string'>;
+type ObjectValue = ResolveProperties<TestProps>;
 //   ^?
 
 // What does ObjectOptionConfig expect for default?
-type TestConfig = ObjectOptionConfig<unknown, TestProps, 'string'>;
+type TestConfig = ObjectOptionConfig<unknown, TestProps>;
 type DefaultType = TestConfig['default'];
 //   ^?
 
@@ -38,7 +38,7 @@ const exampleDefault = {
 };
 
 // Try to use it in a config
-const testConfig: ObjectOptionConfig<unknown, TestProps, 'string'> = {
+const testConfig: ObjectOptionConfig<unknown, TestProps> = {
   type: 'object',
   properties: {
     server: {
@@ -54,7 +54,6 @@ const testConfig: ObjectOptionConfig<unknown, TestProps, 'string'> = {
       default: ['basic'],
     },
   },
-  additionalProperties: 'string',
   default: {
     server: {
       host: 'localhost',

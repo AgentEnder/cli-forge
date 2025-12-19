@@ -55,8 +55,6 @@ const cli = cliForge('object-arguments', {
           default: ['basic'],
         },
       },
-      // Additional properties allow passing arbitrary string values
-      additionalProperties: 'string',
       // You can provide a default for the entire config object
       default: {
         server: {

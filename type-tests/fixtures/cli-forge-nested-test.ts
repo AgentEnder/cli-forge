@@ -59,7 +59,6 @@ const cli = cliForge('test-cli', {
           default: ['basic'],
         },
       },
-      additionalProperties: 'string',
       default: {
         server: {
           host: 'localhost',
@@ -82,12 +81,16 @@ const cli = cliForge('test-cli', {
         // Note: Adding dynamic properties in coerce is a runtime concern.
         // The type system tracks the declared properties only.
         // If you need to add computed properties, return a new type via explicit return type.
-        return config;
+        return {
+          ...config,
+          foo: 'bar', // Example of adding a dynamic property
+        };
       },
     }),
   handler: (args) => {
     // What is args.config typed as?
     console.log(args.config);
+    console.log(args.config.foo.charAt(0)); // note: foo is added dynamically in coerce
   },
 });
 

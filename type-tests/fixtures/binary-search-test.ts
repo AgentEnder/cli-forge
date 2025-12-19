@@ -18,7 +18,6 @@ const cliA = cliForge('test-a', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
       default: { server: { host: 'localhost', port: 3000, ssl: false } },
@@ -47,10 +46,12 @@ const cliB = cliForge('test-b', {
           default: ['basic'],
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
-      default: { server: { host: 'localhost', port: 3000 }, features: ['basic'] },
+      default: {
+        server: { host: 'localhost', port: 3000 },
+        features: ['basic'],
+      },
     }),
   handler: (args) => {
     console.log(args.config?.server);
@@ -80,7 +81,6 @@ const cliC = cliForge('test-c', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
       default: { server: { host: 'localhost', port: 3000 } },
@@ -107,7 +107,6 @@ const cliD = cliForge('test-d', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
       default: { server: { host: 'localhost', port: 3000 } },

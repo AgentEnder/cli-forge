@@ -8,10 +8,9 @@ type CaptureProps<TProps extends Record<string, { type: string }>> = TProps;
 
 function testOption<
   TCoerce,
-  const TProps extends Record<string, { type: string }>,
-  TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  const TProps extends Record<string, { type: string }>
 >(
-  config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  config: ObjectOptionConfig<TCoerce, TProps>
 ): { props: TProps; resolved: ResolveProperties<TProps> } {
   return {} as any;
 }
@@ -28,7 +27,6 @@ const result = testOption({
     },
     name: { type: 'string' },
   },
-  additionalProperties: 'string',
   coerce: (val) => {
     // What is val?
     return val;

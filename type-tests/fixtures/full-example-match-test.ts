@@ -58,7 +58,6 @@ const cli = cliForge('test', {
           default: ['basic'],
         },
       },
-      additionalProperties: 'string',
       default: {
         server: {
           host: 'localhost',

@@ -3,6 +3,14 @@
  */
 import cliForge from 'cli-forge';
 
+type WithArgs<T> = T & { $args?: unknown } extends never
+  ? never
+  : T & { $args?: unknown };
+
+declare const foo: WithArgs<number>;
+
+foo['$args'] = 'baz';
+
 // Test 1: Two nested objects without required
 const cli1 = cliForge('test1', {
   builder: (args) =>
@@ -24,7 +32,6 @@ const cli1 = cliForge('test1', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),
@@ -55,7 +62,6 @@ const cli2 = cliForge('test2', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),
@@ -91,7 +97,6 @@ const cli3 = cliForge('test3', {
           default: ['basic'],
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),

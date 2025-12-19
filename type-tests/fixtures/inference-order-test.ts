@@ -33,11 +33,12 @@ const test2Config = {
     // Explicit annotation
     return val;
   },
-} satisfies ObjectOptionConfig<{ foo: string | undefined }, { foo: { type: 'string' } }, false>;
+} satisfies ObjectOptionConfig<
+  { foo: string | undefined },
+  { foo: { type: 'string' } }
+>;
 
-const test2 = parser()
-  .option('config', test2Config)
-  .parse([]);
+const test2 = parser().option('config', test2Config).parse([]);
 
 // Test 3: What if we define config separately with const assertion?
 const test3Config = {
@@ -50,9 +51,7 @@ const test3Config = {
   },
 } as const;
 
-const test3 = parser()
-  .option('config', test3Config)
-  .parse([]);
+const test3 = parser().option('config', test3Config).parse([]);
 
 // Test 4: No coerce - does properties get inferred correctly?
 const test4 = parser()

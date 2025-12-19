@@ -1,15 +1,18 @@
 /**
  * Debug which overload is being selected
  */
-import { parser, ObjectOptionConfig, ResolveProperties } from '@cli-forge/parser';
+import {
+  parser,
+  ObjectOptionConfig,
+  ResolveProperties,
+} from '@cli-forge/parser';
 
 // Simple function to test ObjectOptionConfig matching
 function testObjectOption<
   TCoerce,
-  const TProps extends Record<string, { type: string }>,
-  TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  const TProps extends Record<string, { type: string }>
 >(
-  config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+  config: ObjectOptionConfig<TCoerce, TProps>
 ): {
   coerce: TCoerce;
   props: TProps;

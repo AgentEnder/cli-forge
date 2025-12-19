@@ -1,9 +1,9 @@
 /**
- * Test two nested objects WITHOUT additionalProperties
+ * Test two nested objects
  */
 import cliForge from 'cli-forge';
 
-// Test: Two nested objects with default but NO additionalProperties
+// Test: Two nested objects with default
 const cli = cliForge('test', {
   builder: (args) =>
     args.option('config', {
@@ -23,7 +23,6 @@ const cli = cliForge('test', {
           },
         },
       },
-      // NO additionalProperties
       validate: (val) => true,
       coerce: (val) => val,
       default: { server: { host: 'localhost', port: 3000 } },

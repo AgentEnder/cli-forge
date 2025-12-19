@@ -18,7 +18,6 @@ const cli1 = cliForge('test1', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),
@@ -43,7 +42,6 @@ const cli2 = cliForge('test2', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),
@@ -66,7 +64,6 @@ const cli3 = cliForge('test3', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
     }),
@@ -75,7 +72,7 @@ const cli3 = cliForge('test3', {
   },
 });
 
-// Test 4: No additionalProperties, with required
+// Test 4: With required
 const cli4 = cliForge('test4', {
   builder: (args) =>
     args.option('config', {

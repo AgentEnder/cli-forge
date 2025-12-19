@@ -25,7 +25,6 @@ const cli1 = cliForge('test1', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
       // NO default
@@ -58,7 +57,6 @@ const cli2 = cliForge('test2', {
           },
         },
       },
-      additionalProperties: 'string',
       validate: (val) => true,
       coerce: (val) => val,
       default: { server: { host: 'localhost', port: 3000 } }, // WITH default

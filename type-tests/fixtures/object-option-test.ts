@@ -38,19 +38,8 @@ export const test2 = parser()
   })
   .parse([]);
 
-// Test 3: Object with additionalProperties
+// Test 3: Object with default value
 export const test3 = parser()
-  .option('env', {
-    type: 'object',
-    properties: {
-      NODE_ENV: { type: 'string' },
-    },
-    additionalProperties: 'string',
-  })
-  .parse([]);
-
-// Test 4: Object with default value
-export const test4 = parser()
   .option('settings', {
     type: 'object',
     properties: {

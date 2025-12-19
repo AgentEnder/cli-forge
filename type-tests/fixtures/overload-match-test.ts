@@ -84,8 +84,12 @@ const brokenConfig = {
 };
 
 // Check if these match ObjectOptionConfig
-type WorkingMatches = typeof workingConfig extends ObjectOptionConfig<any, any, any> ? true : false;
-type BrokenMatches = typeof brokenConfig extends ObjectOptionConfig<any, any, any> ? true : false;
+type WorkingMatches = typeof workingConfig extends ObjectOptionConfig<any, any>
+  ? true
+  : false;
+type BrokenMatches = typeof brokenConfig extends ObjectOptionConfig<any, any>
+  ? true
+  : false;
 
 const _workingMatches: WorkingMatches = 'error' as any;
 const _brokenMatches: BrokenMatches = 'error' as any;

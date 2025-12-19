@@ -16,7 +16,6 @@ const result = parser()
       },
       name: { type: 'string' },
     },
-    additionalProperties: 'string',
     coerce: (val) => {
       // What is val typed as?
       return val;

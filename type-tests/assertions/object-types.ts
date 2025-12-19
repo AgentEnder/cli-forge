@@ -61,18 +61,7 @@ type RequiredObjectValue = {
 
 const test6: IsTrue<AssertEqual<RequiredObjectValue, { foo: string; bar: number }>> = true;
 
-// Test 5: Object with additionalProperties should allow index signature
-type ObjectWithAdditionalProps = {
-  foo: string;
-  bar?: number;
-} & {
-  [key: string]: string | number | undefined;
-};
-
-// This one SHOULD have an index signature
-// We're just testing that our type system allows it when specified
-
-// Test 6: Default value typing
+// Test 5: Default value typing
 type DefaultValueType = {
   foo: string;
   bar: number;

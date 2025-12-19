@@ -37,16 +37,15 @@ const cli = cliForge('object-notation', {
           type: 'array',
           items: 'number',
         },
+        blam: {
+          type: 'string',
+        },
       },
-      additionalProperties: 'string',
     }),
   handler: (args) => {
     // Types should be inferred correctly
     args.foo?.bar?.baz?.toFixed();
-    // Bracket access returns a union of all property types plus additionalProperties type.
-    // Use type narrowing for specific access, or use explicit property names.
-    const blam = args.foo?.['blam'];
-    blam?.charAt(0);
+    args.foo?.blam?.charAt(0);
 
     // It's an array of numbers
     args.foo?.arr?.reduce((acc, val) => acc + val, 0);
