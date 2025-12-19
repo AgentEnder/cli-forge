@@ -126,7 +126,7 @@ export interface CLI<
       TArgs,
       TCommandArgs,
       TChildHandlerReturn,
-      any,
+      TChildren,
       CLI<TArgs, THandlerReturn, TChildren, TParent>,
       TChildChildren
     >
@@ -797,10 +797,22 @@ export interface CLI<
    */
   sdk(): SDKCommand<TArgs, THandlerReturn, TChildren>;
 
-  getBuilder<T extends ParsedArgs = ParsedArgs>(
-    initialCli?: CLI<T, any, any>
-  ):
-    | ((parser: CLI<T, any, any>) => CLI<TArgs, THandlerReturn, TChildren>)
+  /**
+   * Returns the builder function for this command as a composable builder.
+   * The returned function can be used with `chain` to compose multiple builders.
+   *
+   * @example
+   * ```ts
+   * const siblings = args.getParent().getChildren();
+   * const withBuildArgs = siblings.build.getBuilder()!;
+   * const withServeArgs = siblings.serve.getBuilder()!;
+   * return chain(args, withBuildArgs, withServeArgs);
+   * ```
+   */
+  getBuilder():
+    | (<TInit extends ParsedArgs, TInitHandlerReturn, TInitChildren, TInitParent>(
+        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
+      ) => CLI<TInit & TArgs, TInitHandlerReturn, TInitChildren & TChildren, TInitParent>)
     | undefined;
   getHandler():
     | ((args: Omit<TArgs, keyof ParsedArgs>) => THandlerReturn)
@@ -936,10 +948,12 @@ export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
 /**
  * Result type that conditionally includes $args.
  * Only attaches $args when result is an object type.
+ * Uses Awaited<T> to handle async handlers that return Promise<U>.
  */
-export type SDKResult<TArgs, THandlerReturn> = THandlerReturn extends object
-  ? THandlerReturn & { $args: TArgs }
-  : THandlerReturn;
+export type SDKResult<TArgs, THandlerReturn> =
+  Awaited<THandlerReturn> extends object
+    ? Awaited<THandlerReturn> & { $args: TArgs }
+    : Awaited<THandlerReturn>;
 
 /**
  * The callable signature for a command with a handler.
@@ -984,9 +998,9 @@ export type SDKChildren<TChildren> = {
  */
 export type SDKCommand<TArgs, THandlerReturn, TChildren> =
   // eslint-disable-next-line @typescript-eslint/ban-types
-  THandlerReturn extends void | undefined
-    ? SDKChildren<TChildren> // No handler = just children (not callable)
-    : SDKInvokable<TArgs, THandlerReturn> & SDKChildren<TChildren>;
+  // THandlerReturn extends void | undefined
+  // ? SDKChildren<TChildren> // No handler = just children (not callable)
+  SDKInvokable<TArgs, THandlerReturn> & SDKChildren<TChildren>;
 
 /**
  * Constructs a CLI instance. See {@link CLI} for more information.

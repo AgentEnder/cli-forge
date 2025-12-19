@@ -38,7 +38,8 @@ describe('CLI.sdk()', () => {
 
     it('should attach $args to object results', async () => {
       const myCLI = cli('test', {
-        builder: (cmd) => cmd.option('count', { type: 'number' }),
+        builder: (cmd) =>
+          cmd.option('count', { type: 'number', required: true }),
         handler: (args) => ({ value: args.count * 2 }),
       });
 
@@ -64,14 +65,13 @@ describe('CLI.sdk()', () => {
   describe('subcommands', () => {
     it('should invoke subcommand via property access', async () => {
       let buildCalled = false;
-      const myCLI = cli('test')
-        .command('build', {
-          builder: (cmd) => cmd.option('watch', { type: 'boolean' }),
-          handler: (args) => {
-            buildCalled = true;
-            return { watching: args.watch };
-          },
-        });
+      const myCLI = cli('test').command('build', {
+        builder: (cmd) => cmd.option('watch', { type: 'boolean' }),
+        handler: (args) => {
+          buildCalled = true;
+          return { watching: args.watch };
+        },
+      });
 
       const sdk = myCLI.sdk();
       const result = await sdk.build({ watch: true });
@@ -82,17 +82,16 @@ describe('CLI.sdk()', () => {
 
     it('should invoke nested subcommands', async () => {
       let migrateCalled = false;
-      const myCLI = cli('test')
-        .command('db', {
-          builder: (cmd) =>
-            cmd.command('migrate', {
-              builder: (c) => c.option('dry', { type: 'boolean' }),
-              handler: (args) => {
-                migrateCalled = true;
-                return { dryRun: args.dry };
-              },
-            }),
-        });
+      const myCLI = cli('test').command('db', {
+        builder: (cmd) =>
+          cmd.command('migrate', {
+            builder: (c) => c.option('dry', { type: 'boolean' }),
+            handler: (args) => {
+              migrateCalled = true;
+              return { dryRun: args.dry };
+            },
+          }),
+      });
 
       const sdk = myCLI.sdk();
       const result = await sdk.db.migrate({ dry: true });
@@ -102,14 +101,13 @@ describe('CLI.sdk()', () => {
     });
 
     it('should throw when invoking command without handler', async () => {
-      const myCLI = cli('test')
-        .command('db', {
-          // No handler - container command
-          builder: (cmd) =>
-            cmd.command('migrate', {
-              handler: () => 'done',
-            }),
-        });
+      const myCLI = cli('test').command('db', {
+        // No handler - container command
+        builder: (cmd) =>
+          cmd.command('migrate', {
+            handler: () => 'done',
+          }),
+      });
 
       const sdk = myCLI.sdk();
 
@@ -237,8 +235,7 @@ describe('CLI.sdk()', () => {
     });
 
     it('should throw for non-existent subcommands', async () => {
-      const myCLI = cli('test')
-        .command('build', { handler: () => 'ok' });
+      const myCLI = cli('test').command('build', { handler: () => 'ok' });
 
       const sdk = myCLI.sdk();
 

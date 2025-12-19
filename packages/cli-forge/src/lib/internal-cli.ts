@@ -498,13 +498,15 @@ export class InternalCLI<
     return this._parent as TParent;
   }
 
-  getBuilder<T extends ParsedArgs = { unmatched: string[]; '--'?: string[] }>(
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- This is used to help TS infer T correctly
-    _?: CLI<T, any, any> | undefined
-  ):
-    | ((parser: CLI<T, any, any>) => CLI<TArgs, THandlerReturn, TChildren>)
+  getBuilder():
+    | (<TInit extends ParsedArgs, TInitHandlerReturn, TInitChildren, TInitParent>(
+        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
+      ) => CLI<TInit & TArgs, TInitHandlerReturn, TInitChildren & TChildren, TInitParent>)
     | undefined {
-    return this.configuration?.builder as any;
+    const builder = this.configuration?.builder;
+    if (!builder) return undefined;
+    // Return a composable builder that preserves input types
+    return ((parser: CLI<any, any, any, any>) => builder(parser)) as any;
   }
 
   getHandler():
@@ -525,16 +527,20 @@ export class InternalCLI<
   }
 
   sdk(): SDKCommand<TArgs, THandlerReturn, TChildren> {
-    return this.buildSDKProxy(this) as SDKCommand<TArgs, THandlerReturn, TChildren>;
+    return this.buildSDKProxy(this) as SDKCommand<
+      TArgs,
+      THandlerReturn,
+      TChildren
+    >;
   }
 
-  private buildSDKProxy(
-    targetCmd: InternalCLI<any, any, any, any>
-  ): unknown {
+  private buildSDKProxy(targetCmd: InternalCLI<any, any, any, any>): unknown {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
 
-    const invoke = async (argsOrArgv?: Record<string, unknown> | string[]) => {
+    const invoke = async (
+      argsOrArgv?: Record<string, unknown> | string[]
+    ): Promise<THandlerReturn & { $args?: TArgs }> => {
       // Clone the target command to avoid mutating the original
       const cmd = targetCmd.clone();
 
@@ -560,7 +566,9 @@ export class InternalCLI<
         }
         // Build defaults from configured options
         const defaults: Record<string, unknown> = {};
-        for (const [key, config] of Object.entries(cmd.parser.configuredOptions)) {
+        for (const [key, config] of Object.entries(
+          cmd.parser.configuredOptions
+        )) {
           if (config.default !== undefined) {
             defaults[key] = config.default;
           }
@@ -599,7 +607,7 @@ export class InternalCLI<
         }
       }
 
-      return result;
+      return result as any as THandlerReturn & { $args?: TArgs };
     };
 
     // Ensure builder has run to register all subcommands
