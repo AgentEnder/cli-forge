@@ -1,7 +1,6 @@
 import {
   Default,
   UnknownOptionConfig,
-  PlainDefaultValue,
   OptionConfigToType,
 } from '../option-types';
 

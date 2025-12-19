@@ -3,6 +3,7 @@
   "ignorePatterns": [
     "!**/*",
     "node_modules",
+    "dist",
     "**/vite.config.*.timestamp*",
     "**/vitest.config.*.timestamp*"
   ],

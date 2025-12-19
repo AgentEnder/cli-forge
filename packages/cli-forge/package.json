@@ -23,6 +23,9 @@
       "optional": true
     }
   },
+  "devDependencies": {
+    "vite": "catalog:"
+  },
   "type": "commonjs",
   "main": "./dist/index.js",
   "typings": "./dist/index.d.ts",
@@ -39,7 +42,8 @@
   "exports": {
     ".": {
       "require": "./dist/index.js",
-      "types": "./dist/index.d.ts"
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
     },
     "./middleware": {
       "require": "./dist/middleware.js",

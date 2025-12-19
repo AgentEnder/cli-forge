@@ -1,3 +1,4 @@
+import { it, describe, expect } from 'vitest';
 import { readDefaultValue } from './read-default-value';
 describe('readDefaultValue', () => {
   it('should return the default value if no description provided', () => {

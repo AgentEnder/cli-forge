@@ -1,3 +1,4 @@
+import { it, describe, expect } from 'vitest';
 import { InternalCLI } from './internal-cli';
 import { generateDocumentation } from './documentation';
 import cli from './public-api';

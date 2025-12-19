@@ -1,3 +1,5 @@
+import { describe, it, expect } from 'vitest';
+
 import { parser } from './parser';
 import { withEnv } from './parser.spec';
 

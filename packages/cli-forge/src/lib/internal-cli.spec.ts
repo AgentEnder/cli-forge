@@ -1,3 +1,4 @@
+import { it, describe, expect, afterEach } from 'vitest';
 import { InternalCLI } from './internal-cli';
 import { cli } from './public-api';
 
@@ -77,11 +78,11 @@ describe('cliForge', () => {
         alias: ['$0'],
         builder: (argv) => argv,
         handler: makeHandler('bar'),
-      }) as InternalCLI;
-    await test.clone().forge(['f']);
-    await test.clone().forge(['foo']);
-    await test.clone().forge(['bar']);
-    await test.clone().forge([]);
+      }) as Partial<InternalCLI>;
+    await test.clone?.().forge(['f']);
+    await test.clone?.().forge(['foo']);
+    await test.clone?.().forge(['bar']);
+    await test.clone?.().forge([]);
     expect(ran).toMatchInlineSnapshot(`
       {
         "bar": 2,

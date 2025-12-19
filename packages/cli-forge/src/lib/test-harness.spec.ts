@@ -1,3 +1,4 @@
+import { it, describe, expect } from 'vitest';
 import cli from './public-api';
 import { TestHarness } from './test-harness';
 
