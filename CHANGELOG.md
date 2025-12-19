@@ -4,11 +4,11 @@
 
 - **cli-forge:** add sdk() method for programmatic CLI invocation ([8b87697](https://github.com/agentender/cli-forge/commit/8b87697))
 - **cli-forge:** improve SDK and getBuilder composability ([793df62](https://github.com/agentender/cli-forge/commit/793df62))
-- ⚠️  **parser:** remove additionalProperties from object options ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
+- ⚠️ **parser:** remove additionalProperties from object options ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
 
-### ⚠️  Breaking Changes
+### ⚠️ Breaking Changes
 
-- **parser:** remove additionalProperties from object options  ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
+- **parser:** remove additionalProperties from object options ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
   The `additionalProperties` option has been removed from
   object option configuration.
   Rationale for removal:
@@ -21,21 +21,17 @@
     properties upfront
   - Removing this simplifies the type resolution pipeline and makes
     object option types more predictable
-  Migration: If you were using `additionalProperties`, either:
+    Migration: If you were using `additionalProperties`, either:
   1. Add explicit properties for the keys you need
   2. Use a `coerce` function to handle dynamic properties
-  3. Use a Record<string, T> type via coerce for fully dynamic objects
-  Affected APIs:
+  3. Use a `Record<string, T>` type via `coerce` for fully dynamic objects
+     Affected APIs:
   - ObjectOptionConfig no longer accepts additionalProperties parameter
   - OptionConfig type now has 3 type parameters instead of 4
   - WithAdditionalProperties type helper has been removed
-  🤖 Generated with [Claude Code](https://claude.com/claude-code)
-  Co-Authored-By: Claude <noreply@anthropic.com>
 
 ### ❤️ Thank You
 
-- Claude
-- Claude Opus 4.5
 - Craigory Coppola
 
 ## 0.12.0 (2025-12-11)
@@ -61,8 +57,6 @@
 
 ### ❤️ Thank You
 
-- Claude
-- Claude Opus 4.5
 - Craigory Coppola @AgentEnder
 
 ## 0.11.0 (2025-12-04)
@@ -91,24 +85,20 @@
 
 ### ❤️ Thank You
 
-- AgentEnder @AgentEnder
-- Claude
 - Craigory Coppola @AgentEnder
 
 ## 0.10.1 (2024-09-20)
-
 
 ### 🩹 Fixes
 
 - **cli-forge:** fix bin entries for init to exclude .ts extension ([d35e315](https://github.com/agentender/cli-forge/commit/d35e315))
 - **cli-forge:** interactive subshell help should work ([61f8f18](https://github.com/agentender/cli-forge/commit/61f8f18))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.10.0 (2024-09-18)
-
 
 ### 🚀 Features
 
@@ -118,12 +108,11 @@
 
 - **parser:** optional arguments are possibly undefined ([#25](https://github.com/agentender/cli-forge/pull/25))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.9.0 (2024-09-17)
-
 
 ### 🚀 Features
 
@@ -131,23 +120,21 @@
 - **cli-forge,parser:** add support for loading args from configuration files ([4439ece](https://github.com/agentender/cli-forge/commit/4439ece))
 - **docs-site:** support for multifile examples ([161cf08](https://github.com/agentender/cli-forge/commit/161cf08))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.8.1 (2024-09-16)
 
-
 ### 🩹 Fixes
 
 - **cli-forge:** generate-docs should work on windows ([fc9243a](https://github.com/agentender/cli-forge/commit/fc9243a))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.8.0 (2024-09-05)
-
 
 ### 🚀 Features
 
@@ -161,12 +148,11 @@
 - **cli-forge:** fixup init to include tsc infra ([51b1d18](https://github.com/agentender/cli-forge/commit/51b1d18))
 - **parser:** choices should narrow arg typing ([0a913e2](https://github.com/agentender/cli-forge/commit/0a913e2))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.7.0 (2024-08-31)
-
 
 ### 🚀 Features
 
@@ -175,12 +161,11 @@
 - **cli-forge:** initial draft for middleware ([953b9b7](https://github.com/agentender/cli-forge/commit/953b9b7))
 - **cli-parser:** add epilogue support ([395a1ea](https://github.com/agentender/cli-forge/commit/395a1ea))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.6.0 (2024-08-30)
-
 
 ### 🚀 Features
 
@@ -193,12 +178,11 @@
 - **cli-forge:** use tsx to load typescript clis when generating docs if it is available ([4dafd37](https://github.com/agentender/cli-forge/commit/4dafd37))
 - **parser:** clone conflicts and implies when cloning object ([9402b82](https://github.com/agentender/cli-forge/commit/9402b82))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.5.0 (2024-08-29)
-
 
 ### 🚀 Features
 
@@ -216,35 +200,32 @@
 - **cli-forge:** properly link subcommands on index pages ([26a43af](https://github.com/agentender/cli-forge/commit/26a43af))
 - **parser:** unprefixed args not loading properly ([4ce145f](https://github.com/agentender/cli-forge/commit/4ce145f))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola
 
 ## 0.4.0 (2024-08-28)
 
-
 ### 🚀 Features
 
 - **cli-forge:** support for `cli(...).commands()` ([#2](https://github.com/agentender/cli-forge/pull/2))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.3.0 (2024-08-26)
-
 
 ### 🚀 Features
 
 - **cli-forge:** generate-documentation support ([c330733](https://github.com/agentender/cli-forge/commit/c330733))
 - **cli-forge:** add init command ([d733f4d](https://github.com/agentender/cli-forge/commit/d733f4d))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.2.0 (2024-08-24)
-
 
 ### 🚀 Features
 
@@ -255,12 +236,11 @@
 
 - **parser:** support --flag=value ([e00934e](https://github.com/agentender/cli-forge/commit/e00934e))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder
 
 ## 0.1.0 (2024-08-24)
-
 
 ### 🚀 Features
 
@@ -274,6 +254,6 @@
 - **parser:** support for `--` ([7698078](https://github.com/AgentEnder/cli-forge/commit/7698078))
 - **parser:** support for passing array as multiple flags ([71cd161](https://github.com/AgentEnder/cli-forge/commit/71cd161))
 
-### ❤️  Thank You
+### ❤️ Thank You
 
 - Craigory Coppola @AgentEnder

@@ -4,7 +4,8 @@
       "Skill(superpowers:systematic-debugging)",
       "Skill(superpowers:brainstorming)",
       "Bash(gh run view:*)",
-      "WebFetch(domain:docs.npmjs.com)"
+      "WebFetch(domain:docs.npmjs.com)",
+      "Bash(printf:*)"
     ],
     "deny": [],
     "ask": []
