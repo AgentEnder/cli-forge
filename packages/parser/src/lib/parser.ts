@@ -6,7 +6,6 @@ import {
 } from './option-types/option-config-to-type';
 import {
   MakeUndefinedPropertiesOptional,
-  WithAdditionalProperties,
   WithOptional,
 } from './option-types/type-resolution';
 import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
@@ -179,22 +178,16 @@ export class ArgvParser<
   option<
     TOption extends string,
     TCoerce,
-    const TProps extends Record<string, { type: string }>,
-    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+    const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+    config: ObjectOptionConfig<TCoerce, TProps>
   ): ArgvParser<
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: WithOptional<
-          unknown extends TCoerce
-            ? WithAdditionalProperties<
-                ResolveProperties<TProps>,
-                TAdditionalProps
-              >
-            : TCoerce,
-          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+          unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps>
         >;
       }>
   >;
@@ -252,7 +245,7 @@ export class ArgvParser<
   // Generic fallback overload
   option<
     TOption extends string,
-    const TOptionConfig extends OptionConfig<any, any, any, any>
+    const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
     config: TOptionConfig
@@ -296,22 +289,16 @@ export class ArgvParser<
   positional<
     TOption extends string,
     TCoerce,
-    const TProps extends Record<string, { type: string }>,
-    TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+    const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+    config: ObjectOptionConfig<TCoerce, TProps>
   ): ArgvParser<
     TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: WithOptional<
-          unknown extends TCoerce
-            ? WithAdditionalProperties<
-                ResolveProperties<TProps>,
-                TAdditionalProps
-              >
-            : TCoerce,
-          ObjectOptionConfig<TCoerce, TProps, TAdditionalProps>
+          unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
+          ObjectOptionConfig<TCoerce, TProps>
         >;
       }>
   >;
@@ -370,7 +357,7 @@ export class ArgvParser<
   // Generic fallback overload
   positional<
     TOption extends string,
-    const TOptionConfig extends OptionConfig<any, any, any, any>
+    const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
     config: TOptionConfig
@@ -801,7 +788,7 @@ function validateOption<TConfig extends Internal<UnknownOptionConfig>, TVal>(
       ),
     ];
     optionConfig.validate ??= () => true;
-    optionConfig.validate = (val) => {
+    optionConfig.validate = (val: TVal | TVal[]) => {
       if (
         !(Array.isArray(val)
           ? // If option config is an array, check if all values are in choices

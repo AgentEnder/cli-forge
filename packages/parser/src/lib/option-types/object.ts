@@ -1,27 +1,12 @@
 import { CommonOptionConfig, Default } from './common';
-import {
-  ResolveProperties,
-  WithAdditionalProperties,
-} from './type-resolution';
+import { ResolveProperties } from './type-resolution';
 
 /**
  * Compute the full value type for an object option.
- * Resolves each property to its final type (respecting optional/required)
- * and adds an index signature if additionalProperties is set.
- *
- * Uses WithAdditionalProperties when additionalProperties is specified,
- * which creates a compatible index signature that doesn't conflict with
- * explicit property types.
+ * Resolves each property to its final type (respecting optional/required).
  */
-type ObjectValue<
-  TProperties extends Record<string, { type: string }>,
-  TAdditionalProperties extends false | 'string' | 'number' | 'boolean'
-> = [TAdditionalProperties] extends [false]
-  ? ResolveProperties<TProperties>
-  : WithAdditionalProperties<
-      ResolveProperties<TProperties>,
-      TAdditionalProperties
-    >;
+type ObjectValue<TProperties extends Record<string, { type: string }>> =
+  ResolveProperties<TProperties>;
 
 /**
  * Configuration for object options. Objects are parsed from dot notation
@@ -57,35 +42,27 @@ type ObjectValue<
  */
 type ObjectValidateType<
   TCoerce,
-  TProperties extends Record<string, { type: string }>,
-  TAdditionalProperties extends false | 'string' | 'number' | 'boolean'
-> = unknown extends TCoerce
-  ? ObjectValue<TProperties, TAdditionalProperties>
-  : TCoerce;
+  TProperties extends Record<string, { type: string }>
+> = unknown extends TCoerce ? ObjectValue<TProperties> : TCoerce;
 
 export type ObjectOptionConfig<
   TCoerce,
-  TProperties extends Record<string, { type: string }>,
-  TAdditionalProperties extends false | 'string' | 'number' | 'boolean' = false
+  TProperties extends Record<string, { type: string }>
 > = {
   // Inherit all common fields EXCEPT choices, coerce, validate, and default
   // - choices: not applicable to objects
   // - coerce, validate: need custom types for proper inference
   // - default: must be defined without double NoInfer wrapping
   [key in keyof Omit<
-    CommonOptionConfig<
-      ObjectValue<NoInfer<TProperties>, NoInfer<TAdditionalProperties>>,
-      NoInfer<TCoerce>
-    >,
+    CommonOptionConfig<ObjectValue<NoInfer<TProperties>>, NoInfer<TCoerce>>,
     'choices' | 'coerce' | 'validate' | 'default'
   >]: CommonOptionConfig<
-    ObjectValue<NoInfer<TProperties>, NoInfer<TAdditionalProperties>>,
+    ObjectValue<NoInfer<TProperties>>,
     NoInfer<TCoerce>
   >[key];
 } & {
   type: 'object';
   properties: TProperties;
-  additionalProperties?: TAdditionalProperties;
   /**
    * Provide a default value for the entire object.
    * Uses a permissive type (object) to avoid interfering with TProperties inference.
@@ -96,14 +73,12 @@ export type ObjectOptionConfig<
    * Coerce transforms the parsed object value.
    * The return type becomes the final type for this option.
    */
-  coerce?: (
-    value: ObjectValue<TProperties, NoInfer<TAdditionalProperties>>
-  ) => TCoerce;
+  coerce?: (value: ObjectValue<TProperties>) => TCoerce;
   /**
    * Validate the object value after coercion (or the raw value if no coerce).
    * Receives the coerced type if coerce is provided, otherwise the computed ObjectValue type.
    */
   validate?: (
-    value: ObjectValidateType<TCoerce, TProperties, TAdditionalProperties>
+    value: ObjectValidateType<TCoerce, TProperties>
   ) => boolean | string;
 };

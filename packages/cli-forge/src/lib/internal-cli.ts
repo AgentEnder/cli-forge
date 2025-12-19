@@ -309,7 +309,7 @@ export class InternalCLI<
 
   option<
     TOption extends string,
-    const TOptionConfig extends OptionConfig<any, any, any, any>
+    const TOptionConfig extends OptionConfig<any, any, any>
   >(name: TOption, config: TOptionConfig) {
     this.parser.option(name, config);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
@@ -318,7 +318,7 @@ export class InternalCLI<
 
   positional<
     TOption extends string,
-    const TOptionConfig extends OptionConfig<any, any, any, any>
+    const TOptionConfig extends OptionConfig<any, any, any>
   >(name: TOption, config: TOptionConfig) {
     this.parser.positional(name, config);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔

@@ -72,12 +72,7 @@ export type BaseType<T> = T extends { type: 'string' }
   : T extends {
       type: 'object';
       properties: infer P;
-      additionalProperties: infer A;
     }
-  ? P extends Record<string, unknown>
-    ? WithAdditionalProperties<ResolveProperties<P>, A>
-    : never
-  : T extends { type: 'object'; properties: infer P }
   ? P extends Record<string, unknown>
     ? ResolveProperties<P>
     : never
@@ -124,50 +119,10 @@ export type ResolveProperties<TProperties> = IsAny<TProperties> extends true
       >;
     };
 
-type BaseLevelAdditionalProperties<TAdditional> =
-  IsAny<TAdditional> extends true
-    ? unknown
-    : [TAdditional] extends [false]
-    ? never
-    : [TAdditional] extends ['string']
-    ? string
-    : [TAdditional] extends ['number']
-    ? number
-    : [TAdditional] extends ['boolean']
-    ? boolean
-    : never;
-
-/**
- * Combines explicit properties with an index signature for additional properties.
- *
- * The index signature value is a union of all possible values (explicit + additional)
- * to satisfy TypeScript's constraint that index signatures must be compatible with
- * all explicit properties.
- *
- * This allows:
- * - Explicit properties to keep their exact types via the intersection
- * - Additional string keys to be added with the additionalProperties type
- * - Bracket notation access returns the union of all possible types
- */
-export type WithAdditionalProperties<TProperties, TAdditionalProperties> =
-  TProperties & {
-    [key: string]: // | TProperties[keyof TProperties]
-    BaseLevelAdditionalProperties<TAdditionalProperties> | undefined;
-  };
 /**
  * Compute the full value type for an object option.
- * Uses WithAdditionalProperties when additionalProperties is specified,
- * which creates a compatible index signature.
  */
-export type ObjectValueType<TProperties, TAdditionalProperties> =
-  IsAny<TAdditionalProperties> extends true
-    ? ResolveProperties<TProperties>
-    : [TAdditionalProperties] extends [false]
-    ? ResolveProperties<TProperties>
-    : WithAdditionalProperties<
-        ResolveProperties<TProperties>,
-        TAdditionalProperties
-      >;
+export type ObjectValueType<TProperties> = ResolveProperties<TProperties>;
 
 /**
  * Makes properties whose type includes `undefined` optional.

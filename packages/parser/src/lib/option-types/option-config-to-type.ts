@@ -2,7 +2,6 @@ import {
   ResolveOptionType,
   WithOptional,
   ResolveProperties,
-  WithAdditionalProperties,
 } from './type-resolution';
 
 /**
@@ -13,4 +12,4 @@ export type OptionConfigToType<TOptionConfig extends { type: string }> =
   WithOptional<ResolveOptionType<TOptionConfig>, TOptionConfig>;
 
 // Re-export for use in other modules
-export type { ResolveProperties, WithAdditionalProperties };
+export type { ResolveProperties };

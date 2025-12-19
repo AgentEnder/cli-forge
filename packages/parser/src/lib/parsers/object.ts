@@ -7,7 +7,7 @@ import { tryParseValue } from '../parser';
 import { parserMap } from './parser-map';
 import { Parser } from './typings';
 
-export const objectParser: Parser<Internal<ObjectOptionConfig<any, any, any>>> =
+export const objectParser: Parser<Internal<ObjectOptionConfig<any, any>>> =
   ({
   tokens,
   config,
@@ -70,7 +70,7 @@ export const objectParser: Parser<Internal<ObjectOptionConfig<any, any, any>>> =
   function parsePath(parts: string[]): {
     readValue(): any;
     setValue(v: any): void;
-    config: ObjectOptionConfig<any, any, any>;
+    config: ObjectOptionConfig<any, any>;
   } {
     const propParts = [...parts];
     let currentObject = current;
@@ -88,7 +88,7 @@ export const objectParser: Parser<Internal<ObjectOptionConfig<any, any, any>>> =
           setValue(v) {
             currentObject[last] = v;
           },
-          config: currentConfig as ObjectOptionConfig<any, any, any>,
+          config: currentConfig as ObjectOptionConfig<any, any>,
         };
       }
       const nextKey = propParts.shift();
@@ -107,25 +107,13 @@ export const objectParser: Parser<Internal<ObjectOptionConfig<any, any, any>>> =
       if (nextKey) {
         currentObject = currentObject[last];
       }
-      const c = (currentConfig as ObjectOptionConfig<any, any, any>).properties[
+      const c = (currentConfig as ObjectOptionConfig<any, any>).properties[
         last
       ];
       if (!c) {
-        if (
-          'additionalProperties' in currentConfig &&
-          currentConfig.additionalProperties
-        ) {
-          currentConfig = {
-            type: currentConfig.additionalProperties,
-          };
-        } else {
-          throw new Error(
-            `No configuration found for ${last} in ${config.key}`
-          );
-        }
-      } else {
-        currentConfig = c;
+        throw new Error(`No configuration found for ${last} in ${config.key}`);
       }
+      currentConfig = c;
     }
   }
 };

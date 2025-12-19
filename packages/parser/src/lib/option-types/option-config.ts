@@ -17,19 +17,16 @@ import { StringOptionConfig } from './string';
 export type OptionConfig<
   TCoerce = any,
   TChoices = any[],
-  TObjectProps extends Record<string, { type: string }> = Record<string, any>,
-  TAdditionalProps extends false | 'string' | 'number' | 'boolean' = false
+  TObjectProps extends Record<string, { type: string }> = Record<string, any>
 > =
   | StringOptionConfig<TCoerce, TChoices>
   | NumberOptionConfig<TCoerce, TChoices>
   | ArrayOptionConfig<TCoerce, TChoices>
   | BooleanOptionConfig<TCoerce, TChoices>
-  | ObjectOptionConfig<TCoerce, TObjectProps, TAdditionalProps>;
+  | ObjectOptionConfig<TCoerce, TObjectProps>;
 
 /**
  * An OptionConfig with generic parameters set for maximum compatibility.
  * Uses `any` for all type parameters to allow maximum assignability.
- * The IsAny check in AdditionalPropertiesType handles the case where
- * TAdditionalProps is `any` by returning `unknown` instead of an index signature.
  */
-export type UnknownOptionConfig = OptionConfig<any, any, any, any>;
+export type UnknownOptionConfig = OptionConfig<any, any, any>;

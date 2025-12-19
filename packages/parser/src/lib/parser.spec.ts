@@ -2,6 +2,7 @@ import { join } from 'path';
 import { parser } from './parser';
 
 import 'vitest';
+import { expect, describe, it } from 'vitest';
 import { ConfigurationProvider } from './config-files/configuration-loader';
 
 interface CustomMatchers<R = unknown> {
@@ -79,6 +80,18 @@ describe('parser', () => {
   it('should work for boolean values', () => {
     expect(
       parser().option('foo', { type: 'boolean' }).parse(['--foo', 'false'])
+    ).toEqual({ foo: false, unmatched: [] });
+  });
+
+  it('should handle --boolean for boolean values', () => {
+    expect(
+      parser().option('foo', { type: 'boolean' }).parse(['--foo'])
+    ).toEqual({ foo: true, unmatched: [] });
+  });
+
+  it('should handle --no-boolean for boolean values', () => {
+    expect(
+      parser().option('foo', { type: 'boolean' }).parse(['--no-foo'])
     ).toEqual({ foo: false, unmatched: [] });
   });
 
@@ -224,7 +237,6 @@ describe('parser', () => {
             type: 'boolean',
           },
         },
-        additionalProperties: 'string',
       })
       .parse([
         '--foo',
@@ -240,7 +252,6 @@ describe('parser', () => {
         '2',
         '--env.foo=foo',
         '--env.bar',
-        '--env.blam=world',
       ]);
 
     // The following lines should not throw type errors.
@@ -256,9 +267,6 @@ describe('parser', () => {
     parsed.qux.reduce((acc, val) => acc + val, 0);
     parsed.env?.foo?.charAt(0);
     parsed.env?.bar?.valueOf();
-    // Additional properties have type `unknown` to avoid intersection conflicts
-    // with nested object types. Runtime validates the type is correct.
-    (parsed.env?.['blam'] as string).charAt(0);
   });
 
   it('should allow customizing unmatched parser', () => {
@@ -521,8 +529,10 @@ describe('parser', () => {
             type: 'array',
             items: 'number',
           },
+          blam: {
+            type: 'string',
+          },
         },
-        additionalProperties: 'string',
       })
       .parse([
         '--foo.bar.baz',
@@ -558,8 +568,6 @@ describe('parser', () => {
     `);
     // Types should be inferred correctly
     parsed.foo?.bar?.baz?.toFixed();
-    // Additional properties have type `unknown` to avoid intersection conflicts
-    (parsed.foo?.['blam'] as string).charAt(0);
     // It's an array of numbers
     parsed.foo?.arr?.reduce((acc, val) => acc + val, 0);
   });
@@ -892,7 +900,7 @@ describe('parser', () => {
     expect(coerceCalls[0]).toEqual({
       server: { host: 'localhost', port: 8080 },
     });
-    
+
     // Final result should have coerce applied
     expect(result).toEqual({
       config: { server: { host: 'localhost', port: 8080 }, coerced: true },
