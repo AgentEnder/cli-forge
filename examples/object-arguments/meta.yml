@@ -2,106 +2,100 @@ id: object-arguments
 title: Object Arguments with Defaults and Validation
 description: |
   This example demonstrates how to work with object-valued options using dot-notation or JSON strings. Object options support:
-  
+
   - **Nested properties**: Define complex configuration structures with type-safe nested objects
   - **Default values**: Provide defaults at any level (entire object or individual nested properties)
   - **Required properties**: Mark nested properties as required (only validated when parent object is present)
   - **Validation**: Validate the entire object or nested properties
   - **Coercion**: Transform the final object after parsing
   - **Additional properties**: Allow arbitrary properties with a specific type
-  
+
   ## Dot Notation Syntax
-  
+
   Object properties are accessed using dot notation on the command line:
   - `--config.server.host localhost` sets `config.server.host` to `"localhost"`
   - `--config.server.port 8080` sets `config.server.port` to `8080`
   - Multiple properties can be set independently
-  
+
   ## JSON String Input
-  
+
   Alternatively, you can pass the entire object as a JSON string:
   - `--config '{"server": {"host": "example.com", "port": 8080}}'`
   - JSON input can be mixed with dot notation
   - When mixed, the order matters (later values override earlier ones)
-  
+
   ## Default Value Behavior
-  
+
   - If no `config` properties are provided, the entire default object is used
   - If some properties are provided, defaults are applied for missing nested properties
   - Default values work at any nesting level
-  
+
   ## Required Properties
-  
+
   Required properties within objects are conditionally required:
   - If the parent object is not present at all, nested required properties are not checked
   - If the parent object is present (any property is set), nested required properties are validated
-  
+
   For example, if `database.host` is marked as required:
   - `--config.server.port 8080` is valid (database config not present)
   - `--config.database.port 5432` is invalid (database config present but `host` is missing)
 
 entryPoint: object-notation-cli.ts
 fileMap:
-  './object-notation-cli.ts': 'object-notation-cli.ts'
+  "./object-notation-cli.ts": "object-notation-cli.ts"
 commands:
-  - command: '{filename}'
-    title: 'Default Configuration'
-    description: 'When no arguments are provided, the default configuration is used.'
+  - command: "{filename}"
+    title: "Default Configuration"
+    description: "When no arguments are provided, the default configuration is used."
     assertions:
-      - contains: 'localhost'
-      - contains: '3000'
-      - contains: 'http://localhost:3000'
-  
-  - command: '{filename} --config.server.port 8080'
-    title: 'Override Single Property'
-    description: 'Override a single nested property while keeping defaults for others.'
+      - contains: "localhost"
+      - contains: "3000"
+      - contains: "http://localhost:3000"
+
+  - command: "{filename} --config.server.port 8080"
+    title: "Override Single Property"
+    description: "Override a single nested property while keeping defaults for others."
     assertions:
-      - contains: 'localhost'
-      - contains: '8080'
-      - contains: 'http://localhost:8080'
-  
-  - command: '{filename} --config.server.host example.com --config.server.port 443 --config.server.ssl true'
-    title: 'Multiple Properties'
-    description: 'Set multiple properties to configure the server with SSL.'
+      - contains: "localhost"
+      - contains: "8080"
+      - contains: "http://localhost:8080"
+
+  - command: "{filename} --config.server.host example.com --config.server.port 443 --config.server.ssl true"
+    title: "Multiple Properties"
+    description: "Set multiple properties to configure the server with SSL."
     assertions:
-      - contains: 'example.com'
-      - contains: '443'
-      - contains: 'https://example.com:443'
-  
-  - command: '{filename} --config.database.host db.example.com --config.database.name myapp'
-    title: 'Required Properties'
-    description: 'When database config is provided, required properties (host and name) must be set. The default port is used.'
+      - contains: "example.com"
+      - contains: "443"
+      - contains: "https://example.com:443"
+
+  - command: "{filename} --config.database.host db.example.com --config.database.name myapp"
+    title: "Required Properties"
+    description: "When database config is provided, required properties (host and name) must be set. The default port is used."
     assertions:
-      - contains: 'db.example.com'
-      - contains: 'myapp'
-      - contains: '5432'
-  
-  - command: '{filename} --config.features api websockets admin'
-    title: 'Array Properties'
-    description: 'Object properties can also be arrays or other types.'
+      - contains: "db.example.com"
+      - contains: "myapp"
+      - contains: "5432"
+
+  - command: "{filename} --config.features api websockets admin"
+    title: "Array Properties"
+    description: "Object properties can also be arrays or other types."
     assertions:
-      - contains: 'api'
-      - contains: 'websockets'
-      - contains: 'admin'
-  
-  - command: '{filename} --config.customProperty "custom value"'
-    title: 'Additional Properties'
-    description: 'The config object allows additional string properties not explicitly defined.'
-    assertions:
-      - contains: 'custom value'
-  
+      - contains: "api"
+      - contains: "websockets"
+      - contains: "admin"
+
   - command: '{filename} --config "{\"server\": {\"host\": \"api.example.com\", \"port\": 8443, \"ssl\": true}}"'
-    title: 'JSON String Input'
-    description: 'Instead of dot notation, you can pass the entire config as a JSON string. Note: Escape quotes appropriately for your shell.'
+    title: "JSON String Input"
+    description: "Instead of dot notation, you can pass the entire config as a JSON string. Note: Escape quotes appropriately for your shell."
     assertions:
-      - contains: 'api.example.com'
-      - contains: '8443'
-      - contains: 'https://api.example.com:8443'
-  
+      - contains: "api.example.com"
+      - contains: "8443"
+      - contains: "https://api.example.com:8443"
+
   - command: '{filename} --config "{\"server\": {\"host\": \"mixed.example.com\"}}" --config.server.port 9000'
-    title: 'Mixed JSON and Dot Notation'
-    description: 'You can combine JSON string input with dot notation. The dot notation property will override or add to the JSON.'
+    title: "Mixed JSON and Dot Notation"
+    description: "You can combine JSON string input with dot notation. The dot notation property will override or add to the JSON."
     assertions:
-      - contains: 'mixed.example.com'
-      - contains: '9000'
-      - contains: 'http://mixed.example.com:9000'
+      - contains: "mixed.example.com"
+      - contains: "9000"
+      - contains: "http://mixed.example.com:9000"

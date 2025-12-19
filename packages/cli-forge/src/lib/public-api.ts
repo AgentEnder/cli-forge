@@ -89,22 +89,19 @@ export interface CLI<
   TChildren = {},
   TParent = undefined
 > {
-  command<TCommandArgs extends TArgs>(
-    cmd: Command<TArgs, TCommandArgs>
+  command<TCommandArgs extends TArgs, TCmdName extends string>(
+    cmd: Command<TArgs, TCommandArgs, TCmdName>
   ): CLI<
     TArgs,
     THandlerReturn,
-    TChildren &
-      (typeof cmd extends Command<TArgs, infer TCommandArgs, infer TCmdName>
-        ? {
-            [key in TCmdName]: CLI<
-              TCommandArgs,
-              void,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
-            >;
-          }
-        : {}),
+    TChildren & {
+      [key in TCmdName]: CLI<
+        TCommandArgs,
+        void,
+        {},
+        CLI<TArgs, THandlerReturn, TChildren, TParent>
+      >;
+    },
     TParent
   >;
 
@@ -810,9 +807,19 @@ export interface CLI<
    * ```
    */
   getBuilder():
-    | (<TInit extends ParsedArgs, TInitHandlerReturn, TInitChildren, TInitParent>(
+    | (<
+        TInit extends ParsedArgs,
+        TInitHandlerReturn,
+        TInitChildren,
+        TInitParent
+      >(
         parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
-      ) => CLI<TInit & TArgs, TInitHandlerReturn, TInitChildren & TChildren, TInitParent>)
+      ) => CLI<
+        TInit & TArgs,
+        TInitHandlerReturn,
+        TInitChildren & TChildren,
+        TInitParent
+      >)
     | undefined;
   getHandler():
     | ((args: Omit<TArgs, keyof ParsedArgs>) => THandlerReturn)
@@ -948,7 +955,7 @@ export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
 /**
  * Result type that conditionally includes $args.
  * Only attaches $args when result is an object type.
- * Uses Awaited<T> to handle async handlers that return Promise<U>.
+ * Uses `Awaited<T>` to handle async handlers that return `Promise<U>`.
  */
 export type SDKResult<TArgs, THandlerReturn> =
   Awaited<THandlerReturn> extends object

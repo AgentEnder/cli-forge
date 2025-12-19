@@ -5,7 +5,8 @@
       "Skill(superpowers:brainstorming)",
       "Bash(gh run view:*)",
       "WebFetch(domain:docs.npmjs.com)",
-      "Bash(printf:*)"
+      "Bash(printf:*)",
+      "mcp__ide__getDiagnostics"
     ],
     "deny": [],
     "ask": []

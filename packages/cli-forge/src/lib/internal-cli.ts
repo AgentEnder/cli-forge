@@ -171,22 +171,19 @@ export class InternalCLI<
     return this;
   }
 
-  command<TCommandArgs extends TArgs>(
-    cmd: Command<TArgs, TCommandArgs>
+  command<TCommandArgs extends TArgs, TCmdName extends string>(
+    cmd: Command<TArgs, TCommandArgs, TCmdName>
   ): CLI<
     TArgs,
     THandlerReturn,
-    TChildren &
-      (typeof cmd extends Command<TArgs, infer TCmdArgs, infer TCmdName>
-        ? {
-            [key in TCmdName]: CLI<
-              TCmdArgs,
-              void,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
-            >;
-          }
-        : {}),
+    TChildren & {
+      [key in TCmdName]: CLI<
+        TCommandArgs,
+        void,
+        {},
+        CLI<TArgs, THandlerReturn, TChildren, TParent>
+      >;
+    },
     TParent
   >;
   command<
