@@ -84,15 +84,15 @@ cli('db-cli')
     builder: (c) => withPromotionOpts(c),
     handler: async (opts, ctx) => {
       const { seed, migrate, reset } = ctx.command.getParent().getChildren();
-      reset.getHandler()?.({
+      await reset.getHandler()?.({
         local: opts.local,
       });
-      migrate.getHandler()?.({
+      await migrate.getHandler()?.({
         local: opts.local,
         //@ts-expect-error -- this field shouldn't be supported by TS, if it is that signals bad type inference
         type: 'foo',
       });
-      seed.getHandler()?.({
+      await seed.getHandler()?.({
         local: opts.local,
         type: 'scrape',
         promotion: opts.promotion,

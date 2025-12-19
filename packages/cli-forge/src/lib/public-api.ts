@@ -89,15 +89,19 @@ export interface CLI<
   TChildren = {},
   TParent = undefined
 > {
-  command<TCommandArgs extends TArgs, TCmdName extends string>(
-    cmd: Command<TArgs, TCommandArgs, TCmdName>
+  command<
+    TCommandArgs extends TArgs,
+    TCmdName extends string,
+    TChildHandlerReturn = void
+  >(
+    cmd: Command<TArgs, TCommandArgs, TCmdName, TChildHandlerReturn>
   ): CLI<
     TArgs,
     THandlerReturn,
     TChildren & {
       [key in TCmdName]: CLI<
         TCommandArgs,
-        void,
+        TChildHandlerReturn,
         {},
         CLI<TArgs, THandlerReturn, TChildren, TParent>
       >;
@@ -918,12 +922,13 @@ export interface CLICommandOptions<
 export type Command<
   TInitial extends ParsedArgs = any,
   TArgs extends TInitial = TInitial,
-  TCommandName extends string = string
+  TCommandName extends string = string,
+  THandlerReturn = void
 > =
   | ({
       name: TCommandName;
-    } & CLICommandOptions<TInitial, TArgs>)
-  | CLI<TArgs>;
+    } & CLICommandOptions<TInitial, TArgs, THandlerReturn>)
+  | CLI<TArgs, THandlerReturn>;
 
 /**
  * Error Handler for CLI applications. Error handlers should re-throw the error if they cannot handle it.
