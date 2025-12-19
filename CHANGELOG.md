@@ -1,3 +1,43 @@
+# 1.0.0 (2025-12-19)
+
+### 🚀 Features
+
+- **cli-forge:** add sdk() method for programmatic CLI invocation ([8b87697](https://github.com/agentender/cli-forge/commit/8b87697))
+- **cli-forge:** improve SDK and getBuilder composability ([793df62](https://github.com/agentender/cli-forge/commit/793df62))
+- ⚠️  **parser:** remove additionalProperties from object options ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
+
+### ⚠️  Breaking Changes
+
+- **parser:** remove additionalProperties from object options  ([4d0cfd5](https://github.com/agentender/cli-forge/commit/4d0cfd5))
+  The `additionalProperties` option has been removed from
+  object option configuration.
+  Rationale for removal:
+  - The feature added significant type complexity (WithAdditionalProperties,
+    index signature unions) that complicated the type inference system
+  - Index signatures with union types created confusing bracket-access
+    semantics where explicit properties mixed with additional property types
+  - The use case for dynamic additional properties is better served by
+    using a coerce function to transform the value, or by defining explicit
+    properties upfront
+  - Removing this simplifies the type resolution pipeline and makes
+    object option types more predictable
+  Migration: If you were using `additionalProperties`, either:
+  1. Add explicit properties for the keys you need
+  2. Use a `coerce` function to handle dynamic properties
+  3. Use a Record<string, T> type via coerce for fully dynamic objects
+  Affected APIs:
+  - ObjectOptionConfig no longer accepts additionalProperties parameter
+  - OptionConfig type now has 3 type parameters instead of 4
+  - WithAdditionalProperties type helper has been removed
+  🤖 Generated with [Claude Code](https://claude.com/claude-code)
+  Co-Authored-By: Claude <noreply@anthropic.com>
+
+### ❤️ Thank You
+
+- Claude
+- Claude Opus 4.5
+- Craigory Coppola
+
 ## 0.12.0 (2025-12-11)
 
 ### 🚀 Features
