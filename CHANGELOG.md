@@ -1,3 +1,13 @@
+## 1.0.1 (2025-12-19)
+
+### 🩹 Fixes
+
+- **cli-forge:** ensure sibling command handlers are typed properly ([82bff84](https://github.com/agentender/cli-forge/commit/82bff84))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 # 1.0.0 (2025-12-19)
 
 ### 🚀 Features
