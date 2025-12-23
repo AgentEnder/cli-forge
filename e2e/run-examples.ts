@@ -87,6 +87,8 @@ function runExampleCommand(
 ) {
   const command = typeof config === 'string' ? config : config.command;
   const env = typeof config === 'string' ? {} : config.env;
+  const expectedExitCode = typeof config === 'string' ? 0 : config.exitCode ?? 0;
+  
   try {
     process.stdout.write('▶️ ' + label);
     const a = performance.now();
@@ -96,6 +98,16 @@ function runExampleCommand(
       cwd,
     }).toString();
     const b = performance.now();
+    
+    // Check if we expected the command to succeed (exit code 0)
+    if (expectedExitCode !== 0) {
+      // If we expected a non-zero exit code but got success, that's an error
+      process.stdout.write('\r');
+      console.log(`❌ ${label}`.padEnd(process.stdout.columns, ' '));
+      console.log(`Expected exit code ${expectedExitCode} but got 0`);
+      return false;
+    }
+    
     checkAssertions(output, config.assertions);
     // move cursor to the beginning of the line
     process.stdout.write('\r');
@@ -106,7 +118,28 @@ function runExampleCommand(
       )
     );
   } catch (e) {
-    // move cursor to the beginning of the line
+    // Command failed - check if this was expected
+    const actualExitCode = e.status ?? 1;
+    const output = (e.stdout?.toString() || '') + (e.stderr?.toString() || '');
+    
+    if (actualExitCode === expectedExitCode) {
+      // Expected failure - check assertions on the error output
+      try {
+        checkAssertions(output, config.assertions);
+        process.stdout.write('\r');
+        console.log(
+          `✅ ${label} (expected failure)`.padEnd(process.stdout.columns, ' ')
+        );
+        return true;
+      } catch (assertionError) {
+        process.stdout.write('\r');
+        console.log(`❌ ${label}`.padEnd(process.stdout.columns, ' '));
+        console.log(assertionError.toString());
+        return false;
+      }
+    }
+    
+    // Unexpected failure
     process.stdout.write('\r');
     console.log(`❌ ${label}`.padEnd(process.stdout.columns, ' '));
 

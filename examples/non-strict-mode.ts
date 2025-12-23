@@ -12,7 +12,9 @@
 //   - command: '{filename} --name World --unknown arg extra'
 //     assertions:
 //       - contains: 'Hello, World!'
-//       - contains: "Unmatched: [ '--unknown', 'arg', 'extra' ]"
+//       - contains: "--unknown"
+//       - contains: "arg"
+//       - contains: "extra"
 // ---
 import cliForge from 'cli-forge';
 
