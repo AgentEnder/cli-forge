@@ -355,6 +355,14 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
+  localize(
+    dictionary: import('@cli-forge/parser').LocalizationDictionary,
+    locale?: string
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+    this.parser.localize(dictionary, locale);
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
   demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.requiresCommand = 'EXPLICIT';
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;

@@ -24,9 +24,10 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
         : [
             parentCLI.name,
             ...parentCLI.commandChain,
-            ...command.parser.configuredPositionals.map((p) =>
-              p.required ? `<${p.key}>` : `[${p.key}]`
-            ),
+            ...command.parser.configuredPositionals.map((p) => {
+              const displayKey = command.parser.getDisplayKey(p.key);
+              return p.required ? `<${displayKey}>` : `[${displayKey}]`;
+            }),
           ].join(' ')
     }`
   );
@@ -52,10 +53,10 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     command.parser.configuredOptions
   ).filter((c) => !c.positional);
 
-  help.push(...getOptionBlock('Options', nonpositionalOptions));
+  help.push(...getOptionBlock('Options', nonpositionalOptions, command.parser));
 
   for (const { label, keys } of groupedOptions) {
-    help.push(...getOptionBlock(label, keys));
+    help.push(...getOptionBlock(label, keys, command.parser));
   }
 
   if (command.configuration?.examples?.length) {
@@ -117,7 +118,11 @@ function removeTrailingAndLeadingQuotes(str: string) {
   return str.replace(/^['"]/, '').replace(/['"]$/, '');
 }
 
-function getOptionBlock(label: string, options: InternalOptionConfig[]) {
+function getOptionBlock(
+  label: string,
+  options: InternalOptionConfig[],
+  parser: import('@cli-forge/parser').ReadonlyArgvParser<any>
+) {
   const lines: string[] = [];
 
   if (options.length > 0) {
@@ -127,7 +132,9 @@ function getOptionBlock(label: string, options: InternalOptionConfig[]) {
 
   const allParts: Array<[key: string, ...parts: string[]]> = [];
   for (const option of options) {
-    allParts.push([option.key, ...getOptionParts(option)]);
+    // Use the display key (localized) instead of the storage key
+    const displayKey = parser.getDisplayKey(option.key);
+    allParts.push([displayKey, ...getOptionParts(option)]);
   }
   const paddingValues: number[] = [];
   for (let i = 0; i < allParts.length; i++) {

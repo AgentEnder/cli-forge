@@ -19,6 +19,11 @@ export type Documentation = {
     keys: Array<NormalizedOptionConfig>;
   }>;
   subcommands: Documentation[];
+  /**
+   * Localized keys for options. Maps from default key to localized key.
+   * Only present if localization is configured.
+   */
+  localizedKeys?: Record<string, string>;
 };
 
 function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
@@ -85,7 +90,18 @@ export function generateDocumentation(
     generateDocumentation(cmd.clone(), [...commandChain, cli.name])
   );
 
-  return {
+  // Build localized keys map if localization is configured
+  const localizedKeys: Record<string, string> = {};
+  let hasLocalizedKeys = false;
+  for (const key in parser.configuredOptions) {
+    const displayKey = parser.getDisplayKey(key);
+    if (displayKey !== key) {
+      localizedKeys[key] = displayKey;
+      hasLocalizedKeys = true;
+    }
+  }
+
+  const result: Documentation = {
     name: cli.name,
     description: cli.configuration?.description,
     usage: cli.configuration?.usage
@@ -103,5 +119,11 @@ export function generateDocumentation(
     options,
     positionals,
     subcommands,
-  } as Documentation;
+  };
+
+  if (hasLocalizedKeys) {
+    result.localizedKeys = localizedKeys;
+  }
+
+  return result;
 }
