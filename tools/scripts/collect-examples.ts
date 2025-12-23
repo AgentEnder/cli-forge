@@ -10,6 +10,7 @@ export type CommandConfiguration = {
   command: string;
   env: Record<string, string>;
   assertions?: Array<{ contains?: string }>;
+  exitCode?: number;
 };
 
 export type FrontMatter = {

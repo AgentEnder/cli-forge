@@ -84,6 +84,12 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
     tokens: string[],
     parser: ArgvParser<T>
   ) => boolean;
+
+  /**
+   * When set to true, throws a validation error if any unmatched arguments are encountered.
+   * Unmatched arguments are those that don't match any configured option or positional argument.
+   */
+  strict?: boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
@@ -154,6 +160,7 @@ export class ArgvParser<
     this.options = {
       extraParsers: {},
       unmatchedParser: () => false,
+      strict: false,
       ...options,
     };
     this.parserMap = {
@@ -614,6 +621,17 @@ export class ArgvParser<
       }
     }
 
+    // Validate strict mode - check for unmatched arguments
+    if (this.options.strict && result.unmatched?.length) {
+      for (const unmatchedArg of result.unmatched) {
+        const error = new Error(
+          `Unknown argument: ${unmatchedArg}`
+        );
+        delete error.stack;
+        errors.push(error);
+      }
+    }
+
     if (errors.length) {
       const error = new ValidationFailedError<TArgs>(
         errors.map((error) =>
@@ -725,6 +743,18 @@ export class ArgvParser<
     for (const opt of options) {
       this.configuredImplies[option].add(opt);
     }
+    return this;
+  }
+
+  /**
+   * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
+   * when unmatched arguments are encountered. Unmatched arguments are those that don't match any
+   * configured option or positional argument.
+   * @param enable Whether to enable strict mode. Defaults to true.
+   * @returns The parser instance for method chaining.
+   */
+  strict(enable = true) {
+    this.options.strict = enable;
     return this;
   }
 

@@ -283,6 +283,57 @@ describe('parser', () => {
     });
   });
 
+  it('should throw error in strict mode when unmatched arguments are present', () => {
+    expect(() =>
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', 'world'])
+    ).toThrowAggregateErrorContaining('Unknown argument: world');
+  });
+
+  it('should throw error in strict mode for unmatched flags', () => {
+    expect(() =>
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', '--bar', '42'])
+    ).toThrowAggregateErrorContaining('Unknown argument: --bar', 'Unknown argument: 42');
+  });
+
+  it('should not throw error in strict mode when all arguments are matched', () => {
+    expect(
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .parse(['--foo', 'hello', '--bar', '42'])
+    ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
+  });
+
+  it('should allow strict mode to be disabled (default behavior)', () => {
+    expect(
+      parser({ strict: false })
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', 'world'])
+    ).toEqual({ foo: 'hello', unmatched: ['world'] });
+  });
+
+  it('should allow enabling strict mode via .strict() method', () => {
+    expect(() =>
+      parser()
+        .option('foo', { type: 'string' })
+        .strict()
+        .parse(['--foo', 'hello', 'world'])
+    ).toThrowAggregateErrorContaining('Unknown argument: world');
+  });
+
+  it('should allow disabling strict mode via .strict(false) method', () => {
+    expect(
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .strict(false)
+        .parse(['--foo', 'hello', 'world'])
+    ).toEqual({ foo: 'hello', unmatched: ['world'] });
+  });
+
   it('should have correct types with coerce', () => {
     const parsed = parser()
       .option('foo', { type: 'string', coerce: (s) => Number(s) })
