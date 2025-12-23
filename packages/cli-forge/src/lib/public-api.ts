@@ -656,11 +656,11 @@ export interface CLI<
    * Sets up localization for option keys and other text.
    * When localization is enabled, option keys will be displayed in the specified locale in help text and documentation,
    * and both the default and localized keys will be accepted when parsing arguments.
-   * 
+   *
    * @param dictionary The localization dictionary mapping keys to their translations
    * @param locale The target locale (defaults to system locale if not provided)
    * @returns Updated CLI instance for chaining
-   * 
+   *
    * @example
    * ```ts
    * cli('myapp')

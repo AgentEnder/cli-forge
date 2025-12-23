@@ -436,11 +436,11 @@ export class ArgvParser<
    * Sets up localization for option keys and other text.
    * When localization is enabled, option keys will be displayed in the specified locale,
    * but the default (non-localized) keys will still be accepted as aliases.
-   * 
+   *
    * @param dictionary The localization dictionary mapping keys to their translations
    * @param locale The target locale (defaults to system locale if not provided)
    * @returns The parser instance for chaining
-   * 
+   *
    * @example
    * ```ts
    * parser()
