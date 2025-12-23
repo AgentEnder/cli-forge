@@ -13,6 +13,8 @@ import {
   ResolveProperties,
   WithOptional,
   MakeUndefinedPropertiesOptional,
+  LocalizationDictionary,
+  LocalizationFunction,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -650,6 +652,51 @@ export interface CLI<
   env(prefix?: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   env(options: EnvOptionConfig): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Sets up localization for option keys and other text.
+   * When localization is enabled, option keys will be displayed in the specified locale in help text and documentation,
+   * and both the default and localized keys will be accepted when parsing arguments.
+   *
+   * @param dictionary The localization dictionary mapping keys to their translations
+   * @param locale The target locale (defaults to system locale if not provided)
+   * @returns Updated CLI instance for chaining
+   *
+   * @example
+   * ```ts
+   * cli('myapp')
+   *   .localize({
+   *     name: { default: 'name', 'es-ES': 'nombre' },
+   *     port: { default: 'port', 'es-ES': 'puerto' }
+   *   }, 'es-ES')
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(
+    dictionary: LocalizationDictionary,
+    locale?: string
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  /**
+   * Sets up localization using a custom function for translating keys.
+   * This allows integration with existing localization libraries like i18next.
+   *
+   * @param fn A function that takes a key and returns its localized value
+   * @returns Updated CLI instance for chaining
+   *
+   * @example
+   * ```ts
+   * import i18next from 'i18next';
+   *
+   * cli('myapp')
+   *   .localize((key) => i18next.t(key))
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(
+    fn: LocalizationFunction
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.

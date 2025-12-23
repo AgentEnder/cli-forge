@@ -29,6 +29,12 @@ import {
   ConfigurationProvider,
   resolveConfiguration,
 } from './config-files/configuration-loader';
+import {
+  LocalizationDictionary,
+  LocalizationFunction,
+  detectLocale,
+  resolveLocalizedText,
+} from './localization';
 
 /**
  * Defines the option configuration passed to {@link ArgvParser.env}.
@@ -96,6 +102,17 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
   configuredOptions: Readonly<{ [key in keyof TArgs]: InternalOptionConfig }>;
   configuredPositionals: readonly Readonly<InternalOptionConfig>[];
   options: Readonly<Required<ParserOptions<TArgs>>>;
+  /**
+   * Gets the display key for an option, which may be localized.
+   * @param key The storage key
+   * @returns The localized display key, or the original key if not localized
+   */
+  getDisplayKey(key: string): string;
+  /**
+   * Gets the localization dictionary if configured.
+   * @returns The localization dictionary, or undefined if not configured
+   */
+  getLocalizationDictionary(): LocalizationDictionary | undefined;
 }
 
 /**
@@ -149,6 +166,13 @@ export class ArgvParser<
   private envPrefix?: string;
   private shouldReadFromEnv?: boolean;
   private shouldReflectEnv?: boolean;
+
+  /**
+   * Localization dictionary for translating option keys and other text.
+   */
+  private localizationDictionary?: LocalizationDictionary;
+  private localizationLocale?: string;
+  private localizationFunction?: LocalizationFunction;
 
   /**
    * Creates a new parser. Normally using {@link parser} is preferred.
@@ -269,6 +293,16 @@ export class ArgvParser<
     if (name.includes('-')) {
       config.alias ??= [];
       config.alias.push(fromDashedToCamelCase(name));
+    }
+
+    // If localization is configured and the key has a localized version,
+    // add it as an alias so both the default and localized names work
+    const localizedName = this.localizedText(name);
+    if (localizedName !== name) {
+      config.alias ??= [];
+      if (!config.alias.includes(localizedName)) {
+        config.alias.push(localizedName);
+      }
     }
 
     const entry = {
@@ -410,6 +444,78 @@ export class ArgvParser<
   config(provider: ConfigurationProvider<TArgs>) {
     this.configuredConfigurationProviders.push(provider);
     return this;
+  }
+
+  /**
+   * Sets up localization for option keys and other text.
+   * When localization is enabled, option keys will be displayed in the specified locale,
+   * but the default (non-localized) keys will still be accepted as aliases.
+   *
+   * @param dictionary The localization dictionary mapping keys to their translations
+   * @param locale The target locale (defaults to system locale if not provided)
+   * @returns The parser instance for chaining
+   *
+   * @example
+   * ```ts
+   * parser()
+   *   .localize({
+   *     name: { default: 'name', 'es-ES': 'nombre' },
+   *     port: { default: 'port', 'es-ES': 'puerto' }
+   *   }, 'es-ES')
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(dictionary: LocalizationDictionary, locale?: string): this;
+  /**
+   * Sets up localization using a custom function for translating keys.
+   * This allows integration with existing localization libraries like i18next.
+   *
+   * @param fn A function that takes a key and returns its localized value
+   * @returns The parser instance for chaining
+   *
+   * @example
+   * ```ts
+   * import i18next from 'i18next';
+   *
+   * parser()
+   *   .localize((key) => i18next.t(key))
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(fn: LocalizationFunction): this;
+  localize(
+    dictionaryOrFn: LocalizationDictionary | LocalizationFunction,
+    locale?: string
+  ): this {
+    if (typeof dictionaryOrFn === 'function') {
+      this.localizationFunction = dictionaryOrFn;
+      this.localizationDictionary = undefined;
+      this.localizationLocale = undefined;
+    } else {
+      this.localizationDictionary = dictionaryOrFn;
+      this.localizationLocale = locale ?? detectLocale();
+      this.localizationFunction = undefined;
+    }
+    return this;
+  }
+
+  /**
+   * Resolves a key to its localized text value.
+   * If no localization is configured, returns the key as-is.
+   * @param key The key to localize
+   * @returns The localized text, or the original key if not found
+   */
+  private localizedText(key: string): string {
+    if (this.localizationFunction) {
+      return this.localizationFunction(key);
+    }
+    return resolveLocalizedText(
+      key,
+      this.localizationDictionary,
+      this.localizationLocale
+    );
   }
 
   /**
@@ -785,12 +891,32 @@ export class ArgvParser<
     clone.configuredPositionals = [...this.configuredPositionals];
     clone.configuredConflicts = { ...this.configuredConflicts };
     clone.configuredImplies = { ...this.configuredImplies };
+    clone.localizationDictionary = this.localizationDictionary;
+    clone.localizationLocale = this.localizationLocale;
+    clone.localizationFunction = this.localizationFunction;
 
     return clone;
   }
 
   asReadonly(): ReadonlyArgvParser<TArgs> {
     return this;
+  }
+
+  /**
+   * Gets the display key for an option, which may be localized.
+   * @param key The storage key
+   * @returns The localized display key, or the original key if not localized
+   */
+  getDisplayKey(key: string): string {
+    return this.localizedText(key);
+  }
+
+  /**
+   * Gets the localization dictionary if configured.
+   * @returns The localization dictionary, or undefined if not configured
+   */
+  getLocalizationDictionary(): LocalizationDictionary | undefined {
+    return this.localizationDictionary;
   }
 }
 

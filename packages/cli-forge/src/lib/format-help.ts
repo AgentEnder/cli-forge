@@ -24,9 +24,10 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
         : [
             parentCLI.name,
             ...parentCLI.commandChain,
-            ...command.parser.configuredPositionals.map((p) =>
-              p.required ? `<${p.key}>` : `[${p.key}]`
-            ),
+            ...command.parser.configuredPositionals.map((p) => {
+              const displayKey = command.parser.getDisplayKey(p.key);
+              return p.required ? `<${displayKey}>` : `[${displayKey}]`;
+            }),
           ].join(' ')
     }`
   );
@@ -37,10 +38,19 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     help.push('');
     help.push('Commands:');
   }
+  // Track displayed commands by their actual CLI instance to avoid duplicates
+  const displayedCommands = new Set<InternalCLI<any, any, any, any>>();
   for (const key in command.registeredCommands) {
     const subcommand = command.registeredCommands[key];
+    // Skip if we've already displayed this command instance
+    if (displayedCommands.has(subcommand)) {
+      continue;
+    }
+    displayedCommands.add(subcommand);
+    // Use the localized command name for display based on the command's default name
+    const displayKey = command.getLocalizedCommandName(subcommand.name);
     help.push(
-      `  ${key}${
+      `  ${displayKey}${
         subcommand.configuration?.description
           ? ' - ' + subcommand.configuration.description
           : ''
@@ -52,10 +62,10 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     command.parser.configuredOptions
   ).filter((c) => !c.positional);
 
-  help.push(...getOptionBlock('Options', nonpositionalOptions));
+  help.push(...getOptionBlock('Options', nonpositionalOptions, command.parser));
 
   for (const { label, keys } of groupedOptions) {
-    help.push(...getOptionBlock(label, keys));
+    help.push(...getOptionBlock(label, keys, command.parser));
   }
 
   if (command.configuration?.examples?.length) {
@@ -117,7 +127,11 @@ function removeTrailingAndLeadingQuotes(str: string) {
   return str.replace(/^['"]/, '').replace(/['"]$/, '');
 }
 
-function getOptionBlock(label: string, options: InternalOptionConfig[]) {
+function getOptionBlock(
+  label: string,
+  options: InternalOptionConfig[],
+  parser: import('@cli-forge/parser').ReadonlyArgvParser<any>
+) {
   const lines: string[] = [];
 
   if (options.length > 0) {
@@ -127,7 +141,9 @@ function getOptionBlock(label: string, options: InternalOptionConfig[]) {
 
   const allParts: Array<[key: string, ...parts: string[]]> = [];
   for (const option of options) {
-    allParts.push([option.key, ...getOptionParts(option)]);
+    // Use the display key (localized) instead of the storage key
+    const displayKey = parser.getDisplayKey(option.key);
+    allParts.push([displayKey, ...getOptionParts(option)]);
   }
   const paddingValues: number[] = [];
   for (let i = 0; i < allParts.length; i++) {

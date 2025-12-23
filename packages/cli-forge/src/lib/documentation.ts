@@ -2,6 +2,7 @@ import {
   UnknownOptionConfig,
   OptionConfigToType,
   readDefaultValue,
+  LocalizationDictionary,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
@@ -19,6 +20,11 @@ export type Documentation = {
     keys: Array<NormalizedOptionConfig>;
   }>;
   subcommands: Documentation[];
+  /**
+   * Localized keys for options and commands. Maps from default key to full localization entry.
+   * Only present if localization is configured.
+   */
+  localizedKeys?: LocalizationDictionary;
 };
 
 function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
@@ -85,7 +91,42 @@ export function generateDocumentation(
     generateDocumentation(cmd.clone(), [...commandChain, cli.name])
   );
 
-  return {
+  // Get the localization dictionary if configured
+  const dictionary = parser.getLocalizationDictionary();
+  let localizedKeys: LocalizationDictionary | undefined;
+  
+  if (dictionary) {
+    // Filter to only include keys that are actually used in this CLI
+    const usedKeys: LocalizationDictionary = {};
+    let hasUsedKeys = false;
+    
+    for (const key in parser.configuredOptions) {
+      if (dictionary[key]) {
+        usedKeys[key] = dictionary[key];
+        hasUsedKeys = true;
+      }
+    }
+    
+    // Also include command names - track unique commands by instance to avoid duplicates
+    const seenCommands = new Set<InternalCLI<any, any, any, any>>();
+    for (const cmdKey in cli.getSubcommands()) {
+      const cmdInstance = cli.getSubcommands()[cmdKey];
+      if (!seenCommands.has(cmdInstance)) {
+        seenCommands.add(cmdInstance);
+        const defaultName = cmdInstance.name;
+        if (dictionary[defaultName]) {
+          usedKeys[defaultName] = dictionary[defaultName];
+          hasUsedKeys = true;
+        }
+      }
+    }
+    
+    if (hasUsedKeys) {
+      localizedKeys = usedKeys;
+    }
+  }
+
+  const result: Documentation = {
     name: cli.name,
     description: cli.configuration?.description,
     usage: cli.configuration?.usage
@@ -103,5 +144,11 @@ export function generateDocumentation(
     options,
     positionals,
     subcommands,
-  } as Documentation;
+  };
+
+  if (localizedKeys) {
+    result.localizedKeys = localizedKeys;
+  }
+
+  return result;
 }
