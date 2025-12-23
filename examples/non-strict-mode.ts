@@ -20,6 +20,7 @@ import cliForge from 'cli-forge';
 
 const cli = cliForge('non-strict-mode-example')
   // Strict mode is disabled by default
+  .strict(false)
   .option('name', {
     type: 'string',
     description: 'The name to greet',
