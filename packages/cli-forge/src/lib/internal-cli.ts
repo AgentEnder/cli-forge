@@ -360,6 +360,11 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
+  strict(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+    this.parser.options.strict = true;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
   usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.configuration ??= {};
     this.configuration.usage = usageText;

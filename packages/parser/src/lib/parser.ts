@@ -84,6 +84,12 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
     tokens: string[],
     parser: ArgvParser<T>
   ) => boolean;
+
+  /**
+   * When set to true, throws a validation error if any unmatched arguments are encountered.
+   * Unmatched arguments are those that don't match any configured option or positional argument.
+   */
+  strict?: boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
@@ -154,6 +160,7 @@ export class ArgvParser<
     this.options = {
       extraParsers: {},
       unmatchedParser: () => false,
+      strict: false,
       ...options,
     };
     this.parserMap = {
@@ -611,6 +618,17 @@ export class ArgvParser<
       } catch (e: any) {
         delete partial[configuration.key];
         errors.push(e);
+      }
+    }
+
+    // Validate strict mode - check for unmatched arguments
+    if (this.options.strict && result.unmatched && result.unmatched.length > 0) {
+      for (const unmatchedArg of result.unmatched) {
+        const error = new Error(
+          `Unknown argument: ${unmatchedArg}`
+        );
+        delete error.stack;
+        errors.push(error);
       }
     }
 

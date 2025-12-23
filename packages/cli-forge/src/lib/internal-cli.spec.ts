@@ -343,4 +343,22 @@ describe('cliForge', () => {
       // - 'bar' handler
     ]);
   });
+
+  it('should support strict mode', async () => {
+    const mock = mockConsoleLog();
+    
+    try {
+      await cli('test')
+        .strict()
+        .option('foo', { type: 'string' })
+        .forge(['--foo', 'hello', '--unknown', 'arg']);
+    } catch (e) {
+      // Expected to throw
+    }
+
+    const output = mock.getOutput();
+    expect(output).toContain('Unknown argument: --unknown');
+    expect(output).toContain('Unknown argument: arg');
+    mock.restore();
+  });
 });
