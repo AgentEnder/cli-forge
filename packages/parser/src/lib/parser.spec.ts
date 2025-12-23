@@ -316,6 +316,24 @@ describe('parser', () => {
     ).toEqual({ foo: 'hello', unmatched: ['world'] });
   });
 
+  it('should allow enabling strict mode via .strict() method', () => {
+    expect(() =>
+      parser()
+        .option('foo', { type: 'string' })
+        .strict()
+        .parse(['--foo', 'hello', 'world'])
+    ).toThrowAggregateErrorContaining('Unknown argument: world');
+  });
+
+  it('should allow disabling strict mode via .strict(false) method', () => {
+    expect(
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .strict(false)
+        .parse(['--foo', 'hello', 'world'])
+    ).toEqual({ foo: 'hello', unmatched: ['world'] });
+  });
+
   it('should have correct types with coerce', () => {
     const parsed = parser()
       .option('foo', { type: 'string', coerce: (s) => Number(s) })

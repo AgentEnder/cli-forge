@@ -747,6 +747,18 @@ export class ArgvParser<
   }
 
   /**
+   * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
+   * when unmatched arguments are encountered. Unmatched arguments are those that don't match any
+   * configured option or positional argument.
+   * @param enable Whether to enable strict mode. Defaults to true.
+   * @returns The parser instance for method chaining.
+   */
+  strict(enable = true) {
+    this.options.strict = enable;
+    return this;
+  }
+
+  /**
    * Used to combine two parsers into a single parser. Mutates `this`, but returns with updated typings
    * @param parser The parser to augment the current parser with.
    * @returns The updated parser instance.

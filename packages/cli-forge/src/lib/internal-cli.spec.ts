@@ -361,4 +361,22 @@ describe('cliForge', () => {
     expect(output).toContain('Unknown argument: arg');
     mock.restore();
   });
+
+  it('should allow disabling strict mode via .strict(false)', async () => {
+    let captured: any;
+    
+    await cli('test')
+      .strict(false)
+      .option('foo', { type: 'string' })
+      .command('$0', {
+        builder: (args) => args,
+        handler: (args) => {
+          captured = args;
+        },
+      })
+      .forge(['--foo', 'hello', '--unknown', 'arg']);
+
+    expect(captured.foo).toBe('hello');
+    expect(captured.unmatched).toEqual(['--unknown', 'arg']);
+  });
 });

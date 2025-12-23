@@ -677,11 +677,13 @@ export interface CLI<
   demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
-   * Enables strict mode, which throws a validation error when unmatched arguments are encountered.
-   * Unmatched arguments are those that don't match any configured option or positional argument.
+   * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
+   * when unmatched arguments are encountered. Unmatched arguments are those that don't match any
+   * configured option or positional argument.
+   * @param enable Whether to enable strict mode. Defaults to true.
    * @returns Updated CLI instance.
    */
-  strict(): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  strict(enable?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Sets the usage text for the CLI. This text will be displayed in place of the default usage text

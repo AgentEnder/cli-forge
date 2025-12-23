@@ -360,8 +360,8 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
-  strict(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
-    this.parser.options.strict = true;
+  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+    this.parser.options.strict = enable;
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
