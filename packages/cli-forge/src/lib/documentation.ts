@@ -2,6 +2,7 @@ import {
   UnknownOptionConfig,
   OptionConfigToType,
   readDefaultValue,
+  LocalizationDictionary,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
@@ -20,10 +21,10 @@ export type Documentation = {
   }>;
   subcommands: Documentation[];
   /**
-   * Localized keys for options. Maps from default key to localized key.
+   * Localized keys for options and commands. Maps from default key to full localization entry.
    * Only present if localization is configured.
    */
-  localizedKeys?: Record<string, string>;
+  localizedKeys?: LocalizationDictionary;
 };
 
 function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
@@ -90,14 +91,32 @@ export function generateDocumentation(
     generateDocumentation(cmd.clone(), [...commandChain, cli.name])
   );
 
-  // Build localized keys map if localization is configured
-  const localizedKeys: Record<string, string> = {};
-  let hasLocalizedKeys = false;
-  for (const key in parser.configuredOptions) {
-    const displayKey = parser.getDisplayKey(key);
-    if (displayKey !== key) {
-      localizedKeys[key] = displayKey;
-      hasLocalizedKeys = true;
+  // Get the localization dictionary if configured
+  const dictionary = parser.getLocalizationDictionary();
+  let localizedKeys: LocalizationDictionary | undefined;
+  
+  if (dictionary) {
+    // Filter to only include keys that are actually used in this CLI
+    const usedKeys: LocalizationDictionary = {};
+    let hasUsedKeys = false;
+    
+    for (const key in parser.configuredOptions) {
+      if (dictionary[key]) {
+        usedKeys[key] = dictionary[key];
+        hasUsedKeys = true;
+      }
+    }
+    
+    // Also include command names
+    for (const cmdKey in cli.getSubcommands()) {
+      if (dictionary[cmdKey]) {
+        usedKeys[cmdKey] = dictionary[cmdKey];
+        hasUsedKeys = true;
+      }
+    }
+    
+    if (hasUsedKeys) {
+      localizedKeys = usedKeys;
     }
   }
 
@@ -121,7 +140,7 @@ export function generateDocumentation(
     subcommands,
   };
 
-  if (hasLocalizedKeys) {
+  if (localizedKeys) {
     result.localizedKeys = localizedKeys;
   }
 

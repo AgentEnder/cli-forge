@@ -101,6 +101,11 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns The localized display key, or the original key if not localized
    */
   getDisplayKey(key: string): string;
+  /**
+   * Gets the localization dictionary if configured.
+   * @returns The localization dictionary, or undefined if not configured
+   */
+  getLocalizationDictionary(): LocalizationDictionary | undefined;
 }
 
 /**
@@ -839,6 +844,14 @@ export class ArgvParser<
    */
   getDisplayKey(key: string): string {
     return this.localizedText(key);
+  }
+
+  /**
+   * Gets the localization dictionary if configured.
+   * @returns The localization dictionary, or undefined if not configured
+   */
+  getLocalizationDictionary(): LocalizationDictionary | undefined {
+    return this.localizationDictionary;
   }
 }
 

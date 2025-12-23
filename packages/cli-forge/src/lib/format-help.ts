@@ -38,10 +38,19 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     help.push('');
     help.push('Commands:');
   }
+  // Track displayed commands to avoid duplicates
+  const displayedCommands = new Set<string>();
   for (const key in command.registeredCommands) {
     const subcommand = command.registeredCommands[key];
+    // Use the localized command name for display
+    const displayKey = command.getLocalizedCommandName(key);
+    // Skip if we've already displayed this command (it may be registered under multiple keys)
+    if (displayedCommands.has(subcommand.name)) {
+      continue;
+    }
+    displayedCommands.add(subcommand.name);
     help.push(
-      `  ${key}${
+      `  ${displayKey}${
         subcommand.configuration?.description
           ? ' - ' + subcommand.configuration.description
           : ''

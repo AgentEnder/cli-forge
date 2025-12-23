@@ -94,6 +94,26 @@ describe('CLI localization', () => {
     }
   });
 
+  it('should display localized command names in help text', async () => {
+    const mock = mockConsoleLog();
+    try {
+      await cli('test')
+        .localize(dictionary, 'es-ES')
+        .command('serve', {
+          builder: (cmd) => cmd,
+          handler: () => {},
+          description: 'Start the server',
+        })
+        .forge(['--help']);
+
+      const output = mock.getOutput();
+      expect(output).toContain('servir');
+      expect(output).toContain('Start the server');
+    } finally {
+      mock.restore();
+    }
+  });
+
   it('should work with subcommands', async () => {
     let capturedArgs: any;
     await cli('test')
@@ -107,7 +127,7 @@ describe('CLI localization', () => {
           capturedArgs = args;
         },
       })
-      .forge(['serve', '--puerto', '8080', '--nombre', 'test']);
+      .forge(['servir', '--puerto', '8080', '--nombre', 'test']);
 
     expect(capturedArgs.port).toBe(8080);
     expect(capturedArgs.name).toBe('test');

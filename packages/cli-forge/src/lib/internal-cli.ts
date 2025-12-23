@@ -266,7 +266,18 @@ export class InternalCLI<
         key
       ).withRootCommandConfiguration(options as any);
       cmd._parent = this;
+      
+      // Get localized command name and register both as keys
+      const localizedKey = this.getLocalizedCommandName(key);
+      
+      // Register under the primary key (localized if available, default otherwise)
       this.registeredCommands[key] = cmd;
+      
+      // If localized name is different, also register under localized name
+      if (localizedKey !== key) {
+        this.registeredCommands[localizedKey] = cmd;
+      }
+      
       if (options.alias) {
         for (const alias of options.alias) {
           this.registeredCommands[alias] = cmd;
@@ -361,6 +372,15 @@ export class InternalCLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.parser.localize(dictionary, locale);
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
+  /**
+   * Gets the localized display name for a command key.
+   * @param key The command key
+   * @returns The localized command name, or the original key if not localized
+   */
+  getLocalizedCommandName(key: string): string {
+    return this.parser.getDisplayKey(key);
   }
 
   demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
