@@ -1,5 +1,6 @@
 import { describe, it, expect, afterEach } from 'vitest';
 import { cli } from './public-api';
+import { TestHarness } from './test-harness';
 import type { LocalizationDictionary } from '@cli-forge/parser';
 
 const ORIGINAL_CONSOLE_LOG = console.log;
@@ -42,37 +43,35 @@ describe('CLI localization', () => {
   };
 
   it('should accept localized option keys', async () => {
-    let capturedArgs: any;
-    await cli('test')
+    const testCli = cli('test')
       .localize(dictionary, 'es-ES')
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: (args) => {
-          capturedArgs = args;
-        },
-      })
-      .forge(['--nombre', 'test', '--puerto', '8080']);
+        handler: () => {},
+      });
 
-    expect(capturedArgs.name).toBe('test');
-    expect(capturedArgs.port).toBe(8080);
+    const harness = new TestHarness(testCli);
+    const { args } = await harness.parse(['--nombre', 'test', '--puerto', '8080']);
+
+    expect(args.name).toBe('test');
+    expect(args.port).toBe(8080);
   });
 
   it('should accept default option keys as aliases', async () => {
-    let capturedArgs: any;
-    await cli('test')
+    const testCli = cli('test')
       .localize(dictionary, 'es-ES')
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: (args) => {
-          capturedArgs = args;
-        },
-      })
-      .forge(['--name', 'test', '--port', '8080']);
+        handler: () => {},
+      });
 
-    expect(capturedArgs.name).toBe('test');
-    expect(capturedArgs.port).toBe(8080);
+    const harness = new TestHarness(testCli);
+    const { args } = await harness.parse(['--name', 'test', '--port', '8080']);
+
+    expect(args.name).toBe('test');
+    expect(args.port).toBe(8080);
   });
 
   it('should display localized keys in help text', async () => {
@@ -115,55 +114,53 @@ describe('CLI localization', () => {
   });
 
   it('should work with subcommands', async () => {
-    let capturedArgs: any;
-    await cli('test')
+    const testCli = cli('test')
       .localize(dictionary, 'es-ES')
       .command('serve', {
         builder: (cmd) =>
           cmd
             .option('port', { type: 'number' })
             .option('name', { type: 'string' }),
-        handler: (args) => {
-          capturedArgs = args;
-        },
-      })
-      .forge(['servir', '--puerto', '8080', '--nombre', 'test']);
+        handler: () => {},
+      });
 
-    expect(capturedArgs.port).toBe(8080);
-    expect(capturedArgs.name).toBe('test');
+    const harness = new TestHarness(testCli);
+    const { args, commandChain } = await harness.parse(['servir', '--puerto', '8080', '--nombre', 'test']);
+
+    expect(args.port).toBe(8080);
+    expect(args.name).toBe('test');
+    expect(commandChain).toEqual(['servir']);
   });
 
   it('should work without localization', async () => {
-    let capturedArgs: any;
-    await cli('test')
+    const testCli = cli('test')
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: (args) => {
-          capturedArgs = args;
-        },
-      })
-      .forge(['--name', 'test', '--port', '8080']);
+        handler: () => {},
+      });
 
-    expect(capturedArgs.name).toBe('test');
-    expect(capturedArgs.port).toBe(8080);
+    const harness = new TestHarness(testCli);
+    const { args } = await harness.parse(['--name', 'test', '--port', '8080']);
+
+    expect(args.name).toBe('test');
+    expect(args.port).toBe(8080);
   });
 
   it('should chain localize with other builder methods', async () => {
-    let capturedArgs: any;
-    await cli('test')
+    const testCli = cli('test')
       .localize(dictionary, 'es-ES')
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .env('TEST')
       .command('$0', {
-        handler: (args) => {
-          capturedArgs = args;
-        },
-      })
-      .forge(['--nombre', 'test', '--puerto', '8080']);
+        handler: () => {},
+      });
 
-    expect(capturedArgs.name).toBe('test');
-    expect(capturedArgs.port).toBe(8080);
+    const harness = new TestHarness(testCli);
+    const { args } = await harness.parse(['--nombre', 'test', '--puerto', '8080']);
+
+    expect(args.name).toBe('test');
+    expect(args.port).toBe(8080);
   });
 });
