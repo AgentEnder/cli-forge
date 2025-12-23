@@ -14,6 +14,7 @@ import {
   WithOptional,
   MakeUndefinedPropertiesOptional,
   LocalizationDictionary,
+  LocalizationFunction,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -675,6 +676,26 @@ export interface CLI<
   localize(
     dictionary: LocalizationDictionary,
     locale?: string
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  /**
+   * Sets up localization using a custom function for translating keys.
+   * This allows integration with existing localization libraries like i18next.
+   *
+   * @param fn A function that takes a key and returns its localized value
+   * @returns Updated CLI instance for chaining
+   *
+   * @example
+   * ```ts
+   * import i18next from 'i18next';
+   *
+   * cli('myapp')
+   *   .localize((key) => i18next.t(key))
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(
+    fn: LocalizationFunction
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**

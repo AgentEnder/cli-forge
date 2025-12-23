@@ -367,10 +367,16 @@ export class InternalCLI<
   }
 
   localize(
-    dictionary: import('@cli-forge/parser').LocalizationDictionary,
+    dictionaryOrFn:
+      | import('@cli-forge/parser').LocalizationDictionary
+      | import('@cli-forge/parser').LocalizationFunction,
     locale?: string
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
-    this.parser.localize(dictionary, locale);
+    if (typeof dictionaryOrFn === 'function') {
+      this.parser.localize(dictionaryOrFn);
+    } else {
+      this.parser.localize(dictionaryOrFn, locale);
+    }
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 

@@ -31,6 +31,7 @@ import {
 } from './config-files/configuration-loader';
 import {
   LocalizationDictionary,
+  LocalizationFunction,
   detectLocale,
   resolveLocalizedText,
 } from './localization';
@@ -165,6 +166,7 @@ export class ArgvParser<
    */
   private localizationDictionary?: LocalizationDictionary;
   private localizationLocale?: string;
+  private localizationFunction?: LocalizationFunction;
 
   /**
    * Creates a new parser. Normally using {@link parser} is preferred.
@@ -457,9 +459,38 @@ export class ArgvParser<
    *   .option('port', { type: 'number' });
    * ```
    */
-  localize(dictionary: LocalizationDictionary, locale?: string): this {
-    this.localizationDictionary = dictionary;
-    this.localizationLocale = locale ?? detectLocale();
+  localize(dictionary: LocalizationDictionary, locale?: string): this;
+  /**
+   * Sets up localization using a custom function for translating keys.
+   * This allows integration with existing localization libraries like i18next.
+   *
+   * @param fn A function that takes a key and returns its localized value
+   * @returns The parser instance for chaining
+   *
+   * @example
+   * ```ts
+   * import i18next from 'i18next';
+   *
+   * parser()
+   *   .localize((key) => i18next.t(key))
+   *   .option('name', { type: 'string' })
+   *   .option('port', { type: 'number' });
+   * ```
+   */
+  localize(fn: LocalizationFunction): this;
+  localize(
+    dictionaryOrFn: LocalizationDictionary | LocalizationFunction,
+    locale?: string
+  ): this {
+    if (typeof dictionaryOrFn === 'function') {
+      this.localizationFunction = dictionaryOrFn;
+      this.localizationDictionary = undefined;
+      this.localizationLocale = undefined;
+    } else {
+      this.localizationDictionary = dictionaryOrFn;
+      this.localizationLocale = locale ?? detectLocale();
+      this.localizationFunction = undefined;
+    }
     return this;
   }
 
@@ -470,6 +501,9 @@ export class ArgvParser<
    * @returns The localized text, or the original key if not found
    */
   private localizedText(key: string): string {
+    if (this.localizationFunction) {
+      return this.localizationFunction(key);
+    }
     return resolveLocalizedText(
       key,
       this.localizationDictionary,
@@ -829,6 +863,7 @@ export class ArgvParser<
     clone.configuredImplies = { ...this.configuredImplies };
     clone.localizationDictionary = this.localizationDictionary;
     clone.localizationLocale = this.localizationLocale;
+    clone.localizationFunction = this.localizationFunction;
 
     return clone;
   }

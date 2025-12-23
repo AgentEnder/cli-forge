@@ -163,4 +163,35 @@ describe('CLI localization', () => {
     expect(args.name).toBe('test');
     expect(args.port).toBe(8080);
   });
+
+  it('should work with localization function', async () => {
+    const localizer = (key: string) => {
+      const translations: Record<string, string> = {
+        name: 'nombre',
+        port: 'puerto',
+        serve: 'servir',
+      };
+      return translations[key] || key;
+    };
+
+    const testCli = cli('test')
+      .localize(localizer)
+      .option('name', { type: 'string' })
+      .option('port', { type: 'number' })
+      .command('serve', {
+        builder: (cmd) => cmd,
+        handler: () => {},
+      });
+
+    const harness = new TestHarness(testCli);
+
+    // Test options with localized keys
+    const { args: args1 } = await harness.parse(['--nombre', 'test', '--puerto', '8080']);
+    expect(args1.name).toBe('test');
+    expect(args1.port).toBe(8080);
+
+    // Test command with localized name
+    const { commandChain } = await harness.parse(['servir']);
+    expect(commandChain).toEqual(['servir']);
+  });
 });

@@ -10,4 +10,4 @@ export type {
 } from './lib/composable-builder';
 export type { ArgumentsOf } from './lib/utils';
 export { ConfigurationProviders } from './lib/configuration-providers';
-export type { LocalizationDictionary } from '@cli-forge/parser';
+export type { LocalizationDictionary, LocalizationFunction } from '@cli-forge/parser';

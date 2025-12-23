@@ -11,6 +11,12 @@ export type LocalizationDictionary = Record<
 >;
 
 /**
+ * Localization function type for custom translation logic.
+ * This allows integration with existing localization libraries like i18next.
+ */
+export type LocalizationFunction = (key: string) => string;
+
+/**
  * Detects the current locale from the system.
  * Uses Intl.DateTimeFormat to determine the user's locale.
  * @returns The detected locale string (e.g., "en-US", "es-ES")

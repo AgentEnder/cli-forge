@@ -102,4 +102,46 @@ describe('parser localization', () => {
     const result = p.parse(['test']);
     expect(result.name).toBe('test');
   });
+
+  it('should work with localization function', () => {
+    const localizer = (key: string) => {
+      const translations: Record<string, string> = {
+        name: 'nombre',
+        port: 'puerto',
+      };
+      return translations[key] || key;
+    };
+
+    const p = parser()
+      .localize(localizer)
+      .option('name', { type: 'string' })
+      .option('port', { type: 'number' });
+
+    // Should accept localized keys
+    const result1 = p.parse(['--nombre', 'test', '--puerto', '8080']);
+    expect(result1.name).toBe('test');
+    expect(result1.port).toBe(8080);
+
+    // Should also accept default keys
+    const result2 = p.parse(['--name', 'test2', '--port', '9000']);
+    expect(result2.name).toBe('test2');
+    expect(result2.port).toBe(9000);
+  });
+
+  it('should display localized keys from function', () => {
+    const localizer = (key: string) => {
+      const translations: Record<string, string> = {
+        name: 'nombre',
+        port: 'puerto',
+      };
+      return translations[key] || key;
+    };
+
+    const p = parser()
+      .localize(localizer)
+      .option('name', { type: 'string' });
+
+    expect(p.getDisplayKey('name')).toBe('nombre');
+    expect(p.getDisplayKey('unknown')).toBe('unknown');
+  });
 });
