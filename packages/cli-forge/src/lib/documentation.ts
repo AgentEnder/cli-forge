@@ -107,11 +107,17 @@ export function generateDocumentation(
       }
     }
     
-    // Also include command names
+    // Also include command names - track unique commands by instance to avoid duplicates
+    const seenCommands = new Set<InternalCLI<any, any, any, any>>();
     for (const cmdKey in cli.getSubcommands()) {
-      if (dictionary[cmdKey]) {
-        usedKeys[cmdKey] = dictionary[cmdKey];
-        hasUsedKeys = true;
+      const cmdInstance = cli.getSubcommands()[cmdKey];
+      if (!seenCommands.has(cmdInstance)) {
+        seenCommands.add(cmdInstance);
+        const defaultName = cmdInstance.name;
+        if (dictionary[defaultName]) {
+          usedKeys[defaultName] = dictionary[defaultName];
+          hasUsedKeys = true;
+        }
       }
     }
     

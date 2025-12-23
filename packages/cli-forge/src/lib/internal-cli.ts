@@ -267,13 +267,13 @@ export class InternalCLI<
       ).withRootCommandConfiguration(options as any);
       cmd._parent = this;
       
-      // Get localized command name and register both as keys
+      // Get localized command name
       const localizedKey = this.getLocalizedCommandName(key);
       
-      // Register under the primary key (localized if available, default otherwise)
+      // Register under the default key
       this.registeredCommands[key] = cmd;
       
-      // If localized name is different, also register under localized name
+      // If localized name is different, also register under localized name as an alias
       if (localizedKey !== key) {
         this.registeredCommands[localizedKey] = cmd;
       }
