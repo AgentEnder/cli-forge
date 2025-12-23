@@ -4,6 +4,7 @@
   "dependencies": {
     "@cli-forge/parser": "workspace:*",
     "cli-forge": "workspace:*",
+    "i18next": "^25.7.3",
     "tslib": "catalog:"
   }
 }
