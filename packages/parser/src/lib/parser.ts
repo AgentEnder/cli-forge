@@ -622,7 +622,7 @@ export class ArgvParser<
     }
 
     // Validate strict mode - check for unmatched arguments
-    if (this.options.strict && result.unmatched && result.unmatched.length > 0) {
+    if (this.options.strict && result.unmatched?.length) {
       for (const unmatchedArg of result.unmatched) {
         const error = new Error(
           `Unknown argument: ${unmatchedArg}`
