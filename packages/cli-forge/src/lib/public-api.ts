@@ -765,7 +765,7 @@ export interface CLI<
   }: {
     label: string;
     keys: (keyof TArgs)[];
-    sortOrder: number;
+    sortOrder?: number;
   }): CLI<TArgs, THandlerReturn, TChildren, TParent>;
   group(
     label: string,

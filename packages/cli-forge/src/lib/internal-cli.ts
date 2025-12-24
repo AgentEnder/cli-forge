@@ -539,9 +539,19 @@ export class InternalCLI<
   }
 
   getBuilder():
-    | (<TInit extends ParsedArgs, TInitHandlerReturn, TInitChildren, TInitParent>(
+    | (<
+        TInit extends ParsedArgs,
+        TInitHandlerReturn,
+        TInitChildren,
+        TInitParent
+      >(
         parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
-      ) => CLI<TInit & TArgs, TInitHandlerReturn, TInitChildren & TChildren, TInitParent>)
+      ) => CLI<
+        TInit & TArgs,
+        TInitHandlerReturn,
+        TInitChildren & TChildren,
+        TInitParent
+      >)
     | undefined {
     const builder = this.configuration?.builder;
     if (!builder) return undefined;
@@ -742,7 +752,7 @@ export class InternalCLI<
   group(
     labelOrConfigObject:
       | string
-      | { label: string; keys: (keyof TArgs)[]; sortOrder: number },
+      | { label: string; keys: (keyof TArgs)[]; sortOrder?: number },
     keys?: (keyof TArgs)[]
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     const config =
@@ -751,14 +761,17 @@ export class InternalCLI<
         : {
             label: labelOrConfigObject,
             keys: keys as (keyof TArgs)[],
-            sortOrder: Object.keys(this.registeredOptionGroups).length,
           };
 
     if (!config.keys) {
       throw new Error('keys must be provided when calling `group`.');
     }
 
-    this.registeredOptionGroups.push(config);
+    this.registeredOptionGroups.push({
+      ...config,
+      sortOrder:
+        config.sortOrder ?? Object.keys(this.registeredOptionGroups).length,
+    });
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 

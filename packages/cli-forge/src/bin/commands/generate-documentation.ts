@@ -44,10 +44,16 @@ export function withGenerateDocumentationArgs<T extends ParsedArgs>(
       type: 'string',
       description:
         'Specifies the `tsconfig` used when loading typescript based CLIs.',
+    })
+    .option('llms', {
+      type: 'boolean',
+      description:
+        'Generate an llms.txt file describing the CLI for AI agents.',
+      default: true,
     });
 }
 
-export const generateDocumentationCommand: CLI<any, any, any> = cli('generate-documentation', {
+export const generateDocumentationCommand = cli('generate-documentation', {
   description: 'Generate documentation for the given CLI',
   examples: [
     'cli-forge generate-documentation ./bin/my-cli',
@@ -70,6 +76,10 @@ export const generateDocumentationCommand: CLI<any, any, any> = cli('generate-do
       ensureDirSync(outdir);
       writeFileSync(outfile, JSON.stringify(documentation, null, 2));
     }
+
+    if (args.llms) {
+      generateLlmsTxt(documentation, args);
+    }
   },
 });
 
@@ -79,6 +89,156 @@ async function generateMarkdownDocumentation(
 ) {
   const md = await importMarkdownFactory();
   await generateMarkdownForSingleCommand(docs, args.output, args.output, md);
+}
+
+function generateLlmsTxt(docs: Documentation, args: GenerateDocsArgs) {
+  const content = generateLlmsTxtContent(docs);
+  const outfile = join(args.output, 'llms.txt');
+  ensureDirSync(args.output);
+  writeFileSync(outfile, content);
+}
+
+function generateLlmsTxtContent(
+  docs: Documentation,
+  depth = 0,
+  commandPath: string[] = []
+): string {
+  const lines: string[] = [];
+  const indent = '  '.repeat(depth);
+  const currentPath = [...commandPath, docs.name];
+  const fullCommand = currentPath.join(' ');
+
+  // Command header
+  if (depth === 0) {
+    lines.push(`# ${docs.name}`);
+    lines.push('');
+    if (docs.description) {
+      lines.push(docs.description);
+      lines.push('');
+    }
+    lines.push('This document describes the CLI commands and options for AI agent consumption.');
+    lines.push('');
+  } else {
+    lines.push(`${indent}## ${fullCommand}`);
+    if (docs.description) {
+      lines.push(`${indent}${docs.description}`);
+    }
+    lines.push('');
+  }
+
+  // Usage
+  lines.push(`${indent}Usage: ${docs.usage}`);
+  lines.push('');
+
+  // Positional arguments
+  if (docs.positionals.length > 0) {
+    lines.push(`${indent}Positional Arguments:`);
+    for (const pos of docs.positionals) {
+      const typeStr = formatOptionType(pos);
+      const reqStr = pos.required ? ' (required)' : ' (optional)';
+      lines.push(`${indent}  <${pos.key}> - ${typeStr}${reqStr}`);
+      if (pos.description) {
+        lines.push(`${indent}    ${pos.description}`);
+      }
+      if (pos.default !== undefined) {
+        lines.push(`${indent}    Default: ${JSON.stringify(pos.default)}`);
+      }
+    }
+    lines.push('');
+  }
+
+  // Options
+  const optionEntries = Object.entries(docs.options);
+  if (optionEntries.length > 0) {
+    lines.push(`${indent}Options:`);
+    for (const [, opt] of optionEntries) {
+      const typeStr = formatOptionType(opt);
+      const aliasStr = opt.alias?.length
+        ? ` (aliases: ${opt.alias.map((a) => (a.length === 1 ? `-${a}` : `--${a}`)).join(', ')})`
+        : '';
+      const reqStr =
+        opt.required && opt.default === undefined ? ' [required]' : '';
+      const deprecatedStr = opt.deprecated ? ' [deprecated]' : '';
+      lines.push(
+        `${indent}  --${opt.key}${aliasStr} <${typeStr}>${reqStr}${deprecatedStr}`
+      );
+      if (opt.description) {
+        lines.push(`${indent}    ${opt.description}`);
+      }
+      if (opt.default !== undefined) {
+        lines.push(`${indent}    Default: ${JSON.stringify(opt.default)}`);
+      }
+      if ('choices' in opt && opt.choices) {
+        const choicesList =
+          typeof opt.choices === 'function' ? opt.choices() : opt.choices;
+        lines.push(`${indent}    Valid values: ${choicesList.join(', ')}`);
+      }
+    }
+    lines.push('');
+  }
+
+  // Grouped options
+  for (const group of docs.groupedOptions) {
+    if (group.keys.length > 0) {
+      lines.push(`${indent}${group.label}:`);
+      for (const opt of group.keys) {
+        const typeStr = formatOptionType(opt);
+        const aliasStr = opt.alias?.length
+          ? ` (aliases: ${opt.alias.map((a) => (a.length === 1 ? `-${a}` : `--${a}`)).join(', ')})`
+          : '';
+        const reqStr =
+          opt.required && opt.default === undefined ? ' [required]' : '';
+        lines.push(`${indent}  --${opt.key}${aliasStr} <${typeStr}>${reqStr}`);
+        if (opt.description) {
+          lines.push(`${indent}    ${opt.description}`);
+        }
+        if (opt.default !== undefined) {
+          lines.push(`${indent}    Default: ${JSON.stringify(opt.default)}`);
+        }
+      }
+      lines.push('');
+    }
+  }
+
+  // Examples
+  if (docs.examples.length > 0) {
+    lines.push(`${indent}Examples:`);
+    for (const example of docs.examples) {
+      lines.push(`${indent}  $ ${example}`);
+    }
+    lines.push('');
+  }
+
+  // Subcommands
+  if (docs.subcommands.length > 0) {
+    lines.push(`${indent}Subcommands:`);
+    for (const sub of docs.subcommands) {
+      lines.push(
+        `${indent}  ${sub.name}${sub.description ? ` - ${sub.description}` : ''}`
+      );
+    }
+    lines.push('');
+
+    // Recursively document subcommands
+    for (const sub of docs.subcommands) {
+      lines.push(generateLlmsTxtContent(sub, depth + 1, currentPath));
+    }
+  }
+
+  // Epilogue
+  if (docs.epilogue && depth === 0) {
+    lines.push(`Note: ${docs.epilogue}`);
+    lines.push('');
+  }
+
+  return lines.join('\n');
+}
+
+function formatOptionType(opt: Documentation['options'][string]): string {
+  if ('items' in opt && opt.type === 'array') {
+    return `${opt.items}[]`;
+  }
+  return opt.type;
 }
 
 async function generateMarkdownForSingleCommand(
@@ -367,7 +527,10 @@ async function loadCLIModule(
       });
     } else {
       const tsx = (await import('tsx/cjs/api')) as typeof import('tsx/cjs/api');
-      return tsx.require(cliPath, join(process.cwd(), 'fake-file-for-require.ts'));
+      return tsx.require(
+        cliPath,
+        join(process.cwd(), 'fake-file-for-require.ts')
+      );
     }
   } catch {
     try {

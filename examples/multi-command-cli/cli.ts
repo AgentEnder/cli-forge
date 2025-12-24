@@ -3,13 +3,13 @@ import { cli, chain, makeComposableBuilder } from 'cli-forge';
 import { withInitCommand } from './commands/init';
 import { withBuildCommand, BuildResult } from './commands/build';
 import { withServeCommand, ServerInfo } from './commands/serve';
+import { group } from 'console';
 
 const app = cli('project-cli', {
   description: 'Project management CLI',
   builder: (args) =>
-    chain(args, withInitCommand, withBuildCommand, withServeCommand).command(
-      'build-and-serve',
-      {
+    chain(args, withInitCommand, withBuildCommand, withServeCommand)
+      .command('build-and-serve', {
         builder: (args) => {
           const siblings = args.getParent().getChildren();
           const withBuildArgs = siblings.build.getBuilder()!;
@@ -45,32 +45,46 @@ const app = cli('project-cli', {
             serverInfo,
           };
         },
-      }
-    ),
-  handler: async (_args, ctx) => {
-    // Child handlers are typed - can invoke programmatically if needed
-    const children = ctx.command.getChildren();
+      })
+      .command({
+        name: 'foo',
+        builder: (args) =>
+          args.command('bar', {
+            handler: () => {
+              console.log('bar');
+            },
+          }),
+      })
+      .option('foo', {
+        type: 'string',
+        group: 'Bar',
+      })
+      .group('Bar', ['foo'])
+      .enableInteractiveShell(),
+  // handler: async (_args, ctx) => {
+  //   // Child handlers are typed - can invoke programmatically if needed
+  //   const children = ctx.command.getChildren();
 
-    const { init, build } = {
-      init: children.init.getHandler(),
-      build: children.build.getHandler(),
-    };
+  //   const { init, build } = {
+  //     init: children.init.getHandler(),
+  //     build: children.build.getHandler(),
+  //   };
 
-    const result = init?.({
-      git: true,
-      name: 'MyProject',
-      template: 'typescript',
-    });
+  //   const result = init?.({
+  //     git: true,
+  //     name: 'MyProject',
+  //     template: 'typescript',
+  //   });
 
-    const buildResult = build?.({
-      minify: true,
-      sourcemap: false,
-      outDir: 'dist',
-    });
+  //   const buildResult = build?.({
+  //     minify: true,
+  //     sourcemap: false,
+  //     outDir: 'dist',
+  //   });
 
-    console.log('Build result:', buildResult);
-  },
-}).demandCommand();
+  //   console.log('Build result:', buildResult);
+  // },
+});
 
 export default app;
 

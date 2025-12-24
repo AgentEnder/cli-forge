@@ -25,6 +25,7 @@ docs/api/cli-forge
 docs/api/parser
 docs/examples/**/*.md
 docs/cli/**/*.md
+docs/cli/**/*.txt
 docs/changelog.md
 docs/index.md
 docs/CONTRIBUTING.md
