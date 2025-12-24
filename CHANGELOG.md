@@ -1,3 +1,15 @@
+## 1.1.0 (2025-12-24)
+
+### 🚀 Features
+
+- **cli-forge:** generate llms.txt when generating markdown docs ([3745ccb](https://github.com/agentender/cli-forge/commit/3745ccb))
+- **cli-forge,parser:** add strict mode to parser and CLI ([d9299d7](https://github.com/agentender/cli-forge/commit/d9299d7))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Craigory Coppola @AgentEnder
+
 ## 1.0.2 (2025-12-19)
 
 ### 🩹 Fixes
