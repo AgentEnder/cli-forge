@@ -8,7 +8,8 @@ export function readArgKeys(str: `-${string}`): string[] {
   if (str.startsWith('--')) {
     const key = str.slice(2);
     if (key.includes('-')) {
-      return [fromDashedToCamelCase(key)];
+      // Return both camelCase and original dashed versions for strip-dashed support
+      return [fromDashedToCamelCase(key), key];
     }
     return [str.slice(2)];
     // Short flag combinations (e.g. -xvf)

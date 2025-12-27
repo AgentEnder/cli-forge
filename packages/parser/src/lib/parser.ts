@@ -553,8 +553,13 @@ export class ArgvParser<
         const configuredKeys = keys.map((key) =>
           getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
         );
-        // Handles unmatched flags
-        if (configuredKeys.some((key) => key === undefined)) {
+        // Deduplicate configured keys to avoid processing the same option twice
+        // Filter out undefined values - if ANY key matches, we have a match
+        const uniqueConfiguredKeys = Array.from(
+          new Set(configuredKeys.filter((key) => key !== undefined))
+        );
+        // Handles unmatched flags - only unmatched if NONE of the keys match
+        if (uniqueConfiguredKeys.length === 0) {
           if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
@@ -572,7 +577,7 @@ export class ArgvParser<
         if (maybeValue) {
           argvClone.unshift(maybeValue);
         }
-        for (const configuredKey of configuredKeys) {
+        for (const configuredKey of uniqueConfiguredKeys) {
           if (configuredKey) {
             const configuration = this.configuredOptions[configuredKey];
             const value = tryParseValue(this.parserMap[configuration.type], {

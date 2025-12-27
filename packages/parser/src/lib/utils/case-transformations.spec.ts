@@ -26,6 +26,8 @@ describe('utils', () => {
       ['fooBarBaz', 'foo-bar-baz'],
       ['fooBarBazQux', 'foo-bar-baz-qux'],
       ['someHTMLParser', 'some-h-t-m-l-parser'],
+      ['HTMLParser', 'h-t-m-l-parser'],
+      ['SomeFlag', 'some-flag'],
     ])('should convert %s to %s', (input, expected) => {
       expect(fromCamelCaseToDashed(input)).toEqual(expected);
     });
