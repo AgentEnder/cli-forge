@@ -2,6 +2,13 @@ export function fromDashedToCamelCase(str: string) {
   return str.replace(/-([a-z])/g, (match, letter) => letter.toUpperCase());
 }
 
+export function fromCamelCaseToDashed(str: string) {
+  // Convert camelCase to dashed-case
+  // someFlag -> some-flag
+  // someHTMLParser -> some-html-parser
+  return str.replace(/([A-Z])/g, (match) => '-' + match.toLowerCase());
+}
+
 export function fromCamelOrDashedCaseToConstCase(str: string) {
   const parts = [];
   let currentPart = '';

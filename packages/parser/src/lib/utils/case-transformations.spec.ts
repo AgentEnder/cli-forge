@@ -3,6 +3,7 @@ import { it, describe, expect } from 'vitest';
 import {
   fromCamelOrDashedCaseToConstCase,
   fromDashedToCamelCase,
+  fromCamelCaseToDashed,
   getEnvKey,
 } from './case-transformations';
 
@@ -15,6 +16,18 @@ describe('utils', () => {
       ['foo-bar-baz-qux', 'fooBarBazQux'],
     ])('should convert %s to %s', (input, expected) => {
       expect(fromDashedToCamelCase(input)).toEqual(expected);
+    });
+  });
+
+  describe('fromCamelCaseToDashed', () => {
+    it.each([
+      ['foo', 'foo'],
+      ['fooBar', 'foo-bar'],
+      ['fooBarBaz', 'foo-bar-baz'],
+      ['fooBarBazQux', 'foo-bar-baz-qux'],
+      ['someHTMLParser', 'some-h-t-m-l-parser'],
+    ])('should convert %s to %s', (input, expected) => {
+      expect(fromCamelCaseToDashed(input)).toEqual(expected);
     });
   });
 

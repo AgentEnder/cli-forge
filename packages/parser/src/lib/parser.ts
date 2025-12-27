@@ -8,7 +8,7 @@ import {
   MakeUndefinedPropertiesOptional,
   WithOptional,
 } from './option-types/type-resolution';
-import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
+import { fromDashedToCamelCase, fromCamelCaseToDashed, getEnvKey } from './utils/case-transformations';
 import {
   Internal,
   InternalOptionConfig,
@@ -290,9 +290,20 @@ export class ArgvParser<
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     const thisAsNewType = this as any as ArgvParser<any>;
 
+    // Support strip-dashed: add camelCase alias for dashed names
     if (name.includes('-')) {
       config.alias ??= [];
       config.alias.push(fromDashedToCamelCase(name));
+    }
+
+    // Support strip-dashed: add dashed alias for camelCase names
+    // Check if the name has uppercase letters (camelCase)
+    if (/[A-Z]/.test(name)) {
+      config.alias ??= [];
+      const dashedName = fromCamelCaseToDashed(name);
+      if (!config.alias.includes(dashedName)) {
+        config.alias.push(dashedName);
+      }
     }
 
     // If localization is configured and the key has a localized version,
