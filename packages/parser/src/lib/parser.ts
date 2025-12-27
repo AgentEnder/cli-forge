@@ -293,7 +293,10 @@ export class ArgvParser<
     // Support strip-dashed: add camelCase alias for dashed names
     if (name.includes('-')) {
       config.alias ??= [];
-      config.alias.push(fromDashedToCamelCase(name));
+      const camelCaseName = fromDashedToCamelCase(name);
+      if (!config.alias.includes(camelCaseName)) {
+        config.alias.push(camelCaseName);
+      }
     }
 
     // Support strip-dashed: add dashed alias for camelCase names
