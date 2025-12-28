@@ -96,6 +96,13 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
    * Unmatched arguments are those that don't match any configured option or positional argument.
    */
   strict?: boolean;
+
+  /**
+   * When set to true (default), automatically allows options to be used with both camelCase and dashed formats.
+   * For example, an option named "someFlag" will accept both --someFlag and --some-flag.
+   * Set to false to disable this automatic aliasing behavior.
+   */
+  stripDashed?: boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
@@ -185,6 +192,7 @@ export class ArgvParser<
       extraParsers: {},
       unmatchedParser: () => false,
       strict: false,
+      stripDashed: true,
       ...options,
     };
     this.parserMap = {
@@ -291,7 +299,7 @@ export class ArgvParser<
     const thisAsNewType = this as any as ArgvParser<any>;
 
     // Support strip-dashed: add camelCase alias for dashed names
-    if (name.includes('-')) {
+    if (this.options.stripDashed && name.includes('-')) {
       config.alias ??= [];
       const camelCaseName = fromDashedToCamelCase(name);
       if (!config.alias.includes(camelCaseName)) {
@@ -301,7 +309,7 @@ export class ArgvParser<
 
     // Support strip-dashed: add dashed alias for camelCase names
     // Check if the name has uppercase letters (camelCase)
-    if (/[A-Z]/.test(name)) {
+    if (this.options.stripDashed && /[A-Z]/.test(name)) {
       config.alias ??= [];
       const dashedName = fromCamelCaseToDashed(name);
       if (!config.alias.includes(dashedName)) {
@@ -552,7 +560,7 @@ export class ArgvParser<
       // Found a flag + value
       if (isFlag(arg)) {
         const [maybeArg, maybeValue] = arg.split('=');
-        const keys = readArgKeys(maybeArg as `-${string}`);
+        const keys = readArgKeys(maybeArg as `-${string}`, this.options.stripDashed);
         const configuredKeys = keys.map((key) =>
           getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
         );

@@ -555,6 +555,37 @@ describe('parser', () => {
           .parse(['--no-color-output'])
       ).toEqual({ colorOutput: false, unmatched: [] });
     });
+
+    it('can be disabled with stripDashed option', () => {
+      // When stripDashed is false, camelCase options won't accept dashed format
+      expect(
+        parser({ stripDashed: false })
+          .option('someFlag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ unmatched: ['--some-flag', 'value'] });
+
+      // And dashed options won't accept camelCase format
+      expect(
+        parser({ stripDashed: false })
+          .option('some-flag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ unmatched: ['--someFlag', 'value'] });
+    });
+
+    it('is enabled by default', () => {
+      // Default behavior should support both formats
+      expect(
+        parser()
+          .option('someFlag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ someFlag: 'value', unmatched: [] });
+
+      expect(
+        parser()
+          .option('some-flag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ 'some-flag': 'value', unmatched: [] });
+    });
   });
 
   it('should support limiting option choices', () => {
