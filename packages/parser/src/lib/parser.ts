@@ -8,7 +8,7 @@ import {
   MakeUndefinedPropertiesOptional,
   WithOptional,
 } from './option-types/type-resolution';
-import { fromDashedToCamelCase, getEnvKey } from './utils/case-transformations';
+import { fromDashedToCamelCase, fromCamelCaseToDashed, getEnvKey } from './utils/case-transformations';
 import {
   Internal,
   InternalOptionConfig,
@@ -96,6 +96,13 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
    * Unmatched arguments are those that don't match any configured option or positional argument.
    */
   strict?: boolean;
+
+  /**
+   * When set to true (default), automatically allows options to be used with both camelCase and dashed formats.
+   * For example, an option named "someFlag" will accept both --someFlag and --some-flag.
+   * Set to false to disable this automatic aliasing behavior.
+   */
+  stripDashed?: boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
@@ -185,6 +192,7 @@ export class ArgvParser<
       extraParsers: {},
       unmatchedParser: () => false,
       strict: false,
+      stripDashed: true,
       ...options,
     };
     this.parserMap = {
@@ -290,9 +298,23 @@ export class ArgvParser<
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     const thisAsNewType = this as any as ArgvParser<any>;
 
-    if (name.includes('-')) {
+    // Support strip-dashed: add camelCase alias for dashed names
+    if (this.options.stripDashed && name.includes('-')) {
       config.alias ??= [];
-      config.alias.push(fromDashedToCamelCase(name));
+      const camelCaseName = fromDashedToCamelCase(name);
+      if (!config.alias.includes(camelCaseName)) {
+        config.alias.push(camelCaseName);
+      }
+    }
+
+    // Support strip-dashed: add dashed alias for camelCase names
+    // Check if the name has uppercase letters (camelCase)
+    if (this.options.stripDashed && /[A-Z]/.test(name)) {
+      config.alias ??= [];
+      const dashedName = fromCamelCaseToDashed(name);
+      if (!config.alias.includes(dashedName)) {
+        config.alias.push(dashedName);
+      }
     }
 
     // If localization is configured and the key has a localized version,
@@ -538,12 +560,17 @@ export class ArgvParser<
       // Found a flag + value
       if (isFlag(arg)) {
         const [maybeArg, maybeValue] = arg.split('=');
-        const keys = readArgKeys(maybeArg as `-${string}`);
+        const keys = readArgKeys(maybeArg as `-${string}`, this.options.stripDashed);
         const configuredKeys = keys.map((key) =>
           getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
         );
-        // Handles unmatched flags
-        if (configuredKeys.some((key) => key === undefined)) {
+        // Deduplicate configured keys to avoid processing the same option twice
+        // Filter out undefined values - if ANY key matches, we have a match
+        const uniqueConfiguredKeys = Array.from(
+          new Set(configuredKeys.filter((key) => key !== undefined))
+        );
+        // Handles unmatched flags - only unmatched if NONE of the keys match
+        if (uniqueConfiguredKeys.length === 0) {
           if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
@@ -561,7 +588,7 @@ export class ArgvParser<
         if (maybeValue) {
           argvClone.unshift(maybeValue);
         }
-        for (const configuredKey of configuredKeys) {
+        for (const configuredKey of uniqueConfiguredKeys) {
           if (configuredKey) {
             const configuration = this.configuredOptions[configuredKey];
             const value = tryParseValue(this.parserMap[configuration.type], {

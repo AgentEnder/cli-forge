@@ -475,6 +475,119 @@ describe('parser', () => {
     ).toEqual({ 'foo-bar': 'hello', bazQux: 'world', unmatched: [] });
   });
 
+  describe('strip-dashed support', () => {
+    it('should accept dashed flags for camelCase options', () => {
+      expect(
+        parser()
+          .option('someFlag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ someFlag: 'value', unmatched: [] });
+    });
+
+    it('should accept camelCase flags for camelCase options', () => {
+      expect(
+        parser()
+          .option('someFlag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ someFlag: 'value', unmatched: [] });
+    });
+
+    it('should accept dashed flags for dashed options', () => {
+      expect(
+        parser()
+          .option('some-flag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ 'some-flag': 'value', unmatched: [] });
+    });
+
+    it('should accept camelCase flags for dashed options', () => {
+      expect(
+        parser()
+          .option('some-flag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ 'some-flag': 'value', unmatched: [] });
+    });
+
+    it('should work with multiple words in camelCase', () => {
+      expect(
+        parser()
+          .option('myLongOptionName', { type: 'string' })
+          .parse(['--my-long-option-name', 'value'])
+      ).toEqual({ myLongOptionName: 'value', unmatched: [] });
+    });
+
+    it('should work with multiple words in dashed', () => {
+      expect(
+        parser()
+          .option('my-long-option-name', { type: 'string' })
+          .parse(['--myLongOptionName', 'value'])
+      ).toEqual({ 'my-long-option-name': 'value', unmatched: [] });
+    });
+
+    it('should work with boolean options', () => {
+      expect(
+        parser()
+          .option('verboseMode', { type: 'boolean' })
+          .parse(['--verbose-mode'])
+      ).toEqual({ verboseMode: true, unmatched: [] });
+    });
+
+    it('should work with number options', () => {
+      expect(
+        parser()
+          .option('maxCount', { type: 'number' })
+          .parse(['--max-count', '42'])
+      ).toEqual({ maxCount: 42, unmatched: [] });
+    });
+
+    it('should work with array options', () => {
+      expect(
+        parser()
+          .option('fileNames', { type: 'array', items: 'string' })
+          .parse(['--file-names', 'a.txt', 'b.txt'])
+      ).toEqual({ fileNames: ['a.txt', 'b.txt'], unmatched: [] });
+    });
+
+    it('should work with negated boolean flags in camelCase', () => {
+      expect(
+        parser()
+          .option('colorOutput', { type: 'boolean' })
+          .parse(['--no-color-output'])
+      ).toEqual({ colorOutput: false, unmatched: [] });
+    });
+
+    it('can be disabled with stripDashed option', () => {
+      // When stripDashed is false, camelCase options won't accept dashed format
+      expect(
+        parser({ stripDashed: false })
+          .option('someFlag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ unmatched: ['--some-flag', 'value'] });
+
+      // And dashed options won't accept camelCase format
+      expect(
+        parser({ stripDashed: false })
+          .option('some-flag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ unmatched: ['--someFlag', 'value'] });
+    });
+
+    it('is enabled by default', () => {
+      // Default behavior should support both formats
+      expect(
+        parser()
+          .option('someFlag', { type: 'string' })
+          .parse(['--some-flag', 'value'])
+      ).toEqual({ someFlag: 'value', unmatched: [] });
+
+      expect(
+        parser()
+          .option('some-flag', { type: 'string' })
+          .parse(['--someFlag', 'value'])
+      ).toEqual({ 'some-flag': 'value', unmatched: [] });
+    });
+  });
+
   it('should support limiting option choices', () => {
     expect(() =>
       parser()
