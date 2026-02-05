@@ -1,4 +1,4 @@
-import { ParsedArgs } from '@cli-forge/parser';
+import type { ParsedArgs } from '@cli-forge/parser';
 import { CLI } from './public-api';
 
 /**
@@ -54,4 +54,3 @@ export function makeComposableBuilder<
       TParent
     >;
 }
-

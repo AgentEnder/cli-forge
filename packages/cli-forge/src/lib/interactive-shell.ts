@@ -58,6 +58,8 @@ export class InteractiveShell {
         process.emit('SIGINT');
       });
 
+    // Show the cursor (in case it was hidden)
+    process.stdout.write('\x1b[?25h');
     this.rl.prompt();
 
     this.registerLineListener(async (line) => {

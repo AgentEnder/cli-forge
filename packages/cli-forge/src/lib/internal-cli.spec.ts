@@ -1,4 +1,4 @@
-import { it, describe, expect, afterEach } from 'vitest';
+import { afterEach, describe, expect, it } from 'vitest';
 import { InternalCLI } from './internal-cli';
 import { cli } from './public-api';
 
@@ -344,9 +344,39 @@ describe('cliForge', () => {
     ]);
   });
 
+  it('should run root command builder before child command handlers', async () => {
+    let ran = false;
+    const parsed = await cli('test', {
+      builder: (argv) => {
+        ran = true;
+        return argv
+          .option('boo', {
+            type: 'boolean',
+          })
+          .middleware((args) => {
+            return { ...args, injected: 'from-root-builder' };
+          });
+      },
+      handler: () => {
+        // No-op
+      },
+    })
+      .command('foo', {
+        handler: (args) => {
+          // The root command's builder middleware should have run,
+          // injecting the 'injected' property.
+          expect(args.injected).toBe('from-root-builder');
+        },
+      })
+      .forge(['foo']);
+
+    expect(ran).toBe(true);
+    expect(parsed.injected).toBe('from-root-builder');
+  });
+
   it('should support strict mode', async () => {
     const mock = mockConsoleLog();
-    
+
     try {
       await cli('test')
         .strict()
@@ -364,7 +394,7 @@ describe('cliForge', () => {
 
   it('should allow disabling strict mode via .strict(false)', async () => {
     let captured: any;
-    
+
     await cli('test')
       .strict(false)
       .option('foo', { type: 'string' })
@@ -378,5 +408,176 @@ describe('cliForge', () => {
 
     expect(captured.foo).toBe('hello');
     expect(captured.unmatched).toEqual(['--unknown', 'arg']);
+  });
+
+  it('should run parent middleware before evaluating child command handler', async () => {
+    const executionOrder: string[] = [];
+    let handlerArgs: any;
+
+    await cli('test')
+      .option('count', { type: 'number' })
+      .middleware((args) => {
+        executionOrder.push('parent middleware');
+        return { ...args, injected: 'from-parent' };
+      })
+      .command('child', {
+        builder: (argv) =>
+          argv.option('name', { type: 'string' }).middleware((args) => {
+            executionOrder.push('child middleware');
+            return args;
+          }),
+        handler: (args) => {
+          executionOrder.push('child handler');
+          handlerArgs = args;
+        },
+      })
+      .forge(['child', '--name', 'test', '--count', '5']);
+
+    expect(executionOrder).toEqual([
+      'parent middleware',
+      'child middleware',
+      'child handler',
+    ]);
+    // Parent middleware's injected value should be visible to the child handler
+    expect(handlerArgs.injected).toBe('from-parent');
+    expect(handlerArgs.name).toBe('test');
+    expect(handlerArgs.count).toBe(5);
+  });
+
+  it('should run parent middleware before deeply nested child commands', async () => {
+    const executionOrder: string[] = [];
+
+    await cli('test')
+      .middleware((args) => {
+        executionOrder.push('root middleware');
+        return args;
+      })
+      .command('parent', {
+        builder: (argv) =>
+          argv
+            .middleware((args) => {
+              executionOrder.push('parent middleware');
+              return args;
+            })
+            .command('child', {
+              builder: (argv) =>
+                argv.middleware((args) => {
+                  executionOrder.push('child middleware');
+                  return args;
+                }),
+              handler: () => {
+                executionOrder.push('child handler');
+              },
+            }),
+        handler: () => {
+          executionOrder.push('parent handler');
+        },
+      })
+      .forge(['parent', 'child']);
+
+    expect(executionOrder).toEqual([
+      'root middleware',
+      'parent middleware',
+      'child middleware',
+      'child handler',
+    ]);
+  });
+
+  it('should support async middleware and await it before proceeding', async () => {
+    const executionOrder: string[] = [];
+    let handlerArgs: any;
+
+    await cli('test')
+      .option('name', { type: 'string' })
+      .middleware(async (args) => {
+        // Simulate an async operation (e.g., fetching config, validating tokens)
+        await new Promise((resolve) => setTimeout(resolve, 10));
+        executionOrder.push('async root middleware');
+        return { ...args, token: 'resolved-token' };
+      })
+      .command('run', {
+        builder: (argv) =>
+          argv.middleware(async (args) => {
+            await new Promise((resolve) => setTimeout(resolve, 10));
+            executionOrder.push('async child middleware');
+            return { ...args, session: 'resolved-session' };
+          }),
+        handler: (args) => {
+          executionOrder.push('handler');
+          handlerArgs = args;
+        },
+      })
+      .forge(['run', '--name', 'test']);
+
+    expect(executionOrder).toEqual([
+      'async root middleware',
+      'async child middleware',
+      'handler',
+    ]);
+    expect(handlerArgs.name).toBe('test');
+    expect(handlerArgs.token).toBe('resolved-token');
+    expect(handlerArgs.session).toBe('resolved-session');
+  });
+
+  it('should not run coerce for flags that are not passed', async () => {
+    const coerceCalls: string[] = [];
+    let handlerArgs: any;
+
+    await cli('test')
+      .command('$0', {
+        builder: (argv) =>
+          argv
+            .option('provided', {
+              type: 'string',
+              coerce: (val) => {
+                console.trace();
+                coerceCalls.push('provided');
+                return val.toUpperCase();
+              },
+            })
+            .option('omitted', {
+              type: 'string',
+              coerce: (val) => {
+                coerceCalls.push('omitted');
+                return val.toUpperCase();
+              },
+            }),
+        handler: (args) => {
+          handlerArgs = args;
+        },
+      })
+      .forge(['--provided', 'hello']);
+
+    // Only the provided flag should have its coerce function called
+    expect(coerceCalls).toEqual(['provided']);
+    expect(handlerArgs.provided).toBe('HELLO');
+    expect(handlerArgs.omitted).toBeUndefined();
+  });
+
+  it('should not run coerce on default values for non-object options', async () => {
+    const coerceCalls: string[] = [];
+    let handlerArgs: any;
+
+    await cli('test')
+      .command('$0', {
+        builder: (argv) =>
+          argv.option('flag', {
+            type: 'string',
+            default: 'default-value',
+            coerce: (val) => {
+              coerceCalls.push(val);
+              return val.toUpperCase();
+            },
+          }),
+        handler: (args) => {
+          handlerArgs = args;
+        },
+      })
+      .forge([]);
+
+    // Coerce should not be called when the flag falls back to its default
+    expect(coerceCalls).toEqual([]);
+    // The default value should be used as-is, without coercion
+    expect(handlerArgs.flag).toBe('default-value');
   });
 });
