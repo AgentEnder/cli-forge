@@ -2,6 +2,8 @@
 import {
   ArgvParser,
   EnvOptionConfig,
+  LocalizationDictionary,
+  LocalizationFunction,
   OptionConfig,
   ParsedArgs,
   ValidationFailedError,
@@ -9,7 +11,8 @@ import {
   hideBin,
   type ConfigurationFiles,
 } from '@cli-forge/parser';
-import { getCallingFile, getParentPackageJson } from './utils';
+import { readOptionGroupsForCLI } from './cli-option-groups';
+import { formatHelp } from './format-help';
 import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
 import {
   CLI,
@@ -19,8 +22,7 @@ import {
   ErrorHandler,
   SDKCommand,
 } from './public-api';
-import { readOptionGroupsForCLI } from './cli-option-groups';
-import { formatHelp } from './format-help';
+import { getCallingFile, getParentPackageJson } from './utils';
 
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
@@ -83,7 +85,9 @@ export class InternalCLI<
     },
   ];
 
-  private registeredMiddleware: Array<(args: TArgs) => void> = [];
+  private registeredMiddleware: Array<
+    (args: TArgs) => void | unknown | Promise<void> | Promise<unknown>
+  > = [];
 
   /**
    * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
@@ -167,7 +171,7 @@ export class InternalCLI<
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
   ): InternalCLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.configuration = configuration;
-    this.requiresCommand = false;
+    this.requiresCommand = configuration.handler ? false : 'IMPLICIT';
     return this;
   }
 
@@ -266,18 +270,18 @@ export class InternalCLI<
         key
       ).withRootCommandConfiguration(options as any);
       cmd._parent = this;
-      
+
       // Get localized command name
       const localizedKey = this.getLocalizedCommandName(key);
-      
+
       // Register under the default key
       this.registeredCommands[key] = cmd;
-      
+
       // If localized name is different, also register under localized name as an alias
       if (localizedKey !== key) {
         this.registeredCommands[localizedKey] = cmd;
       }
-      
+
       if (options.alias) {
         for (const alias of options.alias) {
           this.registeredCommands[alias] = cmd;
@@ -367,9 +371,7 @@ export class InternalCLI<
   }
 
   localize(
-    dictionaryOrFn:
-      | import('@cli-forge/parser').LocalizationDictionary
-      | import('@cli-forge/parser').LocalizationFunction,
+    dictionaryOrFn: LocalizationDictionary | LocalizationFunction,
     locale?: string
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     if (typeof dictionaryOrFn === 'function') {
@@ -435,7 +437,7 @@ export class InternalCLI<
   }
 
   middleware<TArgs2>(
-    callback: (args: TArgs) => TArgs2 | Promise<TArgs2>
+    callback: (args: TArgs) => TArgs2 | Promise<TArgs2> | void | Promise<void>
   ): CLI<
     TArgs2 extends void ? TArgs : TArgs & TArgs2,
     THandlerReturn,
@@ -454,10 +456,11 @@ export class InternalCLI<
    * @param cmd The command to run.
    * @param args The arguments to pass to the command.
    */
-  async runCommand<T extends ParsedArgs>(args: T, originalArgV: string[]) {
-    const middlewares: Array<(args: any) => void> = [
-      ...this.registeredMiddleware,
-    ];
+  async runCommand<T extends ParsedArgs>(
+    args: T,
+    originalArgV: string[]
+  ): Promise<T> {
+    const middlewares = [...this.registeredMiddleware];
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let cmd: InternalCLI<any, any, any, any> = this;
     for (const command of this.commandChain) {
@@ -472,7 +475,7 @@ export class InternalCLI<
       }
       if (cmd.configuration?.handler) {
         for (const middleware of middlewares) {
-          const middlewareResult = await middleware(args);
+          const middlewareResult = await middleware(args as any);
           if (
             middlewareResult !== void 0 &&
             typeof middlewareResult === 'object'
@@ -480,15 +483,25 @@ export class InternalCLI<
             args = middlewareResult as T;
           }
         }
-        return cmd.configuration.handler(args, {
+        await cmd.configuration.handler(args, {
           command: cmd as any,
         });
+        return args;
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
           if (!process.stdout.isTTY) {
             // If we're not in a TTY, we can't run an interactive shell...
             // Maybe we should warn here?
+          } else if (args.unmatched.length > 0) {
+            // If there are unmatched args, we don't run an interactive shell...
+            // this could represent a user misspelling a subcommand so it gets rather confusing.
+            console.warn(
+              `Warning: Unrecognized command or arguments: ${args.unmatched.join(
+                ' '
+              )}`
+            );
+            cmd.printHelp();
           } else if (!INTERACTIVE_SHELL) {
             const tui = new InteractiveShell(
               this as unknown as InternalCLI<any>,
@@ -519,6 +532,7 @@ export class InternalCLI<
       console.error(e);
       this.printHelp();
     }
+    return args;
   }
 
   getChildren(): TChildren {
@@ -797,7 +811,8 @@ export class InternalCLI<
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
       try {
-        argv = this.parser.parse(args);
+        const cli = this.configuration?.builder?.(this as any) ?? this;
+        argv = (cli as InternalCLI).parser.parse(args) as any;
       } catch (e) {
         if (e instanceof ValidationFailedError) {
           argv = e.partialArgV as TArgs;
@@ -824,16 +839,7 @@ export class InternalCLI<
         throw validationFailedError;
       }
 
-      const finalArgV =
-        this.commandChain.length === 0 && this.configuration?.builder
-          ? (
-              this.configuration.builder?.(
-                this as any
-              ) as unknown as InternalCLI<TArgs, any, any, any>
-            ).parser.parse(args)
-          : argv;
-
-      await this.runCommand(finalArgV, args);
+      const finalArgV = await this.runCommand(argv, args);
       return finalArgV as TArgs;
     });
 

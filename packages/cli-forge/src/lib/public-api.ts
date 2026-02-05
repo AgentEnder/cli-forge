@@ -1,20 +1,20 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import {
+  ArrayOptionConfig,
+  BooleanOptionConfig,
   type ConfigurationFiles,
+  EnvOptionConfig,
+  LocalizationDictionary,
+  LocalizationFunction,
+  MakeUndefinedPropertiesOptional,
+  NumberOptionConfig,
+  ObjectOptionConfig,
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
-  EnvOptionConfig,
-  ObjectOptionConfig,
-  StringOptionConfig,
-  NumberOptionConfig,
-  BooleanOptionConfig,
-  ArrayOptionConfig,
   ResolveProperties,
+  StringOptionConfig,
   WithOptional,
-  MakeUndefinedPropertiesOptional,
-  LocalizationDictionary,
-  LocalizationFunction,
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
@@ -909,7 +909,7 @@ export interface CLICommandOptions<
    * The type of the arguments that are registered after `builder` is invoked, and the type that is passed to the handler.
    */
   TArgs extends TInitial = TInitial,
-  THandlerReturn = void,
+  THandlerReturn = void | Promise<void>,
   /**
    * The children commands that exist before the builder runs.
    */
