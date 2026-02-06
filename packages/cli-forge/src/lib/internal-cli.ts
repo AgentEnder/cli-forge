@@ -89,6 +89,10 @@ export class InternalCLI<
     (args: TArgs) => void | unknown | Promise<void> | Promise<unknown>
   >();
 
+  private registeredInitHooks: Array<
+    (args: TArgs, cli: any) => Promise<void>
+  > = [];
+
   /**
    * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
    *
@@ -443,6 +447,13 @@ export class InternalCLI<
     // If it returns something, we need to merge it into TArgs...
     // that's not here though, its where we apply the middleware results.
     return this as any;
+  }
+
+  init(
+    callback: (args: TArgs, cli: any) => Promise<void>
+  ): any {
+    this.registeredInitHooks.push(callback);
+    return this;
   }
 
   /**
@@ -807,22 +818,53 @@ export class InternalCLI<
    */
   forge = (args: string[] = hideBin(process.argv)) =>
     this.withErrorHandlers(async () => {
-      // Parsing the args does two things:
-      // - builds argv to pass to handler
-      // - fills the command chain + registers commands
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
-      try {
-        const cli = this.configuration?.builder?.(this as any) ?? this;
-        argv = (cli as InternalCLI).parser.parse(args) as any;
-      } catch (e) {
-        if (e instanceof ValidationFailedError) {
-          argv = e.partialArgV as TArgs;
-          validationFailedError = e;
-        } else {
-          throw e;
+
+      if (this.registeredInitHooks.length > 0) {
+        // Phase 1: Lenient parse — resolve known options, collect unmatched
+        const lenientParser = this.parser.clone({
+          ...this.parser.options,
+          lenient: true,
+        });
+        const partialArgs = lenientParser.parse(args);
+
+        // Phase 2: Run init hooks — can register commands, options, middleware
+        for (const hook of this.registeredInitHooks) {
+          await hook(partialArgs as TArgs, this as any);
+        }
+
+        // Phase 3: Full parse with augmented CLI (commands/options added by init hooks)
+        // Reset command chain since the full parse will rebuild it
+        this.commandChain = [];
+        try {
+          const builtCli =
+            this.configuration?.builder?.(this as any) ?? this;
+          argv = (builtCli as InternalCLI).parser.parse(args) as any;
+        } catch (e) {
+          if (e instanceof ValidationFailedError) {
+            argv = e.partialArgV as TArgs;
+            validationFailedError = e;
+          } else {
+            throw e;
+          }
+        }
+      } else {
+        // No init hooks — existing parse path, completely unchanged
+        try {
+          const builtCli =
+            this.configuration?.builder?.(this as any) ?? this;
+          argv = (builtCli as InternalCLI).parser.parse(args) as any;
+        } catch (e) {
+          if (e instanceof ValidationFailedError) {
+            argv = e.partialArgV as TArgs;
+            validationFailedError = e;
+          } else {
+            throw e;
+          }
         }
       }
+
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let currentCommand: InternalCLI<any, any, any, any> = this;
       for (const command of this.commandChain) {
