@@ -1230,6 +1230,70 @@ describe('parser', () => {
   });
 });
 
+describe('lenient mode', () => {
+  it('should collect unmatched flags without calling unmatchedParser', () => {
+    let unmatchedParserCalled = false;
+    const result = parser({
+      lenient: true,
+      unmatchedParser: () => {
+        unmatchedParserCalled = true;
+        return false;
+      },
+    })
+      .option('config', { type: 'string' })
+      .parse(['--config', 'test.json', '--unknown', 'value', 'positional']);
+    expect(unmatchedParserCalled).toBe(false);
+    expect(result.config).toBe('test.json');
+    expect(result.unmatched).toEqual(['--unknown', 'value', 'positional']);
+  });
+
+  it('should skip validation in lenient mode', () => {
+    const result = parser({ lenient: true })
+      .option('name', { type: 'string', required: true })
+      .parse([]);
+    expect(result.name).toBeUndefined();
+  });
+
+  it('should still apply env vars and defaults in lenient mode', () => {
+    process.env['TEST_PORT'] = '8080';
+    try {
+      const result = parser({ lenient: true })
+        .env('TEST')
+        .option('port', { type: 'number' })
+        .option('host', { type: 'string', default: 'localhost' })
+        .parse([]);
+      expect(result.port).toBe(8080);
+      expect(result.host).toBe('localhost');
+    } finally {
+      delete process.env['TEST_PORT'];
+    }
+  });
+
+  it('should not call unmatchedParser for unmatched positionals', () => {
+    let unmatchedParserCalled = false;
+    const result = parser({
+      lenient: true,
+      unmatchedParser: () => {
+        unmatchedParserCalled = true;
+        return false;
+      },
+    })
+      .option('name', { type: 'string' })
+      .parse(['--name', 'test', 'some-command', '--watch']);
+    expect(unmatchedParserCalled).toBe(false);
+    expect(result.name).toBe('test');
+    expect(result.unmatched).toEqual(['some-command', '--watch']);
+  });
+
+  it('should handle -- separator in lenient mode', () => {
+    const result = parser({ lenient: true })
+      .option('config', { type: 'string' })
+      .parse(['--config', 'test.json', '--', 'rest', 'args']);
+    expect(result.config).toBe('test.json');
+    expect(result['--']).toEqual(['rest', 'args']);
+  });
+});
+
 export async function withEnv(
   env: NodeJS.ProcessEnv,
   cb: () => void | Promise<void>
