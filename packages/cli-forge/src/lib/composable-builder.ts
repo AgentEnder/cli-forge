@@ -25,10 +25,30 @@ export type ComposableBuilder<
   init: CLI<TInit, THandlerReturn, TChildren, TParent>
 ) => CLI<TInit & TArgs2, THandlerReturn, TChildren & TAddedChildren, TParent>;
 
+type RecordedOp = { method: string; args: any[] };
+
+function createRecordingProxy(): { proxy: any; operations: RecordedOp[] } {
+  const operations: RecordedOp[] = [];
+  const handler: ProxyHandler<object> = {
+    get(_target, prop) {
+      return (...args: any[]) => {
+        operations.push({ method: prop as string, args });
+        return proxy;
+      };
+    },
+  };
+  const proxy = new Proxy({}, handler);
+  return { proxy, operations };
+}
+
 /**
  * Creates a composable builder function that can be used with `chain`.
  * Can be used to add options, commands, or any other CLI modifications.
  * Children added by the builder function are properly tracked in the type.
+ *
+ * The builder function runs once at creation time against a recording Proxy.
+ * Subsequent applications replay the captured operations, ensuring inline
+ * middleware closures have stable references for Set-based deduplication.
  *
  * @typeParam TArgs2 - The args type after the builder runs
  * @typeParam TChildren2 - The children type added by the builder
@@ -43,14 +63,21 @@ export function makeComposableBuilder<
     init: CLI<ParsedArgs, any, {}, any>
   ) => CLI<TArgs2, any, TChildren2, any>
 ) {
+  const { proxy, operations } = createRecordingProxy();
+  fn(proxy);
+
   return <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(
     init: CLI<TInit, THandlerReturn, TChildren, TParent>
-  ) =>
-    // eslint-disable-next-line @typescript-eslint/ban-types
-    fn(init as unknown as CLI<ParsedArgs, any, {}, any>) as unknown as CLI<
+  ) => {
+    let current: any = init;
+    for (const op of operations) {
+      current = current[op.method](...op.args);
+    }
+    return current as unknown as CLI<
       TInit & TArgs2,
       THandlerReturn,
       TChildren & TChildren2,
       TParent
     >;
+  };
 }
