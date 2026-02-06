@@ -48,7 +48,7 @@ describe('CLI localization', () => {
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);
@@ -64,7 +64,7 @@ describe('CLI localization', () => {
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);
@@ -100,7 +100,7 @@ describe('CLI localization', () => {
         .localize(dictionary, 'es-ES')
         .command('serve', {
           builder: (cmd) => cmd,
-          handler: () => {},
+          handler: () => { /* noop */ },
           description: 'Start the server',
         })
         .forge(['--help']);
@@ -121,7 +121,7 @@ describe('CLI localization', () => {
           cmd
             .option('port', { type: 'number' })
             .option('name', { type: 'string' }),
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);
@@ -137,7 +137,7 @@ describe('CLI localization', () => {
       .option('name', { type: 'string' })
       .option('port', { type: 'number' })
       .command('$0', {
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);
@@ -154,7 +154,7 @@ describe('CLI localization', () => {
       .option('port', { type: 'number' })
       .env('TEST')
       .command('$0', {
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);
@@ -180,7 +180,7 @@ describe('CLI localization', () => {
       .option('port', { type: 'number' })
       .command('serve', {
         builder: (cmd) => cmd,
-        handler: () => {},
+        handler: () => { /* noop */ },
       });
 
     const harness = new TestHarness(testCli);

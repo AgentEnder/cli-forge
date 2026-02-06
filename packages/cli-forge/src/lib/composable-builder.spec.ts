@@ -51,7 +51,7 @@ describe('makeComposableBuilder', () => {
         .command('child', {
           builder: (cmd) =>
             chain(cmd, builder).option('format', { type: 'string' }),
-          handler: () => {},
+          handler: () => { /* noop */ },
         })
         .forge(['child']);
       expect(mwCallCount).toBe(1);
@@ -61,7 +61,7 @@ describe('makeComposableBuilder', () => {
       const builder = makeComposableBuilder((cmd) =>
         cmd.command('sub', {
           builder: (c) => c.option('flag', { type: 'boolean' }),
-          handler: () => {},
+          handler: () => { /* noop */ },
         })
       );
 

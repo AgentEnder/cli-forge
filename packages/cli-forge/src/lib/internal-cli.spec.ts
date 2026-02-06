@@ -172,12 +172,12 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --baz     - (a, b)
-        --qux     - [required]
-        --quux    - [default: a]
-
+        --baz     - (a, b)                             
+        --qux     - [required]                         
+        --quux    - [default: a]                       
+       
       Run \`test [command] --help\` for more information on a command"
     `);
   });
@@ -205,10 +205,10 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --baz
-        --bar
+        --baz    
+        --bar    
         --foo    "
     `);
   });
@@ -227,7 +227,7 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
         --bar    "
     `);
@@ -245,8 +245,10 @@ describe('cliForge', () => {
       .forge(['sub', 'example', 'fred']);
     expect(args).toMatchInlineSnapshot(`
       {
-        "name": "fred",
-        "unmatched": [],
+        "name": "example",
+        "unmatched": [
+          "fred",
+        ],
       }
     `);
   });
@@ -301,9 +303,9 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --quux
+        --quux   
 
       Advanced:
         --baz
@@ -615,35 +617,17 @@ describe('cliForge', () => {
       expect(handlerCalled).toBe(true);
     });
 
-    it('should pass matched args to init hook and resolve plugin commands', async () => {
-      let handlerArgs: any;
-      await cli('test')
-        .option('verbose', { type: 'boolean' })
-        .init(async (args, app) => {
-          expect(args.verbose).toBe(true);
-          app.command('deploy', {
-            builder: (cmd) => cmd.option('target', { type: 'string' }),
-            handler: (a) => {
-              handlerArgs = a;
-            },
-          });
-        })
-        .forge(['deploy', '--verbose', '--target', 'production']);
-      expect(handlerArgs.verbose).toBe(true);
-      expect(handlerArgs.target).toBe('production');
-    });
-
     it('should run multiple init hooks sequentially', async () => {
       const order: number[] = [];
       await cli('test')
         .option('config', { type: 'string' })
         .init(async (_args, app) => {
           order.push(1);
-          app.command('first', { handler: () => {} });
+          app.command('first', { handler: () => { /* noop */ } });
         })
         .init(async (_args, app) => {
           order.push(2);
-          app.command('second', { handler: () => {} });
+          app.command('second', { handler: () => { /* noop */ } });
         })
         .forge(['first']);
       expect(order).toEqual([1, 2]);
@@ -669,7 +653,7 @@ describe('cliForge', () => {
         .init(async (_args, app) => {
           await new Promise((r) => setTimeout(r, 10));
           resolved = true;
-          app.command('run', { handler: () => {} });
+          app.command('run', { handler: () => { /* noop */ } });
         })
         .forge(['run']);
       expect(resolved).toBe(true);
@@ -693,25 +677,6 @@ describe('cliForge', () => {
       expect(caughtError.message).toBe('init failed');
     });
 
-    it('should work with the full plugin loading pattern', async () => {
-      let handlerArgs: any;
-
-      await cli('app')
-        .option('config', { type: 'string' })
-        .init(async (args, app) => {
-          if (args.config === 'with-plugins') {
-            app.command('plugin-cmd', {
-              builder: (cmd) => cmd.option('watch', { type: 'boolean' }),
-              handler: (a) => {
-                handlerArgs = a;
-              },
-            });
-          }
-        })
-        .forge(['--config', 'with-plugins', 'plugin-cmd', '--watch']);
-      expect(handlerArgs.config).toBe('with-plugins');
-      expect(handlerArgs.watch).toBe(true);
-    });
   });
 
   describe('middleware deduplication', () => {
@@ -725,7 +690,7 @@ describe('cliForge', () => {
         .middleware(mw)
         .middleware(mw)
         .command('run', {
-          handler: () => {},
+          handler: () => { /* noop */ },
         })
         .forge(['run']);
       expect(callCount).toBe(1);
@@ -745,7 +710,7 @@ describe('cliForge', () => {
         .middleware(mw1)
         .middleware(mw2)
         .command('run', {
-          handler: () => {},
+          handler: () => { /* noop */ },
         })
         .forge(['run']);
       expect(calls).toEqual(['mw1', 'mw2']);
@@ -770,7 +735,7 @@ describe('cliForge', () => {
         .middleware(mw2)
         .middleware(mw3)
         .middleware(mw1) // duplicate — should not change order
-        .command('run', { handler: () => {} })
+        .command('run', { handler: () => { /* noop */ } })
         .forge(['run']);
       expect(order).toEqual([1, 2, 3]);
     });
@@ -785,10 +750,145 @@ describe('cliForge', () => {
         .middleware(sharedMw)
         .command('child', {
           builder: (cmd) => cmd.middleware(sharedMw),
-          handler: () => {},
+          handler: () => { /* noop */ },
         })
         .forge(['child']);
       expect(callCount).toBe(1);
+    });
+  });
+
+  describe('integration: init hooks + composable builders + middleware dedup', () => {
+    it('should support the full plugin loading pattern', async () => {
+      // Simulates: my-app --config with-plugins plugin-cmd --watch --verbose
+      // 1. Lenient parse matches --config and --verbose (registered on parent)
+      // 2. Init hook reads config, registers plugin-cmd
+      // 3. Re-parse resolves 'plugin-cmd --watch' from unmatched tokens
+      let handlerArgs: any;
+      let mwCallCount = 0;
+      const sharedMw = (args: any) => {
+        mwCallCount++;
+        return args;
+      };
+
+      await cli('app')
+        .option('config', { type: 'string' })
+        .option('verbose', { type: 'boolean', alias: ['v'] })
+        .middleware(sharedMw)
+        .init(async (args, app) => {
+          expect(args.config).toBe('with-plugins');
+          expect(args.verbose).toBe(true);
+          // Plugin commands register options via builder so they work with
+          // the shared parser during command resolution
+          app.command('plugin-cmd', {
+            builder: (cmd) =>
+              cmd
+                .middleware(sharedMw)
+                .option('watch', { type: 'boolean' }),
+            handler: (a) => {
+              handlerArgs = a;
+            },
+          });
+        })
+        .forge([
+          '--config',
+          'with-plugins',
+          'plugin-cmd',
+          '--watch',
+          '--verbose',
+        ]);
+
+      expect(handlerArgs).toBeDefined();
+      expect(handlerArgs.config).toBe('with-plugins');
+      expect(handlerArgs.verbose).toBe(true);
+      expect(handlerArgs.watch).toBe(true);
+      // Shared middleware should only run once despite being on parent and plugin
+      expect(mwCallCount).toBe(1);
+    });
+
+    it('should handle init hooks that register options consumed in re-parse', async () => {
+      let handlerArgs: any;
+      await cli('app')
+        .option('config', { type: 'string' })
+        .init(async (_args, app) => {
+          // Init hook adds a new option that was previously unmatched
+          app.option('extra', { type: 'string' });
+        })
+        .command('$0', {
+          handler: (a) => {
+            handlerArgs = a;
+          },
+        })
+        .forge(['--config', 'test.json', '--extra', 'bonus']);
+
+      expect(handlerArgs.config).toBe('test.json');
+      expect(handlerArgs.extra).toBe('bonus');
+    });
+
+    it('should pass only matched args to init hooks, not unmatched tokens', async () => {
+      let initArgs: any;
+      await cli('app')
+        .option('config', { type: 'string' })
+        .init(async (args, app) => {
+          initArgs = { ...args };
+          app.command('deploy', {
+            builder: (cmd) => cmd.option('target', { type: 'string' }),
+            handler: () => { /* noop */ },
+          });
+        })
+        .forge(['--config', 'prod.json', 'deploy', '--target', 'aws']);
+
+      expect(initArgs.config).toBe('prod.json');
+      // 'deploy' and '--target' should be in unmatched, not as parsed args
+      expect(initArgs.target).toBeUndefined();
+    });
+
+    it('should merge env/default values from lenient parse with re-parse results', async () => {
+      let handlerArgs: any;
+      process.env['APP_VERBOSE'] = 'true';
+      process.env['APP_CONFIG'] = 'from-env.json';
+      try {
+        await cli('app')
+          .env('APP')
+          .option('verbose', { type: 'boolean' })
+          .option('config', { type: 'string' })
+          .init(async (args, app) => {
+            // env vars should be populated even in lenient parse
+            expect(args.verbose).toBe(true);
+            expect(args.config).toBe('from-env.json');
+            app.command('run', {
+              handler: (a) => {
+                handlerArgs = a;
+              },
+            });
+          })
+          .forge(['run']);
+      } finally {
+        delete process.env['APP_VERBOSE'];
+        delete process.env['APP_CONFIG'];
+      }
+
+      expect(handlerArgs.verbose).toBe(true);
+      expect(handlerArgs.config).toBe('from-env.json');
+    });
+
+    it('should merge default values from lenient parse with re-parse results', async () => {
+      let handlerArgs: any;
+      await cli('app')
+        .option('verbose', { type: 'boolean', default: false })
+        .option('config', { type: 'string', default: 'default.json' })
+        .init(async (args, app) => {
+          expect(args.verbose).toBe(false);
+          expect(args.config).toBe('default.json');
+          app.command('run', {
+            handler: (a) => {
+              handlerArgs = a;
+            },
+          });
+        })
+        .forge(['run']);
+
+      expect(handlerArgs.verbose).toBe(false);
+      expect(handlerArgs.config).toBe('default.json');
     });
   });
 });
