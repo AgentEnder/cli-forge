@@ -289,6 +289,10 @@ export class InternalCLI<
       }
     } else if (keyOrCommand instanceof InternalCLI) {
       const cmd = keyOrCommand;
+      if (cmd.name === '$0') {
+        this.withRootCommandConfiguration(cmd.configuration as any);
+        return this as any;
+      }
       cmd._parent = this;
       this.registeredCommands[cmd.name] = cmd;
       if (cmd.configuration?.alias) {
@@ -308,17 +312,7 @@ export class InternalCLI<
   commands(...a0: Command[] | Command[][]): any {
     const commands = a0.flat();
     for (const val of commands) {
-      if (val instanceof InternalCLI) {
-        val._parent = this;
-        this.registeredCommands[val.name] = val;
-        // Include any options that were defined via cli(...).option() instead of via builder
-        this.parser.augment(val.parser);
-      } else {
-        const { name, ...configuration } = val as {
-          name: string;
-        } & CLICommandOptions<any, any>;
-        this.command(name, configuration);
-      }
+      this.command(val);
     }
     return this;
   }
