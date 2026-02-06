@@ -98,13 +98,6 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
   strict?: boolean;
 
   /**
-   * When set to true, skips the unmatchedParser callback and all validation.
-   * Unmatched arguments are collected into the `unmatched` array.
-   * Env vars, config files, and defaults are still applied.
-   */
-  lenient?: boolean;
-
-  /**
    * When set to true (default), automatically allows options to be used with both camelCase and dashed formats.
    * For example, an option named "someFlag" will accept both --someFlag and --some-flag.
    * Set to false to disable this automatic aliasing behavior.
@@ -199,7 +192,6 @@ export class ArgvParser<
       extraParsers: {},
       unmatchedParser: () => false,
       strict: false,
-      lenient: false,
       stripDashed: true,
       ...options,
     } as Required<ParserOptions<TArgs>>;
@@ -579,7 +571,7 @@ export class ArgvParser<
         );
         // Handles unmatched flags - only unmatched if NONE of the keys match
         if (uniqueConfiguredKeys.length === 0) {
-          if (!this.options.lenient && this.options.unmatchedParser(arg, argvClone, this)) {
+          if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
           }
@@ -627,7 +619,7 @@ export class ArgvParser<
           result[configuration.key] = value;
           matchedPositionals++;
         } else {
-          if (!this.options.lenient && this.options.unmatchedParser(arg, argvClone, this)) {
+          if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
           }
@@ -637,9 +629,6 @@ export class ArgvParser<
       }
     }
 
-    if (this.options.lenient) {
-      return this.normalizeOptions(result) as TArgs;
-    }
     return this.validateAndNormalizeResults(result) as TArgs;
   }
 
@@ -932,6 +921,12 @@ export class ArgvParser<
     clone.localizationDictionary = this.localizationDictionary;
     clone.localizationLocale = this.localizationLocale;
     clone.localizationFunction = this.localizationFunction;
+    clone.envPrefix = this.envPrefix;
+    clone.shouldReadFromEnv = this.shouldReadFromEnv;
+    clone.shouldReflectEnv = this.shouldReflectEnv;
+    clone.configuredConfigurationProviders = [
+      ...this.configuredConfigurationProviders,
+    ];
 
     return clone;
   }

@@ -25,22 +25,6 @@ export type ComposableBuilder<
   init: CLI<TInit, THandlerReturn, TChildren, TParent>
 ) => CLI<TInit & TArgs2, THandlerReturn, TChildren & TAddedChildren, TParent>;
 
-type RecordedOp = { method: string; args: any[] };
-
-function createRecordingProxy(): { proxy: any; operations: RecordedOp[] } {
-  const operations: RecordedOp[] = [];
-  const handler: ProxyHandler<object> = {
-    get(_target, prop) {
-      return (...args: any[]) => {
-        operations.push({ method: prop as string, args });
-        return proxy;
-      };
-    },
-  };
-  const proxy = new Proxy({}, handler);
-  return { proxy, operations };
-}
-
 /**
  * Creates a composable builder function that can be used with `chain`.
  * Can be used to add options, commands, or any other CLI modifications.
@@ -63,7 +47,18 @@ export function makeComposableBuilder<
     init: CLI<ParsedArgs, any, {}, any>
   ) => CLI<TArgs2, any, TChildren2, any>
 ) {
-  const { proxy, operations } = createRecordingProxy();
+  // Run builder once against a recording proxy to capture operations.
+  // Replaying these ensures inline closures (e.g. middleware) keep stable
+  // references across applications, enabling Set-based deduplication.
+  const operations: { method: string; args: any[] }[] = [];
+  const proxy = new Proxy({} as CLI, {
+    get(_target, prop) {
+      return (...args: any[]) => {
+        operations.push({ method: prop as string, args });
+        return proxy;
+      };
+    },
+  });
   fn(proxy);
 
   return <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(

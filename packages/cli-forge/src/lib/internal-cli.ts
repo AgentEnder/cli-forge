@@ -450,10 +450,13 @@ export class InternalCLI<
   }
 
   init(
-    callback: (args: TArgs, cli: any) => Promise<void>
-  ): any {
+    callback: (
+      args: TArgs,
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>
+    ) => Promise<void>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.registeredInitHooks.push(callback);
-    return this;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
   /**
@@ -821,47 +824,44 @@ export class InternalCLI<
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
 
+      // If init hooks are registered, do a two-pass parse:
+      // 1. Parse known options (skip command resolution) to get args for hooks
+      // 2. Run init hooks so they can register commands/options
+      // 3. Re-parse only the unmatched tokens with the augmented CLI
+      // 4. Merge first-pass matched args with re-parse results
+      let firstPassArgs: TArgs | undefined;
       if (this.registeredInitHooks.length > 0) {
-        // Phase 1: Lenient parse — resolve known options, collect unmatched
-        const lenientParser = this.parser.clone({
-          ...this.parser.options,
-          lenient: true,
-        });
-        const partialArgs = lenientParser.parse(args);
+        firstPassArgs = this.parser
+          .clone({
+            ...this.parser.options,
+            unmatchedParser: () => false,
+            strict: false,
+          })
+          .parse(args) as TArgs;
 
-        // Phase 2: Run init hooks — can register commands, options, middleware
         for (const hook of this.registeredInitHooks) {
-          await hook(partialArgs as TArgs, this as any);
+          await hook(
+            firstPassArgs,
+            this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>
+          );
         }
 
-        // Phase 3: Full parse with augmented CLI (commands/options added by init hooks)
-        // Reset command chain since the full parse will rebuild it
-        this.commandChain = [];
-        try {
-          const builtCli =
-            this.configuration?.builder?.(this as any) ?? this;
-          argv = (builtCli as InternalCLI).parser.parse(args) as any;
-        } catch (e) {
-          if (e instanceof ValidationFailedError) {
-            argv = e.partialArgV as TArgs;
-            validationFailedError = e;
-          } else {
-            throw e;
-          }
-        }
-      } else {
-        // No init hooks — existing parse path, completely unchanged
-        try {
-          const builtCli =
-            this.configuration?.builder?.(this as any) ?? this;
-          argv = (builtCli as InternalCLI).parser.parse(args) as any;
-        } catch (e) {
-          if (e instanceof ValidationFailedError) {
-            argv = e.partialArgV as TArgs;
-            validationFailedError = e;
-          } else {
-            throw e;
-          }
+        args = (firstPassArgs as any).unmatched as string[];
+      }
+
+      try {
+        const builtCli =
+          this.configuration?.builder?.(this as any) ?? this;
+        const parsed = (builtCli as InternalCLI).parser.parse(args);
+        argv = (firstPassArgs ? { ...firstPassArgs, ...parsed } : parsed) as any;
+      } catch (e) {
+        if (e instanceof ValidationFailedError) {
+          argv = (firstPassArgs
+            ? { ...firstPassArgs, ...(e.partialArgV as any) }
+            : e.partialArgV) as TArgs;
+          validationFailedError = e;
+        } else {
+          throw e;
         }
       }
 
