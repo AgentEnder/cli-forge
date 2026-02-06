@@ -28,11 +28,18 @@ A new `.init()` lifecycle hook that introduces a two-pass parse within `forge()`
 
 ```
 forge(argv)
-  ├─ Pass 1: shallow parse (options only, skip command resolution)
-  │   └─ Only runs if init hooks are registered
-  ├─ Init hooks run sequentially with partial args + CLI reference
+  ├─ Parse: full parse, but lenient (no validation, unmatched args collected)
+  │   Result: matched args + unmatched tokens
+  │   └─ Only uses lenient mode if init hooks are registered
+  │
+  ├─ Init hooks run sequentially with matched args + CLI reference
   │   └─ Can call cli.command(), cli.option(), cli.middleware(), etc.
-  ├─ Pass 2: full parse (current behavior — unmatchedParser, validation, etc.)
+  │
+  ├─ Re-parse: ONLY the previously-unmatched tokens
+  │   └─ Resolves newly registered commands/options
+  │   └─ Merges results into matched args from first parse
+  │
+  ├─ Validation (once, on merged results)
   ├─ Middleware
   └─ Handler
 ```
@@ -53,46 +60,64 @@ cli('my-app')
 
 ### Behavior
 
-- **Pass 1 is conditional**: If no `.init()` hooks are registered, `forge()` goes straight to the current parse path. Zero overhead for existing users.
-- **Pass 1 is shallow**: Uses the parser with command resolution disabled — unmatched args are silently ignored, no validation runs. Only extracts values for currently-registered options.
-- **Multiple init hooks**: Run sequentially in registration order. All share the same pass 1 result.
-- **Init hooks are async**: The callback receives `(args, cli)` where `args` is the partial parse result and `cli` is the current CLI instance for mutation.
-- **Pass 2 is unchanged**: After all init hooks complete, the existing `this.parser.parse(args)` runs with the full command set available.
+- **Conditional**: If no `.init()` hooks are registered, `forge()` goes straight to the current parse path. Zero overhead for existing users.
+- **Lenient first parse**: The initial parse resolves all currently-registered options and collects unmatched tokens (unknown flags, unresolved commands) without erroring. Skips validation. Applies env vars, config files, and defaults as normal (so `--config` can come from env).
+- **Multiple init hooks**: Run sequentially in registration order. All share the same first-parse result.
+- **Init hooks are async**: The callback receives `(args, cli)` where `args` is the parsed result (matched options only) and `cli` is the current CLI instance for mutation.
+- **Re-parse is incremental**: Only the unmatched tokens from the first parse are fed back through the parser. This avoids re-resolving already-matched flags, re-reading config files, or re-applying env vars. Results are merged with the first parse.
+- **Validation runs once**: After merging first parse + re-parse results, validation runs a single time on the complete args.
 
 ### Implementation Notes
 
-#### Pass 1: Shallow Parse
+#### Lenient Parse Mode
 
 The parser needs a mode that:
 - Resolves registered options (flags, positionals with known keys)
+- Collects unmatched tokens (unknown flags, unresolved commands) into an array instead of erroring
 - Skips the `unmatchedParser` callback (no command chain resolution)
 - Skips validation (`required`, `choices`, `validate`, `conflicts`, `implies`, `strict`)
 - Applies env vars, config files, and defaults as normal (so `--config` can come from env)
 
 This could be implemented as:
-- A new `parse()` option: `this.parser.parse(args, { shallow: true })`
-- Or a separate method: `this.parser.shallowParse(args)`
+- A new `parse()` option: `this.parser.parse(args, { lenient: true })`
+- Or a separate method: `this.parser.lenientParse(args)`
+
+Returns: `{ args: TArgs, unmatched: string[] }` — the matched args plus the raw tokens that weren't consumed.
+
+#### Incremental Re-parse
+
+After init hooks register new commands/options, only the unmatched tokens are re-parsed:
+- `this.parser.parse(unmatched)` — uses the now-augmented parser with new commands/options
+- `unmatchedParser` fires normally (resolving plugin commands)
+- Results are merged with the first parse: `{ ...firstParseArgs, ...reparseArgs }`
+- Validation runs once on the merged result
 
 #### Changes to `forge()`
 
 ```ts
 forge = (args: string[] = hideBin(process.argv)) =>
   this.withErrorHandlers(async () => {
-    // NEW: Init phase (only if hooks registered)
     if (this.registeredInitHooks.length > 0) {
-      const partialArgs = this.parser.parse(args, { shallow: true });
+      // Lenient parse: resolve known options, collect unmatched tokens
+      const { args: partialArgs, unmatched } = this.parser.parse(args, {
+        lenient: true,
+      });
+
+      // Run init hooks — can register commands, options, middleware
       for (const hook of this.registeredInitHooks) {
         await hook(partialArgs, this);
       }
+
+      // Re-parse ONLY unmatched tokens with augmented parser
+      const reparseResult = this.parser.parse(unmatched);
+      const argv = { ...partialArgs, ...reparseResult };
+
+      // Continue with normal flow (version/help checks, middleware, handler)
+      // ...
+    } else {
+      // No init hooks: existing parse path, completely unchanged
+      // ...
     }
-
-    // EXISTING: Full parse (unchanged)
-    let argv, validationFailedError;
-    try {
-      argv = this.parser.parse(args);
-    } catch (e) { /* ... existing error handling ... */ }
-
-    // ... rest of forge() unchanged ...
   });
 ```
 
@@ -298,6 +323,14 @@ chain(cli('my-app'), globalOptions)
 
 // Usage:
 //   my-app --config ./my-config.js test --watch -v
+//
+// Parse flow:
+//   1. Lenient parse: --config and -v matched → { config: './my-config.js', verbose: true }
+//      Unmatched tokens: ['test', '--watch']
+//   2. Init hook loads config, registers 'test' command with --watch option
+//   3. Re-parse ['test', '--watch'] → command chain resolves, --watch matched
+//   4. Merged args: { config: '...', verbose: true, watch: true }
+//   5. Validation → Middleware → test handler
 ```
 
 ---
