@@ -172,12 +172,12 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --baz     - (a, b)                             
-        --qux     - [required]                         
-        --quux    - [default: a]                       
-       
+        --baz     - (a, b)
+        --qux     - [required]
+        --quux    - [default: a]
+
       Run \`test [command] --help\` for more information on a command"
     `);
   });
@@ -205,10 +205,10 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --baz    
-        --bar    
+        --baz
+        --bar
         --foo    "
     `);
   });
@@ -227,11 +227,28 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
         --bar    "
     `);
     expect(process.exitCode).toBe(1);
+  });
+
+  it('should support subcommands with positional args', async () => {
+    const args = await cli('test')
+      .command(
+        cli('sub', {
+          builder: (argv) => argv.positional('name', { type: 'string' }),
+          handler: (args) => args,
+        })
+      )
+      .forge(['sub', 'example', 'fred']);
+    expect(args).toMatchInlineSnapshot(`
+      {
+        "name": "fred",
+        "unmatched": [],
+      }
+    `);
   });
 
   it('should support async handlers', async () => {
@@ -284,9 +301,9 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --quux   
+        --quux
 
       Advanced:
         --baz
@@ -579,5 +596,83 @@ describe('cliForge', () => {
     expect(coerceCalls).toEqual([]);
     // The default value should be used as-is, without coercion
     expect(handlerArgs.flag).toBe('default-value');
+  });
+
+  describe('middleware deduplication', () => {
+    it('should not run the same middleware twice when registered with same reference', async () => {
+      let callCount = 0;
+      const mw = (args: any) => {
+        callCount++;
+        return args;
+      };
+      await cli('test')
+        .middleware(mw)
+        .middleware(mw)
+        .command('run', {
+          handler: () => {},
+        })
+        .forge(['run']);
+      expect(callCount).toBe(1);
+    });
+
+    it('should run different middleware functions even with same body', async () => {
+      const calls: string[] = [];
+      const mw1 = (args: any) => {
+        calls.push('mw1');
+        return args;
+      };
+      const mw2 = (args: any) => {
+        calls.push('mw2');
+        return args;
+      };
+      await cli('test')
+        .middleware(mw1)
+        .middleware(mw2)
+        .command('run', {
+          handler: () => {},
+        })
+        .forge(['run']);
+      expect(calls).toEqual(['mw1', 'mw2']);
+    });
+
+    it('should preserve middleware insertion order', async () => {
+      const order: number[] = [];
+      const mw1 = (args: any) => {
+        order.push(1);
+        return args;
+      };
+      const mw2 = (args: any) => {
+        order.push(2);
+        return args;
+      };
+      const mw3 = (args: any) => {
+        order.push(3);
+        return args;
+      };
+      await cli('test')
+        .middleware(mw1)
+        .middleware(mw2)
+        .middleware(mw3)
+        .middleware(mw1) // duplicate — should not change order
+        .command('run', { handler: () => {} })
+        .forge(['run']);
+      expect(order).toEqual([1, 2, 3]);
+    });
+
+    it('should deduplicate middleware across parent and child commands', async () => {
+      let callCount = 0;
+      const sharedMw = (args: any) => {
+        callCount++;
+        return args;
+      };
+      await cli('test')
+        .middleware(sharedMw)
+        .command('child', {
+          builder: (cmd) => cmd.middleware(sharedMw),
+          handler: () => {},
+        })
+        .forge(['child']);
+      expect(callCount).toBe(1);
+    });
   });
 });

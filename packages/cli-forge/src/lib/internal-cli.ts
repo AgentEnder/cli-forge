@@ -85,9 +85,9 @@ export class InternalCLI<
     },
   ];
 
-  private registeredMiddleware: Array<
+  private registeredMiddleware = new Set<
     (args: TArgs) => void | unknown | Promise<void> | Promise<unknown>
-  > = [];
+  >();
 
   /**
    * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
@@ -438,7 +438,7 @@ export class InternalCLI<
     TChildren,
     TParent
   > {
-    this.registeredMiddleware.push(callback);
+    this.registeredMiddleware.add(callback);
     // If middleware returns void, TArgs doesn't change...
     // If it returns something, we need to merge it into TArgs...
     // that's not here though, its where we apply the middleware results.
@@ -454,12 +454,14 @@ export class InternalCLI<
     args: T,
     originalArgV: string[]
   ): Promise<T> {
-    const middlewares = [...this.registeredMiddleware];
+    const middlewares = new Set<(args: any) => void>(this.registeredMiddleware);
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     let cmd: InternalCLI<any, any, any, any> = this;
     for (const command of this.commandChain) {
       cmd = cmd.registeredCommands[command];
-      middlewares.push(...cmd.registeredMiddleware);
+      for (const mw of cmd.registeredMiddleware) {
+        middlewares.add(mw);
+      }
     }
     try {
       if (cmd.requiresCommand) {
@@ -700,7 +702,13 @@ export class InternalCLI<
       chain.unshift(current);
       current = current._parent;
     }
-    return chain.flatMap((c) => c.registeredMiddleware);
+    const seen = new Set<(args: any) => unknown | Promise<unknown>>();
+    for (const c of chain) {
+      for (const mw of c.registeredMiddleware) {
+        seen.add(mw);
+      }
+    }
+    return [...seen];
   }
 
   enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
