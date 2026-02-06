@@ -598,6 +598,122 @@ describe('cliForge', () => {
     expect(handlerArgs.flag).toBe('default-value');
   });
 
+  describe('init hooks', () => {
+    it('should run init hook before command resolution', async () => {
+      let handlerCalled = false;
+      await cli('test')
+        .option('config', { type: 'string' })
+        .init(async (args, app) => {
+          expect(args.config).toBe('test.json');
+          app.command('serve', {
+            handler: () => {
+              handlerCalled = true;
+            },
+          });
+        })
+        .forge(['--config', 'test.json', 'serve']);
+      expect(handlerCalled).toBe(true);
+    });
+
+    it('should pass matched args to init hook and resolve plugin commands', async () => {
+      let handlerArgs: any;
+      await cli('test')
+        .option('verbose', { type: 'boolean' })
+        .init(async (args, app) => {
+          expect(args.verbose).toBe(true);
+          app.command('deploy', {
+            builder: (cmd) => cmd.option('target', { type: 'string' }),
+            handler: (a) => {
+              handlerArgs = a;
+            },
+          });
+        })
+        .forge(['deploy', '--verbose', '--target', 'production']);
+      expect(handlerArgs.verbose).toBe(true);
+      expect(handlerArgs.target).toBe('production');
+    });
+
+    it('should run multiple init hooks sequentially', async () => {
+      const order: number[] = [];
+      await cli('test')
+        .option('config', { type: 'string' })
+        .init(async (_args, app) => {
+          order.push(1);
+          app.command('first', { handler: () => {} });
+        })
+        .init(async (_args, app) => {
+          order.push(2);
+          app.command('second', { handler: () => {} });
+        })
+        .forge(['first']);
+      expect(order).toEqual([1, 2]);
+    });
+
+    it('should skip init phase when no init hooks are registered', async () => {
+      let handlerCalled = false;
+      await cli('test')
+        .option('name', { type: 'string' })
+        .command('$0', {
+          handler: (args) => {
+            handlerCalled = true;
+            expect(args.name).toBe('world');
+          },
+        })
+        .forge(['--name', 'world']);
+      expect(handlerCalled).toBe(true);
+    });
+
+    it('should support async init hooks', async () => {
+      let resolved = false;
+      await cli('test')
+        .init(async (_args, app) => {
+          await new Promise((r) => setTimeout(r, 10));
+          resolved = true;
+          app.command('run', { handler: () => {} });
+        })
+        .forge(['run']);
+      expect(resolved).toBe(true);
+    });
+
+    it('should handle init hook errors through error handler', async () => {
+      let caughtError: any;
+      try {
+        await cli('test')
+          .errorHandler((e) => {
+            caughtError = e;
+          })
+          .init(async () => {
+            throw new Error('init failed');
+          })
+          .forge([]);
+      } catch {
+        // withErrorHandlers re-throws after invoking handlers
+      }
+      expect(caughtError).toBeDefined();
+      expect(caughtError.message).toBe('init failed');
+    });
+
+    it('should work with the full plugin loading pattern', async () => {
+      let handlerArgs: any;
+
+      await cli('app')
+        .option('config', { type: 'string' })
+        .init(async (args, app) => {
+          if (args.config === 'with-plugins') {
+            app.command('plugin-cmd', {
+              builder: (cmd) => cmd.option('watch', { type: 'boolean' }),
+              handler: (a) => {
+                handlerArgs = a;
+              },
+            });
+          }
+        })
+        .forge(['--config', 'with-plugins', 'plugin-cmd', '--watch']);
+      expect(handlerArgs.config).toBe('with-plugins');
+      expect(handlerArgs.watch).toBe(true);
+    });
+  });
+
   describe('middleware deduplication', () => {
     it('should not run the same middleware twice when registered with same reference', async () => {
       let callCount = 0;

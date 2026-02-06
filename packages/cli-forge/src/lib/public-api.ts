@@ -782,6 +782,21 @@ export interface CLI<
   >;
 
   /**
+   * Registers an init hook that runs before command resolution.
+   * Init hooks receive partially-parsed args (from currently-registered options)
+   * and can modify the CLI (register commands, options, middleware) before the
+   * full parse runs. This enables plugin loading from config files.
+   *
+   * @param callback Async function receiving (args, cli). Mutate cli to add commands/options.
+   */
+  init(
+    callback: (
+      args: TArgs,
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>
+    ) => Promise<void>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
    * Parses argv and executes the CLI
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
