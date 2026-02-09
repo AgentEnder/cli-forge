@@ -791,9 +791,9 @@ export interface CLI<
    */
   init(
     callback: (
-      args: TArgs,
-      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>
-    ) => Promise<void>
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
+      args: TArgs
+    ) => Promise<void> | void
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
