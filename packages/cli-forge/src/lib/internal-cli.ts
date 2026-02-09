@@ -90,7 +90,7 @@ export class InternalCLI<
   >();
 
   private registeredInitHooks: Array<
-    (args: TArgs, cli: any) => Promise<void>
+    (cli: any, args: TArgs) => Promise<void> | void
   > = [];
 
   /**
@@ -451,9 +451,9 @@ export class InternalCLI<
 
   init(
     callback: (
-      args: TArgs,
-      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>
-    ) => Promise<void>
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
+      args: TArgs
+    ) => Promise<void> | void
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.registeredInitHooks.push(callback);
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
@@ -824,51 +824,94 @@ export class InternalCLI<
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
 
-      // If init hooks are registered, do a two-pass parse:
-      // 1. Parse known options (skip command resolution) to get args for hooks
-      // 2. Run init hooks so they can register commands/options
-      // 3. Re-parse only the unmatched tokens with the augmented CLI
-      // 4. Merge first-pass matched args with re-parse results
-      let firstPassArgs: TArgs | undefined;
-      if (this.registeredInitHooks.length > 0) {
-        firstPassArgs = this.parser
+      // Run root builder (may register options, init hooks, commands)
+      this.configuration?.builder?.(this as any);
+
+      // Merge helper: accumulate defined values without overwriting
+      const mergeNew = (target: any, source: any) => {
+        for (const [key, value] of Object.entries(source)) {
+          if (key !== 'unmatched' && value !== undefined && target[key] === undefined) {
+            target[key] = value;
+          }
+        }
+      };
+
+      // Iterative command discovery with init hooks.
+      // Each level: non-strict parse filtered args → merge into
+      // accumulated result → run init hooks → find next command
+      // in unmatched tokens → filter down. Builders stay lazy.
+      let currentArgs = [...args];
+      // eslint-disable-next-line @typescript-eslint/no-this-alias
+      let currentCmd: InternalCLI<any, any, any, any> = this;
+      const mergedArgs: any = {};
+
+      // eslint-disable-next-line no-constant-condition
+      while (true) {
+        // Non-strict parse to get current arg values for init hooks.
+        // Seeded with mergedArgs so required options parsed at earlier
+        // levels satisfy validation.
+        const parsed = this.parser
           .clone({
             ...this.parser.options,
             unmatchedParser: () => false,
             strict: false,
+            validate: false,
           })
-          .parse(args) as TArgs;
+          .parse(currentArgs, mergedArgs) as any;
 
-        for (const hook of this.registeredInitHooks) {
-          await hook(
-            firstPassArgs,
-            this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>
-          );
+        mergeNew(mergedArgs, parsed);
+
+        // Run init hooks with the full accumulated args
+        for (const hook of currentCmd.registeredInitHooks) {
+          await hook(currentCmd as any, mergedArgs);
         }
 
-        args = (firstPassArgs as any).unmatched as string[];
+        // Find the next command in unmatched tokens
+        const unmatched: string[] = parsed.unmatched ?? [];
+        let nextCmd: InternalCLI<any, any, any, any> | null = null;
+        const remainingArgs: string[] = [];
+
+        for (const token of unmatched) {
+          if (!nextCmd && !token.startsWith('-')) {
+            const cmd = currentCmd.registeredCommands[token];
+            if (cmd && cmd.configuration) {
+              cmd.parser = this.parser;
+              cmd.configuration.builder?.(cmd as any);
+              this.commandChain.push(token);
+              nextCmd = cmd;
+              continue;
+            }
+          }
+          remainingArgs.push(token);
+        }
+
+        if (!nextCmd) {
+          currentArgs = unmatched;
+          break;
+        }
+        currentArgs = remainingArgs;
+        currentCmd = nextCmd;
       }
 
+      // All builders and init hooks have run. The parser now has
+      // all options registered. Parse the remaining unmatched tokens
+      // seeded with the accumulated values from the discovery loop.
+      // The alreadyParsed values ensure proper required-option
+      // validation and prevent positional re-consumption.
       try {
-        const builtCli =
-          this.configuration?.builder?.(this as any) ?? this;
-        const parsed = (builtCli as InternalCLI).parser.parse(args);
-        argv = (firstPassArgs ? { ...firstPassArgs, ...parsed } : parsed) as any;
+        argv = this.parser
+          .clone({
+            ...this.parser.options,
+            unmatchedParser: () => false,
+          })
+          .parse(currentArgs, mergedArgs) as any;
       } catch (e) {
         if (e instanceof ValidationFailedError) {
-          argv = (firstPassArgs
-            ? { ...firstPassArgs, ...(e.partialArgV as any) }
-            : e.partialArgV) as TArgs;
+          argv = e.partialArgV as any;
           validationFailedError = e;
         } else {
           throw e;
         }
-      }
-
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any, any, any> = this;
-      for (const command of this.commandChain) {
-        currentCommand = currentCommand.registeredCommands[command];
       }
 
       if (argv.version) {

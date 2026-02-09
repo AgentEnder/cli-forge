@@ -605,7 +605,7 @@ describe('cliForge', () => {
       let handlerCalled = false;
       await cli('test')
         .option('config', { type: 'string' })
-        .init(async (args, app) => {
+        .init(async (app, args) => {
           expect(args.config).toBe('test.json');
           app.command('serve', {
             handler: () => {
@@ -621,13 +621,21 @@ describe('cliForge', () => {
       const order: number[] = [];
       await cli('test')
         .option('config', { type: 'string' })
-        .init(async (_args, app) => {
+        .init(async (app) => {
           order.push(1);
-          app.command('first', { handler: () => { /* noop */ } });
+          app.command('first', {
+            handler: () => {
+              /* noop */
+            },
+          });
         })
-        .init(async (_args, app) => {
+        .init(async (app) => {
           order.push(2);
-          app.command('second', { handler: () => { /* noop */ } });
+          app.command('second', {
+            handler: () => {
+              /* noop */
+            },
+          });
         })
         .forge(['first']);
       expect(order).toEqual([1, 2]);
@@ -650,10 +658,14 @@ describe('cliForge', () => {
     it('should support async init hooks', async () => {
       let resolved = false;
       await cli('test')
-        .init(async (_args, app) => {
+        .init(async (app) => {
           await new Promise((r) => setTimeout(r, 10));
           resolved = true;
-          app.command('run', { handler: () => { /* noop */ } });
+          app.command('run', {
+            handler: () => {
+              /* noop */
+            },
+          });
         })
         .forge(['run']);
       expect(resolved).toBe(true);
@@ -677,6 +689,136 @@ describe('cliForge', () => {
       expect(caughtError.message).toBe('init failed');
     });
 
+    it('should be able to be specified in `builder`', async () => {
+      let initRan = false;
+      const app = cli('foo', {
+        builder: (cli) =>
+          cli.init(() => {
+            initRan = true;
+          }),
+        handler: () => {
+          /* noop */
+        },
+      });
+      await app.forge();
+      expect(initRan).toBeTruthy();
+    });
+  });
+
+  describe('subcommand init hooks', () => {
+    it('should run init hooks registered in a subcommand builder', async () => {
+      let initRan = false;
+      let handlerArgs: any;
+      await cli('app')
+        .command('serve', {
+          builder: (cmd) =>
+            cmd
+              .option('port', { type: 'number' })
+              .init((subcli, args) => {
+                initRan = true;
+                subcli.option('dynamic', { type: 'string' });
+              }),
+          handler: (args) => {
+            handlerArgs = args;
+          },
+        })
+        .forge(['serve', '--port', '8080', '--dynamic', 'hello']);
+
+      expect(initRan).toBe(true);
+      expect(handlerArgs.port).toBe(8080);
+      expect(handlerArgs.dynamic).toBe('hello');
+    });
+
+    it('should pass current parsed args to subcommand init hooks', async () => {
+      let initArgs: any;
+      await cli('app')
+        .option('verbose', { type: 'boolean' })
+        .command('deploy', {
+          builder: (cmd) =>
+            cmd
+              .option('target', { type: 'string' })
+              .init((_cli, args) => {
+                initArgs = { ...args };
+              }),
+          handler: () => {
+            /* noop */
+          },
+        })
+        // Note: command name must come before boolean flags to avoid
+        // the boolean parser consuming it as a value
+        .forge(['deploy', '--verbose', '--target', 'aws']);
+
+      expect(initArgs.verbose).toBe(true);
+      expect(initArgs.target).toBe('aws');
+    });
+
+    it('should support nested subcommand init hooks', async () => {
+      const hookOrder: string[] = [];
+      let handlerArgs: any;
+      await cli('app')
+        .command('db', {
+          builder: (cmd) =>
+            cmd
+              .init(() => {
+                hookOrder.push('db');
+              })
+              .command('migrate', {
+                builder: (sub) =>
+                  sub
+                    .option('direction', { type: 'string' })
+                    .init((subcli) => {
+                      hookOrder.push('migrate');
+                      subcli.option('dry-run', { type: 'boolean' });
+                    }),
+                handler: (args) => {
+                  handlerArgs = args;
+                },
+              }),
+          handler: () => {
+            /* noop */
+          },
+        })
+        .forge(['db', 'migrate', '--direction', 'up', '--dry-run']);
+
+      expect(hookOrder).toEqual(['db', 'migrate']);
+      expect(handlerArgs.direction).toBe('up');
+      expect(handlerArgs['dry-run']).toBe(true);
+    });
+
+    it('should work when both root and subcommand have init hooks', async () => {
+      const hookOrder: string[] = [];
+      let handlerArgs: any;
+      await cli('app')
+        .option('config', { type: 'string' })
+        .init((app) => {
+          hookOrder.push('root');
+          app.command('serve', {
+            builder: (cmd) =>
+              cmd
+                .option('port', { type: 'number' })
+                .init((subcli) => {
+                  hookOrder.push('serve');
+                  subcli.option('hot-reload', { type: 'boolean' });
+                }),
+            handler: (args) => {
+              handlerArgs = args;
+            },
+          });
+        })
+        .forge([
+          '--config',
+          'app.json',
+          'serve',
+          '--port',
+          '3000',
+          '--hot-reload',
+        ]);
+
+      expect(hookOrder).toEqual(['root', 'serve']);
+      expect(handlerArgs.config).toBe('app.json');
+      expect(handlerArgs.port).toBe(3000);
+      expect(handlerArgs['hot-reload']).toBe(true);
+    });
   });
 
   describe('middleware deduplication', () => {
@@ -690,7 +832,9 @@ describe('cliForge', () => {
         .middleware(mw)
         .middleware(mw)
         .command('run', {
-          handler: () => { /* noop */ },
+          handler: () => {
+            /* noop */
+          },
         })
         .forge(['run']);
       expect(callCount).toBe(1);
@@ -710,7 +854,9 @@ describe('cliForge', () => {
         .middleware(mw1)
         .middleware(mw2)
         .command('run', {
-          handler: () => { /* noop */ },
+          handler: () => {
+            /* noop */
+          },
         })
         .forge(['run']);
       expect(calls).toEqual(['mw1', 'mw2']);
@@ -735,7 +881,11 @@ describe('cliForge', () => {
         .middleware(mw2)
         .middleware(mw3)
         .middleware(mw1) // duplicate — should not change order
-        .command('run', { handler: () => { /* noop */ } })
+        .command('run', {
+          handler: () => {
+            /* noop */
+          },
+        })
         .forge(['run']);
       expect(order).toEqual([1, 2, 3]);
     });
@@ -750,7 +900,9 @@ describe('cliForge', () => {
         .middleware(sharedMw)
         .command('child', {
           builder: (cmd) => cmd.middleware(sharedMw),
-          handler: () => { /* noop */ },
+          handler: () => {
+            /* noop */
+          },
         })
         .forge(['child']);
       expect(callCount).toBe(1);
@@ -774,16 +926,14 @@ describe('cliForge', () => {
         .option('config', { type: 'string' })
         .option('verbose', { type: 'boolean', alias: ['v'] })
         .middleware(sharedMw)
-        .init(async (args, app) => {
+        .init(async (app, args) => {
           expect(args.config).toBe('with-plugins');
           expect(args.verbose).toBe(true);
           // Plugin commands register options via builder so they work with
           // the shared parser during command resolution
           app.command('plugin-cmd', {
             builder: (cmd) =>
-              cmd
-                .middleware(sharedMw)
-                .option('watch', { type: 'boolean' }),
+              cmd.middleware(sharedMw).option('watch', { type: 'boolean' }),
             handler: (a) => {
               handlerArgs = a;
             },
@@ -809,7 +959,7 @@ describe('cliForge', () => {
       let handlerArgs: any;
       await cli('app')
         .option('config', { type: 'string' })
-        .init(async (_args, app) => {
+        .init(async (app) => {
           // Init hook adds a new option that was previously unmatched
           app.option('extra', { type: 'string' });
         })
@@ -828,11 +978,13 @@ describe('cliForge', () => {
       let initArgs: any;
       await cli('app')
         .option('config', { type: 'string' })
-        .init(async (args, app) => {
+        .init(async (app, args) => {
           initArgs = { ...args };
           app.command('deploy', {
             builder: (cmd) => cmd.option('target', { type: 'string' }),
-            handler: () => { /* noop */ },
+            handler: () => {
+              /* noop */
+            },
           });
         })
         .forge(['--config', 'prod.json', 'deploy', '--target', 'aws']);
@@ -851,7 +1003,7 @@ describe('cliForge', () => {
           .env('APP')
           .option('verbose', { type: 'boolean' })
           .option('config', { type: 'string' })
-          .init(async (args, app) => {
+          .init(async (app, args) => {
             // env vars should be populated even in lenient parse
             expect(args.verbose).toBe(true);
             expect(args.config).toBe('from-env.json');
@@ -876,7 +1028,7 @@ describe('cliForge', () => {
       await cli('app')
         .option('verbose', { type: 'boolean', default: false })
         .option('config', { type: 'string', default: 'default.json' })
-        .init(async (args, app) => {
+        .init(async (app, args) => {
           expect(args.verbose).toBe(false);
           expect(args.config).toBe('default.json');
           app.command('run', {
