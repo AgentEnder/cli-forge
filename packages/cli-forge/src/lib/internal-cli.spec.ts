@@ -703,30 +703,55 @@ describe('cliForge', () => {
       await app.forge();
       expect(initRan).toBeTruthy();
     });
+
+    it('should run middleware before init hooks', async () => {
+      let initReceivedArgs: any;
+      let handlerArgs: any;
+      await cli('app')
+        .option('env', { type: 'string' })
+        .middleware((args: any) => ({
+          ...args,
+          computed: `${args.env}-computed`,
+        }))
+        .init((app, args: any) => {
+          initReceivedArgs = { ...args };
+          if (args.computed === 'prod-computed') {
+            app.command('deploy', {
+              handler: (a) => {
+                handlerArgs = a;
+              },
+            });
+          }
+        })
+        .forge(['--env', 'prod', 'deploy']);
+
+      expect(initReceivedArgs.computed).toBe('prod-computed');
+      expect(handlerArgs).toBeDefined();
+      expect(handlerArgs.env).toBe('prod');
+    });
   });
 
   describe('subcommand init hooks', () => {
     it('should run init hooks registered in a subcommand builder', async () => {
       let initRan = false;
-      let handlerArgs: any;
-      await cli('app')
+      const parsed = await cli('app')
         .command('serve', {
           builder: (cmd) =>
-            cmd
-              .option('port', { type: 'number' })
-              .init((subcli, args) => {
-                initRan = true;
-                subcli.option('dynamic', { type: 'string' });
-              }),
-          handler: (args) => {
-            handlerArgs = args;
+            cmd.option('port', { type: 'number' }).init((subcli) => {
+              initRan = true;
+              subcli.option('dynamic', { type: 'string' });
+            }),
+          handler: () => {
+            // noop
           },
         })
         .forge(['serve', '--port', '8080', '--dynamic', 'hello']);
 
       expect(initRan).toBe(true);
-      expect(handlerArgs.port).toBe(8080);
-      expect(handlerArgs.dynamic).toBe('hello');
+      // parsed's typing is missing these flags since they
+      // are not on the root path, but they should be returned nonetheless
+      expect((parsed as unknown as { port: number }).port).toBe(8080);
+      expect((parsed as unknown as { dynamic: string }).dynamic).toBe('hello');
     });
 
     it('should pass current parsed args to subcommand init hooks', async () => {
@@ -735,11 +760,9 @@ describe('cliForge', () => {
         .option('verbose', { type: 'boolean' })
         .command('deploy', {
           builder: (cmd) =>
-            cmd
-              .option('target', { type: 'string' })
-              .init((_cli, args) => {
-                initArgs = { ...args };
-              }),
+            cmd.option('target', { type: 'string' }).init((_cli, args) => {
+              initArgs = { ...args };
+            }),
           handler: () => {
             /* noop */
           },
@@ -764,12 +787,10 @@ describe('cliForge', () => {
               })
               .command('migrate', {
                 builder: (sub) =>
-                  sub
-                    .option('direction', { type: 'string' })
-                    .init((subcli) => {
-                      hookOrder.push('migrate');
-                      subcli.option('dry-run', { type: 'boolean' });
-                    }),
+                  sub.option('direction', { type: 'string' }).init((subcli) => {
+                    hookOrder.push('migrate');
+                    subcli.option('dry-run', { type: 'boolean' });
+                  }),
                 handler: (args) => {
                   handlerArgs = args;
                 },
@@ -794,12 +815,10 @@ describe('cliForge', () => {
           hookOrder.push('root');
           app.command('serve', {
             builder: (cmd) =>
-              cmd
-                .option('port', { type: 'number' })
-                .init((subcli) => {
-                  hookOrder.push('serve');
-                  subcli.option('hot-reload', { type: 'boolean' });
-                }),
+              cmd.option('port', { type: 'number' }).init((subcli) => {
+                hookOrder.push('serve');
+                subcli.option('hot-reload', { type: 'boolean' });
+              }),
             handler: (args) => {
               handlerArgs = args;
             },
