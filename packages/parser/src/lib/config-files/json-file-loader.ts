@@ -19,19 +19,11 @@ export function getJsonFileConfigLoader<T>(
   }
 
   class JsonFileConfigLoader {
-    private seen = new Set<string>();
-
     resolve(configurationRoot: string) {
       const nearestFile = traverseForFile(filename, configurationRoot);
       if (!nearestFile || !nearestFile.endsWith('.json')) {
         return undefined;
       }
-      if (this.seen.has(nearestFile)) {
-        throw new Error(
-          `Circular reference detected in configuration file: ${nearestFile}. This is likely caused by an "extends" property pointing to a directory which doesn't contain a configuration file.`
-        );
-      }
-      this.seen.add(nearestFile);
       return nearestFile;
     }
 
