@@ -22,10 +22,15 @@ export type ConfigurationProvider<T> = {
 
 // Runs all the configuration loaders in order to resolve the configuration file.
 // Recurses if the configuration file extends another configuration file.
+// The `visited` map tracks resolved files per-loader to detect circular extends chains.
+// It is created fresh for each top-level call and passed through recursive extends resolution.
 export function resolveConfiguration<T>(
   configurationRoot: string,
-  loaders: ConfigurationProvider<T>[]
+  loaders: ConfigurationProvider<T>[],
+  visited?: Map<ConfigurationProvider<T>, Set<string>>
 ): T {
+  const visitedMap = visited ?? new Map();
+
   function loadConfiguration(
     filename: string,
     provider: ConfigurationProvider<T>
@@ -36,7 +41,8 @@ export function resolveConfiguration<T>(
         loaded.extends.startsWith('.')
           ? join(configurationRoot, loaded.extends)
           : loaded.extends,
-        loaders
+        loaders,
+        visitedMap
       );
       return { ...extended, ...loaded };
     }
@@ -47,6 +53,14 @@ export function resolveConfiguration<T>(
   for (const loader of loaders) {
     const filename = loader.resolve(configurationRoot);
     if (filename) {
+      const loaderVisited = visitedMap.get(loader) ?? new Set<string>();
+      if (loaderVisited.has(filename)) {
+        throw new Error(
+          `Circular reference detected in configuration file: ${filename}. This is likely caused by an "extends" property pointing to a directory which doesn't contain a configuration file.`
+        );
+      }
+      loaderVisited.add(filename);
+      visitedMap.set(loader, loaderVisited);
       combined = {
         ...loadConfiguration(filename, loader),
         ...combined,
