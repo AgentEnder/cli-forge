@@ -33,7 +33,9 @@ export const ExamplesDocsPlugin = async (
   const examplesRoot = join(workspaceRoot, 'examples') + sep;
   const examples = collectExamples(join(examplesRoot, '../examples'));
 
-  for (const example of examples) {
+  const visibleExamples = examples.filter((e) => !e.data.hidden);
+
+  for (const example of visibleExamples) {
     const relative = (
       example.files.length > 1 || example.multifile
         ? dirname(example.files[0].path)
@@ -53,7 +55,7 @@ export const ExamplesDocsPlugin = async (
   ensureDirSync(join(__dirname, '../../docs/examples'));
   writeFileSync(
     join(__dirname, '../../docs/examples/index.md'),
-    formatIndexMd(examples)
+    formatIndexMd(visibleExamples)
   );
 
   return {

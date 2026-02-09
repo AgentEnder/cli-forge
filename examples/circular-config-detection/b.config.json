@@ -1,0 +1,4 @@
+{
+  "extends": "./a.config.json",
+  "greeting": "from-b"
+}

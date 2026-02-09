@@ -21,6 +21,7 @@ export type FrontMatter = {
   commands: (string | CommandConfiguration)[];
   entryPoint: string;
   contentFile?: string;
+  hidden?: boolean;
 };
 
 export type Example = {

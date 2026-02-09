@@ -1,0 +1,13 @@
+id: circular-config-detection
+title: Circular Config Detection
+hidden: true
+entryPoint: cli.ts
+fileMap:
+  './cli.ts': 'cli.ts'
+  './a.config.json': 'a.config.json'
+  './b.config.json': 'b.config.json'
+commands:
+  - command: '{filename}'
+    exitCode: 1
+    assertions:
+      - contains: 'Circular reference detected'
