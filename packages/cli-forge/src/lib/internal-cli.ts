@@ -466,7 +466,8 @@ export class InternalCLI<
    */
   async runCommand<T extends ParsedArgs>(
     args: T,
-    originalArgV: string[]
+    originalArgV: string[],
+    executedMiddleware?: Set<(args: any) => void>
   ): Promise<T> {
     const middlewares = new Set<(args: any) => void>(this.registeredMiddleware);
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -485,6 +486,7 @@ export class InternalCLI<
       }
       if (cmd.configuration?.handler) {
         for (const middleware of middlewares) {
+          if (executedMiddleware?.has(middleware)) continue;
           const middlewareResult = await middleware(args as any);
           if (
             middlewareResult !== void 0 &&
@@ -815,7 +817,18 @@ export class InternalCLI<
   }
 
   /**
-   * Parses argv and executes the CLI
+   * Parses argv and executes the CLI.
+   *
+   * Execution proceeds in two phases:
+   *
+   * **Discovery loop** (per command level): builder → parse (non-strict,
+   * no validation) → merge → middleware → init hooks → find next
+   * subcommand in unmatched tokens → repeat.
+   *
+   * **Final parse + execution**: parse (with validation, seeded with
+   * accumulated args) → help/version check → handler. Middleware that
+   * already ran during discovery is skipped.
+   *
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
@@ -837,13 +850,14 @@ export class InternalCLI<
       };
 
       // Iterative command discovery with init hooks.
-      // Each level: non-strict parse filtered args → merge into
-      // accumulated result → run init hooks → find next command
-      // in unmatched tokens → filter down. Builders stay lazy.
+      // Each level: non-strict parse filtered args → run middleware
+      // → run init hooks → find next command in unmatched tokens
+      // → filter down. Builders stay lazy.
       let currentArgs = [...args];
       // eslint-disable-next-line @typescript-eslint/no-this-alias
       let currentCmd: InternalCLI<any, any, any, any> = this;
       const mergedArgs: any = {};
+      const executedMiddleware = new Set<(args: any) => void>();
 
       // eslint-disable-next-line no-constant-condition
       while (true) {
@@ -860,6 +874,18 @@ export class InternalCLI<
           .parse(currentArgs, mergedArgs) as any;
 
         mergeNew(mergedArgs, parsed);
+
+        // Run middleware for this command level before init hooks,
+        // so init hooks can see middleware-transformed args.
+        for (const mw of currentCmd.registeredMiddleware) {
+          if (!executedMiddleware.has(mw)) {
+            executedMiddleware.add(mw);
+            const result = await mw(mergedArgs);
+            if (result !== void 0 && typeof result === 'object') {
+              Object.assign(mergedArgs, result);
+            }
+          }
+        }
 
         // Run init hooks with the full accumulated args
         for (const hook of currentCmd.registeredInitHooks) {
@@ -926,7 +952,7 @@ export class InternalCLI<
         throw validationFailedError;
       }
 
-      const finalArgV = await this.runCommand(argv, args);
+      const finalArgV = await this.runCommand(argv, args, executedMiddleware);
       return finalArgV as TArgs;
     });
 
