@@ -357,6 +357,57 @@ Config files support `extends` for composition:
 }
 ```
 
+### Execution Lifecycle (`forge()`)
+
+When `forge(argv)` is called, execution proceeds in two phases:
+
+**Phase 1 — Discovery loop** (iterative, per command level):
+```
+for each command level (root → subcommand → nested subcommand…):
+  1. Builder     — runs lazily when the command is first discovered
+  2. Parse       — non-strict, no validation (validate: false), seeded
+                   with accumulated args (alreadyParsed). Unrecognized
+                   tokens go to `unmatched`.
+  3. Merge       — new parsed values merge into the accumulated result
+                   (existing values are never overwritten)
+  4. Middleware   — runs for this command level (deduped by reference);
+                   transforms accumulated args in-place
+  5. Init hooks  — run with the CLI instance + accumulated args; may
+                   register new options, commands, or middleware
+  6. Command lookup — scan `unmatched` for the next subcommand name;
+                   if found, run its builder and repeat from step 2
+```
+
+The loop terminates when no more subcommands are found in `unmatched`.
+
+**Phase 2 — Final parse + execution:**
+```
+  7. Parse       — strict (validate: true), seeded with accumulated
+                   args. Runs full validation: required, choices,
+                   conflicts, implications, coerce. Catches
+                   ValidationFailedError for --help/--version override.
+  8. Help/Version — if --help or --version is set, print and return
+  9. Handler      — runCommand() executes the resolved command's
+                   handler. Middleware that already ran in the loop
+                   is skipped (deduped via executedMiddleware set).
+```
+
+**Parser normalization pipeline** (runs in both parse phases):
+```
+  tokenize argv → env vars → config files → defaults → nested object
+  defaults → coerce
+  (if validate: true) → required → choices → custom validate →
+  conflicts → implications → strict unmatched check
+```
+
+**Key invariants:**
+- Builders are lazy — only run when their command is discovered
+- All command levels share a single parser instance (options accumulate)
+- `alreadyParsed` seeds the result so positionals aren't re-consumed
+  and required options from earlier levels aren't flagged as missing
+- Each middleware function runs exactly once across the entire lifecycle
+- Init hooks see middleware-transformed args
+
 ### Middleware Composition
 Middleware transforms args between parsing and handler execution:
 ```typescript
