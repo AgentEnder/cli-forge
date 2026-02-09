@@ -334,6 +334,31 @@ describe('parser', () => {
     ).toEqual({ foo: 'hello', unmatched: ['world'] });
   });
 
+  it('should skip required validation when validate is false', () => {
+    expect(
+      parser({ validate: false })
+        .option('foo', { type: 'string', required: true })
+        .parse([])
+    ).toEqual({ foo: undefined, unmatched: [] });
+  });
+
+  it('should still apply defaults when validate is false', () => {
+    expect(
+      parser({ validate: false })
+        .option('foo', { type: 'string', default: 'bar' })
+        .option('count', { type: 'number', required: true })
+        .parse([])
+    ).toEqual({ foo: 'bar', count: undefined, unmatched: [] });
+  });
+
+  it('should validate required options by default', () => {
+    expect(() =>
+      parser()
+        .option('foo', { type: 'string', required: true })
+        .parse([])
+    ).toThrowAggregateErrorContaining('Missing required option foo');
+  });
+
   it('should have correct types with coerce', () => {
     const parsed = parser()
       .option('foo', { type: 'string', coerce: (s) => Number(s) })

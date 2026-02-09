@@ -98,6 +98,13 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
   strict?: boolean;
 
   /**
+   * When set to false, skips validation (required checks, choices, conflicts, etc.)
+   * while still normalizing options (defaults, env vars, coercion). Useful for
+   * best-effort discovery parsing. Defaults to true.
+   */
+  validate?: boolean;
+
+  /**
    * When set to true (default), automatically allows options to be used with both camelCase and dashed formats.
    * For example, an option named "someFlag" will accept both --someFlag and --some-flag.
    * Set to false to disable this automatic aliasing behavior.
@@ -193,6 +200,7 @@ export class ArgvParser<
       unmatchedParser: () => false,
       strict: false,
       stripDashed: true,
+      validate: true,
       ...options,
     } as Required<ParserOptions<TArgs>>;
     this.parserMap = {
@@ -543,11 +551,16 @@ export class ArgvParser<
   /**
    * Parses an array of arguments into a structured object.
    * @param argv The array of arguments to parse
+   * @param alreadyParsed Optional pre-parsed values to seed the result with.
+   *   Already-set keys are preserved during parsing (e.g. positionals that
+   *   already have a value are skipped). Validation and normalization still
+   *   run on the complete result.
    * @returns The parsed arguments
    */
-  parse(argv: string[] = hideBin(process.argv)) {
+  parse(argv: string[] = hideBin(process.argv), alreadyParsed?: Record<string, unknown>) {
     const argvClone = [...argv];
     const result: any = {
+      ...alreadyParsed,
       unmatched: [],
     };
     let arg = argvClone.shift();
@@ -629,6 +642,9 @@ export class ArgvParser<
       }
     }
 
+    if (this.options.validate === false) {
+      return this.normalizeOptions(result) as TArgs;
+    }
     return this.validateAndNormalizeResults(result) as TArgs;
   }
 
