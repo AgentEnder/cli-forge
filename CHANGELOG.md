@@ -1,3 +1,29 @@
+## 1.2.0 (2026-02-09)
+
+### 🚀 Features
+
+- add strip-dashed support for automatic camelCase/kebab-case aliasing ([#39](https://github.com/agentender/cli-forge/pull/39), [#38](https://github.com/agentender/cli-forge/issues/38))
+- **cli-forge:** use Set for middleware storage to enable idempotent registration ([5a002d1](https://github.com/agentender/cli-forge/commit/5a002d1))
+- **cli-forge:** capture-and-replay in makeComposableBuilder for stable middleware refs ([aee7c7c](https://github.com/agentender/cli-forge/commit/aee7c7c))
+- **cli-forge:** add init hooks with incremental re-parse for plugin loading ([2a2f6c2](https://github.com/agentender/cli-forge/commit/2a2f6c2))
+- **cli-forge:** run init hooks at every command level ([90dce06](https://github.com/agentender/cli-forge/commit/90dce06))
+- **cli-forge:** run middleware before init hooks in discovery loop ([4773480](https://github.com/agentender/cli-forge/commit/4773480))
+- **parser:** add lenient parse mode for init hooks ([0266ea6](https://github.com/agentender/cli-forge/commit/0266ea6))
+- **parser:** add validate option and alreadyParsed parameter ([1f309e3](https://github.com/agentender/cli-forge/commit/1f309e3))
+
+### 🩹 Fixes
+
+- **cli-forge:** always run root builder before child commands ([a9390b8](https://github.com/agentender/cli-forge/commit/a9390b8))
+- **cli-forge:** cli.command(cli('-zsh', ...)) should work for assigning root command ([e325bc4](https://github.com/agentender/cli-forge/commit/e325bc4))
+- **parser:** move circular config detection from provider state to resolution call ([0b39a72](https://github.com/agentender/cli-forge/commit/0b39a72))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Claude
+- Copilot @Copilot
+- Craigory Coppola @AgentEnder
+
 ## 1.1.0 (2025-12-24)
 
 ### 🚀 Features
