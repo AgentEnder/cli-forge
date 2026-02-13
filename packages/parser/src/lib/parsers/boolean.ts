@@ -1,5 +1,4 @@
 import { Internal, BooleanOptionConfig } from '../option-types';
-import { isNextFlag } from '../utils/flags';
 import { Parser } from './typings';
 
 export const booleanParser: Parser<Internal<BooleanOptionConfig>> = ({
@@ -12,13 +11,14 @@ export const booleanParser: Parser<Internal<BooleanOptionConfig>> = ({
     if (val === undefined) {
       return true;
     }
-    if (isNextFlag(val)) {
-      tokens.unshift(val);
+    if (val === 'true') {
       return true;
     }
     if (val === 'false') {
       return false;
     }
+    // Not a boolean literal — put it back for positional/subcommand handling
+    tokens.unshift(val);
     return true;
   })();
   return negated ? !parsed : parsed;
