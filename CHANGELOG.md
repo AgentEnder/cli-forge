@@ -1,3 +1,16 @@
+## 1.2.1 (2026-02-13)
+
+### 🩹 Fixes
+
+- **cli-forge:** use subcommand-aware unmatchedParser in discovery loop ([ce6e940](https://github.com/agentender/cli-forge/commit/ce6e940))
+- **parser:** only consume 'true'/'false' as boolean flag values ([8acb1ae](https://github.com/agentender/cli-forge/commit/8acb1ae))
+- **parser:** check unmatchedParser before positional matching ([3355d0c](https://github.com/agentender/cli-forge/commit/3355d0c))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.2.0 (2026-02-09)
 
 ### 🚀 Features

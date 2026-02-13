@@ -1,6 +1,6 @@
 {
   "name": "@cli-forge/parser",
-  "version": "1.2.0",
+  "version": "1.2.1",
   "dependencies": {
     "tslib": "catalog:"
   },
