@@ -729,6 +729,31 @@ describe('cliForge', () => {
       expect(handlerArgs).toBeDefined();
       expect(handlerArgs.env).toBe('prod');
     });
+
+    it('should work after async middleware', async () => {
+      const app = cli('foo', {
+        builder: (argv) =>
+          argv
+            .middleware(async (args) => {
+              const newPromise = new Promise((res) => setImmediate(res));
+              await newPromise;
+              (args as any)['middleware-ran'] = true;
+            })
+            .init((cli) => {
+              cli.option('bar', {
+                type: 'boolean',
+              });
+            }),
+      });
+      const parsed = await app.forge(['--bar']);
+      expect(parsed).toMatchInlineSnapshot(`
+        {
+          "bar": true,
+          "middleware-ran": true,
+          "unmatched": [],
+        }
+      `);
+    });
   });
 
   describe('subcommand init hooks', () => {
@@ -1060,6 +1085,117 @@ describe('cliForge', () => {
 
       expect(handlerArgs.verbose).toBe(false);
       expect(handlerArgs.config).toBe('default.json');
+    });
+  });
+
+  describe('positional arguments with subcommands', () => {
+    // CLI shape: app [file] <lint|test>
+    // The parser tries subcommand lookup (via unmatchedParser) before
+    // consuming tokens as positional arguments. This allows subcommand
+    // names to take priority, with non-matching tokens falling through
+    // to positional matching.
+
+    function buildTestCli() {
+      return cli('app')
+        .positional('file', { type: 'string' })
+        .command('lint', {
+          builder: (cmd) =>
+            cmd.option('fix', { type: 'boolean', default: false }),
+          handler: (args) => args,
+        })
+        .command('test', {
+          builder: (cmd) =>
+            cmd.option('watch', { type: 'boolean', default: false }),
+          handler: (args) => args,
+        });
+    }
+
+    it('should run subcommand when only subcommand name is given: `app lint`', async () => {
+      // `app lint` → 'lint' recognized as subcommand, file stays undefined
+      const result = (await buildTestCli().forge(['lint'])) as any;
+      expect(result.file).toBeUndefined();
+      expect(result.fix).toBe(false);
+    });
+
+    it('should run subcommand when positional follows it: `app lint myfile`', async () => {
+      // `app lint myfile` → 'lint' recognized as subcommand,
+      // 'myfile' consumed as file positional
+      const result = (await buildTestCli().forge([
+        'lint',
+        'myfile',
+      ])) as any;
+      expect(result.file).toBe('myfile');
+      expect(result.fix).toBe(false);
+    });
+
+    it('should run subcommand with its own flags: `app test --watch`', async () => {
+      // `app test --watch` → 'test' recognized as subcommand,
+      // --watch parsed by the test subcommand
+      const result = (await buildTestCli().forge([
+        'test',
+        '--watch',
+      ])) as any;
+      expect(result.watch).toBe(true);
+      expect(result.file).toBeUndefined();
+    });
+
+    it('should run subcommand when string flags precede it: `app --config x lint`', async () => {
+      // `app --config x lint` → --config parsed as flag consuming 'x',
+      // 'lint' recognized as subcommand (not consumed by positional)
+      const result = (await cli('app')
+        .option('config', { type: 'string' })
+        .positional('file', { type: 'string' })
+        .command('lint', {
+          builder: (cmd) =>
+            cmd.option('fix', { type: 'boolean', default: false }),
+          handler: (args) => args,
+        })
+        .forge(['--config', 'app.json', 'lint'])) as any;
+
+      expect(result.config).toBe('app.json');
+      expect(result.fix).toBe(false);
+      expect(result.file).toBeUndefined();
+    });
+
+    it('should run subcommand when boolean flags precede it: `app --verbose lint`', async () => {
+      // `app --verbose lint` → --verbose set to true (no value consumed),
+      // 'lint' recognized as subcommand
+      const result = (await cli('app')
+        .option('verbose', { type: 'boolean', default: false })
+        .positional('file', { type: 'string' })
+        .command('lint', {
+          builder: (cmd) =>
+            cmd.option('fix', { type: 'boolean', default: false }),
+          handler: (args) => args,
+        })
+        .forge(['--verbose', 'lint'])) as any;
+
+      expect(result.verbose).toBe(true);
+      expect(result.fix).toBe(false);
+      expect(result.file).toBeUndefined();
+    });
+
+    it('should parse positional before subcommand: `app myfile lint`', async () => {
+      // `app myfile lint` → 'myfile' not a subcommand, consumed as file,
+      // 'lint' recognized as subcommand
+      const result = (await buildTestCli().forge([
+        'myfile',
+        'lint',
+      ])) as any;
+      expect(result.file).toBe('myfile');
+      expect(result.fix).toBe(false);
+    });
+
+    it('should parse positional and subcommand with flags: `app myfile test --watch`', async () => {
+      // `app myfile test --watch` → 'myfile' consumed as file,
+      // 'test' recognized as subcommand, --watch parsed by test
+      const result = (await buildTestCli().forge([
+        'myfile',
+        'test',
+        '--watch',
+      ])) as any;
+      expect(result.file).toBe('myfile');
+      expect(result.watch).toBe(true);
     });
   });
 });
