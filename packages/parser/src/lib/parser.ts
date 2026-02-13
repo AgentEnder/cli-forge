@@ -1,5 +1,26 @@
-import { CommonOptionConfig } from './option-types/common';
+import {
+  ConfigurationProvider,
+  resolveConfiguration,
+} from './config-files/configuration-loader';
 import { hideBin } from './helpers';
+import {
+  LocalizationDictionary,
+  LocalizationFunction,
+  detectLocale,
+  resolveLocalizedText,
+} from './localization';
+import {
+  ArrayOptionConfig,
+  BooleanOptionConfig,
+  Internal,
+  InternalOptionConfig,
+  NumberOptionConfig,
+  ObjectOptionConfig,
+  OptionConfig,
+  StringOptionConfig,
+  UnknownOptionConfig,
+} from './option-types';
+import { CommonOptionConfig } from './option-types/common';
 import {
   OptionConfigToType,
   ResolveProperties,
@@ -8,33 +29,16 @@ import {
   MakeUndefinedPropertiesOptional,
   WithOptional,
 } from './option-types/type-resolution';
-import { fromDashedToCamelCase, fromCamelCaseToDashed, getEnvKey } from './utils/case-transformations';
-import {
-  Internal,
-  InternalOptionConfig,
-  ObjectOptionConfig,
-  StringOptionConfig,
-  NumberOptionConfig,
-  BooleanOptionConfig,
-  ArrayOptionConfig,
-  OptionConfig,
-  UnknownOptionConfig,
-} from './option-types';
 import { parserMap } from './parsers/parser-map';
 import { NoValueError, Parser, ParserContext } from './parsers/typings';
-import { getConfiguredOptionKey } from './utils/get-configured-key';
+import {
+  fromCamelCaseToDashed,
+  fromDashedToCamelCase,
+  getEnvKey,
+} from './utils/case-transformations';
 import { isFlag, isNextFlag, readArgKeys } from './utils/flags';
+import { getConfiguredOptionKey } from './utils/get-configured-key';
 import { readDefaultValue } from './utils/read-default-value';
-import {
-  ConfigurationProvider,
-  resolveConfiguration,
-} from './config-files/configuration-loader';
-import {
-  LocalizationDictionary,
-  LocalizationFunction,
-  detectLocale,
-  resolveLocalizedText,
-} from './localization';
 
 /**
  * Defines the option configuration passed to {@link ArgvParser.env}.
@@ -83,6 +87,8 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
 
   /**
    * Can be used to implement custom handling for unmatched arguments.
+   * This runs before positional arguments would be matched, allowing it to intercept
+   * values that would otherwise be consumed as positionals (e.g. for subcommand parsing).
    * @returns true if the argument was handled, false if it was not
    */
   unmatchedParser?: (
@@ -557,7 +563,10 @@ export class ArgvParser<
    *   run on the complete result.
    * @returns The parsed arguments
    */
-  parse(argv: string[] = hideBin(process.argv), alreadyParsed?: Record<string, unknown>) {
+  parse(
+    argv: string[] = hideBin(process.argv),
+    alreadyParsed?: Record<string, unknown>
+  ) {
     const argvClone = [...argv];
     const result: any = {
       ...alreadyParsed,
@@ -573,7 +582,10 @@ export class ArgvParser<
       // Found a flag + value
       if (isFlag(arg)) {
         const [maybeArg, maybeValue] = arg.split('=');
-        const keys = readArgKeys(maybeArg as `-${string}`, this.options.stripDashed);
+        const keys = readArgKeys(
+          maybeArg as `-${string}`,
+          this.options.stripDashed
+        );
         const configuredKeys = keys.map((key) =>
           getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
         );
@@ -616,6 +628,13 @@ export class ArgvParser<
         }
         // Found a positional argument
       } else {
+        // Try unmatchedParser first (e.g., for subcommand discovery).
+        // This allows subcommand tokens to be intercepted before
+        // positional matching greedily consumes them.
+        if (this.options.unmatchedParser(arg, argvClone, this)) {
+          arg = argvClone.shift();
+          continue;
+        }
         let configuration = this.configuredPositionals[matchedPositionals];
         // Handles if a positional argument was already set by a flag.
         while (configuration && result[configuration.key] !== undefined) {
@@ -632,10 +651,6 @@ export class ArgvParser<
           result[configuration.key] = value;
           matchedPositionals++;
         } else {
-          if (this.options.unmatchedParser(arg, argvClone, this)) {
-            arg = argvClone.shift();
-            continue;
-          }
           result.unmatched.push(arg);
         }
         arg = argvClone.shift();
@@ -773,9 +788,7 @@ export class ArgvParser<
     // Validate strict mode - check for unmatched arguments
     if (this.options.strict && result.unmatched?.length) {
       for (const unmatchedArg of result.unmatched) {
-        const error = new Error(
-          `Unknown argument: ${unmatchedArg}`
-        );
+        const error = new Error(`Unknown argument: ${unmatchedArg}`);
         delete error.stack;
         errors.push(error);
       }
