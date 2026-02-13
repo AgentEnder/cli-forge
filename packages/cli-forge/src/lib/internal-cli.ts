@@ -864,10 +864,22 @@ export class InternalCLI<
         // Non-strict parse to get current arg values for init hooks.
         // Seeded with mergedArgs so required options parsed at earlier
         // levels satisfy validation.
+        // The unmatchedParser intercepts subcommand tokens before
+        // positional matching can greedily consume them.
+        let discoveredCommand: string | null = null;
         const parsed = this.parser
           .clone({
             ...this.parser.options,
-            unmatchedParser: () => false,
+            unmatchedParser: (arg) => {
+              if (!discoveredCommand && !arg.startsWith('-')) {
+                const cmd = currentCmd.registeredCommands[arg];
+                if (cmd && cmd.configuration) {
+                  discoveredCommand = arg;
+                  return true;
+                }
+              }
+              return false;
+            },
             strict: false,
             validate: false,
           })
@@ -892,30 +904,46 @@ export class InternalCLI<
           await hook(currentCmd as any, mergedArgs);
         }
 
-        // Find the next command in unmatched tokens
-        const unmatched: string[] = parsed.unmatched ?? [];
+        // Build the next command if one was discovered during parsing
+        // (i.e., subcommand token intercepted before positional matching)
         let nextCmd: InternalCLI<any, any, any, any> | null = null;
+        if (discoveredCommand) {
+          const cmd = currentCmd.registeredCommands[discoveredCommand];
+          cmd.parser = this.parser;
+          cmd.configuration!.builder?.(cmd as any);
+          this.commandChain.push(discoveredCommand);
+          nextCmd = cmd;
+        }
+
+        // Scan unmatched tokens for commands that may have been registered
+        // dynamically by init hooks (these weren't in registeredCommands
+        // during parse, so the unmatchedParser couldn't intercept them).
+        const unmatched: string[] = parsed.unmatched ?? [];
         const remainingArgs: string[] = [];
 
-        for (const token of unmatched) {
-          if (!nextCmd && !token.startsWith('-')) {
-            const cmd = currentCmd.registeredCommands[token];
-            if (cmd && cmd.configuration) {
-              cmd.parser = this.parser;
-              cmd.configuration.builder?.(cmd as any);
-              this.commandChain.push(token);
-              nextCmd = cmd;
-              continue;
+        if (!nextCmd) {
+          for (const token of unmatched) {
+            if (!nextCmd && !token.startsWith('-')) {
+              const cmd = currentCmd.registeredCommands[token];
+              if (cmd && cmd.configuration) {
+                cmd.parser = this.parser;
+                cmd.configuration.builder?.(cmd as any);
+                this.commandChain.push(token);
+                nextCmd = cmd;
+                continue;
+              }
             }
+            remainingArgs.push(token);
           }
-          remainingArgs.push(token);
         }
 
         if (!nextCmd) {
           currentArgs = unmatched;
           break;
         }
-        currentArgs = remainingArgs;
+        // If command found during parse, all unmatched are remaining args.
+        // If command found in post-init scan, use filtered remaining args.
+        currentArgs = discoveredCommand ? unmatched : remainingArgs;
         currentCmd = nextCmd;
       }
 
