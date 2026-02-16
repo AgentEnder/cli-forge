@@ -94,6 +94,13 @@ export class InternalCLI<
   > = [];
 
   /**
+   * Set when a `$0` alias replaces the root builder via `.command()`.
+   * The $0 builder should only run if no explicit subcommand is given,
+   * so `forge()` defers it until the discovery loop confirms no match.
+   */
+  private builderIsFrom$0Alias = false;
+
+  /**
    * A list of option groups that have been registered with the CLI. Grouped Options are displayed together in the help text.
    *
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -269,6 +276,12 @@ export class InternalCLI<
           handler: options.handler as any,
           description: options.description,
         });
+        // Only defer the builder when it came from an alias (e.g.,
+        // command('search', { alias: ['$0'] })). When key === '$0',
+        // the command IS the root and its builder should run normally.
+        if (key !== '$0' && options.alias?.includes('$0')) {
+          this.builderIsFrom$0Alias = true;
+        }
       }
       const cmd = new InternalCLI<TArgs, TChildHandlerReturn>(
         key
@@ -837,22 +850,23 @@ export class InternalCLI<
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
 
-      // Run root builder (may register options, init hooks, commands)
-      const originalBuilder = this.configuration?.builder;
-      this.configuration?.builder?.(this as any);
-
-      // If a $0 alias was registered during the builder, the configuration's
-      // builder was replaced with the $0 subcommand's builder. We need to
-      // run it so that the subcommand's options (e.g. positionals) get
-      // registered on the parser before parsing begins.
-      if (this.configuration?.builder && this.configuration.builder !== originalBuilder) {
-        this.configuration.builder(this as any);
+      // Run root builder (may register options, init hooks, commands).
+      // If the builder came from a $0 alias, skip it here — we defer
+      // running it until the discovery loop confirms no explicit
+      // subcommand was given, so it doesn't double-run when the
+      // command is invoked by name.
+      if (!this.builderIsFrom$0Alias) {
+        this.configuration?.builder?.(this as any);
       }
 
       // Merge helper: accumulate defined values without overwriting
       const mergeNew = (target: any, source: any) => {
         for (const [key, value] of Object.entries(source)) {
-          if (key !== 'unmatched' && value !== undefined && target[key] === undefined) {
+          if (
+            key !== 'unmatched' &&
+            value !== undefined &&
+            target[key] === undefined
+          ) {
             target[key] = value;
           }
         }
@@ -919,9 +933,12 @@ export class InternalCLI<
         if (discoveredCommand) {
           const cmd = currentCmd.registeredCommands[discoveredCommand];
           cmd.parser = this.parser;
-          cmd.configuration!.builder?.(cmd as any);
+          cmd.configuration?.builder?.(cmd as any);
           this.commandChain.push(discoveredCommand);
           nextCmd = cmd;
+          // An explicit subcommand was found — the $0 default path
+          // won't be taken, so clear the deferred builder flag.
+          this.builderIsFrom$0Alias = false;
         }
 
         // Scan unmatched tokens for commands that may have been registered
@@ -939,6 +956,7 @@ export class InternalCLI<
                 cmd.configuration.builder?.(cmd as any);
                 this.commandChain.push(token);
                 nextCmd = cmd;
+                this.builderIsFrom$0Alias = false;
                 continue;
               }
             }
@@ -947,6 +965,17 @@ export class InternalCLI<
         }
 
         if (!nextCmd) {
+          // No explicit subcommand was found. If a $0 alias replaced
+          // the root builder, run it now so its options (e.g. positionals)
+          // get registered before the final parse.
+          if (this.builderIsFrom$0Alias) {
+            this.builderIsFrom$0Alias = false; // only run once
+            this.configuration?.builder?.(this as any);
+            // Re-run the loop iteration so the newly registered options
+            // participate in parsing.
+            currentArgs = unmatched;
+            continue;
+          }
           currentArgs = unmatched;
           break;
         }

@@ -98,19 +98,58 @@ describe('cliForge', () => {
     let receivedArgs: any;
     await cli('test', {
       builder: (args) =>
-        args
-          .option('url', { type: 'string' })
-          .command('search', {
-            alias: ['$0'],
-            builder: (c) =>
-              c.positional('query', { type: 'string', required: true }),
-            handler: (handlerArgs) => {
-              receivedArgs = handlerArgs;
-            },
-          }),
+        args.option('url', { type: 'string' }).command('search', {
+          alias: ['$0'],
+          builder: (c) =>
+            c.positional('query', { type: 'string', required: true }),
+          handler: (handlerArgs) => {
+            receivedArgs = handlerArgs;
+          },
+        }),
     }).forge(['hello']);
     expect(receivedArgs.query).toBe('hello');
     expect(receivedArgs.unmatched).toEqual([]);
+  });
+
+  it('should not run subcommand builder twice when aliased to $0', async () => {
+    let builderCallCount = 0;
+    await cli('test')
+      .command('search', {
+        alias: ['$0'],
+        builder: (c) => {
+          builderCallCount++;
+          return c.positional('query', { type: 'string', required: true });
+        },
+        handler: () => {
+          // noop
+        },
+      })
+      .forge(['search', 'hello']);
+    expect(builderCallCount).toBe(1);
+  });
+
+  it('should not run subcommand builder thats aliased to $0 when executing other command', async () => {
+    await cli('test')
+      .command('search', {
+        alias: ['$0'],
+        builder: () => {
+          throw new Error('should not run builder');
+        },
+        handler: () => {
+          throw new Error('should not run handler');
+        },
+      })
+      .command('other', {
+        builder: (c) => c,
+        handler: () => {
+          /* noop */
+        },
+      })
+      .forge(['other']);
+    // Would have thrown  if the search command's builder had been run,
+    // but typed as Promise<T> | T, this one is static, so .resolves fails because
+    // its not a promise, but we can still assert that it ran without error by reaching this line.
+    expect(true).toBe(true);
   });
 
   it('should run parent command if no subcommand is given', () => {
@@ -194,12 +233,12 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --baz     - (a, b)                             
-        --qux     - [required]                         
-        --quux    - [default: a]                       
-       
+        --baz     - (a, b)
+        --qux     - [required]
+        --quux    - [default: a]
+
       Run \`test [command] --help\` for more information on a command"
     `);
   });
@@ -227,10 +266,10 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --baz    
-        --bar    
+        --baz
+        --bar
         --foo    "
     `);
   });
@@ -249,7 +288,7 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
         --bar    "
     `);
@@ -325,9 +364,9 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help    - Show help for the current command  
+        --help    - Show help for the current command
         --version - Show the version number for the CLI
-        --quux   
+        --quux
 
       Advanced:
         --baz
@@ -1142,10 +1181,7 @@ describe('cliForge', () => {
     it('should run subcommand when positional follows it: `app lint myfile`', async () => {
       // `app lint myfile` → 'lint' recognized as subcommand,
       // 'myfile' consumed as file positional
-      const result = (await buildTestCli().forge([
-        'lint',
-        'myfile',
-      ])) as any;
+      const result = (await buildTestCli().forge(['lint', 'myfile'])) as any;
       expect(result.file).toBe('myfile');
       expect(result.fix).toBe(false);
     });
@@ -1153,10 +1189,7 @@ describe('cliForge', () => {
     it('should run subcommand with its own flags: `app test --watch`', async () => {
       // `app test --watch` → 'test' recognized as subcommand,
       // --watch parsed by the test subcommand
-      const result = (await buildTestCli().forge([
-        'test',
-        '--watch',
-      ])) as any;
+      const result = (await buildTestCli().forge(['test', '--watch'])) as any;
       expect(result.watch).toBe(true);
       expect(result.file).toBeUndefined();
     });
@@ -1200,10 +1233,7 @@ describe('cliForge', () => {
     it('should parse positional before subcommand: `app myfile lint`', async () => {
       // `app myfile lint` → 'myfile' not a subcommand, consumed as file,
       // 'lint' recognized as subcommand
-      const result = (await buildTestCli().forge([
-        'myfile',
-        'lint',
-      ])) as any;
+      const result = (await buildTestCli().forge(['myfile', 'lint'])) as any;
       expect(result.file).toBe('myfile');
       expect(result.fix).toBe(false);
     });
