@@ -838,7 +838,16 @@ export class InternalCLI<
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
 
       // Run root builder (may register options, init hooks, commands)
+      const originalBuilder = this.configuration?.builder;
       this.configuration?.builder?.(this as any);
+
+      // If a $0 alias was registered during the builder, the configuration's
+      // builder was replaced with the $0 subcommand's builder. We need to
+      // run it so that the subcommand's options (e.g. positionals) get
+      // registered on the parser before parsing begins.
+      if (this.configuration?.builder && this.configuration.builder !== originalBuilder) {
+        this.configuration.builder(this as any);
+      }
 
       // Merge helper: accumulate defined values without overwriting
       const mergeNew = (target: any, source: any) => {

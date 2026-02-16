@@ -91,6 +91,28 @@ describe('cliForge', () => {
     `);
   });
 
+  it('should parse positional args when command is invoked via $0 alias', async () => {
+    // When a parent CLI has options and a subcommand uses alias: ['$0'],
+    // invoking without the subcommand name should still parse positionals
+    // defined by the subcommand's builder.
+    let receivedArgs: any;
+    await cli('test', {
+      builder: (args) =>
+        args
+          .option('url', { type: 'string' })
+          .command('search', {
+            alias: ['$0'],
+            builder: (c) =>
+              c.positional('query', { type: 'string', required: true }),
+            handler: (handlerArgs) => {
+              receivedArgs = handlerArgs;
+            },
+          }),
+    }).forge(['hello']);
+    expect(receivedArgs.query).toBe('hello');
+    expect(receivedArgs.unmatched).toEqual([]);
+  });
+
   it('should run parent command if no subcommand is given', () => {
     const ran = { foo: false, bar: false };
     cli('test')
