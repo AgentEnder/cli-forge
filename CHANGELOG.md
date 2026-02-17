@@ -1,3 +1,15 @@
+## 1.2.2 (2026-02-17)
+
+### 🩹 Fixes
+
+- **cli-forge:** builder of command with -zsh alias should run before parsing ([db10526](https://github.com/agentender/cli-forge/commit/db10526))
+- **cli-forge:** prevent double execution of $0-aliased subcommand builders ([6f09a7b](https://github.com/agentender/cli-forge/commit/6f09a7b))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.2.1 (2026-02-13)
 
 ### 🩹 Fixes
