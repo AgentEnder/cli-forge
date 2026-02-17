@@ -233,12 +233,12 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --baz     - (a, b)
-        --qux     - [required]
-        --quux    - [default: a]
-
+        --baz     - (a, b)                             
+        --qux     - [required]                         
+        --quux    - [default: a]                       
+       
       Run \`test [command] --help\` for more information on a command"
     `);
   });
@@ -266,10 +266,10 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --baz
-        --bar
+        --baz    
+        --bar    
         --foo    "
     `);
   });
@@ -288,7 +288,7 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
         --bar    "
     `);
@@ -364,9 +364,9 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help    - Show help for the current command
+        --help    - Show help for the current command  
         --version - Show the version number for the CLI
-        --quux
+        --quux   
 
       Advanced:
         --baz
