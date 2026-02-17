@@ -12,8 +12,10 @@
 //   > Note: This example is a bit more abstract that the others, as real world use cases for object-valued
 //   > options and especially nested objects are less common. This example is included to demonstrate the
 //   > flexibility of the CLI Forge APIs and the ability to handle complex option structures with type safety.
-// commands:
-//  - '{filename} --foo.bar.baz 42 --foo.qux 42 --foo.arr 1 2 3 --foo.blam hello'
+// test:
+//   - name: "Parses nested object with dot notation"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --foo.bar.baz 42 --foo.qux 42 --foo.arr 1 2 3 --foo.blam hello'
 // ---
 import cliForge from 'cli-forge';
 

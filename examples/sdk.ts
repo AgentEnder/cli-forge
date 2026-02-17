@@ -4,9 +4,19 @@
 // description: |
 //   This example demonstrates the basic usage of cli-forge to create a simple CLI
 //   with two commands and various options, and how that CLI can be used programmatically.
-// commands:
-//  - '{filename} hello --name sir'
-//  - '{filename} goodbye --name madame'
+// test:
+//   - name: "Runs hello command via CLI"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//     assertions:
+//       stdout:
+//         contains: 'Hello, sir!'
+//   - name: "Runs goodbye command via CLI"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} goodbye --name madame'
+//     assertions:
+//       stdout:
+//         contains: 'Goodbye, madame.'
 // ---
 import cliForge from 'cli-forge';
 

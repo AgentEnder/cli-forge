@@ -9,10 +9,25 @@
 //   Also demonstrates accessing child commands programmatically via
 //   `getChildren()` and invoking their handlers with full type inference.
 //
-// commands:
-//   - '{filename} greet --name sir --greeting "Good day"'
-//   - '{filename} farewell --name madame --farewell "Goodbye"'
-//   - '{filename} converse --name sir'
+// test:
+//   - name: "Runs greet command with composable options"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} greet --name sir --greeting "Good day"'
+//     assertions:
+//       stdout:
+//         contains: 'Good day, sir!'
+//   - name: "Runs farewell command with composable options"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} farewell --name madame --farewell "Goodbye"'
+//     assertions:
+//       stdout:
+//         contains: 'Goodbye, madame!'
+//   - name: "Runs converse command"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} converse --name sir'
+//     assertions:
+//       stdout:
+//         contains: '[sir]: hello!'
 // ---
 import { UnknownCLI, chain, cli, makeComposableBuilder } from 'cli-forge';
 

@@ -5,21 +5,25 @@
 //   A parent command that executes child commands in sequence, passing data
 //   between steps. Useful for release pipelines, build systems, or deployments.
 //
-// commands:
-//   - command: '{filename} --project my-app'
+// test:
+//   - name: "Executes full release workflow"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --project my-app'
 //     assertions:
-//       - contains: 'Validating my-app'
-//       - contains: 'Building my-app'
-//       - contains: 'Publishing my-app'
-//       - contains: 'Release complete'
-//   - command: '{filename} validate --project my-app'
+//       stdout:
+//         matches: 'Validating my-app.*Building my-app.*Publishing my-app.*Release complete'
+//   - name: "Runs validate command"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} validate --project my-app'
 //     assertions:
-//       - contains: 'Validating my-app'
-//       - contains: 'Validation passed'
-//   - command: '{filename} build --project my-app'
+//       stdout:
+//         matches: 'Validating my-app.*Validation passed'
+//   - name: "Runs build command"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} build --project my-app'
 //     assertions:
-//       - contains: 'Building my-app'
-//       - contains: 'Build output'
+//       stdout:
+//         matches: 'Building my-app.*Build output'
 // ---
 import { cli, makeComposableBuilder, chain } from 'cli-forge';
 

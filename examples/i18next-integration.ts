@@ -4,16 +4,19 @@
 // description: |
 //   Demonstrates how to integrate cli-forge with i18next localization library
 //   using the function-based localization API.
-// commands:
-//   - command: '{filename} --name TestApp --port 8080'
+// test:
+//   - name: "Runs with localized options"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name TestApp --port 8080'
 //     assertions:
-//       - contains: 'Starting server'
-//       - contains: 'Name: TestApp'
-//       - contains: 'Port: 8080'
-//   - command: '{filename} --help'
+//       stdout:
+//         matches: 'Starting server.*Name: TestApp.*Port: 8080'
+//   - name: "Shows help with localized option names"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --help'
 //     assertions:
-//       - contains: '--name'
-//       - contains: '--port'
+//       stdout:
+//         matches: '--name.*--port'
 // ---
 
 import { cli } from 'cli-forge';

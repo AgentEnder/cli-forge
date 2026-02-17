@@ -4,15 +4,20 @@
 // description: |
 //   This example demonstrates how to use strict mode to ensure that all arguments are recognized.
 //   Strict mode throws a validation error when unmatched arguments are encountered.
-// commands:
-//   - command: '{filename} --name World'
+// test:
+//   - name: "Accepts known arguments"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World'
 //     assertions:
-//       - contains: 'Hello, World!'
-//   - command: '{filename} --name World --unknown arg'
+//       stdout:
+//         contains: 'Hello, World!'
+//   - name: "Rejects unknown arguments in strict mode"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World --unknown arg'
 //     assertions:
-//       - contains: 'Unknown argument: --unknown'
-//       - contains: 'Unknown argument: arg'
-//     exitCode: 1
+//       stderr:
+//         matches: 'Unknown argument: --unknown.*Unknown argument: arg'
+//       exitCode: 1
 // ---
 import cliForge from 'cli-forge';
 

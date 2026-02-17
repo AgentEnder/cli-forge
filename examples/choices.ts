@@ -7,8 +7,13 @@
 //   Choices are checked after `coerce` if it is also provided, so be sure that the `coerce` function returns a value that is in the choices array.
 //
 //   Choices can be provided as an array of valid values or as a function that returns an array of valid values. Note that when returning the array from a function, providing "as const" is necessary to narrow the typing of the argument. This may not be possible if the choices are dynamic or need to be calculated at runtime, in which case the typing will remain as a broader type (e.g. `string` instead of `'a' | 'b'`).
-// commands:
-//  - '{filename} hello --name sir'
+// test:
+//   - name: "Validates option choices"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//     assertions:
+//       stdout:
+//         contains: 'hello, sir!'
 // ---
 import cliForge from 'cli-forge';
 

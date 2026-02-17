@@ -15,11 +15,16 @@
 //
 //   Options passed on the command line will always take precedence over environment variables. Environment variables override configuration files as well as default values.
 //
-// commands:
-//  - command: '{filename} hello'
-//    env:
-//      ENV_OPTIONS_NAME: sir
-//      ENV_OPTIONS_GREETING: hello
+// test:
+//   - name: "Loads options from environment variables"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello'
+//       env:
+//         ENV_OPTIONS_NAME: sir
+//         ENV_OPTIONS_GREETING: hello
+//     assertions:
+//       stdout:
+//         contains: 'Hello, sir!'
 // ---
 import cli from 'cli-forge';
 

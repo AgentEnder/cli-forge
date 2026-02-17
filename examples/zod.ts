@@ -5,8 +5,13 @@
 //   As another example of middleware, we can look at how to integrate [Zod](https://npmjs.com/zod). CLI Forge
 //   provides a middleware function under `cli-forge/middleware/zod` that can be used to validate, parse, transform,
 //   and otherwise manipulate command arguments using Zod schemas.
-// commands:
-//  - '{filename} hello --name sir'
+// test:
+//   - name: "Validates and transforms with Zod"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//     assertions:
+//       stdout:
+//         matches: 'Hello, SIR!.*sssssnake_case: sir'
 // ---
 import cliForge from 'cli-forge';
 import { zodMiddleware } from 'cli-forge/middleware/zod';

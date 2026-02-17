@@ -8,8 +8,10 @@
 //   - An explicit call to `.group` as part of the command's builder function.
 //   - By passing a `group` property in the option definition.
 //
-// commands:
-//   - '{filename} --help'
+// test:
+//   - name: "Shows grouped options in help"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --help'
 // ---
 
 import { cli } from 'cli-forge';

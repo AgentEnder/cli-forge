@@ -16,16 +16,13 @@
 //
 //   This example uses `--format json` with the `deploy` subcommand to walk
 //   through every stage. The console output shows the exact order.
-// commands:
-//  - command: '{filename} --format json deploy --target staging'
-//    assertions:
-//      - contains: '[1. root builder]'
-//      - contains: '[2. root middleware]'
-//      - contains: '[3. root init hook]'
-//      - contains: '[4. deploy builder]'
-//      - contains: '[5. deploy middleware]'
-//      - contains: '[6. deploy init hook]'
-//      - contains: '[7. handler]'
+// test:
+//   - name: "Demonstrates execution lifecycle order"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --format json deploy --target staging'
+//     assertions:
+//       stdout:
+//         matches: '\\[1\\. root builder\\].*\\[2\\. root middleware\\].*\\[3\\. root init hook\\].*\\[4\\. deploy builder\\].*\\[5\\. deploy middleware\\].*\\[6\\. deploy init hook\\].*\\[7\\. handler\\]'
 // ---
 import cli from 'cli-forge';
 

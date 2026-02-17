@@ -3,8 +3,10 @@
 // title: Using the Test Harness
 // description: |
 //   This is a simple example that demonstrates how to create a basic CLI using cli-forge
-// commands:
-//  - '--test {filename}'
+// test:
+//   - name: "Runs test harness tests"
+//     options:
+//       command: 'node --test {entryPoint}'
 // ---
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';

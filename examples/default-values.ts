@@ -11,13 +11,33 @@
 //
 //   Setting the `default` property to a value directly is the simplest way to set a default value, but can lead to some odd behavior if the value isn't consistent. For example, if the default value is the value of an environment variable that may differ among users then the actual default value will be different for each user. In this case in documentation, it would be better to tell users a description of the default value rather than the actual value.
 //
-// commands:
-//  - '{filename}'
-//  - '{filename} --name sir'
-//  - '{filename} --greeting "Good day"'
-//  - command: '{filename} --farewell "Goodbye"'
-//    env:
-//      DEFAULT_VALUES_HELLO: "Greetings"
+// test:
+//   - name: "Uses default values"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint}'
+//     assertions:
+//       stdout:
+//         contains: 'Hello, World!'
+//   - name: "Uses custom name"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name sir'
+//     assertions:
+//       stdout:
+//         contains: 'Hello, sir!'
+//   - name: "Uses custom greeting"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --greeting "Good day"'
+//     assertions:
+//       stdout:
+//         contains: 'Good day, World!'
+//   - name: "Uses env variable for greeting"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --farewell "Goodbye"'
+//       env:
+//         DEFAULT_VALUES_HELLO: "Greetings"
+//     assertions:
+//       stdout:
+//         contains: 'Greetings, World!'
 // ---
 import cliForge from 'cli-forge';
 

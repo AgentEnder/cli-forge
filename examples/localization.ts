@@ -4,21 +4,25 @@
 // description: |
 //   Demonstrates how to use the localization feature to support
 //   multiple languages for option keys and command names.
-// commands:
-//   - command: '{filename} --nombre Juan --puerto 8080'
+// test:
+//   - name: "Accepts localized option names"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --nombre Juan --puerto 8080'
 //     assertions:
-//       - contains: 'Starting server'
-//       - contains: 'Name: Juan'
-//       - contains: 'Port: 8080'
-//   - command: '{filename} --name John --port 3000'
+//       stdout:
+//         matches: 'Starting server.*Name: Juan.*Port: 8080'
+//   - name: "Accepts default option names"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name John --port 3000'
 //     assertions:
-//       - contains: 'Starting server'
-//       - contains: 'Name: John'
-//       - contains: 'Port: 3000'
-//   - command: '{filename} --help'
+//       stdout:
+//         matches: 'Starting server.*Name: John.*Port: 3000'
+//   - name: "Shows localized options in help"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --help'
 //     assertions:
-//       - contains: '--nombre'
-//       - contains: '--puerto'
+//       stdout:
+//         matches: '--nombre.*--puerto'
 // ---
 
 import { cli, LocalizationDictionary } from 'cli-forge';

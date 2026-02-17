@@ -11,8 +11,13 @@
 //   - Modify the arguments object
 //   - Perform validation that takes multiple arguments into account
 //   - Perform side effects
-// commands:
-//  - '{filename} hello --name sir'
+// test:
+//   - name: "Executes middleware before handler"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//     assertions:
+//       stdout:
+//         matches: 'ABOUT TO RUN A COMMAND.*HELLO MIDDLEWARE.*Hello, SIR!'
 // ---
 import cliForge from 'cli-forge';
 

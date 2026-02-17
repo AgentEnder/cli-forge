@@ -4,8 +4,13 @@
 // description: |
 //   This example demonstrates how to use [@cli-forge/parser](https://npmjs.com/@cli-forge/parser) to interpret CLI arguments
 //   without the need for a CLI framework. For single-command CLIs, this may be enough.
-// commands:
-//   - '{filename} --name sir'
+// test:
+//   - name: "Parses arguments with parser only"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name sir'
+//     assertions:
+//       stdout:
+//         contains: 'Hello, sir!'
 // ---
 import { parser } from '@cli-forge/parser';
 

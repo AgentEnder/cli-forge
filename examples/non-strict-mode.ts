@@ -4,17 +4,19 @@
 // description: |
 //   This example demonstrates the default behavior without strict mode.
 //   Unmatched arguments are collected in the `unmatched` array and don't cause errors.
-// commands:
-//   - command: '{filename} --name World'
+// test:
+//   - name: "Accepts known arguments"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World'
 //     assertions:
-//       - contains: 'Hello, World!'
-//       - contains: 'Unmatched: []'
-//   - command: '{filename} --name World --unknown arg extra'
+//       stdout:
+//         matches: 'Hello, World!.*Unmatched: \\[\\]'
+//   - name: "Collects unknown arguments in unmatched array"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World --unknown arg extra'
 //     assertions:
-//       - contains: 'Hello, World!'
-//       - contains: "--unknown"
-//       - contains: "arg"
-//       - contains: "extra"
+//       stdout:
+//         matches: 'Hello, World!.*--unknown.*arg.*extra'
 // ---
 import cliForge from 'cli-forge';
 

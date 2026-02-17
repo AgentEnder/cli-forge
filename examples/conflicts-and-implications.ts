@@ -3,9 +3,13 @@
 // title: Conflicts and Implications
 // description: |
 //   This example illustrates how `.conflicts()` and `.implies()` can be used to enforce mutually exclusive options and mutually required options, respectively.
-// commands:
-//  - '{filename} --source=old --target=new'
-//  - '{filename} --source=old --target=new --dry-run'
+// test:
+//   - name: "Runs with source and target"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --source=old --target=new'
+//   - name: "Runs with dry-run option"
+//     options:
+//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --source=old --target=new --dry-run'
 // ---
 import cli from 'cli-forge';
 

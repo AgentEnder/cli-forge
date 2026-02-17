@@ -10,7 +10,6 @@
 //     assertions:
 //       stdout:
 //         contains: 'Hello, sir!'
-//
 //   - name: "Goodbye command"
 //     options:
 //       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} goodbye --name madame'
