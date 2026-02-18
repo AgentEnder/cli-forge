@@ -17,13 +17,49 @@ import MonacoEditorWebpackPlugin from 'monaco-editor-webpack-plugin';
 import { compressToEncodedURIComponent } from 'lz-string';
 
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
-import { dirname, join, sep } from 'node:path';
+import { dirname, join } from 'node:path';
 
 import { stringify } from 'yaml';
 
 // Functional-examples imports
 import { resolveConfig, scanExamples } from 'functional-examples';
 import type { Example as FunctionalExample } from 'functional-examples';
+
+/**
+ * Get the entry point file from an example
+ */
+function getEntryPoint(example: FunctionalExample) {
+  const entryPoint = example.metadata.entryPoint;
+  console.log(
+    entryPoint,
+    example.files.map((f) => f.relativePath)
+  );
+  if (!entryPoint) {
+    return example.files[0];
+  }
+  return example.files.find((file) => file.relativePath === entryPoint || file.absolutePath === entryPoint);
+}
+
+/**
+ * Transform FunctionalExample to the old Example format expected by the playground
+ */
+function transformForPlayground(example: FunctionalExample) {
+  return {
+    files: example.files.map((file) => ({
+      path: file.absolutePath,
+      contents: file.parsed,
+    })),
+    data: {
+      id: example.id,
+      title: example.title,
+      description: example.description,
+      fileMap: (example.metadata.fileMap as Record<string, string>) ?? {},
+      commands: [], // Not needed for playground
+      entryPoint: getEntryPoint(example)?.absolutePath ?? example.files[0]?.absolutePath,
+      hidden: example.metadata.hidden ?? false,
+    },
+  };
+}
 
 export const ExamplesDocsPlugin = async (
   context: LoadContext
@@ -112,39 +148,6 @@ export const ExamplesDocsPlugin = async (
     },
   };
 };
-
-/**
- * Transform FunctionalExample to the old Example format expected by the playground
- */
-function transformForPlayground(example: FunctionalExample) {
-  return {
-    files: example.files.map((file) => ({
-      path: file.absolutePath,
-      contents: file.parsed,
-    })),
-    data: {
-      id: example.id,
-      title: example.title,
-      description: example.description,
-      fileMap: (example.metadata.fileMap as Record<string, string>) ?? {},
-      commands: [], // Not needed for playground
-      entryPoint: getEntryPoint(example)?.absolutePath ?? example.files[0]?.absolutePath,
-      hidden: example.metadata.hidden ?? false,
-    },
-  };
-}
-
-function getEntryPoint(example: FunctionalExample) {
-  const entryPoint = example.metadata.entryPoint;
-  console.log(
-    entryPoint,
-    example.files.map((f) => f.relativePath)
-  );
-  if (!entryPoint) {
-    return example.files[0];
-  }
-  return example.files.find((file) => file.relativePath === entryPoint || file.absolutePath === entryPoint);
-}
 
 function formatCodeBlock(
   path: string,
