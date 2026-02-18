@@ -10,7 +10,7 @@
 // test:
 //   - name: "Validates option choices"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/choices.ts hello --name sir'
 //     assertions:
 //       stdout:
 //         contains: 'hello, sir!'

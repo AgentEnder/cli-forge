@@ -7,13 +7,13 @@
 // test:
 //   - name: "Accepts known arguments"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/non-strict-mode.ts --name World'
 //     assertions:
 //       stdout:
 //         matches: 'Hello, World!.*Unmatched: \\[\\]'
 //   - name: "Collects unknown arguments in unmatched array"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name World --unknown arg extra'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/non-strict-mode.ts --name World --unknown arg extra'
 //     assertions:
 //       stdout:
 //         matches: 'Hello, World!.*--unknown.*arg.*extra'

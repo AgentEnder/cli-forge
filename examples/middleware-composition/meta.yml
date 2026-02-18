@@ -4,18 +4,10 @@ description: |
   Demonstrates how to compose middleware from separate modules. Each middleware
   adds properties to the args object, and TypeScript correctly infers the
   accumulated type in the final handler.
-
-entryPoint: cli.ts
-fileMap:
-  "./cli.ts": "cli.ts"
-  "./types.ts": "types.ts"
-  "./middleware/auth.ts": "middleware/auth.ts"
-  "./middleware/timing.ts": "middleware/timing.ts"
-
 test:
   - name: "With Authentication"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} greet --name Developer'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/middleware-composition/cli.ts greet --name Developer'
     assertions:
       stdout:
         matches: '(?s)Hello, Developer.*authenticated.*Request completed in'

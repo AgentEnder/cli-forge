@@ -4,26 +4,17 @@ description: |
   Shows how to create reusable option builders that can be shared across
   commands. This pattern reduces duplication when multiple commands need
   the same options like verbosity, output format, or configuration paths.
-
-entryPoint: cli.ts
-fileMap:
-  "./cli.ts": "cli.ts"
-  "./builders/common.ts": "builders/common.ts"
-  "./builders/output.ts": "builders/output.ts"
-  "./commands/build.ts": "commands/build.ts"
-  "./commands/serve.ts": "commands/serve.ts"
-
 test:
   - name: "Build with Options"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} build --verbose --format json'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/composable-builders/cli.ts build --verbose --format json'
     assertions:
       stdout:
         matches: '(?s)verbose: true.*format: json'
 
   - name: "Serve with Options"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} serve --port 8080 --verbose'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/composable-builders/cli.ts serve --port 8080 --verbose'
     assertions:
       stdout:
         matches: '(?s)verbose: true.*port: 8080'

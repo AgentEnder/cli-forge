@@ -5,6 +5,10 @@ import type { Config } from 'functional-examples';
 
 const config: Config = {
   root: './examples',
+  scan: {
+    include: ['**/*.ts', '**/meta.yml'],
+    exclude: ['**/node_modules/**', '**/dist/**'],
+  },
   plugins: [
     createJavaScriptPlugin(),
     createYamlManifestPlugin(),

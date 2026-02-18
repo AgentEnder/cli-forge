@@ -1,0 +1,108 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "type": "object",
+  "properties": {
+    "plugins": {
+      "type": "array",
+      "description": "Plugins to use for scanning and parsing",
+      "items": {
+        "anyOf": [
+          {
+            "type": "object",
+            "properties": {
+              "name": {
+                "const": "javascript"
+              },
+              "options": {
+                "$ref": "#/$defs/javascriptOptions"
+              }
+            }
+          }
+        ]
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "JSON Schema defining the expected metadata structure for examples"
+    },
+    "scan": {
+      "type": "object",
+      "properties": {
+        "include": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns to include"
+        },
+        "exclude": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Glob patterns to exclude"
+        }
+      }
+    },
+    "pathMappings": {
+      "type": "array",
+      "description": "Path mappings for conflict resolution",
+      "items": {
+        "type": "object",
+        "properties": {
+          "pattern": {
+            "type": "string"
+          },
+          "extractor": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "pattern",
+          "extractor"
+        ]
+      }
+    },
+    "generate": {
+      "type": "object",
+      "properties": {
+        "outputDir": {
+          "type": "string",
+          "description": "Output directory for generated files"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "javascriptOptions": {
+      "type": "object",
+      "properties": {
+        "skipFrontmatter": {
+          "type": "boolean",
+          "description": "Skip frontmatter parsing"
+        },
+        "skipRegions": {
+          "type": "boolean",
+          "description": "Skip region parsing"
+        },
+        "regionTag": {
+          "type": "object",
+          "description": "Custom region tag markers",
+          "properties": {
+            "start": {
+              "type": "string"
+            },
+            "end": {
+              "type": "string"
+            }
+          }
+        },
+        "skipExtraction": {
+          "type": "boolean",
+          "description": "Skip file extraction/discovery"
+        }
+      },
+      "description": "Options for javascript plugin"
+    }
+  }
+}

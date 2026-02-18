@@ -6,7 +6,7 @@
 // test:
 //   - name: "Runs test harness tests"
 //     options:
-//       command: 'node --test {entryPoint}'
+//       command: 'node --test examples/test-harness.ts'
 // ---
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';

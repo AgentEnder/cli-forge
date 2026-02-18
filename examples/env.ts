@@ -18,7 +18,7 @@
 // test:
 //   - name: "Loads options from environment variables"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/env.ts hello'
 //       env:
 //         ENV_OPTIONS_NAME: sir
 //         ENV_OPTIONS_GREETING: hello

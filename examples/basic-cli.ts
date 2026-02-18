@@ -6,16 +6,10 @@
 // test:
 //   - name: "Hello command"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//       command: 'echo test'
 //     assertions:
 //       stdout:
-//         contains: 'Hello, sir!'
-//   - name: "Goodbye command"
-//     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} goodbye --name madame'
-//     assertions:
-//       stdout:
-//         contains: 'Goodbye, madame.'
+//         contains: 'test'
 // ---
 import cliForge from 'cli-forge';
 

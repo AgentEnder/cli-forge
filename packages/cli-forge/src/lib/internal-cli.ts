@@ -43,6 +43,15 @@ import { getCallingFile, getParentPackageJson } from './utils';
  *   }).forge();
  * ```
  */
+/**
+ * Cross-realm brand symbol used to identify InternalCLI instances across
+ * different copies of the cli-forge package (e.g. when pnpm resolves
+ * multiple copies due to differing peer dependencies). `Symbol.for()`
+ * returns the same symbol globally, so the brand check works even when
+ * `instanceof` would fail.
+ */
+const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
+
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
@@ -51,6 +60,26 @@ export class InternalCLI<
   TParent = undefined
 > implements CLI<TArgs, THandlerReturn, TChildren, TParent>
 {
+  /**
+   * Cross-realm brand for identifying InternalCLI instances across
+   * different package copies. See {@link CLI_FORGE_BRAND}.
+   */
+  readonly [CLI_FORGE_BRAND] = true;
+
+  /**
+   * Check whether `obj` is an InternalCLI instance, even when it was
+   * created by a different copy of the cli-forge package.
+   */
+  static isInternalCLI(
+    obj: unknown
+  ): obj is InternalCLI<any, any, any, any> {
+    return (
+      obj != null &&
+      typeof obj === 'object' &&
+      CLI_FORGE_BRAND in obj
+    );
+  }
+
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
@@ -304,10 +333,16 @@ export class InternalCLI<
           this.registeredCommands[alias] = cmd;
         }
       }
-    } else if (keyOrCommand instanceof InternalCLI) {
-      const cmd = keyOrCommand;
+    } else if (InternalCLI.isInternalCLI(keyOrCommand)) {
+      const cmd = keyOrCommand as InternalCLI<any, any, any, any>;
       if (cmd.name === '$0') {
         this.withRootCommandConfiguration(cmd.configuration as any);
+        // Copy any commands registered on the $0 instance (e.g. subcommands
+        // added via `.commands()` after the $0 CLI was created).
+        for (const [key, subcmd] of Object.entries(cmd.registeredCommands)) {
+          subcmd._parent = this;
+          this.registeredCommands[key] = subcmd;
+        }
         return this as any;
       }
       cmd._parent = this;

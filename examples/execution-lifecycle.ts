@@ -19,7 +19,7 @@
 // test:
 //   - name: "Demonstrates execution lifecycle order"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --format json deploy --target staging'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/execution-lifecycle.ts --format json deploy --target staging'
 //     assertions:
 //       stdout:
 //         matches: '\\[1\\. root builder\\].*\\[2\\. root middleware\\].*\\[3\\. root init hook\\].*\\[4\\. deploy builder\\].*\\[5\\. deploy middleware\\].*\\[6\\. deploy init hook\\].*\\[7\\. handler\\]'

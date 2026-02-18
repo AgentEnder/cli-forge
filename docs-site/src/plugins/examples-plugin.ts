@@ -21,13 +21,7 @@ import { dirname, join, sep } from 'node:path';
 
 import { stringify } from 'yaml';
 
-import {
-  CommandConfiguration,
-  Example,
-  collectExamples,
-} from '../../../tools/scripts/collect-examples';
-
-// NEW: functional-examples imports
+// Functional-examples imports
 import { resolveConfig, scanExamples } from 'functional-examples';
 import type { Example as FunctionalExample } from 'functional-examples';
 
@@ -45,17 +39,11 @@ export const ExamplesDocsPlugin = async (
   const visibleExamples = examples.filter((e) => !e.metadata.hidden);
 
   for (const example of visibleExamples) {
-    const relative = (
-      example.files.length > 1 || example.multifile
-        ? dirname(example.files[0].path)
-        : example.files[0].path
-    ).replace(examplesRoot, '');
+    // Use displayPath for the markdown filename
     const destination = join(
       __dirname,
       '../../docs/examples',
-      relative.endsWith('.ts')
-        ? relative.replace('.ts', '.md')
-        : `${relative}.md`
+      `${example.displayPath}.md`
     );
     ensureDirSync(dirname(destination));
     writeFileSync(destination, formatExampleMd(example));
@@ -124,21 +112,25 @@ export const ExamplesDocsPlugin = async (
   };
 };
 
-function getEntryPoint(example: Example) {
+function getEntryPoint(example: FunctionalExample) {
+  const entryPoint = example.metadata.entryPoint;
   console.log(
-    example.data.entryPoint,
-    example.files.map((f) => f.path)
+    entryPoint,
+    example.files.map((f) => f.relativePath)
   );
-  return example.files.find((file) => file.path === example.data.entryPoint);
+  if (!entryPoint) {
+    return example.files[0];
+  }
+  return example.files.find((file) => file.relativePath === entryPoint || file.absolutePath === entryPoint);
 }
 
 function formatCodeBlock(
   path: string,
   contents: string,
-  fileMap: Record<string, string>,
+  fileMap: Record<string, string> | undefined,
   title: string
 ): string {
-  const displayTitle = fileMap[path] ?? title;
+  const displayTitle = fileMap?.[path] ?? title;
   const ext = path.split('.').pop() ?? 'ts';
   const lang =
     ext === 'yml' || ext === 'yaml' ? 'yaml' : ext === 'json' ? 'json' : 'ts';
@@ -149,8 +141,10 @@ ${contents}
 
 function processContentWithFileTags(
   content: string,
-  files: Example['files'],
-  data: Example['data']
+  files: FunctionalExample['files'],
+  metadata: FunctionalExample['metadata'],
+  id: string,
+  title: string
 ): string {
   // Match {{file:path}} patterns
   const fileTagPattern = /\{\{file:([^}]+)\}\}/g;
@@ -162,36 +156,47 @@ function processContentWithFileTags(
     // Find the file in the collected files
     const file = files.find((f) => {
       // Match against the relative path from fileMap or the path suffix
-      const fileMapMatch = Object.entries(data.fileMap).find(
-        ([fullPath, displayName]) =>
-          displayName === normalizedPath || fullPath.endsWith(normalizedPath)
-      );
-      if (fileMapMatch) {
-        return f.path === fileMapMatch[0];
+      const fileMap = metadata.fileMap as Record<string, string> | undefined;
+      if (fileMap) {
+        const fileMapMatch = Object.entries(fileMap).find(
+          ([fullPath, displayName]) =>
+            displayName === normalizedPath || fullPath.endsWith(normalizedPath)
+        );
+        if (fileMapMatch) {
+          return f.relativePath === fileMapMatch[0] || f.absolutePath === fileMapMatch[0];
+        }
       }
-      return f.path.endsWith(normalizedPath);
+      return f.relativePath.endsWith(normalizedPath) || f.absolutePath.endsWith(normalizedPath);
     });
 
     if (!file) {
       console.warn(
-        `Warning: File "${relativePath}" not found in example "${data.id}"`
+        `Warning: File "${relativePath}" not found in example "${id}"`
       );
       return match; // Keep original tag if file not found
     }
 
-    return formatCodeBlock(file.path, file.contents, data.fileMap, data.title);
+    return formatCodeBlock(
+      file.relativePath,
+      file.parsed,
+      metadata.fileMap as Record<string, string> | undefined,
+      title
+    );
   });
 }
 
-function formatExampleMd({ files, data, content }: Example): string {
+function formatExampleMd(example: FunctionalExample): string {
+  const { id, title, description, files, metadata } = example;
+
   const frontmatter = `---
 ${stringify({
-  id: data.id,
-  title: data.title,
-  description: data.description,
+  id,
+  title,
+  description,
 })}hide_title: true
 ---`;
 
+  const entryPoint = getEntryPoint(example);
   const playgroundLink = link(
     `/playground/#${compressToEncodedURIComponent(
       [
@@ -199,30 +204,38 @@ ${stringify({
         '// the TypeScript playground that this script should be evaluated as a nodejs script.',
         "import {} from 'node:fs'",
         '',
-        getEntryPoint({ files, data })?.contents ?? '',
+        entryPoint?.parsed ?? '',
       ].join('\n')
     )}`,
     'View on TypeScript Playground'
   );
 
-  const usageSection = data.commands.length
+  // Extract commands from metadata.test array
+  const testCommands = (metadata.test as Array<{
+    name?: string;
+    options: { command: string; env?: Record<string, string> };
+    assertions?: unknown;
+  }>) ?? [];
+
+  const usageSection = testCommands.length
     ? h2(
         'Usage',
-        ...data.commands.map((config) => {
-          const n: CommandConfiguration =
-            typeof config === 'string' ? { command: config, env: {} } : config;
-          const { env, title, description, command } = n;
+        ...testCommands.map((testCase) => {
+          const { name: testName, options } = testCase;
+          const { command, env = {} } = options;
+          // Escape command for code block (already inside backticks, no need for extra escaping)
+          const displayCommand = command.replace('{filename}', './' + id + '.js');
           return lines(
-            title ? h3(title) : '',
-            description,
+            testName ? h3(testName) : '',
+            '',
             codeBlock(
               `${
-                Object.entries(env ?? {}).length
+                Object.entries(env).length
                   ? Object.entries(env)
                       .map((val) => val.join('='))
                       .join(' ') + ' '
                   : ''
-              }node ${command.replace('{filename}', './' + data.id + '.js')}`,
+              }${displayCommand}`,
               'shell'
             )
           );
@@ -230,14 +243,23 @@ ${stringify({
       )
     : '';
 
+  // Check if there's a content.md file
+  const contentFile = files.find(f => f.relativePath.endsWith('content.md'));
+
   // If content.md exists, use it with file tag processing
-  if (content) {
-    const processedContent = processContentWithFileTags(content, files, data);
+  if (contentFile) {
+    const processedContent = processContentWithFileTags(
+      contentFile.raw,
+      files,
+      metadata,
+      id,
+      title
+    );
     return `${frontmatter}
 
-# ${data.title}
+# ${title}
 
-${data.description ?? ''}
+${description ?? ''}
 
 ${processedContent}
 
@@ -250,15 +272,20 @@ ${e2eExamplesDisclaimer}
   }
 
   // Fallback: original behavior (description + all files sequentially)
-  const bodyLines = [h1(data.title)];
-  if (data.description) {
-    bodyLines.push(data.description);
+  const bodyLines = [h1(title)];
+  if (description) {
+    bodyLines.push(description);
   }
   bodyLines.push(h2('Code'));
 
   const codeBlocks = files
-    .map(({ path, contents }) =>
-      formatCodeBlock(path, contents, data.fileMap, data.title)
+    .map(({ relativePath, parsed }) =>
+      formatCodeBlock(
+        relativePath,
+        parsed,
+        metadata.fileMap as Record<string, string> | undefined,
+        title
+      )
     )
     .join('\n\n');
 
@@ -275,7 +302,7 @@ ${e2eExamplesDisclaimer}
 `;
 }
 
-function formatIndexMd(examples: ReturnType<typeof collectExamples>): string {
+function formatIndexMd(examples: FunctionalExample[]): string {
   return `---
 id: examples
 title: Examples
@@ -284,7 +311,7 @@ ${h1(
   'Examples',
   ul(
     examples.map((example) =>
-      link(`examples/${example.data.id}`, example.data?.title)
+      link(`examples/${example.id}`, example.title)
     )
   ),
   e2eExamplesDisclaimer

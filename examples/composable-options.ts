@@ -12,19 +12,19 @@
 // test:
 //   - name: "Runs greet command with composable options"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} greet --name sir --greeting "Good day"'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/composable-options.ts greet --name sir --greeting "Good day"'
 //     assertions:
 //       stdout:
 //         contains: 'Good day, sir!'
 //   - name: "Runs farewell command with composable options"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} farewell --name madame --farewell "Goodbye"'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/composable-options.ts farewell --name madame --farewell "Goodbye"'
 //     assertions:
 //       stdout:
 //         contains: 'Goodbye, madame!'
 //   - name: "Runs converse command"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} converse --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/composable-options.ts converse --name sir'
 //     assertions:
 //       stdout:
 //         contains: '[sir]: hello!'

@@ -11,7 +11,7 @@
 // test:
 //   - name: "Shows grouped options in help"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --help'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/option-groups.ts --help'
 // ---
 
 import { cli } from 'cli-forge';

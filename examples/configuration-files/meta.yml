@@ -14,23 +14,18 @@ description: |
   - Default Values
 
   This is based on the idea of highest specificity. CLI Arguments are always provided directly by the user. Environment variables can change system-to-system. Configuration files are specific to the project. Default values are equal for all instances of the CLI.
-entryPoint: configured-cli.ts
-fileMap:
-  './configured-cli.ts': 'configured-cli.ts'
-  './package.json': 'package.json'
-  './configured-cli.config.json': 'configured-cli.config.json'
-  './other.config.json': 'other.config.json'
+
 test:
   - name: 'Pure Config'
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint}'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/configuration-files/configured-cli.ts'
     assertions:
       stdout:
         matches: '(?s)Hello!.*Goodbye.*bar'
 
   - name: 'CLI Arguments'
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --greeting "Welcome"'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/configuration-files/configured-cli.ts --greeting "Welcome"'
     assertions:
       stdout:
         matches: '(?s)Welcome.*Goodbye.*bar'

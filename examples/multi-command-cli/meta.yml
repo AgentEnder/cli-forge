@@ -5,31 +5,24 @@ description: |
   `makeComposableBuilder` and `chain`. Each command returns typed
   results that can be accessed programmatically via `getChildren()`.
 
-entryPoint: cli.ts
-fileMap:
-  "./cli.ts": "cli.ts"
-  "./commands/init.ts": "commands/init.ts"
-  "./commands/build.ts": "commands/build.ts"
-  "./commands/serve.ts": "commands/serve.ts"
-
 test:
   - name: "Initialize Project"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} init --name my-project'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts init --name my-project'
     assertions:
       stdout:
         contains: "Initializing project: my-project"
 
   - name: "Build with Minification"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} build --minify'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts build --minify'
     assertions:
       stdout:
         matches: '(?s)Building project.*minify: true'
 
   - name: "Start Dev Server"
     options:
-      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} serve --port 4000 --open'
+      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts serve --port 4000 --open'
     assertions:
       stdout:
         matches: '(?s)Starting server on port 4000.*Opening browser'

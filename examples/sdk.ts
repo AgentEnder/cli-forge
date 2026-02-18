@@ -7,13 +7,13 @@
 // test:
 //   - name: "Runs hello command via CLI"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/sdk.ts hello --name sir'
 //     assertions:
 //       stdout:
 //         contains: 'Hello, sir!'
 //   - name: "Runs goodbye command via CLI"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} goodbye --name madame'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/sdk.ts goodbye --name madame'
 //     assertions:
 //       stdout:
 //         contains: 'Goodbye, madame.'

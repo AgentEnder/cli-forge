@@ -15,7 +15,7 @@
 // test:
 //   - name: "Parses nested object with dot notation"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --foo.bar.baz 42 --foo.qux 42 --foo.arr 1 2 3 --foo.blam hello'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-dot-notation-simple.ts --foo.bar.baz 42 --foo.qux 42 --foo.arr 1 2 3 --foo.blam hello'
 // ---
 import cliForge from 'cli-forge';
 

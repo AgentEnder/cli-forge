@@ -8,7 +8,7 @@
 // test:
 //   - name: "Uses ArgumentsOf type helper"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --name John --age 42'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/arguments-of.ts --name John --age 42'
 //     assertions:
 //       stdout:
 //         matches: 'Hello, John!.*You are 42 years old\\.'

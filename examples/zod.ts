@@ -8,7 +8,7 @@
 // test:
 //   - name: "Validates and transforms with Zod"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} hello --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/zod.ts hello --name sir'
 //     assertions:
 //       stdout:
 //         matches: 'Hello, SIR!.*sssssnake_case: sir'

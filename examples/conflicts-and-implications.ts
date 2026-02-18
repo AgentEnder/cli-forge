@@ -6,10 +6,10 @@
 // test:
 //   - name: "Runs with source and target"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --source=old --target=new'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/conflicts-and-implications.ts --source=old --target=new'
 //   - name: "Runs with dry-run option"
 //     options:
-//       command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --source=old --target=new --dry-run'
+//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/conflicts-and-implications.ts --source=old --target=new --dry-run'
 // ---
 import cli from 'cli-forge';
 

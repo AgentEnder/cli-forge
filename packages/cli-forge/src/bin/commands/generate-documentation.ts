@@ -386,19 +386,7 @@ async function importMarkdownFactory(): Promise<mdfactory> {
 }
 
 function isCLI(obj: unknown): obj is InternalCLI {
-  if (obj instanceof InternalCLI) {
-    return true;
-  }
-  if (typeof obj !== 'object' || !obj) {
-    return false;
-  }
-  if (!('constructor' in obj)) {
-    return false;
-  }
-  if (!('name' in obj.constructor)) {
-    return false;
-  }
-  return obj.constructor.name === InternalCLI.name;
+  return InternalCLI.isInternalCLI(obj);
 }
 
 function getExamplesFragment(
