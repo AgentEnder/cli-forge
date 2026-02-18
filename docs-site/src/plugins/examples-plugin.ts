@@ -28,8 +28,6 @@ import type { Example as FunctionalExample } from 'functional-examples';
 export const ExamplesDocsPlugin = async (
   context: LoadContext
 ): Promise<Plugin> => {
-  const examplesRoot = join(workspaceRoot, 'examples') + sep;
-
   // Use functional-examples scanner
   const config = await resolveConfig({
     root: join(workspaceRoot, 'examples')
@@ -84,12 +82,15 @@ export const ExamplesDocsPlugin = async (
       };
     },
 
-    async contentLoaded({ content, actions }) {
+    async contentLoaded({ actions }) {
       const { createData, addRoute } = actions;
+
+      // Transform FunctionalExample to old Example format for playground
+      const transformedExamples = examples.map(transformForPlayground);
 
       const examplesJsonPath = await createData(
         'examples.json',
-        JSON.stringify(examples, null, 2)
+        JSON.stringify(transformedExamples, null, 2)
       );
 
       const dtsPath = await createData(
@@ -111,6 +112,27 @@ export const ExamplesDocsPlugin = async (
     },
   };
 };
+
+/**
+ * Transform FunctionalExample to the old Example format expected by the playground
+ */
+function transformForPlayground(example: FunctionalExample) {
+  return {
+    files: example.files.map((file) => ({
+      path: file.absolutePath,
+      contents: file.parsed,
+    })),
+    data: {
+      id: example.id,
+      title: example.title,
+      description: example.description,
+      fileMap: (example.metadata.fileMap as Record<string, string>) ?? {},
+      commands: [], // Not needed for playground
+      entryPoint: getEntryPoint(example)?.absolutePath ?? example.files[0]?.absolutePath,
+      hidden: example.metadata.hidden ?? false,
+    },
+  };
+}
 
 function getEntryPoint(example: FunctionalExample) {
   const entryPoint = example.metadata.entryPoint;
