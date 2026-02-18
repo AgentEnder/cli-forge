@@ -27,13 +27,22 @@ import {
   collectExamples,
 } from '../../../tools/scripts/collect-examples';
 
+// NEW: functional-examples imports
+import { resolveConfig, scanExamples } from 'functional-examples';
+import type { Example as FunctionalExample } from 'functional-examples';
+
 export const ExamplesDocsPlugin = async (
   context: LoadContext
 ): Promise<Plugin> => {
   const examplesRoot = join(workspaceRoot, 'examples') + sep;
-  const examples = collectExamples(join(examplesRoot, '../examples'));
 
-  const visibleExamples = examples.filter((e) => !e.data.hidden);
+  // Use functional-examples scanner
+  const config = await resolveConfig({
+    root: join(workspaceRoot, 'examples')
+  });
+  const { examples } = await scanExamples(config);
+
+  const visibleExamples = examples.filter((e) => !e.metadata.hidden);
 
   for (const example of visibleExamples) {
     const relative = (
