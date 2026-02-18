@@ -2,8 +2,21 @@ import Layout from '@theme/Layout';
 import React, { useRef, useEffect } from 'react';
 import BrowserOnly from '@docusaurus/BrowserOnly';
 
-import type { Example } from '../../../tools/scripts/collect-examples';
 import type { EditorRef } from './editor';
+
+// Type for the transformed example format (from plugins/examples-plugin.ts)
+type Example = {
+  files: { path: string; contents: string }[];
+  data: {
+    id: string;
+    title: string;
+    description?: string;
+    fileMap: Record<string, string>;
+    commands: unknown[];
+    entryPoint: string;
+    hidden?: boolean;
+  };
+};
 
 import { Toaster } from 'react-hot-toast';
 
