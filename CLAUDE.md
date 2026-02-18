@@ -158,7 +158,7 @@ commands:
 
 The `docs-site/src/plugins/examples-plugin.ts` Docusaurus plugin:
 
-1. Collects examples using `tools/scripts/collect-examples.ts`
+1. Collects examples using `functional-examples` library
 2. Parses YAML front-matter from each example
 3. Generates markdown files in `docs-site/docs/examples/`
 4. Creates index page listing all examples
@@ -175,19 +175,27 @@ nx build docs-site
 
 ### E2E Testing
 
-The `e2e/run-examples.ts` runner:
+Examples are managed using `functional-examples`:
 
+- **Config**: `functional-examples.config.ts` defines example sources and test configuration
+- **Test**: Run all example tests with assertions
+  ```bash
+  nx run e2e:e2e:examples
+  # or directly:
+  npx functional-examples test
+  ```
+- **Scan**: Discover all examples and their metadata
+  ```bash
+  npx functional-examples scan
+  ```
+
+The test runner:
 1. Collects all examples with their commands
 2. For each command:
    - Replaces `{filename}` with actual path
    - Executes via `tsx`
    - Validates output against assertions
 3. Also type-checks all examples with TypeScript
-
-**Run e2e tests:**
-```bash
-nx run e2e:e2e:examples
-```
 
 ### Adding a New Example
 
