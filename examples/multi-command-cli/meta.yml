@@ -12,20 +12,24 @@ fileMap:
   "./commands/build.ts": "commands/build.ts"
   "./commands/serve.ts": "commands/serve.ts"
 
-commands:
-  - command: "{filename} init --name my-project"
-    title: "Initialize Project"
+test:
+  - name: "Initialize Project"
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} init --name my-project'
     assertions:
-      - contains: "Initializing project: my-project"
+      stdout:
+        contains: "Initializing project: my-project"
 
-  - command: "{filename} build --minify"
-    title: "Build with Minification"
+  - name: "Build with Minification"
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} build --minify'
     assertions:
-      - contains: "Building project"
-      - contains: "minify: true"
+      stdout:
+        matches: '(?s)Building project.*minify: true'
 
-  - command: "{filename} serve --port 4000 --open"
-    title: "Start Dev Server"
+  - name: "Start Dev Server"
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} serve --port 4000 --open'
     assertions:
-      - contains: "Starting server on port 4000"
-      - contains: "Opening browser"
+      stdout:
+        matches: '(?s)Starting server on port 4000.*Opening browser'

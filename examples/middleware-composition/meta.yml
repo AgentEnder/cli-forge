@@ -12,11 +12,10 @@ fileMap:
   "./middleware/auth.ts": "middleware/auth.ts"
   "./middleware/timing.ts": "middleware/timing.ts"
 
-commands:
-  - command: "{filename} greet --name Developer"
-    title: "With Authentication"
-    description: "The middleware chain adds user context and timing information."
+test:
+  - name: "With Authentication"
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} greet --name Developer'
     assertions:
-      - contains: "Hello, Developer"
-      - contains: "authenticated"
-      - contains: "Request completed in"
+      stdout:
+        matches: '(?s)Hello, Developer.*authenticated.*Request completed in'

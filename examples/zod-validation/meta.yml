@@ -11,17 +11,17 @@ fileMap:
   './schemas/config.ts': 'schemas/config.ts'
   './schemas/user.ts': 'schemas/user.ts'
 
-commands:
-  - command: '{filename} deploy --env production --replicas 3'
-    title: 'Deploy Command'
-    description: 'Validates deployment configuration using Zod schema.'
+test:
+  - name: 'Deploy Command'
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} deploy --env production --replicas 3'
     assertions:
-      - contains: 'Deploying to production'
-      - contains: 'replicas: 3'
+      stdout:
+        matches: '(?s)Deploying to production.*replicas: 3'
 
-  - command: '{filename} user-info --email test@example.com --role admin'
-    title: 'User Info Command'
-    description: 'Validates user data and transforms email to lowercase.'
+  - name: 'User Info Command'
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} user-info --email test@example.com --role admin'
     assertions:
-      - contains: 'Email: test@example.com'
-      - contains: 'Role: admin'
+      stdout:
+        matches: '(?s)Email: test@example\.com.*Role: admin'

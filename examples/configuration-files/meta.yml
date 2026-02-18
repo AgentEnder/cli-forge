@@ -20,18 +20,17 @@ fileMap:
   './package.json': 'package.json'
   './configured-cli.config.json': 'configured-cli.config.json'
   './other.config.json': 'other.config.json'
-commands:
-  - command: '{filename}'
-    title: 'Pure Config'
-    description: 'Note that no arguments are provided to the CLI. In this case, all arguments are being loaded from the configuration files.'
+test:
+  - name: 'Pure Config'
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint}'
     assertions:
-      - contains: 'Hello!'
-      - contains: 'Goodbye'
-      - contains: 'bar'
-  - command: '{filename} --greeting "Welcome"'
-    title: 'CLI Arguments'
-    description: 'In this case, the CLI arguments are being used to override the configuration file.'
+      stdout:
+        matches: '(?s)Hello!.*Goodbye.*bar'
+
+  - name: 'CLI Arguments'
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint} --greeting "Welcome"'
     assertions:
-      - contains: 'Welcome'
-      - contains: 'Goodbye'
-      - contains: 'bar'
+      stdout:
+        matches: '(?s)Welcome.*Goodbye.*bar'

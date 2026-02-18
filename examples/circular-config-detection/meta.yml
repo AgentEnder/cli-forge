@@ -6,8 +6,11 @@ fileMap:
   './cli.ts': 'cli.ts'
   './a.config.json': 'a.config.json'
   './b.config.json': 'b.config.json'
-commands:
-  - command: '{filename}'
-    exitCode: 1
+test:
+  - name: "Circular config detection error"
+    options:
+      command: 'tsx --no-cache --tsconfig ./examples/tsconfig.json {entryPoint}'
     assertions:
-      - contains: 'Circular reference detected'
+      exitCode: 1
+      stderr:
+        contains: 'Circular reference detected'
