@@ -14,7 +14,7 @@
       "command": "jest --config {projectRoot}/jest.config.ts"
     },
     "e2e:examples": {
-      "command": "tsx {projectRoot}/run-examples.ts",
+      "command": "functional-examples test",
       "dependsOn": ["^build"]
     }
   },
