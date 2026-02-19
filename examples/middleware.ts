@@ -14,7 +14,7 @@
 // test:
 //   - name: "Executes middleware before handler"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/middleware.ts hello --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json middleware.ts hello --name sir'
 //     assertions:
 //       stdout:
 //         matches: 'ABOUT TO RUN A COMMAND.*HELLO MIDDLEWARE.*Hello, SIR!'

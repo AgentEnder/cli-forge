@@ -7,19 +7,19 @@
 // test:
 //   - name: "Accepts localized option names"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/localization.ts --nombre Juan --puerto 8080'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json localization.ts --nombre Juan --puerto 8080'
 //     assertions:
 //       stdout:
 //         matches: 'Starting server.*Name: Juan.*Port: 8080'
 //   - name: "Accepts default option names"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/localization.ts --name John --port 3000'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json localization.ts --name John --port 3000'
 //     assertions:
 //       stdout:
 //         matches: 'Starting server.*Name: John.*Port: 3000'
 //   - name: "Shows localized options in help"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/localization.ts --help'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json localization.ts --help'
 //     assertions:
 //       stdout:
 //         matches: '--nombre.*--puerto'

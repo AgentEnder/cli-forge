@@ -6,10 +6,10 @@
 // test:
 //   - name: "Runs with source and target"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/conflicts-and-implications.ts --source=old --target=new'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json conflicts-and-implications.ts --source=old --target=new'
 //   - name: "Runs with dry-run option"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/conflicts-and-implications.ts --source=old --target=new --dry-run'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json conflicts-and-implications.ts --source=old --target=new --dry-run'
 // ---
 import cli from 'cli-forge';
 
@@ -43,7 +43,7 @@ cli('conflicts-and-implications', {
       // Implies creates mutually required arguments. Validation will throw an error if the first argument is provided without the second.
       // Practically in this case, this means that if the user provides the --force option, they must also provide the --backup option.
       .implies('force', 'backup'),
-  handler: (args) => {
+  handler: (_args) => {
     // ...
   },
 }).forge();

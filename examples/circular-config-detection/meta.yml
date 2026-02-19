@@ -3,7 +3,7 @@ title: Circular Config Detection
 test:
   - name: "Circular config detection error"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/circular-config-detection/cli.ts'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
     assertions:
       exitCode: 1
       stderr:

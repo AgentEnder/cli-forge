@@ -14,25 +14,25 @@
 // test:
 //   - name: "Uses default values"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/default-values.ts'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json default-values.ts'
 //     assertions:
 //       stdout:
 //         contains: 'Hello, World!'
 //   - name: "Uses custom name"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/default-values.ts --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json default-values.ts --name sir'
 //     assertions:
 //       stdout:
 //         contains: 'Hello, sir!'
 //   - name: "Uses custom greeting"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/default-values.ts --greeting "Good day"'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json default-values.ts --greeting "Good day"'
 //     assertions:
 //       stdout:
 //         contains: 'Good day, World!'
 //   - name: "Uses env variable for greeting"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/default-values.ts --farewell "Goodbye"'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json default-values.ts --farewell "Goodbye"'
 //       env:
 //         DEFAULT_VALUES_HELLO: "Greetings"
 //     assertions:

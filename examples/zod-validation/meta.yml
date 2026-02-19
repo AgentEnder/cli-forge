@@ -7,14 +7,14 @@ description: |
 test:
   - name: 'Deploy Command'
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/zod-validation/cli.ts deploy --env production --replicas 3'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts deploy --env production --replicas 3'
     assertions:
       stdout:
-        matches: '(?s)Deploying to production.*replicas: 3'
+        matches: 'Deploying to production.*replicas: 3'
 
   - name: 'User Info Command'
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/zod-validation/cli.ts user-info --email test@example.com --role admin'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts user-info --email test@example.com --role admin'
     assertions:
       stdout:
-        matches: '(?s)Email: test@example\.com.*Role: admin'
+        matches: 'Email: test@example\.com.*Role: admin'

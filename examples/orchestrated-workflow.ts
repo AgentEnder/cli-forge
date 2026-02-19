@@ -8,19 +8,19 @@
 // test:
 //   - name: "Executes full release workflow"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/orchestrated-workflow.ts --project my-app'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json orchestrated-workflow.ts --project my-app'
 //     assertions:
 //       stdout:
 //         matches: 'Validating my-app.*Building my-app.*Publishing my-app.*Release complete'
 //   - name: "Runs validate command"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/orchestrated-workflow.ts validate --project my-app'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json orchestrated-workflow.ts validate --project my-app'
 //     assertions:
 //       stdout:
 //         matches: 'Validating my-app.*Validation passed'
 //   - name: "Runs build command"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/orchestrated-workflow.ts build --project my-app'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json orchestrated-workflow.ts build --project my-app'
 //     assertions:
 //       stdout:
 //         matches: 'Building my-app.*Build output'

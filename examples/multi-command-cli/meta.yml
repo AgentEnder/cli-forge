@@ -8,21 +8,21 @@ description: |
 test:
   - name: "Initialize Project"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts init --name my-project'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts init --name my-project'
     assertions:
       stdout:
         contains: "Initializing project: my-project"
 
   - name: "Build with Minification"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts build --minify'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts build --minify'
     assertions:
       stdout:
-        matches: '(?s)Building project.*minify: true'
+        matches: 'Building project.*minify: true'
 
   - name: "Start Dev Server"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/multi-command-cli/cli.ts serve --port 4000 --open'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts serve --port 4000 --open'
     assertions:
       stdout:
-        matches: '(?s)Starting server on port 4000.*Opening browser'
+        matches: 'Starting server on port 4000.*Opening browser'

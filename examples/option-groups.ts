@@ -11,7 +11,7 @@
 // test:
 //   - name: "Shows grouped options in help"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/option-groups.ts --help'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json option-groups.ts --help'
 // ---
 
 import { cli } from 'cli-forge';
@@ -42,7 +42,7 @@ const myCLI = cli('demo', {
         group: 'address',
       })
       .group('basic-info', ['firstName', 'lastName', 'age']),
-  handler: (args) => {
+  handler: (_args) => {
     // not important
   },
 });

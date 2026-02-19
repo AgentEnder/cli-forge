@@ -43,49 +43,49 @@ description: |
 test:
   - name: "Default Configuration"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts'
     assertions:
       stdout:
-        matches: '(?s)localhost.*3000.*http://localhost:3000'
+        matches: 'Server will run at: http://localhost:3000.*Features: basic'
 
   - name: "Override Single Property"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config.server.port 8080'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config.server.port 8080'
     assertions:
       stdout:
-        matches: '(?s)localhost.*8080.*http://localhost:8080'
+        matches: 'Server will run at: http://localhost:8080.*Features: basic'
 
   - name: "Multiple Properties"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config.server.host example.com --config.server.port 443 --config.server.ssl true'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config.server.host example.com --config.server.port 443 --config.server.ssl true'
     assertions:
       stdout:
-        matches: '(?s)example\.com.*443.*https://example\.com:443'
+        matches: 'Server will run at: https://example\.com:443.*Features: basic'
 
   - name: "Required Properties"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config.database.host db.example.com --config.database.name myapp'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config.database.host db.example.com --config.database.name myapp'
     assertions:
       stdout:
-        matches: '(?s)db\.example\.com.*myapp.*5432'
+        matches: 'Database: myapp at db\.example\.com:5432.*Features: basic'
 
   - name: "Array Properties"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config.features api websockets admin'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config.features api websockets admin'
     assertions:
       stdout:
-        matches: '(?s)api.*websockets.*admin'
+        matches: 'Features: api, websockets, admin'
 
   - name: "JSON String Input"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config "{\"server\": {\"host\": \"api.example.com\", \"port\": 8443, \"ssl\": true}}"'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config "{\"server\": {\"host\": \"api.example.com\", \"port\": 8443, \"ssl\": true}}"'
     assertions:
       stdout:
-        matches: '(?s)api\.example\.com.*8443.*https://api\.example\.com:8443'
+        matches: 'Server will run at: https://api\.example\.com:8443.*Features: basic'
 
   - name: "Mixed JSON and Dot Notation"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/object-arguments/object-notation-cli.ts --config "{\"server\": {\"host\": \"mixed.example.com\"}}" --config.server.port 9000'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-notation-cli.ts --config "{\"server\": {\"host\": \"mixed.example.com\"}}" --config.server.port 9000'
     assertions:
       stdout:
-        matches: '(?s)mixed\.example\.com.*9000.*http://mixed\.example\.com:9000'
+        matches: 'Server will run at: http://mixed\.example\.com:9000.*Features: basic'

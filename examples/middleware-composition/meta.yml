@@ -7,7 +7,7 @@ description: |
 test:
   - name: "With Authentication"
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/middleware-composition/cli.ts greet --name Developer'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts greet --name Developer'
     assertions:
       stdout:
-        matches: '(?s)Hello, Developer.*authenticated.*Request completed in'
+        matches: 'Hello, Developer!.*Authenticated as:.*authenticated: true.*Request completed in'

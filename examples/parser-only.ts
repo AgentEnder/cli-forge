@@ -7,7 +7,7 @@
 // test:
 //   - name: "Parses arguments with parser only"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/parser-only.ts --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json parser-only.ts --name sir'
 //     assertions:
 //       stdout:
 //         contains: 'Hello, sir!'

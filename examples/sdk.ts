@@ -7,13 +7,13 @@
 // test:
 //   - name: "Runs hello command via CLI"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/sdk.ts hello --name sir'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json sdk.ts hello --name sir'
 //     assertions:
 //       stdout:
 //         contains: 'Hello, sir!'
 //   - name: "Runs goodbye command via CLI"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/sdk.ts goodbye --name madame'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json sdk.ts goodbye --name madame'
 //     assertions:
 //       stdout:
 //         contains: 'Goodbye, madame.'
@@ -64,7 +64,7 @@ const cli = cliForge('basic-cli')
           console.log(`Setting config ${args.set?.key} to ${args.set?.value}`);
         },
       }),
-    handler: (args) => {
+    handler: (_args) => {
       console.log('Use a subcommand of nested');
     },
   });

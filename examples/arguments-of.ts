@@ -8,12 +8,12 @@
 // test:
 //   - name: "Uses ArgumentsOf type helper"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/arguments-of.ts --name John --age 42'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json arguments-of.ts --name John --age 42'
 //     assertions:
 //       stdout:
-//         matches: 'Hello, John!.*You are 42 years old\\.'
+//         matches: 'Hello, John!.*You are 42 years old\.'
 // ---
-import { cli, ArgumentsOf, makeComposableBuilder, chain, CLI } from 'cli-forge';
+import { ArgumentsOf, chain, cli, CLI, makeComposableBuilder } from 'cli-forge';
 
 const withName = makeComposableBuilder((args) =>
   args.option('name', {

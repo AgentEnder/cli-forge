@@ -18,14 +18,14 @@ description: |
 test:
   - name: 'Pure Config'
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/configuration-files/configured-cli.ts'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json configured-cli.ts'
     assertions:
       stdout:
-        matches: '(?s)Hello!.*Goodbye.*bar'
+        matches: 'Hello!, bar!.*Goodbye, bar!'
 
   - name: 'CLI Arguments'
     options:
-      command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/configuration-files/configured-cli.ts --greeting "Welcome"'
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json configured-cli.ts --greeting "Welcome"'
     assertions:
       stdout:
-        matches: '(?s)Welcome.*Goodbye.*bar'
+        matches: 'Welcome, bar!.*Goodbye, bar!'

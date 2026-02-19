@@ -7,13 +7,13 @@
 // test:
 //   - name: "Runs with localized options"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/i18next-integration.ts --name TestApp --port 8080'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json i18next-integration.ts --name TestApp --port 8080'
 //     assertions:
 //       stdout:
 //         matches: 'Starting server.*Name: TestApp.*Port: 8080'
 //   - name: "Shows help with localized option names"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./examples/tsconfig.json examples/i18next-integration.ts --help'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json i18next-integration.ts --help'
 //     assertions:
 //       stdout:
 //         matches: '--name.*--port'
