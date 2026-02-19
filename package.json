@@ -9,7 +9,7 @@
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
     "@nx/vite": "catalog:",
-    "@nx/vitest": "22.2.0-beta.2",
+    "@nx/vitest": "22.5.1",
     "@nx/web": "catalog:",
     "@nx/workspace": "catalog:",
     "@swc-node/register": "catalog:",
@@ -45,16 +45,21 @@
     "includedScripts": []
   },
   "dependencies": {
-    "@functional-examples/documentation": "0.0.0-alpha.2",
-    "@functional-examples/javascript": "0.0.0-alpha.2",
-    "@functional-examples/test": "0.0.0-alpha.2",
-    "@functional-examples/yaml-manifest": "0.0.0-alpha.2",
-    "functional-examples": "0.0.0-alpha.2",
+    "@functional-examples/documentation": "0.0.0-alpha.5",
+    "@functional-examples/javascript": "0.0.0-alpha.5",
+    "@functional-examples/test": "0.0.0-alpha.5",
+    "@functional-examples/yaml-manifest": "0.0.0-alpha.5",
+    "functional-examples": "0.0.0-alpha.5",
     "react-hot-toast": "catalog:"
   },
   "pnpm": {
     "overrides": {
-      "cli-forge": "workspace:*"
+      "cli-forge": "workspace:*",
+      "@functional-examples/test": "link:../functional-examples/packages/test",
+      "@functional-examples/documentation": "link:../functional-examples/packages/documentation",
+      "@functional-examples/javascript": "link:../functional-examples/packages/javascript",
+      "@functional-examples/yaml-manifest": "link:../functional-examples/packages/yaml-manifest",
+      "functional-examples": "link:../functional-examples/packages/functional-examples"
     }
   },
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"

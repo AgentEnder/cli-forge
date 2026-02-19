@@ -11,7 +11,7 @@
       ]
     },
     "e2e:jest": {
-      "command": "jest --config {projectRoot}/jest.config.ts"
+      "command": "jest --config {projectRoot}/jest.config.js"
     },
     "e2e:examples": {
       "command": "functional-examples test",
