@@ -1,3 +1,24 @@
+## 1.2.3 (2026-02-19)
+
+### 🚀 Features
+
+- add functional-examples configuration ([89daa89](https://github.com/agentender/cli-forge/commit/89daa89))
+- migrate basic-cli example to functional-examples schema ([f84b338](https://github.com/agentender/cli-forge/commit/f84b338))
+- migrate single-file examples to functional-examples schema ([13ec526](https://github.com/agentender/cli-forge/commit/13ec526))
+- migrate multi-file example metadata to functional-examples schema ([b6b0400](https://github.com/agentender/cli-forge/commit/b6b0400))
+- update e2e:examples to use functional-examples CLI ([df842ce](https://github.com/agentender/cli-forge/commit/df842ce))
+- **docs:** replace collectExamples with scanExamples ([64484ed](https://github.com/agentender/cli-forge/commit/64484ed))
+- **docs:** update content processing for functional-examples ([8507e1a](https://github.com/agentender/cli-forge/commit/8507e1a))
+
+### 🩹 Fixes
+
+- **docs:** complete migration to functional-examples in Docusaurus plugin ([62d0b77](https://github.com/agentender/cli-forge/commit/62d0b77))
+- **docs:** resolve TypeScript errors and clean up unused code ([a7234b6](https://github.com/agentender/cli-forge/commit/a7234b6))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.2.2 (2026-02-17)
 
 ### 🩹 Fixes
