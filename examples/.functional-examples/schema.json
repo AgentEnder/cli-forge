@@ -8,15 +8,47 @@
       "items": {
         "anyOf": [
           {
-            "type": "object",
-            "properties": {
-              "name": {
+            "const": "javascript",
+            "description": "Use the default options for javascript"
+          },
+          {
+            "type": "array",
+            "prefixItems": [
+              {
                 "const": "javascript"
               },
-              "options": {
+              {
                 "$ref": "#/$defs/javascriptOptions"
               }
-            }
+            ],
+            "minItems": 2,
+            "maxItems": 2
+          },
+          {
+            "const": "yaml-manifest",
+            "description": "Use the default options for yaml-manifest"
+          },
+          {
+            "const": "@functional-examples/test",
+            "description": "Use the default options for @functional-examples/test"
+          },
+          {
+            "type": "string",
+            "description": "Unknown plugin package name"
+          },
+          {
+            "type": "array",
+            "description": "Unknown plugin with options",
+            "prefixItems": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "object"
+              }
+            ],
+            "minItems": 1,
+            "maxItems": 2
           }
         ]
       }

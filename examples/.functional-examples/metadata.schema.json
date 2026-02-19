@@ -34,6 +34,33 @@
                     },
                     "command": {
                       "type": "string"
+                    },
+                    "maintainVTSequences": {
+                      "type": "boolean"
+                    },
+                    "outputSnapshot": {
+                      "type": "object",
+                      "properties": {
+                        "path": {
+                          "type": "string"
+                        },
+                        "stdout": {
+                          "type": "boolean"
+                        },
+                        "stderr": {
+                          "type": "boolean"
+                        },
+                        "exitCode": {
+                          "type": "boolean"
+                        },
+                        "ansi": {
+                          "type": "boolean"
+                        }
+                      },
+                      "required": [
+                        "path"
+                      ],
+                      "additionalProperties": false
                     }
                   },
                   "required": [
@@ -108,6 +135,33 @@
                       },
                       "assertions": {
                         "$ref": "#/$defs/__schema0"
+                      },
+                      "maintainVTSequences": {
+                        "type": "boolean"
+                      },
+                      "outputSnapshot": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "stdout": {
+                            "type": "boolean"
+                          },
+                          "stderr": {
+                            "type": "boolean"
+                          },
+                          "exitCode": {
+                            "type": "boolean"
+                          },
+                          "ansi": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "path"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
@@ -157,6 +211,33 @@
                       },
                       "command": {
                         "type": "string"
+                      },
+                      "maintainVTSequences": {
+                        "type": "boolean"
+                      },
+                      "outputSnapshot": {
+                        "type": "object",
+                        "properties": {
+                          "path": {
+                            "type": "string"
+                          },
+                          "stdout": {
+                            "type": "boolean"
+                          },
+                          "stderr": {
+                            "type": "boolean"
+                          },
+                          "exitCode": {
+                            "type": "boolean"
+                          },
+                          "ansi": {
+                            "type": "boolean"
+                          }
+                        },
+                        "required": [
+                          "path"
+                        ],
+                        "additionalProperties": false
                       }
                     },
                     "required": [
@@ -231,6 +312,33 @@
                         },
                         "assertions": {
                           "$ref": "#/$defs/__schema0"
+                        },
+                        "maintainVTSequences": {
+                          "type": "boolean"
+                        },
+                        "outputSnapshot": {
+                          "type": "object",
+                          "properties": {
+                            "path": {
+                              "type": "string"
+                            },
+                            "stdout": {
+                              "type": "boolean"
+                            },
+                            "stderr": {
+                              "type": "boolean"
+                            },
+                            "exitCode": {
+                              "type": "boolean"
+                            },
+                            "ansi": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "path"
+                          ],
+                          "additionalProperties": false
                         }
                       },
                       "required": [
