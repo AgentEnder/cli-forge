@@ -9,5 +9,6 @@ export type {
   ExtractChildren,
 } from './lib/composable-builder';
 export type { ArgumentsOf } from './lib/utils';
+export type { PromptConfig, PromptOptionConfig, PromptOption, PromptProvider } from './lib/prompt-types';
 export { ConfigurationProviders } from './lib/configuration-providers';
 export type { LocalizationDictionary, LocalizationFunction } from '@cli-forge/parser';
