@@ -1493,5 +1493,38 @@ describe('cliForge', () => {
       await app.forge([]);
       expect(batchCalled).toBe(true);
     });
+
+    it('should prompt, inject values, and pass validation', async () => {
+      let handlerArgs: any;
+      const provider: PromptProvider = {
+        promptBatch: async (options) => {
+          const results: Record<string, unknown> = {};
+          for (const opt of options) {
+            if (opt.config.type === 'number') {
+              results[opt.name] = 42;
+            } else {
+              results[opt.name] = 'prompted-' + opt.name;
+            }
+          }
+          return results;
+        },
+      };
+
+      const app = cli('test', {
+        handler: (args) => {
+          handlerArgs = args;
+        },
+      })
+        .option('name', { type: 'string', required: true })
+        .option('port', { type: 'number', prompt: 'Which port?' })
+        .option('verbose', { type: 'boolean', default: false })
+        .withPromptProvider(provider);
+
+      await app.forge([]);
+
+      expect(handlerArgs.name).toBe('prompted-name');
+      expect(handlerArgs.port).toBe(42);
+      expect(handlerArgs.verbose).toBe(false); // default, not prompted
+    });
   });
 });
