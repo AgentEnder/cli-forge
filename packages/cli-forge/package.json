@@ -6,11 +6,15 @@
     "@cli-forge/parser": "workspace:*"
   },
   "peerDependencies": {
+    "@clack/prompts": "*",
     "markdown-factory": "catalog:",
     "tsx": "catalog:",
     "zod": "catalog:"
   },
   "peerDependenciesMeta": {
+    "@clack/prompts": {
+      "optional": true
+    },
     "markdown-factory": {
       "optional": true,
       "dev": true
@@ -52,6 +56,10 @@
     "./middleware/*": {
       "require": "./dist/middleware/*.js",
       "types": "./dist/middleware/*.d.ts"
+    },
+    "./prompt-providers/clack": {
+      "require": "./dist/prompt-providers/clack.js",
+      "types": "./dist/prompt-providers/clack.d.ts"
     },
     "./package.json": "./package.json"
   },
