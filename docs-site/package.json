@@ -2,59 +2,45 @@
   "name": "@cli-forge/docs-site",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "scripts": {
-    "serve": "docusaurus start",
-    "build": "docusaurus build",
-    "swizzle": "docusaurus swizzle",
-    "write-heading-ids": "docusaurus write-heading-ids",
+    "dev": "vike dev",
+    "build": "vike build && pnpm exec pagefind --site dist/client",
+    "preview": "vike build && pnpm exec pagefind --site dist/client && vike preview",
     "typecheck": "tsc",
     "extract-cli-docs": "pnpm cli-forge generate-documentation ../packages/cli-forge/src/bin/cli.ts --output ./docs/cli"
   },
   "dependencies": {
-    "@docusaurus/core": "catalog:",
-    "@docusaurus/preset-classic": "catalog:",
-    "@mdx-js/react": "catalog:",
-    "clsx": "catalog:",
-    "prism-react-renderer": "catalog:",
-    "react": "catalog:",
-    "react-dom": "catalog:",
-    "react-hot-toast": "catalog:"
+    "@icons-pack/react-simple-icons": "^13.11.2",
+    "@shikijs/rehype": "^3.21.0",
+    "functional-examples": "workspace:*",
+    "gray-matter": "^4.0.3",
+    "lucide-react": "^0.563.0",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "rehype-github-alerts": "^4.2.0",
+    "rehype-parse": "^9.0.1",
+    "rehype-raw": "^7.0.0",
+    "rehype-stringify": "^10.0.1",
+    "remark-directive": "^3.0.1",
+    "remark-gfm": "^4.0.1",
+    "remark-parse": "^11.0.0",
+    "remark-rehype": "^11.1.2",
+    "shiki": "^3.21.0",
+    "unified": "^11.0.5",
+    "vike": "^0.4.252",
+    "vike-react": "^0.6.19",
+    "yaml": "^2.7.1"
   },
   "devDependencies": {
-    "@docusaurus/module-type-aliases": "catalog:",
-    "@docusaurus/remark-plugin-npm2yarn": "catalog:",
-    "@docusaurus/theme-common": "catalog:",
-    "@docusaurus/tsconfig": "catalog:",
-    "@docusaurus/types": "catalog:",
-    "@nx/devkit": "catalog:",
-    "@typescript/sandbox": "catalog:",
-    "cli-forge": "workspace:*",
-    "css-loader": "^7.1.2",
-    "docusaurus-plugin-sass": "catalog:",
-    "docusaurus-plugin-typedoc": "catalog:",
-    "fast-glob": "catalog:",
-    "monaco-editor": "catalog:",
-    "monaco-editor-webpack-plugin": "catalog:",
-    "remark-github": "catalog:",
-    "sass": "catalog:",
-    "style-loader": "catalog:",
-    "typedoc": "catalog:",
-    "typedoc-plugin-markdown": "catalog:"
-  },
-  "browserslist": {
-    "production": [
-      ">0.5%",
-      "not dead",
-      "not op_mini all"
-    ],
-    "development": [
-      "last 3 chrome version",
-      "last 3 firefox version",
-      "last 5 safari version"
-    ]
-  },
-  "engines": {
-    "node": ">=18.0"
+    "@tailwindcss/vite": "^4.1.18",
+    "@types/react": "^19.2.9",
+    "@types/react-dom": "^19.2.3",
+    "@vitejs/plugin-react": "^5.1.2",
+    "pagefind": "^1.4.0",
+    "tailwindcss": "^4.1.18",
+    "typescript": "^5.7.2",
+    "vite": "^7.3.1"
   },
   "nx": {
     "name": "docs-site",
@@ -69,17 +55,7 @@
           "extract-cli-docs"
         ],
         "outputs": [
-          "{projectRoot}/.docusaurus",
-          "{projectRoot}/build",
-          "{projectRoot}/docs/examples",
-          "{projectRoot}/docs/api"
-        ],
-        "inputs": [
-          "{projectRoot}/**/*",
-          "{projectRoot}/docusaurus.config.js",
-          "!{projectRoot}/src/**/*.d.ts",
-          "!{projectRoot}/docs/examples",
-          "!{projectRoot}/docs/api"
+          "{projectRoot}/dist"
         ]
       },
       "deploy": {
@@ -89,7 +65,7 @@
         "executor": "nx-github-pages:deploy",
         "options": {
           "remote": "https://github.com/agentender/cli-forge.git",
-          "directory": "{projectRoot}/build"
+          "directory": "{projectRoot}/dist/client"
         }
       },
       "extract-cli-docs": {
@@ -101,17 +77,12 @@
         ]
       },
       "serve": {
-        "dependsOn": [
-          "extract-cli-docs"
-        ]
-      },
-      "serve-static": {
-        "command": "npx docusaurus serve",
+        "command": "vike dev",
         "options": {
           "cwd": "{projectRoot}"
         },
         "dependsOn": [
-          "build"
+          "extract-cli-docs"
         ]
       }
     }
