@@ -1,6 +1,5 @@
 import { forwardRef, useState } from 'react';
 import type { SiteExampleFile } from '../server/utils/examples';
-import { BlueprintFrame } from './BlueprintFrame';
 import { type HighlightLines, slugifyFilename } from './CodeBlock';
 import { CodePreviewPanel } from './CodePreviewPanel';
 import { FileTree } from './FileTree';
@@ -19,7 +18,6 @@ interface FileExplorerProps {
 
 /**
  * Two-pane file explorer: tree on the left, code preview on the right.
- * Wrapped in a BlueprintFrame for the engineering drawing aesthetic.
  *
  * Supports both controlled mode (activeFile + onActiveFileChange) and
  * uncontrolled mode (internal state with optional defaultFile).
@@ -58,16 +56,16 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
 
     return (
       <div ref={ref} className={className}>
-        <BlueprintFrame>
-          <div className="flex flex-col min-h-100 -m-6">
+        <div className="border border-gray-700 rounded overflow-hidden">
+          <div className="flex flex-col min-h-100">
             {/* Unified header row */}
-            <div className="flex shrink-0 border-b border-bp-line-dim/20 bg-bp-paper-light/60">
-              <div className="w-52 shrink-0 flex items-center px-3 py-1.5 border-r border-bp-line-dim/20">
-                <span className="bp-annotation">FILE EXPLORER</span>
+            <div className="flex shrink-0 border-b border-gray-700 bg-gray-800">
+              <div className="w-52 shrink-0 flex items-center px-3 py-1.5 border-r border-gray-700">
+                <span className="text-[0.625rem] uppercase tracking-wider text-gray-500 font-mono">FILE EXPLORER</span>
               </div>
               <div className="flex-1 flex items-center justify-between px-3 py-1.5 min-w-0">
                 {selectedFile && (
-                  <span className="text-xs font-code text-bp-line-dim truncate">
+                  <span className="text-xs font-mono text-gray-400 truncate">
                     {selectedFile.relativePath}
                   </span>
                 )}
@@ -77,7 +75,7 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
             {/* Content panes */}
             <div className="flex flex-1 min-h-0">
               {/* File tree */}
-              <div className="w-52 shrink-0 border-r border-bp-line-dim/20 overflow-y-auto bg-[rgba(14,35,60,0.95)]">
+              <div className="w-52 shrink-0 border-r border-gray-700 overflow-y-auto bg-gray-900">
                 <FileTree
                   files={files}
                   activeFile={activeFile}
@@ -98,14 +96,14 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
                     anchorPrefix={`explorer-${slugifyFilename(selectedFile.relativePath)}`}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-bp-line-dim">
-                    <span className="bp-annotation">Select a file to preview</span>
+                  <div className="flex items-center justify-center h-full text-gray-500">
+                    <span className="text-[0.625rem] uppercase tracking-wider font-mono">Select a file to preview</span>
                   </div>
                 )}
               </div>
             </div>
           </div>
-        </BlueprintFrame>
+        </div>
       </div>
     );
   }

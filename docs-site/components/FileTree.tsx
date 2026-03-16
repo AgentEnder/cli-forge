@@ -17,7 +17,7 @@ export function FileTree({ files, activeFile, onSelectFile }: FileTreeProps) {
   const tree = buildTree(files.map((f) => f.relativePath));
 
   return (
-    <div className="py-2 text-sm font-code">
+    <div className="py-2 text-sm font-mono">
       {tree.map((entry) => (
         <TreeNode
           key={entry.path}
@@ -50,7 +50,7 @@ function TreeNode({
     return (
       <div>
         <button
-          className="w-full flex items-center gap-1.5 py-1 hover:bg-bp-surface/30 transition-colors text-bp-line-dim"
+          className="w-full flex items-center gap-1.5 py-1 hover:bg-gray-800/50 transition-colors text-gray-400"
           style={{ paddingLeft }}
           onClick={() => setExpanded(!expanded)}
         >
@@ -84,8 +84,8 @@ function TreeNode({
         w-full flex items-center gap-1.5 py-1 transition-all text-left border-l-2
         ${
           isActive
-            ? 'text-bp-line border-bp-accent bg-bp-accent/5 animate-pulse-accent'
-            : 'text-bp-line-dim hover:text-bp-line hover:bg-bp-surface/20 border-transparent'
+            ? 'text-gray-200 border-blue-400 bg-blue-400/5'
+            : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30 border-transparent'
         }
       `}
       style={{ paddingLeft: paddingLeft + 12 }}
@@ -99,7 +99,7 @@ function TreeNode({
 
 function FolderIcon() {
   return (
-    <svg className="w-4 h-4 text-bp-amber/80 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-4 h-4 text-yellow-500/80 shrink-0" viewBox="0 0 24 24" fill="currentColor">
       <path d="M10 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-8l-2-2z" />
     </svg>
   );
@@ -107,12 +107,12 @@ function FolderIcon() {
 
 function FileIcon({ name }: { name: string }) {
   const ext = name.split('.').pop()?.toLowerCase();
-  let color = 'text-bp-line-dim';
-  if (ext === 'ts' || ext === 'tsx') color = 'text-bp-accent';
-  else if (ext === 'js' || ext === 'jsx') color = 'text-bp-amber';
-  else if (ext === 'json' || ext === 'jsonc') color = 'text-bp-amber/70';
-  else if (ext === 'yml' || ext === 'yaml') color = 'text-bp-green';
-  else if (ext === 'md') color = 'text-bp-line';
+  let color = 'text-gray-400';
+  if (ext === 'ts' || ext === 'tsx') color = 'text-blue-400';
+  else if (ext === 'js' || ext === 'jsx') color = 'text-yellow-500';
+  else if (ext === 'json' || ext === 'jsonc') color = 'text-yellow-500/70';
+  else if (ext === 'yml' || ext === 'yaml') color = 'text-green-400';
+  else if (ext === 'md') color = 'text-gray-200';
 
   return (
     <svg className={`w-4 h-4 ${color} shrink-0`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

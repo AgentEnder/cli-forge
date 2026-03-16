@@ -1,5 +1,4 @@
 import { useState } from 'react';
-import { CornerMark } from './BlueprintFrame';
 import { CodeBlock, slugifyFilename } from './CodeBlock';
 
 interface ProseCodeBlockProps {
@@ -52,23 +51,18 @@ export function ProseCodeBlock({
 
   return (
     <div className="my-5 relative">
-      <CornerMark position="top-left" />
-      <CornerMark position="top-right" />
-      <CornerMark position="bottom-left" />
-      <CornerMark position="bottom-right" />
-
-      <div className="rounded-sm border border-bp-line-dim/60 overflow-hidden bg-[rgba(18,42,72,0.95)]">
+      <div className="rounded-sm border border-gray-700 overflow-hidden bg-gray-900">
         {/* Header with file/region info */}
         {hasFile && (
-          <div className="flex items-center justify-between px-3 py-1.5 bg-bp-paper-light/60 border-b border-bp-line-dim/20">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
             <button
               onClick={handleNavigate}
-              className="flex items-center gap-1.5 text-xs font-code text-bp-accent hover:text-bp-line-bright transition-colors group"
+              className="flex items-center gap-1.5 text-xs font-mono text-blue-400 hover:text-white transition-colors group"
               title={`Open ${file} in File Explorer`}
             >
               {/* File icon */}
               <svg
-                className="w-3 h-3 text-bp-line-dim group-hover:text-bp-accent transition-colors"
+                className="w-3 h-3 text-gray-400 group-hover:text-blue-400 transition-colors"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -80,7 +74,7 @@ export function ProseCodeBlock({
               <span>{displayLabel}</span>
               {/* Arrow hint */}
               <svg
-                className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-bp-line-dim"
+                className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -92,7 +86,7 @@ export function ProseCodeBlock({
 
             <button
               onClick={handleCopy}
-              className="text-bp-line-dim hover:text-bp-line transition-colors p-1"
+              className="text-gray-400 hover:text-gray-200 transition-colors p-1"
               aria-label="Copy code"
               title="Copy code"
             >

@@ -6,26 +6,11 @@ interface LinkProps extends AnchorHTMLAttributes<HTMLAnchorElement> {
   active?: boolean;
 }
 
-/**
- * Navigation link that automatically prepends the site base URL.
- * Uses standard <a> tags — Vike handles client-side navigation
- * via its built-in link interceptor.
- */
-export function Link({
-  children,
-  active,
-  href,
-  className = '',
-  ...props
-}: LinkProps) {
+export function Link({ children, active, href, className = '', ...props }: LinkProps) {
   return (
     <a
       href={href ? applyBaseUrl(href) : href}
-      className={`
-        transition-colors duration-200
-        ${active ? 'text-bp-line font-medium' : 'text-bp-line/70 hover:text-bp-line'}
-        ${className}
-      `}
+      className={`transition-colors duration-200 ${active ? 'font-medium' : 'opacity-70 hover:opacity-100'} ${className}`}
       {...props}
     >
       {children}

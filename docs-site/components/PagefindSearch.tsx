@@ -34,7 +34,7 @@ declare global {
 }
 
 /**
- * Blueprint-themed search with Cmd/Ctrl+K and keyboard navigation.
+ * Search with Cmd/Ctrl+K and keyboard navigation.
  */
 export function PagefindSearch() {
   const [query, setQuery] = useState('');
@@ -123,7 +123,7 @@ export function PagefindSearch() {
   return (
     <div ref={containerRef} className="relative">
       <div className="relative">
-        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-bp-line-dim pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-gray-500 pointer-events-none" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
         </svg>
         <input
@@ -134,27 +134,27 @@ export function PagefindSearch() {
           onFocus={() => query && setIsOpen(true)}
           onKeyDown={handleKeyDown}
           placeholder="Search..."
-          className="w-56 pl-9 pr-14 py-1.5 rounded text-xs font-code bg-bp-paper-light/60 border border-bp-line-dim/25 text-bp-line placeholder:text-bp-line-dim focus:border-bp-accent focus:outline-none transition-all"
+          className="w-56 pl-9 pr-14 py-1.5 rounded text-xs font-mono bg-gray-800 border border-gray-700 text-gray-200 placeholder:text-gray-500 focus:border-blue-400 focus:outline-none transition-all"
         />
-        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[0.5625rem] bg-bp-paper border border-bp-line-dim/25 rounded text-bp-line-dim pointer-events-none">
+        <kbd className="absolute right-2.5 top-1/2 -translate-y-1/2 px-1 py-0.5 text-[0.5625rem] bg-gray-900 border border-gray-700 rounded text-gray-500 pointer-events-none">
           ⌘K
         </kbd>
       </div>
 
       {isOpen && (
-        <div className="absolute top-full right-0 mt-2 z-50 w-96 max-h-96 overflow-y-auto bp-glass rounded border border-bp-line-dim/30">
+        <div className="absolute top-full right-0 mt-2 z-50 w-96 max-h-96 overflow-y-auto bg-gray-900/95 backdrop-blur-sm rounded border border-gray-700">
           {pagefindError ? (
             <div className="p-4 text-center text-sm">
-              <div className="text-bp-amber mb-1">Search unavailable</div>
-              <div className="text-bp-line-dim text-xs">
-                Build the site with <code className="text-bp-accent">pnpm build</code> to enable search.
+              <div className="text-yellow-500 mb-1">Search unavailable</div>
+              <div className="text-gray-500 text-xs">
+                Build the site with <code className="text-blue-400">pnpm build</code> to enable search.
               </div>
             </div>
           ) : isLoading ? (
-            <div className="px-4 py-6 text-center text-bp-line-dim text-sm">Searching...</div>
+            <div className="px-4 py-6 text-center text-gray-500 text-sm">Searching...</div>
           ) : results.length > 0 ? (
             <>
-              <div className="px-3 py-1.5 text-[0.625rem] text-bp-line-dim border-b border-bp-line-dim/15 font-code uppercase tracking-wider">
+              <div className="px-3 py-1.5 text-[0.625rem] text-gray-500 border-b border-gray-700 font-mono uppercase tracking-wider">
                 {results.length} result{results.length !== 1 ? 's' : ''}
               </div>
               <div ref={resultsRef}>
@@ -163,25 +163,25 @@ export function PagefindSearch() {
                     key={result.id}
                     onClick={() => { window.location.href = result.url; setIsOpen(false); }}
                     onMouseEnter={() => setSelectedIndex(i)}
-                    className={`w-full text-left px-3 py-2.5 border-b border-bp-line-dim/10 last:border-0 transition-colors ${
-                      i === selectedIndex ? 'bg-bp-accent/10' : 'hover:bg-bp-surface/30'
+                    className={`w-full text-left px-3 py-2.5 border-b border-gray-800 last:border-0 transition-colors ${
+                      i === selectedIndex ? 'bg-blue-400/10' : 'hover:bg-gray-800/50'
                     }`}
                   >
-                    <div className={`text-sm font-medium ${i === selectedIndex ? 'text-bp-line-bright' : 'text-bp-line'}`}>
+                    <div className={`text-sm font-medium ${i === selectedIndex ? 'text-white' : 'text-gray-200'}`}>
                       {result.title}
                     </div>
-                    <div className="text-xs text-bp-line-dim mt-0.5 line-clamp-2" dangerouslySetInnerHTML={{ __html: result.excerpt }} />
+                    <div className="text-xs text-gray-500 mt-0.5 line-clamp-2" dangerouslySetInnerHTML={{ __html: result.excerpt }} />
                   </button>
                 ))}
               </div>
-              <div className="px-3 py-1.5 text-[0.5625rem] text-bp-line-dim border-t border-bp-line-dim/15 flex items-center gap-3 font-code">
-                <span><kbd className="px-1 bg-bp-paper rounded">↑↓</kbd> nav</span>
-                <span><kbd className="px-1 bg-bp-paper rounded">↵</kbd> select</span>
-                <span><kbd className="px-1 bg-bp-paper rounded">esc</kbd> close</span>
+              <div className="px-3 py-1.5 text-[0.5625rem] text-gray-500 border-t border-gray-700 flex items-center gap-3 font-mono">
+                <span><kbd className="px-1 bg-gray-900 rounded">↑↓</kbd> nav</span>
+                <span><kbd className="px-1 bg-gray-900 rounded">↵</kbd> select</span>
+                <span><kbd className="px-1 bg-gray-900 rounded">esc</kbd> close</span>
               </div>
             </>
           ) : query ? (
-            <div className="px-4 py-6 text-center text-bp-line-dim text-sm">No results for &ldquo;{query}&rdquo;</div>
+            <div className="px-4 py-6 text-center text-gray-500 text-sm">No results for &ldquo;{query}&rdquo;</div>
           ) : null}
         </div>
       )}

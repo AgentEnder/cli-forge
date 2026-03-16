@@ -1,40 +1,23 @@
-import { Link } from './Link';
-import { SpecPanel } from './SpecPanel';
 import type { SiteExample } from '../server/utils/examples';
+import { Link } from './Link';
 
 interface ExampleCardProps {
   example: SiteExample;
 }
 
-/**
- * Card component for the examples index page.
- */
 export function ExampleCard({ example }: ExampleCardProps) {
-  const fileCount = example.files.length;
-
   return (
     <Link href={`/examples/${example.id}`} className="block no-underline">
-      <SpecPanel
-        label="EXAMPLE"
-        revision={example.extractorName}
-        footer={[
-          { key: 'FILES', value: String(fileCount) },
-          { key: 'EXTRACTOR', value: example.extractorName },
-          ...(example.tags.length > 0
-            ? [{ key: 'TAGS', value: example.tags.join(', ') }]
-            : []),
-        ]}
-        className="h-full hover:bg-bp-surface/30 transition-colors"
-      >
-        <h3 className="text-base font-heading text-bp-line mb-2 normal-case tracking-normal">
-          {example.title}
-        </h3>
+      <div className="border border-gray-700 rounded p-4 hover:bg-gray-800/50 transition-colors h-full">
+        <h3 className="text-base font-semibold mb-2">{example.title}</h3>
         {example.description && (
-          <p className="text-sm text-bp-line-dim leading-relaxed">
-            {example.description}
-          </p>
+          <p className="text-sm text-gray-400 leading-relaxed">{example.description}</p>
         )}
-      </SpecPanel>
+        <div className="flex gap-2 mt-3 text-xs text-gray-500">
+          <span>{example.files.length} files</span>
+          {example.tags.length > 0 && <span>· {example.tags.join(', ')}</span>}
+        </div>
+      </div>
     </Link>
   );
 }

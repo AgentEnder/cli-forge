@@ -13,7 +13,7 @@ interface CodePreviewPanelProps {
 
 /**
  * The right pane of the FileExplorer — shows the selected file's
- * code with blueprint-themed syntax highlighting.
+ * code with syntax highlighting.
  */
 export function CodePreviewPanel({
   filename,

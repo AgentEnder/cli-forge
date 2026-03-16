@@ -22,7 +22,7 @@ export function ProseRenderer({
           return (
             <div
               key={i}
-              className="prose-blueprint max-w-4xl"
+              className="prose-content max-w-4xl"
               dangerouslySetInnerHTML={{ __html: block.html }}
             />
           );

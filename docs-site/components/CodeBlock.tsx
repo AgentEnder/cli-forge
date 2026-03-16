@@ -92,14 +92,14 @@ function addLineNumbersToShikiHtml(
     const lineClass = isHighlighted ? 'line highlighted-line' : 'line';
     const anchorId = anchorPrefix ? `${anchorPrefix}-L${num}` : undefined;
     const gutterTag = anchorId
-      ? `<a id="${anchorId}" href="#${anchorId}" data-line="${num}" onclick="event.preventDefault()" class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(143,164,190,0.4);user-select:none;flex-shrink:0;text-decoration:none">${num}</a>`
-      : `<span class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(143,164,190,0.4);user-select:none;flex-shrink:0">${num}</span>`;
+      ? `<a id="${anchorId}" href="#${anchorId}" data-line="${num}" onclick="event.preventDefault()" class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(156,163,175,0.4);user-select:none;flex-shrink:0;text-decoration:none">${num}</a>`
+      : `<span class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(156,163,175,0.4);user-select:none;flex-shrink:0">${num}</span>`;
     return `<span class="${lineClass}">${gutterTag}`;
   });
 }
 
 /**
- * Blueprint-themed code block with header bar and copy button.
+ * Code block with header bar and copy button.
  */
 export function CodeBlock({
   highlightedHtml,
@@ -263,26 +263,26 @@ export function CodeBlock({
 
   return (
     <div
-      className={`flex flex-col rounded border border-bp-line-dim/25 overflow-hidden bg-[rgba(18,42,72,0.95)] ${className}`}
+      className={`flex flex-col rounded border border-gray-700 overflow-hidden bg-gray-900 ${className}`}
     >
       {/* Header bar */}
       {showHeader && (filename || language) && (
-        <div className="flex items-center justify-between px-3 py-1.5 bg-bp-paper-light/60 border-b border-bp-line-dim/20">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
           <div className="flex items-center gap-2">
             {filename && (
-              <span className="text-xs font-code text-bp-line-dim">
+              <span className="text-xs font-mono text-gray-400">
                 {filename}
               </span>
             )}
             {!filename && language && (
-              <span className="text-[0.625rem] font-code text-bp-line-dim uppercase tracking-wider">
+              <span className="text-[0.625rem] font-mono text-gray-400 uppercase tracking-wider">
                 {language}
               </span>
             )}
           </div>
           <button
             onClick={handleCopy}
-            className="text-bp-line-dim hover:text-bp-line transition-colors p-1"
+            className="text-gray-400 hover:text-gray-200 transition-colors p-1"
             aria-label="Copy code"
             title="Copy code"
           >
@@ -317,11 +317,11 @@ export function CodeBlock({
         {processedHtml ? (
           <div
             ref={codeRef}
-            className="p-4 text-sm font-code leading-relaxed [&_code]:whitespace-normal [&_.line]:flex [&_.line]:whitespace-pre"
+            className="p-4 text-sm font-mono leading-relaxed [&_code]:whitespace-normal [&_.line]:flex [&_.line]:whitespace-pre"
             dangerouslySetInnerHTML={{ __html: processedHtml }}
           />
         ) : (
-          <pre className="p-4 text-sm font-code leading-relaxed text-bp-line">
+          <pre className="p-4 text-sm font-mono leading-relaxed text-gray-200">
             {showLineNumbers ? (
               <code>
                 {displayCode.split('\n').map((line, i) => {
@@ -346,12 +346,12 @@ export function CodeBlock({
                           href={`#${anchorId}`}
                           data-line={num}
                           onClick={(e) => handlePlainLineClick(e, num)}
-                          className="w-8 shrink-0 text-right mr-4 text-bp-line-dim/40 select-none no-underline hover:text-bp-accent transition-colors"
+                          className="w-8 shrink-0 text-right mr-4 text-gray-600 select-none no-underline hover:text-blue-400 transition-colors"
                         >
                           {num}
                         </a>
                       ) : (
-                        <span className="w-8 shrink-0 text-right mr-4 text-bp-line-dim/40 select-none">
+                        <span className="w-8 shrink-0 text-right mr-4 text-gray-600 select-none">
                           {num}
                         </span>
                       )}
