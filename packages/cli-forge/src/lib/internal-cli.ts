@@ -23,6 +23,7 @@ import {
   SDKCommand,
 } from './public-api';
 import type { PromptProvider, PromptOptionConfig } from './prompt-types';
+import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
 
 /**
@@ -123,7 +124,7 @@ export class InternalCLI<
     (cli: any, args: TArgs) => Promise<void> | void
   > = [];
 
-  private registeredPromptProviders: PromptProvider[] = [];
+  registeredPromptProviders: PromptProvider[] = [];
 
   /**
    * Stores prompt config for each option, keyed by option name.
@@ -381,8 +382,12 @@ export class InternalCLI<
   option<
     TOption extends string,
     const TOptionConfig extends OptionConfig<any, any, any>
-  >(name: TOption, config: TOptionConfig) {
-    this.parser.option(name, config);
+  >(name: TOption, config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }) {
+    const { prompt, ...parserConfig } = config;
+    if (prompt !== undefined) {
+      this.promptConfigs.set(name, prompt);
+    }
+    this.parser.option(name, parserConfig as TOptionConfig);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
   }
@@ -390,8 +395,12 @@ export class InternalCLI<
   positional<
     TOption extends string,
     const TOptionConfig extends OptionConfig<any, any, any>
-  >(name: TOption, config: TOptionConfig) {
-    this.parser.positional(name, config);
+  >(name: TOption, config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }) {
+    const { prompt, ...parserConfig } = config;
+    if (prompt !== undefined) {
+      this.promptConfigs.set(name, prompt);
+    }
+    this.parser.positional(name, parserConfig as TOptionConfig);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
     return this as any;
   }
@@ -1046,6 +1055,47 @@ export class InternalCLI<
       // seeded with the accumulated values from the discovery loop.
       // The alreadyParsed values ensure proper required-option
       // validation and prevent positional re-consumption.
+
+      // Prompt for missing option values before final validation.
+      // Collect prompt providers from the full command chain.
+      const allPromptProviders: PromptProvider[] = [
+        ...this.registeredPromptProviders,
+      ];
+      const allPromptConfigs = new Map(this.promptConfigs);
+      {
+        // eslint-disable-next-line @typescript-eslint/no-this-alias
+        let walkCmd: InternalCLI<any, any, any, any> = this;
+        for (const command of this.commandChain) {
+          walkCmd = walkCmd.registeredCommands[command];
+          for (const p of walkCmd.registeredPromptProviders) {
+            allPromptProviders.push(p);
+          }
+          for (const [k, v] of walkCmd.promptConfigs) {
+            allPromptConfigs.set(k, v);
+          }
+        }
+      }
+
+      if (allPromptProviders.length > 0 || allPromptConfigs.size > 0) {
+        const promptedValues = await resolvePrompts({
+          configuredOptions: this.parser.configuredOptions as Record<
+            string,
+            any
+          >,
+          configuredImplies: this.parser.configuredImplies,
+          promptConfigs: allPromptConfigs,
+          providers: allPromptProviders,
+          currentArgs: mergedArgs,
+        });
+
+        // Inject prompted values into accumulated args
+        for (const [key, value] of Object.entries(promptedValues)) {
+          if (value !== undefined) {
+            mergedArgs[key] = value;
+          }
+        }
+      }
+
       try {
         argv = this.parser
           .clone({

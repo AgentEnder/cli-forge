@@ -1255,7 +1255,7 @@ describe('cliForge', () => {
   describe('prompt providers', () => {
     it('should register a prompt provider via withPromptProvider', () => {
       const provider: PromptProvider = {
-        prompt: async (option) => 'test-value',
+        prompt: async () => 'test-value',
       };
       const app = cli('test').withPromptProvider(provider);
       // Should return CLI for chaining
@@ -1266,6 +1266,211 @@ describe('cliForge', () => {
       expect(() => {
         cli('test').withPromptProvider({} as any);
       }).toThrow(/must implement at least one of/);
+    });
+
+    it('should store prompt config from option registration', () => {
+      const app = cli('test')
+        .option('name', { type: 'string', prompt: true })
+        .option('age', { type: 'number', prompt: 'How old are you?' })
+        .option('debug', { type: 'boolean' });
+
+      const internal = app as unknown as InternalCLI;
+      expect(internal.promptConfigs.get('name')).toBe(true);
+      expect(internal.promptConfigs.get('age')).toBe('How old are you?');
+      expect(internal.promptConfigs.has('debug')).toBe(false);
+    });
+
+    it('should store prompt config from positional registration', () => {
+      const app = cli('test')
+        .positional('file', { type: 'string', prompt: 'Which file?' });
+
+      const internal = app as unknown as InternalCLI;
+      expect(internal.promptConfigs.get('file')).toBe('Which file?');
+    });
+
+    it('should not store prompt config when prompt is not provided', () => {
+      const app = cli('test')
+        .option('name', { type: 'string' });
+
+      const internal = app as unknown as InternalCLI;
+      expect(internal.promptConfigs.size).toBe(0);
+    });
+
+    it('should store prompt callback config', () => {
+      const promptFn = () => 'Enter value';
+      const app = cli('test')
+        .option('token', { type: 'string', prompt: promptFn });
+
+      const internal = app as unknown as InternalCLI;
+      expect(internal.promptConfigs.get('token')).toBe(promptFn);
+    });
+  });
+
+  describe('prompt resolution in forge', () => {
+    it('should prompt for required options with no value when provider exists', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return option.name === 'name' ? 'Alice' : 42;
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', required: true })
+        .option('age', { type: 'number', required: true })
+        .withPromptProvider(provider);
+
+      await app.forge([]);
+      expect(prompted).toContain('name');
+      expect(prompted).toContain('age');
+    });
+
+    it('should not prompt for options with values already provided', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', required: true })
+        .withPromptProvider(provider);
+
+      await app.forge(['--name', 'Bob']);
+      expect(prompted).not.toContain('name');
+    });
+
+    it('should prompt when prompt is true even if not required', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', prompt: true })
+        .withPromptProvider(provider);
+
+      await app.forge([]);
+      expect(prompted).toContain('name');
+    });
+
+    it('should not prompt when prompt is false even if required', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', required: true, prompt: false })
+        .withPromptProvider(provider);
+
+      // This will throw due to required validation, but should not prompt
+      await expect(app.forge([])).rejects.toThrow();
+      expect(prompted).not.toContain('name');
+    });
+
+    it('should use prompt callback to resolve config', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('token', {
+          type: 'string',
+          prompt: (args: any) => (args.authFile ? false : 'Enter token'),
+        })
+        .withPromptProvider(provider);
+
+      await app.forge([]);
+      expect(prompted).toContain('token');
+    });
+
+    it('should throw when prompting needed but no provider registered', async () => {
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', prompt: true });
+
+      await expect(app.forge([])).rejects.toThrow(/no prompt provider/i);
+    });
+
+    it('should use filtered providers before fallback providers', async () => {
+      const calls: Array<{ provider: string; option: string }> = [];
+      const filteredProvider: PromptProvider = {
+        filter: (name) => name === 'secret',
+        prompt: async (option) => {
+          calls.push({ provider: 'filtered', option: option.name });
+          return 'secret-value';
+        },
+      };
+      const fallbackProvider: PromptProvider = {
+        prompt: async (option) => {
+          calls.push({ provider: 'fallback', option: option.name });
+          return 'fallback-value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('name', { type: 'string', prompt: true })
+        .option('secret', { type: 'string', prompt: true })
+        .withPromptProvider(filteredProvider)
+        .withPromptProvider(fallbackProvider);
+
+      await app.forge([]);
+      expect(calls).toContainEqual({ provider: 'filtered', option: 'secret' });
+      expect(calls).toContainEqual({ provider: 'fallback', option: 'name' });
+    });
+
+    it('should prefer promptBatch over prompt when available', async () => {
+      let batchCalled = false;
+      const provider: PromptProvider = {
+        promptBatch: async (options) => {
+          batchCalled = true;
+          const result: Record<string, unknown> = {};
+          for (const opt of options) {
+            result[opt.name] = 'batch-value';
+          }
+          return result;
+        },
+        prompt: async () => {
+          throw new Error('Should not be called when promptBatch exists');
+        },
+      };
+
+      const app = cli('test', {
+        handler: () => {},
+      })
+        .option('a', { type: 'string', prompt: true })
+        .option('b', { type: 'string', prompt: true })
+        .withPromptProvider(provider);
+
+      await app.forge([]);
+      expect(batchCalled).toBe(true);
     });
   });
 });
