@@ -1150,6 +1150,8 @@ export class InternalCLI<
     }
     clone.commandChain = [...this.commandChain];
     clone.requiresCommand = this.requiresCommand;
+    clone.registeredPromptProviders = [...this.registeredPromptProviders];
+    clone.promptConfigs = new Map(this.promptConfigs);
     return clone;
   }
 }

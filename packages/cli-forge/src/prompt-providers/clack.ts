@@ -12,7 +12,10 @@ export function createClackPromptProvider(): PromptProvider {
     async promptBatch(
       options: PromptOption[]
     ): Promise<Record<string, unknown>> {
-      const clack = await import('@clack/prompts');
+      // Dynamic import to avoid compile-time module resolution
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const modulePath = '@clack/prompts';
+      const clack = await import(/* webpackIgnore: true */ modulePath);
 
       const results: Record<string, unknown> = {};
 
@@ -48,7 +51,7 @@ export function createClackPromptProvider(): PromptProvider {
               defaultValue !== undefined ? String(defaultValue) : undefined,
             defaultValue:
               defaultValue !== undefined ? String(defaultValue) : undefined,
-            validate: (val) => {
+            validate: (val: string): string | void => {
               if (val && isNaN(Number(val))) {
                 return 'Please enter a valid number';
               }
@@ -119,12 +122,14 @@ function getDefault(config: PromptOption['config']): unknown {
 }
 
 function hasChoices(config: PromptOption['config']): boolean {
-  return config.choices !== undefined;
+  return 'choices' in config && (config as Record<string, unknown>)['choices'] !== undefined;
 }
 
 function getChoices(config: PromptOption['config']): unknown[] {
-  if (typeof config.choices === 'function') {
-    return config.choices();
+  const cfg = config as Record<string, unknown>;
+  const choices = cfg['choices'];
+  if (typeof choices === 'function') {
+    return choices();
   }
-  return config.choices ?? [];
+  return (choices as unknown[]) ?? [];
 }

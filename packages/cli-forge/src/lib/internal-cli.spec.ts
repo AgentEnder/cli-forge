@@ -1304,6 +1304,27 @@ describe('cliForge', () => {
       const internal = app as unknown as InternalCLI;
       expect(internal.promptConfigs.get('token')).toBe(promptFn);
     });
+
+    it('should propagate prompt providers to subcommands', async () => {
+      const prompted: string[] = [];
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'value';
+        },
+      };
+
+      const app = cli('test')
+        .withPromptProvider(provider)
+        .command('sub', {
+          builder: (cmd) =>
+            cmd.option('name', { type: 'string', required: true }),
+          handler: () => {},
+        });
+
+      await app.forge(['sub']);
+      expect(prompted).toContain('name');
+    });
   });
 
   describe('prompt resolution in forge', () => {

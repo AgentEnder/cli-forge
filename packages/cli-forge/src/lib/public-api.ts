@@ -18,7 +18,7 @@ import {
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
-import type { PromptProvider } from './prompt-types';
+import type { PromptOptionConfig, PromptProvider } from './prompt-types';
 
 /**
  * Extracts the command name from a Command type.
@@ -453,7 +453,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps>
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -472,7 +472,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -488,7 +488,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -504,7 +504,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -520,7 +520,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -536,7 +536,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -563,7 +563,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps>
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -582,7 +582,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -598,7 +598,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -614,7 +614,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -630,7 +630,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -646,7 +646,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
