@@ -1,5 +1,9 @@
-import Tabs from '@theme/Tabs';
-import TabItem from '@theme/TabItem';
+---
+title: Getting Started with CLI Forge
+description: Learn how to create your first CLI with CLI Forge
+nav:
+  order: 1
+---
 
 # Getting Started with CLI Forge
 
@@ -9,7 +13,7 @@ As CLI Forge is focused on first class TypeScript support, this guide will assum
 
 If adding a cli to an existing project, you may wish to install CLI Forge with npm or yarn:
 
-```bash npm2yarn
+```bash
 npm install cli-forge
 ```
 
@@ -114,19 +118,18 @@ if (require.main === module) {
 
 To run your CLI without building it, you can use [`tsx`](https://npmjs.com/tsx). If you'd rather build your CLI first, you can run `npm run build` to compile your typescript files to javascript.
 
-<Tabs>
-    <TabItem value="TypeScript + TSX">
-    ```bash
-    npx tsx bin/my-cli.ts hello --name world
-    ```
-    </TabItem>
-    <TabItem value="TypeScript + Build">
-    ```bash
-    npm run build
-    npx bin/my-cli hello --name world
-    ```
-    </TabItem>
-</Tabs>
+**Using TSX (no build step):**
+
+```bash
+npx tsx bin/my-cli.ts hello --name world
+```
+
+**Using a build step:**
+
+```bash
+npm run build
+npx bin/my-cli hello --name world
+```
 
 > **Note:** Future commands will only show the `tsx` variant of the CLI invocation. If you wish to see the `npm run build` variant, you can refer back to this section.
 

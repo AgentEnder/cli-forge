@@ -1,3 +1,10 @@
+---
+title: TypeScript Configuration
+description: TypeScript setup and configuration for CLI Forge
+nav:
+  order: 2
+---
+
 # TypeScript Configuration and Setup
 
 CLI Forge is built with first class TypeScript support. This enables you to write your cli commands in typescript and take advantage of the type safety and intellisense that TypeScript provides for every option you expect.

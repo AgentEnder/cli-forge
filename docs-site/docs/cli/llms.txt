@@ -1,0 +1,75 @@
+# cli-forge
+
+CLI tool for working with cli-forge based CLI's.
+
+This document describes the CLI commands and options for AI agent consumption.
+
+Usage: cli-forge
+
+Options:
+  --help (aliases: -h) <boolean>
+    Show help for the current command
+  --version <boolean>
+    Show the version number for the CLI
+
+Subcommands:
+  generate-documentation - Generate documentation for the given CLI
+  init - Generate a new CLI
+
+  ## cli-forge generate-documentation
+  Generate documentation for the given CLI
+
+  Usage: cli-forge generate-documentation <cli>
+
+  Positional Arguments:
+    <cli> - string (required)
+      Path to the cli that docs should be generated for.
+
+  Options:
+    --help (aliases: -h) <boolean>
+      Show help for the current command
+    --version <boolean>
+      Show the version number for the CLI
+    --output (aliases: -o) <string>
+      Where should the documentation be output?
+      Default: "docs"
+    --format <string>
+      What format should the documentation be output in?
+      Default: "md"
+      Valid values: json, md
+    --export <string>
+      The name of the export that contains the CLI instance. By default, docs will be generated for the default export.
+    --tsconfig <string>
+      Specifies the `tsconfig` used when loading typescript based CLIs.
+    --llms <boolean>
+      Generate an llms.txt file describing the CLI for AI agents.
+      Default: true
+
+  Examples:
+    $ cli-forge generate-documentation ./bin/my-cli
+    $ cli-forge generate-documentation ./bin/my-cli --format json
+    $ cli-forge generate-documentation ./bin/my-cli --export mycli
+
+  ## cli-forge init
+  Generate a new CLI
+
+  Usage: cli-forge init <cliName>
+
+  Positional Arguments:
+    <cliName> - string (required)
+      Name of the CLI to generate.
+
+  Options:
+    --help (aliases: -h) <boolean>
+      Show help for the current command
+    --version <boolean>
+      Show the version number for the CLI
+    --output (aliases: -o) <string>
+      Where should the CLI be created?
+    --format <string>
+      What format should the CLI be in?
+      Default: "ts"
+      Valid values: js, ts
+    --initialVersion (aliases: --initial-version) <string>
+      Initial version used when creating the package.json for the new CLI.
+      Default: "0.0.1"

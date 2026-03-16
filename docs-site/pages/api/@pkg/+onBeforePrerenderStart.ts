@@ -1,9 +1,9 @@
 import type { OnBeforePrerenderStartAsync } from 'vike/types';
-import { loadExamples } from '../../../server/utils/examples';
+import { scanPackages } from '../../../server/utils/packages';
 
 const onBeforePrerenderStart: OnBeforePrerenderStartAsync = async () => {
-  const examples = await loadExamples();
-  return examples.map((ex) => `/examples/${ex.id}`);
+  const packages = await scanPackages();
+  return packages.map((pkg) => `/api/${pkg.dirName}`);
 };
 
 export default onBeforePrerenderStart;

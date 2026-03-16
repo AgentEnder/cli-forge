@@ -1,3 +1,10 @@
+---
+title: Documentation Generation
+description: Auto-generate documentation from your CLI definition
+nav:
+  order: 3
+---
+
 # Autogenerate CLI Documentation
 
 Any CLI that is written with CLI forge can utilize `npx cli-forge generate-docs` to generate documentation.
