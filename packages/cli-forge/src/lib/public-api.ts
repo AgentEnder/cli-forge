@@ -18,6 +18,7 @@ import {
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
+import type { PromptProvider } from './prompt-types';
 
 /**
  * Extracts the command name from a Command type.
@@ -422,6 +423,17 @@ export interface CLI<
    */
   errorHandler(
     handler: ErrorHandler
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Registers a prompt provider for interactive option fulfillment.
+   * Multiple providers can be registered. Filtered providers are checked first
+   * (in registration order), then fallback providers (no filter).
+   *
+   * @param provider The prompt provider to register.
+   */
+  withPromptProvider(
+    provider: PromptProvider
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**

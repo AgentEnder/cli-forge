@@ -22,6 +22,7 @@ import {
   ErrorHandler,
   SDKCommand,
 } from './public-api';
+import type { PromptProvider, PromptOptionConfig } from './prompt-types';
 import { getCallingFile, getParentPackageJson } from './utils';
 
 /**
@@ -121,6 +122,14 @@ export class InternalCLI<
   private registeredInitHooks: Array<
     (cli: any, args: TArgs) => Promise<void> | void
   > = [];
+
+  private registeredPromptProviders: PromptProvider[] = [];
+
+  /**
+   * Stores prompt config for each option, keyed by option name.
+   * Set when .option() is called with a `prompt` property.
+   */
+  promptConfigs: Map<string, PromptOptionConfig<any>> = new Map();
 
   /**
    * Set when a `$0` alias replaces the root builder via `.command()`.
@@ -826,6 +835,18 @@ export class InternalCLI<
     handler: ErrorHandler
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.registeredErrorHandlers.unshift(handler);
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
+  withPromptProvider(
+    provider: PromptProvider
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+    if (!provider.prompt && !provider.promptBatch) {
+      throw new Error(
+        "Prompt provider must implement at least one of 'prompt' or 'promptBatch'"
+      );
+    }
+    this.registeredPromptProviders.push(provider);
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 

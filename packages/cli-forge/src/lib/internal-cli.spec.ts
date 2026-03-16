@@ -1,6 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest';
 import { InternalCLI } from './internal-cli';
 import { cli } from './public-api';
+import type { PromptProvider } from './prompt-types';
 
 const ORIGINAL_CONSOLE_LOG = console.log;
 
@@ -1248,6 +1249,23 @@ describe('cliForge', () => {
       ])) as any;
       expect(result.file).toBe('myfile');
       expect(result.watch).toBe(true);
+    });
+  });
+
+  describe('prompt providers', () => {
+    it('should register a prompt provider via withPromptProvider', () => {
+      const provider: PromptProvider = {
+        prompt: async (option) => 'test-value',
+      };
+      const app = cli('test').withPromptProvider(provider);
+      // Should return CLI for chaining
+      expect(app).toBeDefined();
+    });
+
+    it('should throw if provider has neither prompt nor promptBatch', () => {
+      expect(() => {
+        cli('test').withPromptProvider({} as any);
+      }).toThrow(/must implement at least one of/);
     });
   });
 });
