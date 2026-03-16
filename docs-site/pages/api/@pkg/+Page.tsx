@@ -1,9 +1,12 @@
+import { useApiPackage } from 'vike-plugin-typedoc/client';
 import { useData } from 'vike-react/useData';
+import { ApiPackageLanding } from '../../../components/ApiPackageLanding';
 import { Link } from '../../../components/Link';
 import type { PageData } from './+data.server';
 
 export default function PackageDetailPage() {
   const { pkg } = useData<PageData>();
+  const { apiPackage } = useApiPackage();
 
   if (!pkg) {
     return (
@@ -65,13 +68,25 @@ export default function PackageDetailPage() {
         </div>
       </div>
 
+      {/* Install command */}
+      <div className="inline-block bg-gray-800/50 border border-gray-700 rounded px-3 py-1.5 mb-6">
+        <code className="text-sm text-gray-200 font-mono">
+          npm install {pkg.npmName}
+        </code>
+      </div>
+
       {pkg.renderedHtml ? (
         <div
-          className="prose-content"
+          className="prose-content max-w-4xl"
           dangerouslySetInnerHTML={{ __html: pkg.renderedHtml }}
         />
       ) : (
         <p className="text-gray-500">No README available for this package.</p>
+      )}
+
+      {/* API Exports from TypeDoc */}
+      {apiPackage && apiPackage.exports.length > 0 && (
+        <ApiPackageLanding apiPackage={apiPackage} />
       )}
     </div>
   );

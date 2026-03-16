@@ -1,5 +1,6 @@
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { loadTypedocContext } from 'vike-plugin-typedoc/server';
 import {
   buildDocsNavigation,
   hydrateDocs,
@@ -9,7 +10,11 @@ import {
   type NavigationItem,
 } from '../server/utils/docs';
 import { loadExamples, type SiteExample } from '../server/utils/examples';
-import { renderMarkdown } from '../server/utils/markdown';
+import {
+  configureRehypeTypedoc,
+  configureRemarkCodeProps,
+  renderMarkdown,
+} from '../server/utils/markdown';
 import { scanPackages, type PackageInfo } from '../server/utils/packages';
 import { workspaceRoot } from '../server/utils/workspace.js';
 
@@ -32,11 +37,48 @@ export async function onCreateGlobalContext(
 ): Promise<void> {
   const docsDir = join(process.cwd(), 'docs');
 
-  const [categories, examplesList, packageList] = await Promise.all([
-    scanCategories(docsDir),
-    loadExamples(),
-    scanPackages(),
-  ]);
+  // Phase 1: Load TypeDoc context and configure rehype-typedoc
+  // so inline code auto-linking works in all subsequent markdown rendering.
+  let typedocNavigation: NavigationItem[] = [];
+  try {
+    const typedoc = await loadTypedocContext(context);
+    configureRehypeTypedoc(typedoc.rehypeOptions);
+    configureRemarkCodeProps({
+      resolveSignature: (symbolName, pkg) => {
+        const exports = typedoc.apiDocs.allExports;
+        const matches = exports.filter((exp) => exp.name === symbolName);
+
+        if (pkg) {
+          const match = matches.find((exp) => exp.package === pkg);
+          return match?.signature;
+        }
+
+        if (matches.length === 1) return matches[0].signature;
+        if (matches.length > 1) {
+          throw new Error(
+            `Ambiguous ::typedoc symbol "${symbolName}" found in packages: ${matches.map((m) => m.package).join(', ')}. Use pkg attribute to disambiguate.`
+          );
+        }
+        return undefined;
+      },
+    });
+    typedocNavigation = typedoc.navigation;
+  } catch (err) {
+    console.warn(
+      '[docs-site] TypeDoc context not available (run typedoc first):',
+      (err as Error).message
+    );
+  }
+
+  // Phase 2: Load all content in parallel.
+  // renderMarkdown calls within these loaders will now
+  // automatically apply typedoc symbol links.
+  const [categories, { siteExamples: examplesList }, packageList] =
+    await Promise.all([
+      scanCategories(docsDir),
+      loadExamples(),
+      scanPackages(),
+    ]);
 
   const rawDocs = await scanDocs(docsDir, categories);
   const docs = await hydrateDocs(rawDocs);
@@ -102,10 +144,19 @@ export async function onCreateGlobalContext(
       title: 'API',
       path: '/api',
       order: 100,
-      children: packageList.map((pkg) => ({
-        title: pkg.npmName,
-        path: `/api/${pkg.dirName}`,
-      })),
+      children: [
+        ...packageList.map((pkg) => {
+          // Merge TypeDoc nav items into package nav
+          const apiNav = typedocNavigation.find(
+            (item) => item.path === `/api/${pkg.dirName}`
+          );
+          return {
+            title: pkg.npmName,
+            path: `/api/${pkg.dirName}`,
+            children: apiNav?.children,
+          };
+        }),
+      ],
     },
   ];
 

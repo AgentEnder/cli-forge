@@ -255,6 +255,9 @@ importers:
 
   docs-site:
     dependencies:
+      '@functional-examples/documentation':
+        specifier: ^0.1.1
+        version: 0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       '@icons-pack/react-simple-icons':
         specifier: ^13.11.2
         version: 13.12.0(react@19.2.4)
@@ -288,6 +291,9 @@ importers:
       rehype-stringify:
         specifier: ^10.0.1
         version: 10.0.1
+      rehype-typedoc:
+        specifier: ^0.1.0
+        version: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
       remark-directive:
         specifier: ^3.0.1
         version: 3.0.1
@@ -309,6 +315,9 @@ importers:
       vike:
         specifier: ^0.4.252
         version: 0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      vike-plugin-typedoc:
+        specifier: ^0.1.0
+        version: 0.1.0(react@19.2.4)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
       vike-react:
         specifier: ^0.6.19
         version: 0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
@@ -4668,6 +4677,9 @@ packages:
   mdast-util-gfm@3.1.0:
     resolution: {integrity: sha512-0ulfdQOM3ysHhCJ1p06l0b0VKlhU0wuQs3thxZQagjcjPrlFRqY215uZGHHJan9GEAXd9MbfPjFJz+qMkVR6zQ==}
 
+  mdast-util-newline-to-break@2.0.0:
+    resolution: {integrity: sha512-MbgeFca0hLYIEx/2zGsszCSEJJ1JSCdiY5xQxRcLDDGa8EPvlLPupJ4DSajbMPAnC0je8jfb9TiUATnxxrHUog==}
+
   mdast-util-phrasing@4.1.0:
     resolution: {integrity: sha512-TqICwyvJJpBwvGAMZjj4J2n0X8QWp21b9l0o7eXyVJ25YNWYbJDVIyD1bZXE6WtV6RmKJVYmQAKWa0zWOABz2w==}
 
@@ -5355,6 +5367,15 @@ packages:
   rehype-stringify@10.0.1:
     resolution: {integrity: sha512-k9ecfXHmIPuFVI61B9DeLPN0qFHfawM6RsuX48hoqlaKSF61RskNjSm1lI8PhBEM0MRdLxVVm4WmTqJQccH9mA==}
 
+  rehype-typedoc@0.1.0:
+    resolution: {integrity: sha512-7ORrExsQ15LCWvCKT3SxMqLJCwZRpXUxxkvH0adMiWV/GrHpl8Zga/hNqZXd8m+9pmJmhnmgBmK3bCaRTDGGTw==}
+    peerDependencies:
+      remark-directive: '>=3.0.0'
+      unified: '>=11.0.0'
+
+  remark-breaks@4.0.0:
+    resolution: {integrity: sha512-IjEjJOkH4FuJvHZVIW0QCDWxcG96kCq7An/KVH2NfJe6rKZU2AsHeB3OEjPNRxi4QC34Xdx7I2KGYn6IpT7gxQ==}
+
   remark-directive@3.0.1:
     resolution: {integrity: sha512-gwglrEQEZcZYgVyG1tQuA+h58EZfq5CSULw7J90AFuCTyib1thgHPoqQ+h9iFvU6R+vnZ5oNFQR5QKgGpk741A==}
 
@@ -6024,6 +6045,20 @@ packages:
 
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
+
+  vike-plugin-typedoc@0.1.0:
+    resolution: {integrity: sha512-swVNPenGoPjBFKHVojEK1FioYvW6lu0qRnsPLgOL+t0eS/KRNWY98tE9c2MSJlHr076baktdrS+JaJu1WSXv0Q==}
+    peerDependencies:
+      react: '>=18'
+      vike: '>=0.4.250'
+      vike-react: '>=0.5'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      vike:
+        optional: true
+      vike-react:
+        optional: true
 
   vike-react@0.6.21:
     resolution: {integrity: sha512-mZyskc8xXJbUbK8/Lsztgd0MhrCxnQjHhCpruMVokA+jJC1uuZEAgwoO5Fptoiyqm2pjDfqtAGDw+1pZ97d9OA==}
@@ -11237,6 +11272,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
+  mdast-util-newline-to-break@2.0.0:
+    dependencies:
+      '@types/mdast': 4.0.4
+      mdast-util-find-and-replace: 3.0.2
+
   mdast-util-phrasing@4.1.0:
     dependencies:
       '@types/mdast': 4.0.4
@@ -12128,6 +12168,18 @@ snapshots:
       hast-util-to-html: 9.0.5
       unified: 11.0.5
 
+  rehype-typedoc@0.1.0(remark-directive@3.0.1)(unified@11.0.5):
+    dependencies:
+      remark-directive: 3.0.1
+      unified: 11.0.5
+      unist-util-visit: 5.1.0
+
+  remark-breaks@4.0.0:
+    dependencies:
+      '@types/mdast': 4.0.4
+      mdast-util-newline-to-break: 2.0.0
+      unified: 11.0.5
+
   remark-directive@3.0.1:
     dependencies:
       '@types/mdast': 4.0.4
@@ -12886,6 +12938,23 @@ snapshots:
     dependencies:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
+
+  vike-plugin-typedoc@0.1.0(react@19.2.4)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))):
+    dependencies:
+      rehype-stringify: 10.0.1
+      rehype-typedoc: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
+      remark-breaks: 4.0.0
+      remark-directive: 3.0.1
+      remark-gfm: 4.0.1
+      remark-parse: 11.0.0
+      remark-rehype: 11.1.2
+      unified: 11.0.5
+    optionalDependencies:
+      react: 19.2.4
+      vike: 0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
+      vike-react: 0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
+    transitivePeerDependencies:
+      - supports-color
 
   vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))):
     dependencies:

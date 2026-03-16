@@ -2,8 +2,8 @@ import type { OnBeforePrerenderStartAsync } from 'vike/types';
 import { loadExamples } from '../../../server/utils/examples';
 
 const onBeforePrerenderStart: OnBeforePrerenderStartAsync = async () => {
-  const examples = await loadExamples();
-  return examples.map((ex) => `/examples/${ex.id}`);
+  const { siteExamples } = await loadExamples();
+  return siteExamples.map((ex) => `/examples/${ex.id}`);
 };
 
 export default onBeforePrerenderStart;
