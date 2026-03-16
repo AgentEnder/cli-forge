@@ -1387,6 +1387,29 @@ describe('cliForge', () => {
       expect(prompted).toContain('name');
     });
 
+    it('should still prompt when prompt is true even if value already provided', async () => {
+      const prompted: string[] = [];
+      let handlerArgs: any;
+      const provider: PromptProvider = {
+        prompt: async (option) => {
+          prompted.push(option.name);
+          return 'prompted-value';
+        },
+      };
+
+      const app = cli('test', {
+        handler: (args) => {
+          handlerArgs = args;
+        },
+      })
+        .option('name', { type: 'string', prompt: true })
+        .withPromptProvider(provider);
+
+      await app.forge(['--name', 'cli-value']);
+      expect(prompted).toContain('name');
+      expect(handlerArgs.name).toBe('prompted-value');
+    });
+
     it('should not prompt when prompt is false even if required', async () => {
       const prompted: string[] = [];
       const provider: PromptProvider = {

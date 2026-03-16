@@ -59,7 +59,8 @@
     },
     "./prompt-providers/clack": {
       "require": "./dist/prompt-providers/clack.js",
-      "types": "./dist/prompt-providers/clack.d.ts"
+      "types": "./dist/prompt-providers/clack.d.ts",
+      "import": "./dist/prompt-providers/clack.js"
     },
     "./package.json": "./package.json"
   },
