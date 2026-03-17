@@ -20,7 +20,8 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const pathname = pageContext.urlPathname;
   const navigation: NavigationItem[] =
-    (pageContext as unknown as Record<string, unknown>).navigation as NavigationItem[] ?? [];
+    ((pageContext as unknown as Record<string, unknown>)
+      .navigation as NavigationItem[]) ?? [];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
@@ -35,7 +36,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     <div className="min-h-screen bg-forge-bg text-forge-smoke relative">
       <ForgeBackground />
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-forge-bg/95 backdrop-blur-sm border-b border-forge-iron-light relative">
+      <header className="relative top-0 z-40 bg-forge-bg/95 backdrop-blur-sm border-b border-forge-iron-light sm:sticky">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 no-underline">
@@ -87,7 +88,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
 
       {/* Mobile nav overlay */}
       {mobileMenuOpen && (
-        <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setMobileMenuOpen(false)}>
+        <div
+          className="fixed inset-0 z-30 bg-black/50 md:hidden"
+          onClick={() => setMobileMenuOpen(false)}
+        >
           <div
             className="absolute top-14 left-0 right-0 bg-forge-bg border-b border-forge-iron-light max-h-[calc(100vh-3.5rem)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
@@ -123,7 +127,11 @@ export default function Layout({ children }: { children: React.ReactNode }) {
         )}
 
         {/* Main content */}
-        <main className={`flex-1 min-w-0 p-6 md:p-8 ${showSidebar ? '' : 'max-w-screen-xl mx-auto'}`}>
+        <main
+          className={`flex-1 min-w-0 p-6 md:p-8 ${
+            showSidebar ? '' : 'max-w-7xl mx-auto'
+          }`}
+        >
           {children}
         </main>
       </div>
@@ -141,7 +149,11 @@ function SidebarContent({
   return (
     <nav className="space-y-1">
       {navigation.map((section) => (
-        <SidebarSection key={section.title} item={section} pathname={pathname} />
+        <SidebarSection
+          key={section.title}
+          item={section}
+          pathname={pathname}
+        />
       ))}
     </nav>
   );
@@ -155,9 +167,13 @@ function SidebarSection({
   pathname: string;
 }) {
   const hasChildren = item.children && item.children.length > 0;
-  const isActive = item.path ? pathname === item.path || pathname.startsWith(item.path + '/') : false;
+  const isActive = item.path
+    ? pathname === item.path || pathname.startsWith(item.path + '/')
+    : false;
   const hasActiveChild = item.children?.some(
-    (child) => child.path && (pathname === child.path || pathname.startsWith(child.path + '/'))
+    (child) =>
+      child.path &&
+      (pathname === child.path || pathname.startsWith(child.path + '/'))
   );
 
   const [open, setOpen] = useState(isActive || !!hasActiveChild);
