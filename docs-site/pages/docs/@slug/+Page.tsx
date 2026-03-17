@@ -31,13 +31,13 @@ export default function DocDetailPage() {
         <Link href="/docs" className="hover:text-gray-300">
           Docs
         </Link>
-        <span>/</span>
-        {doc.section !== 'Documentation' && (
+        {doc.section !== 'Documentation' && doc.section !== '_toplevel' && (
           <>
-            <span className="text-gray-500">{doc.section}</span>
             <span>/</span>
+            <span className="text-gray-500">{doc.section}</span>
           </>
         )}
+        <span>/</span>
         <span className="text-gray-300">{doc.title}</span>
       </nav>
 

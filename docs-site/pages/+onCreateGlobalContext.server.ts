@@ -89,7 +89,13 @@ export async function onCreateGlobalContext(
   // (not part of any section — they get top-level nav entries)
   const root = workspaceRoot();
   try {
-    const readmeContent = await readFile(join(root, 'README.md'), 'utf-8');
+    let readmeContent = await readFile(join(root, 'README.md'), 'utf-8');
+    // Rewrite the logo image path to point to the public asset
+    const baseUrl = (process.env.BASE_URL || '/cli-forge').replace(/\/$/, '');
+    readmeContent = readmeContent.replace(
+      /!\[CLI Forge Logo\]\([^)]+\)/,
+      `![CLI Forge Logo](${baseUrl}/logo.svg)`
+    );
     const readmeHtml = await renderMarkdown(readmeContent);
     docs.push({
       slug: 'index',
