@@ -56,7 +56,9 @@ export async function onCreateGlobalContext(
         if (matches.length === 1) return matches[0].signature;
         if (matches.length > 1) {
           throw new Error(
-            `Ambiguous ::typedoc symbol "${symbolName}" found in packages: ${matches.map((m) => m.package).join(', ')}. Use pkg attribute to disambiguate.`
+            `Ambiguous ::typedoc symbol "${symbolName}" found in packages: ${matches
+              .map((m) => m.package)
+              .join(', ')}. Use pkg attribute to disambiguate.`
           );
         }
         return undefined;
@@ -83,16 +85,17 @@ export async function onCreateGlobalContext(
   const rawDocs = await scanDocs(docsDir, categories);
   const docs = await hydrateDocs(rawDocs);
 
-  // Load root README as the docs index page
+  // Load root README and CHANGELOG as standalone doc pages
+  // (not part of any section — they get top-level nav entries)
   const root = workspaceRoot();
   try {
     const readmeContent = await readFile(join(root, 'README.md'), 'utf-8');
     const readmeHtml = await renderMarkdown(readmeContent);
-    docs.unshift({
+    docs.push({
       slug: 'index',
       title: 'Home',
       description: 'CLI Forge -- A type-safe CLI builder for Node.js',
-      section: 'Documentation',
+      section: '_toplevel',
       order: 0,
       filePath: join(root, 'README.md'),
       content: readmeContent,
@@ -102,7 +105,6 @@ export async function onCreateGlobalContext(
     /* no README */
   }
 
-  // Load root CHANGELOG
   try {
     const changelogContent = await readFile(
       join(root, 'CHANGELOG.md'),
@@ -113,8 +115,8 @@ export async function onCreateGlobalContext(
       slug: 'changelog',
       title: 'Changelog',
       description: 'CLI Forge changelog',
-      section: 'Documentation',
-      order: 1,
+      section: '_toplevel',
+      order: 999,
       filePath: join(root, 'CHANGELOG.md'),
       content: changelogContent,
       renderedHtml: changelogHtml,
@@ -123,14 +125,18 @@ export async function onCreateGlobalContext(
     /* no CHANGELOG */
   }
 
-  const docsNavigation = buildDocsNavigation(docs, categories);
+  // Build docs navigation from scanned docs only (exclude _toplevel pages)
+  const sectionDocs = docs.filter((d) => d.section !== '_toplevel');
+  const docsNavigation = buildDocsNavigation(sectionDocs, categories);
 
   const packages = Object.fromEntries(
     packageList.map((pkg) => [pkg.dirName, pkg])
   );
 
   const navigation: NavigationItem[] = [
+    { title: 'Home', path: '/docs/index', order: -2 },
     ...docsNavigation,
+    { title: 'Changelog', path: '/docs/changelog', order: 999 },
     {
       title: 'Examples',
       path: '/examples',
