@@ -2,19 +2,19 @@
 
 Define a schema for deployment configuration. The schema validates input and transforms it to add computed properties like `requiresApproval` based on the environment.
 
-{{file:schemas/config.ts}}
+<%= file('schemas/config.ts') %>
 
 ## User Schema
 
 The user schema validates email format and normalizes it to lowercase. It also computes permission flags based on the user's role.
 
-{{file:schemas/user.ts}}
+<%= file('schemas/user.ts') %>
 
 ## CLI with Zod Middleware
 
 The main CLI applies `zodMiddleware` to each command. This validates parsed arguments against the schema and adds transformed properties to the args object.
 
-{{file:cli.ts}}
+<%= file('cli.ts') %>
 
 ## How It Works
 

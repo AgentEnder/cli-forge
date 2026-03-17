@@ -2,31 +2,31 @@
 
 Start by defining reusable option builders for common patterns. These can be imported by any command that needs them.
 
-{{file:builders/common.ts}}
+<%= file('builders/common.ts') %>
 
 ## Output Options
 
 Group related options together. The output builders handle format selection and file output.
 
-{{file:builders/output.ts}}
+<%= file('builders/output.ts') %>
 
 ## Build Command
 
 The build command composes multiple option builders using the `chain` function. TypeScript correctly infers the combined type of all options in the handler.
 
-{{file:commands/build.ts}}
+<%= file('commands/build.ts') %>
 
 ## Serve Command
 
 The serve command reuses `withVerbose` from common options, ensuring the `--verbose` flag behaves identically across commands.
 
-{{file:commands/serve.ts}}
+<%= file('commands/serve.ts') %>
 
 ## Main CLI
 
 The main entry point composes all commands together. Each command brings its own options, all composed from reusable builders.
 
-{{file:cli.ts}}
+<%= file('cli.ts') %>
 
 ## Benefits of This Pattern
 

@@ -6,25 +6,25 @@ Each command lives in its own file under `commands/`. This separation makes comm
 
 The init command creates a new project. It uses choices for the template option, which TypeScript narrows to a literal union type.
 
-{{file:commands/init.ts}}
+<%= file('commands/init.ts') %>
 
 ### Build Command
 
 The build command handles production builds with options for minification and source maps.
 
-{{file:commands/build.ts}}
+<%= file('commands/build.ts') %>
 
 ### Serve Command
 
 The serve command starts a development server with configurable port and host.
 
-{{file:commands/serve.ts}}
+<%= file('commands/serve.ts') %>
 
 ## Main Entry Point
 
 The main CLI file imports and registers all commands. This keeps the entry point minimal and focused on composition.
 
-{{file:cli.ts}}
+<%= file('cli.ts') %>
 
 ## Directory Structure
 
