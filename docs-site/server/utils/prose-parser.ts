@@ -67,9 +67,10 @@ function buildContentIndex(
 
 /**
  * Regex for fenced code blocks in markdown.
- * Captures: [1] language, [2] content between fences.
+ * Captures: [1] language (word chars before any space/newline), [2] content between fences.
+ * Allows optional metadata after the language (e.g. `title="file.ts"`).
  */
-const FENCED_BLOCK_RE = /^```(\w*)\n([\s\S]*?)^```$/gm;
+const FENCED_BLOCK_RE = /^```(\w*)[^\n]*\n([\s\S]*?)^```$/gm;
 
 interface FencedBlock {
   language: string;
