@@ -339,6 +339,37 @@ nx serve docs-site
 
 ---
 
+## Commit Conventions
+
+Commits follow **conventional commits** with scopes for the changelog.
+
+### Scope Rules
+
+- **Scope = the package that consumers care about**, not the directory where the change lives.
+- Examples and e2e tests exist to support a package — scope them to that package.
+- Repo-wide infra (eslint, tsconfig, CI, nx) uses the `repo` scope.
+
+### Quick Reference
+
+| Change | Correct | Wrong |
+|--------|---------|-------|
+| New example for cli-forge | `docs(cli-forge): add prompting example` | `feat(examples): ...` |
+| E2E test for cli-forge | `chore(cli-forge): add prompting e2e tests` | `test(e2e): ...` |
+| ESLint / CI / nx config | `chore(repo): migrate to flat config` | `chore(eslint): ...` |
+| Docs-site fix | `fix(docs-site): ...` | ✓ (docs-site is its own scope) |
+| Parser bug fix | `fix(parser): ...` | ✓ |
+| New parser feature | `feat(parser): ...` | ✓ |
+
+### Types
+
+- `feat` — new user-facing capability
+- `fix` — bug fix
+- `docs` — documentation, examples
+- `chore` — tests, infra, deps, tooling
+- `refactor` — restructuring without behavior change
+
+---
+
 ## Key Patterns
 
 ### Fluent Builder Pattern
