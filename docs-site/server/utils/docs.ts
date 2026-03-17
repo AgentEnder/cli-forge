@@ -44,7 +44,7 @@ export async function scanCategories(docsDir: string): Promise<Map<string, Categ
 
   let entries: string[];
   try {
-    entries = (await readdir(docsDir, { recursive: true })) as string[];
+    entries = (await readdir(docsDir, { recursive: true } as any)) as string[];
   } catch {
     return categories;
   }
@@ -74,7 +74,7 @@ export async function scanDocs(docsDir: string, categories: Map<string, Category
 
   let entries: string[];
   try {
-    entries = (await readdir(docsDir, { recursive: true })) as string[];
+    entries = (await readdir(docsDir, { recursive: true } as any)) as string[];
   } catch {
     console.warn('[docs-site] No docs directory found at', docsDir);
     return [];

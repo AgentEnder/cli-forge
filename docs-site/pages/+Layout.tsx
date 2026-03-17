@@ -19,7 +19,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   const pageContext = usePageContext();
   const pathname = pageContext.urlPathname;
   const navigation: NavigationItem[] =
-    (pageContext as Record<string, unknown>).navigation as NavigationItem[] ?? [];
+    (pageContext as unknown as Record<string, unknown>).navigation as NavigationItem[] ?? [];
 
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
