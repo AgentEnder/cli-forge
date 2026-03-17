@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/ban-types */
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import {
   ArgvParser,
   EnvOptionConfig,
@@ -57,7 +57,7 @@ const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-  // eslint-disable-next-line @typescript-eslint/ban-types
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TChildren = {},
   TParent = undefined
 > implements CLI<TArgs, THandlerReturn, TChildren, TParent>
@@ -297,7 +297,7 @@ export class InternalCLI<
               CLI<TArgs, THandlerReturn, TChildren, TParent>
             >;
           }
-        : // eslint-disable-next-line @typescript-eslint/ban-types
+        : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
           {}),
     TParent
   > {

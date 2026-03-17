@@ -5,6 +5,9 @@
   "scripts": {},
   "private": true,
   "devDependencies": {
+    "@clack/prompts": "^1.1.0",
+    "@eslint/eslintrc": "catalog:",
+    "@eslint/js": "catalog:",
     "@nx/eslint": "catalog:",
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
