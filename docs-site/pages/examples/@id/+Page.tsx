@@ -147,10 +147,11 @@ export default function ExampleDetailPage() {
           <h1 className="text-3xl font-bold text-gray-100 mb-3">
             {example.title}
           </h1>
-          {example.description && (
-            <p className="text-gray-400 max-w-2xl">
-              {example.description}
-            </p>
+          {example.renderedDescriptionHtml && (
+            <div
+              className="prose-content max-w-2xl text-gray-400"
+              dangerouslySetInnerHTML={{ __html: example.renderedDescriptionHtml }}
+            />
           )}
         </div>
 

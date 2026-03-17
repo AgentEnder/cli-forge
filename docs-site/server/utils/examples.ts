@@ -70,6 +70,8 @@ export interface SiteExample {
   id: string;
   title: string;
   description: string;
+  /** Pre-rendered description HTML (markdown → HTML) */
+  renderedDescriptionHtml: string;
   extractorName: string;
   displayPath: string;
   files: SiteExampleFile[];
@@ -222,10 +224,22 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
       );
     }
 
+    // Render the description through markdown pipeline
+    const description = ex.description ?? '';
+    let renderedDescriptionHtml = '';
+    if (description) {
+      try {
+        renderedDescriptionHtml = await renderMarkdown(description);
+      } catch {
+        renderedDescriptionHtml = `<p>${description}</p>`;
+      }
+    }
+
     examples.push({
       id: ex.id,
       title: ex.title,
-      description: ex.description ?? '',
+      description,
+      renderedDescriptionHtml,
       extractorName: ex.extractorName,
       displayPath: ex.displayPath,
       files,
