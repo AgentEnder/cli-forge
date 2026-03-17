@@ -8,6 +8,7 @@ import {
 import { FileExplorer } from '../../../components/FileExplorer';
 import { Link } from '../../../components/Link';
 import { ProseRenderer } from '../../../components/ProseRenderer';
+import { TableOfContents } from '../../../components/TableOfContents';
 import type { ExampleDetailData } from './+data';
 
 const EXPLORER_PREFIX = 'explorer-';
@@ -130,7 +131,8 @@ export default function ExampleDetailPage() {
   }
 
   return (
-    <div>
+    <div className="flex gap-8">
+      <div className="flex-1 min-w-0">
       {/* Prose content -- capped at readable width */}
       <div className="max-w-4xl">
         {/* Breadcrumb */}
@@ -208,6 +210,15 @@ export default function ExampleDetailPage() {
         highlightLines={highlightLines}
         className="mb-8"
       />
+      </div>
+
+      {example.headings.length > 0 && (
+        <aside className="hidden xl:block w-56 shrink-0">
+          <div className="sticky top-20">
+            <TableOfContents headings={example.headings} />
+          </div>
+        </aside>
+      )}
     </div>
   );
 }

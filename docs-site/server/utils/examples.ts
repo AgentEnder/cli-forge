@@ -10,6 +10,7 @@ import {
 } from 'functional-examples';
 import { readFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
+import { extractHeadings, type TocEntry } from './docs';
 import { getHighlighter } from './highlighter';
 import { linkifyCodeHtml, renderMarkdown } from './markdown';
 import { parseProseToBlocks } from './prose-parser';
@@ -79,6 +80,7 @@ export interface SiteExample {
   hasReadme: boolean;
   renderedProseHtml: string | null;
   proseBlocks: ProseBlock[] | null;
+  headings: TocEntry[];
 }
 
 const LANG_MAP: Record<string, string> = {
@@ -249,6 +251,7 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
       ),
       renderedProseHtml,
       proseBlocks,
+      headings: extractHeadings(renderedDescriptionHtml + (renderedProseHtml ?? '')),
     });
   }
 

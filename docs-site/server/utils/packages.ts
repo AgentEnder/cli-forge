@@ -1,5 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
+import { extractHeadings, type TocEntry } from './docs';
 import { renderMarkdown } from './markdown';
 import { workspaceRoot } from './workspace.js';
 
@@ -12,6 +13,7 @@ export interface PackageInfo {
   githubUrl: string;
   readmeContent: string;
   renderedHtml: string;
+  headings: TocEntry[];
 }
 
 const GITHUB_REPO = 'https://github.com/AgentEnder/cli-forge';
@@ -75,6 +77,7 @@ export async function scanPackages(): Promise<PackageInfo[]> {
       githubUrl: `${GITHUB_REPO}/tree/main/packages/${entry.name}`,
       readmeContent,
       renderedHtml,
+      headings: extractHeadings(renderedHtml),
     });
   }
 
