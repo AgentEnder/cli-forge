@@ -7,6 +7,7 @@ export default function DocsPage() {
 
   const sections = new Map<string, typeof docs>();
   for (const doc of docs) {
+    if (doc.section === '_toplevel') continue;
     if (!sections.has(doc.section)) {
       sections.set(doc.section, []);
     }
