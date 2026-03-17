@@ -12,7 +12,7 @@ import { readFile } from 'node:fs/promises';
 import { extname, resolve } from 'node:path';
 import { extractHeadings, type TocEntry } from './docs';
 import { getHighlighter } from './highlighter';
-import { linkifyCodeHtml, renderMarkdown } from './markdown';
+import { linkifyCodeHtml, renderMarkdown, stripH1 } from './markdown';
 import { parseProseToBlocks } from './prose-parser';
 
 export type { ParsedRegion };
@@ -133,7 +133,7 @@ async function transformFile(
   try {
     highlightedHtml = highlighter.codeToHtml(rawContent, {
       lang: language,
-      theme: 'blueprint',
+      theme: 'forge',
       transformers: [
         {
           name: 'add-language-class',
@@ -210,12 +210,17 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
       const { renderedProse } = renderProseFiles(ex.files, metadata);
       if (renderedProse.length > 0) {
         const proseMarkdown = renderedProse.join('\n\n');
-        renderedProseHtml = await renderMarkdown(proseMarkdown);
+        renderedProseHtml = stripH1(await renderMarkdown(proseMarkdown));
         proseBlocks = await parseProseToBlocks(
           proseMarkdown,
           ex.files,
           metadata
         );
+        for (const block of proseBlocks) {
+          if (block.type === 'html') {
+            block.html = stripH1(block.html);
+          }
+        }
       }
     } catch (err) {
       throw new Error(

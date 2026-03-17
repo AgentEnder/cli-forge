@@ -2,6 +2,7 @@ import { SiGithub } from '@icons-pack/react-simple-icons';
 import { ChevronDown, Menu, X } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { usePageContext } from 'vike-react/usePageContext';
+import { ForgeBackground } from '../components/ForgeBackground';
 import { Link } from '../components/Link';
 import { PagefindSearch } from '../components/PagefindSearch';
 import type { NavigationItem } from '../server/utils/docs';
@@ -31,9 +32,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
   }, [pathname]);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-gray-200">
+    <div className="min-h-screen bg-forge-bg text-forge-smoke relative">
+      <ForgeBackground />
       {/* Header */}
-      <header className="sticky top-0 z-40 bg-gray-900/95 backdrop-blur-sm border-b border-gray-700">
+      <header className="sticky top-0 z-40 bg-forge-bg/95 backdrop-blur-sm border-b border-forge-iron-light relative">
         <div className="max-w-screen-2xl mx-auto flex items-center justify-between px-4 h-14">
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 no-underline">
@@ -42,7 +44,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                 alt="CLI Forge"
                 className="w-6 h-6"
               />
-              <span className="text-sm font-semibold tracking-wider text-gray-100">
+              <span className="text-sm font-semibold tracking-wider text-forge-flame-bright font-[Cinzel]">
                 CLI Forge
               </span>
             </Link>
@@ -53,7 +55,7 @@ export default function Layout({ children }: { children: React.ReactNode }) {
                   key={link.href}
                   href={link.href}
                   active={pathname.startsWith(link.href)}
-                  className="text-xs font-medium tracking-wider uppercase"
+                  className="relative text-xs font-medium tracking-wider uppercase"
                 >
                   {link.label}
                 </Link>
@@ -67,13 +69,13 @@ export default function Layout({ children }: { children: React.ReactNode }) {
               href={GITHUB_URL}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-gray-400 hover:text-gray-100 transition-colors"
+              className="text-forge-ash hover:text-forge-flame-bright transition-colors"
               aria-label="GitHub"
             >
               <SiGithub size={18} />
             </a>
             <button
-              className="md:hidden text-gray-400 hover:text-gray-100 transition-colors"
+              className="md:hidden text-forge-ash hover:text-forge-flame-bright transition-colors"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
@@ -87,16 +89,16 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       {mobileMenuOpen && (
         <div className="fixed inset-0 z-30 bg-black/50 md:hidden" onClick={() => setMobileMenuOpen(false)}>
           <div
-            className="absolute top-14 left-0 right-0 bg-gray-900 border-b border-gray-700 max-h-[calc(100vh-3.5rem)] overflow-y-auto"
+            className="absolute top-14 left-0 right-0 bg-forge-bg border-b border-forge-iron-light max-h-[calc(100vh-3.5rem)] overflow-y-auto"
             onClick={(e) => e.stopPropagation()}
           >
-            <nav className="px-4 py-3 border-b border-gray-800">
+            <nav className="px-4 py-3 border-b border-forge-iron">
               {NAV_LINKS.map((link) => (
                 <Link
                   key={link.href}
                   href={link.href}
                   active={pathname.startsWith(link.href)}
-                  className="block py-2 text-sm font-medium"
+                  className="relative block py-2 text-sm font-medium"
                 >
                   {link.label}
                 </Link>
@@ -112,10 +114,10 @@ export default function Layout({ children }: { children: React.ReactNode }) {
       )}
 
       {/* Body */}
-      <div className="max-w-screen-2xl mx-auto flex">
+      <div className="max-w-screen-2xl mx-auto flex relative z-10">
         {/* Desktop sidebar */}
         {showSidebar && (
-          <aside className="hidden md:block w-60 shrink-0 border-r border-gray-800 sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-4">
+          <aside className="hidden md:block w-60 shrink-0 border-r border-forge-iron sticky top-14 h-[calc(100vh-3.5rem)] overflow-y-auto p-4">
             <SidebarContent navigation={navigation} pathname={pathname} />
           </aside>
         )}
@@ -165,7 +167,7 @@ function SidebarSection({
       <Link
         href={item.path ?? '#'}
         active={isActive}
-        className="block py-1.5 px-2 text-sm rounded hover:bg-gray-800 transition-colors"
+        className="block py-1.5 px-2 text-sm rounded hover:bg-forge-bg-surface transition-colors"
       >
         {item.title}
       </Link>
@@ -176,7 +178,7 @@ function SidebarSection({
     <div className="mb-2">
       <button
         onClick={() => setOpen(!open)}
-        className="flex items-center justify-between w-full py-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-gray-500 hover:text-gray-300 transition-colors rounded hover:bg-gray-800/50"
+        className="flex items-center justify-between w-full py-1.5 px-2 text-xs font-semibold uppercase tracking-wider text-forge-ash-dim hover:text-forge-ash transition-colors rounded hover:bg-forge-bg-surface/50"
       >
         <span>{item.title}</span>
         <ChevronDown
@@ -185,7 +187,7 @@ function SidebarSection({
         />
       </button>
       {open && (
-        <div className="ml-2 mt-0.5 border-l border-gray-800 pl-2 space-y-0.5">
+        <div className="ml-2 mt-0.5 border-l border-forge-iron pl-2 space-y-0.5">
           {item.children!.map((child) => {
             const childActive = child.path
               ? pathname === child.path || pathname.startsWith(child.path + '/')
@@ -195,7 +197,7 @@ function SidebarSection({
                 key={child.path ?? child.title}
                 href={child.path ?? '#'}
                 active={childActive}
-                className="block py-1 px-2 text-sm rounded hover:bg-gray-800 transition-colors"
+                className="block py-1 px-2 text-sm rounded hover:bg-forge-bg-surface transition-colors"
               >
                 {child.title}
               </Link>

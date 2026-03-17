@@ -33,7 +33,10 @@
       "Bash(do)",
       "Bash(if grep -q \"command: ''tsx \" \"$file\")",
       "Bash(then)",
-      "Bash(perl -i -pe:*)"
+      "Bash(perl -i -pe:*)",
+      "Bash(do echo:*)",
+      "Read(//Users/agentender/repos/functional-examples/docs-site/components/**)",
+      "Bash(mkdir:*)"
     ],
     "deny": [],
     "ask": []

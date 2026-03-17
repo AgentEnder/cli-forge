@@ -7,8 +7,8 @@ export default function ApiPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-100 mb-3">API Reference</h1>
-      <p className="text-gray-400 mb-8 max-w-2xl">
+      <h1 className="text-3xl font-bold text-forge-flame-bright mb-3 font-[Cinzel]">API Reference</h1>
+      <p className="text-forge-ash mb-8 max-w-2xl">
         Browse the packages that make up CLI Forge.
       </p>
 
@@ -19,21 +19,21 @@ export default function ApiPage() {
             href={`/api/${pkg.dirName}`}
             className="block no-underline"
           >
-            <div className="border border-gray-700 rounded p-5 hover:bg-gray-800/50 transition-colors h-full">
+            <div className="border border-forge-iron-light rounded p-5 hover:bg-forge-bg-surface/50 transition-colors h-full">
               <div className="flex items-center justify-between mb-2">
-                <h3 className="text-base font-mono text-gray-200">
+                <h3 className="text-base font-mono text-forge-smoke">
                   {pkg.npmName}
                 </h3>
-                <span className="text-xs text-gray-500 font-mono">
+                <span className="text-xs text-forge-ash-dim font-mono">
                   v{pkg.version}
                 </span>
               </div>
               {pkg.description && (
-                <p className="text-sm text-gray-400 leading-relaxed">
+                <p className="text-sm text-forge-ash leading-relaxed">
                   {pkg.description}
                 </p>
               )}
-              <div className="mt-3 text-xs text-gray-500">
+              <div className="mt-3 text-xs text-forge-ash-dim">
                 <span>npm: {pkg.npmName}</span>
               </div>
             </div>
@@ -42,7 +42,7 @@ export default function ApiPage() {
       </div>
 
       {packages.length === 0 && (
-        <p className="text-gray-500 text-center py-12">
+        <p className="text-forge-ash-dim text-center py-12">
           No packages found.
         </p>
       )}

@@ -50,7 +50,7 @@ function TreeNode({
     return (
       <div>
         <button
-          className="w-full flex items-center gap-1.5 py-1 hover:bg-gray-800/50 transition-colors text-gray-400"
+          className="w-full flex items-center gap-1.5 py-1 hover:bg-forge-bg-surface/50 transition-colors text-forge-ash"
           style={{ paddingLeft }}
           onClick={() => setExpanded(!expanded)}
         >
@@ -84,8 +84,8 @@ function TreeNode({
         w-full flex items-center gap-1.5 py-1 transition-all text-left border-l-2
         ${
           isActive
-            ? 'text-gray-200 border-blue-400 bg-blue-400/5'
-            : 'text-gray-400 hover:text-gray-200 hover:bg-gray-800/30 border-transparent'
+            ? 'text-forge-flame-bright border-forge-ember bg-forge-ember-bright/5'
+            : 'text-forge-ash hover:text-forge-flame-bright hover:bg-forge-bg-surface/30 border-transparent'
         }
       `}
       style={{ paddingLeft: paddingLeft + 12 }}
@@ -99,7 +99,7 @@ function TreeNode({
 
 function FolderIcon() {
   return (
-    <svg className="w-4 h-4 text-yellow-500/80 shrink-0" viewBox="0 0 24 24" fill="currentColor">
+    <svg className="w-4 h-4 text-forge-ember-bright/80 shrink-0" viewBox="0 0 24 24" fill="currentColor">
       <path d="M10 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V8a2 2 0 00-2-2h-8l-2-2z" />
     </svg>
   );
@@ -107,12 +107,12 @@ function FolderIcon() {
 
 function FileIcon({ name }: { name: string }) {
   const ext = name.split('.').pop()?.toLowerCase();
-  let color = 'text-gray-400';
-  if (ext === 'ts' || ext === 'tsx') color = 'text-blue-400';
-  else if (ext === 'js' || ext === 'jsx') color = 'text-yellow-500';
-  else if (ext === 'json' || ext === 'jsonc') color = 'text-yellow-500/70';
-  else if (ext === 'yml' || ext === 'yaml') color = 'text-green-400';
-  else if (ext === 'md') color = 'text-gray-200';
+  let color = 'text-forge-ash';
+  if (ext === 'ts' || ext === 'tsx') color = 'text-forge-info';
+  else if (ext === 'js' || ext === 'jsx') color = 'text-forge-flame';
+  else if (ext === 'json' || ext === 'jsonc') color = 'text-forge-flame/70';
+  else if (ext === 'yml' || ext === 'yaml') color = 'text-forge-success';
+  else if (ext === 'md') color = 'text-forge-smoke';
 
   return (
     <svg className={`w-4 h-4 ${color} shrink-0`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5">

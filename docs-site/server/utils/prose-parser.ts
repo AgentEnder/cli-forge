@@ -141,7 +141,7 @@ export async function parseProseToBlocks(
     try {
       highlightedHtml = highlighter.codeToHtml(trimmedContent, {
         lang: block.language,
-        theme: 'blueprint',
+        theme: 'forge',
         transformers: [
           {
             name: 'add-language-class',

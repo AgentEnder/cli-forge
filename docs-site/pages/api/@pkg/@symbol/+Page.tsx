@@ -8,15 +8,15 @@ export default function SymbolDetail() {
   if (!apiExport) {
     return (
       <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-gray-100 mb-4">
+        <h1 className="text-2xl font-bold text-forge-flame-bright mb-4">
           Symbol Not Found
         </h1>
-        <p className="text-gray-400">
+        <p className="text-forge-ash">
           The requested API symbol was not found.
         </p>
         <Link
           href={`/api/${packageSlug}`}
-          className="inline-block mt-6 text-blue-400 hover:text-blue-300 transition-colors text-sm"
+          className="inline-block mt-6 text-forge-ember-bright hover:text-forge-flame transition-colors text-sm"
         >
           &larr; Back to {packageName}
         </Link>

@@ -43,7 +43,7 @@ export function ApiPackageLanding({ apiPackage }: ApiPackageLandingProps) {
     <div>
       {apiPackage.exports.length > 0 && (
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-gray-100 mb-4 tracking-wider">
+          <h2 className="text-xl font-bold text-forge-flame-bright font-[Cinzel] mb-4 tracking-wider">
             API EXPORTS
           </h2>
 
@@ -51,7 +51,7 @@ export function ApiPackageLanding({ apiPackage }: ApiPackageLandingProps) {
             const exports = byKind.get(kind) ?? [];
             return (
               <div key={kind} className="mb-6">
-                <h3 className="text-sm font-semibold text-gray-400 mb-2 tracking-wider uppercase">
+                <h3 className="text-sm font-semibold text-forge-ash mb-2 tracking-wider uppercase">
                   {KIND_LABELS[kind]}
                 </h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-2">
@@ -59,18 +59,18 @@ export function ApiPackageLanding({ apiPackage }: ApiPackageLandingProps) {
                     <Link
                       key={exp.slug}
                       href={exp.path}
-                      className="block p-3 border border-gray-700 rounded hover:bg-gray-800/50 hover:border-gray-600 transition-colors no-underline"
+                      className="block p-3 border border-forge-iron-light rounded hover:bg-forge-bg-surface/50 hover:border-forge-steel transition-colors no-underline"
                     >
                       <div className="flex items-center gap-2 mb-1">
-                        <code className="text-sm font-mono text-gray-200">
+                        <code className="text-sm font-mono text-forge-smoke">
                           {exp.name}
                         </code>
-                        <span className="text-[10px] text-gray-500 tracking-wider uppercase">
+                        <span className="text-[10px] text-forge-ash-dim tracking-wider uppercase">
                           {exp.kind}
                         </span>
                       </div>
                       {exp.description && (
-                        <p className="text-xs text-gray-400 line-clamp-2">
+                        <p className="text-xs text-forge-ash line-clamp-2">
                           {exp.description}
                         </p>
                       )}

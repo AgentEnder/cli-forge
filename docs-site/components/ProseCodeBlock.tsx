@@ -51,18 +51,18 @@ export function ProseCodeBlock({
 
   return (
     <div className="my-5 relative">
-      <div className="rounded-sm border border-gray-700 overflow-hidden bg-gray-900">
+      <div className="rounded-sm border border-forge-iron-light overflow-hidden bg-forge-bg">
         {/* Header with file/region info */}
         {hasFile && (
-          <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
+          <div className="flex items-center justify-between px-3 py-1.5 bg-forge-bg-surface border-b border-forge-iron-light">
             <button
               onClick={handleNavigate}
-              className="flex items-center gap-1.5 text-xs font-mono text-blue-400 hover:text-white transition-colors group"
+              className="flex items-center gap-1.5 text-xs font-mono text-forge-ember-bright hover:text-forge-flame-bright transition-colors group"
               title={`Open ${file} in File Explorer`}
             >
               {/* File icon */}
               <svg
-                className="w-3 h-3 text-gray-400 group-hover:text-blue-400 transition-colors"
+                className="w-3 h-3 text-forge-ash group-hover:text-forge-ember-bright transition-colors"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -74,7 +74,7 @@ export function ProseCodeBlock({
               <span>{displayLabel}</span>
               {/* Arrow hint */}
               <svg
-                className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-gray-400"
+                className="w-3 h-3 opacity-0 group-hover:opacity-100 transition-opacity text-forge-ash"
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
@@ -86,7 +86,7 @@ export function ProseCodeBlock({
 
             <button
               onClick={handleCopy}
-              className="text-gray-400 hover:text-gray-200 transition-colors p-1"
+              className="text-forge-ash hover:text-forge-flame-bright transition-colors p-1"
               aria-label="Copy code"
               title="Copy code"
             >

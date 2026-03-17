@@ -11,7 +11,7 @@ import remarkGfm from 'remark-gfm';
 import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import { unified } from 'unified';
-import { blueprintTheme } from './highlighter.js';
+import { forgeTheme } from './highlighter.js';
 
 // Module-level rehype-typedoc options — configured once, used by all renderMarkdown calls
 let _rehypeOptions: RehypeTypedocOptions | undefined;
@@ -70,7 +70,7 @@ export async function renderMarkdown(md: string): Promise<string> {
 
   // Syntax highlighting via @shikijs/rehype
   // addLanguageClass preserves language info so rehypeTypedocCodeBlocks can skip non-TS blocks
-  processor.use(rehypeShiki, { theme: blueprintTheme, addLanguageClass: true });
+  processor.use(rehypeShiki, { theme: forgeTheme, addLanguageClass: true });
 
   // Add code block symbol linking after shiki highlighting
   if (_rehypeOptions) {
@@ -81,6 +81,16 @@ export async function renderMarkdown(md: string): Promise<string> {
 
   const file = await processor.process(md);
   return String(file);
+}
+
+/**
+ * Strip top-level `<h1>` elements from rendered HTML.
+ *
+ * Page layouts render their own `<h1>` from structured data (title, package
+ * name, etc.), so the `<h1>` produced by markdown is always redundant.
+ */
+export function stripH1(html: string): string {
+  return html.replace(/<h1\b[^>]*>[\s\S]*?<\/h1>\s*/gi, '');
 }
 
 /**

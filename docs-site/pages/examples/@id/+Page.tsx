@@ -114,15 +114,15 @@ export default function ExampleDetailPage() {
   if (!example) {
     return (
       <div className="text-center py-20">
-        <h1 className="text-2xl font-bold text-gray-100 mb-2">
+        <h1 className="text-2xl font-bold text-forge-flame-bright mb-2">
           Example Not Found
         </h1>
-        <p className="text-gray-400 mb-4">
+        <p className="text-forge-ash mb-4">
           The requested example could not be found.
         </p>
         <Link
           href="/examples"
-          className="text-blue-400 hover:text-blue-300 underline"
+          className="text-forge-ember-bright hover:text-forge-flame underline"
         >
           Back to Examples
         </Link>
@@ -136,22 +136,22 @@ export default function ExampleDetailPage() {
       {/* Prose content -- capped at readable width */}
       <div className="max-w-4xl">
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-xs text-gray-500 mb-6">
-          <Link href="/examples" className="hover:text-gray-300">
+        <nav className="flex items-center gap-2 text-xs text-forge-ash-dim mb-6">
+          <Link href="/examples" className="hover:text-forge-smoke">
             Examples
           </Link>
           <span>/</span>
-          <span className="text-gray-300">{example.title}</span>
+          <span className="text-forge-smoke">{example.title}</span>
         </nav>
 
         {/* Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-100 mb-3">
+          <h1 className="text-3xl font-bold text-forge-flame-bright font-[Cinzel] mb-3">
             {example.title}
           </h1>
           {example.renderedDescriptionHtml && (
             <div
-              className="prose-content max-w-2xl text-gray-400"
+              className="prose-content max-w-2xl text-forge-ash"
               dangerouslySetInnerHTML={{ __html: example.renderedDescriptionHtml }}
             />
           )}
@@ -159,16 +159,16 @@ export default function ExampleDetailPage() {
 
         {/* Metadata stamps */}
         <div className="flex gap-3 flex-wrap mb-6">
-          <span className="inline-block px-2 py-0.5 border border-gray-700 text-xs uppercase text-blue-400">
+          <span className="inline-block px-2 py-0.5 border border-forge-iron-light text-xs uppercase text-forge-ember-bright">
             {example.extractorName}
           </span>
-          <span className="inline-block px-2 py-0.5 border border-gray-700 text-xs uppercase text-gray-400">
+          <span className="inline-block px-2 py-0.5 border border-forge-iron-light text-xs uppercase text-forge-ash">
             {example.files.length} FILES
           </span>
           {example.tags.map((tag) => (
             <span
               key={tag}
-              className="inline-block px-2 py-0.5 border border-gray-700 text-xs uppercase text-green-400"
+              className="inline-block px-2 py-0.5 border border-forge-iron-light text-xs uppercase text-forge-success"
             >
               {tag}
             </span>
@@ -183,7 +183,7 @@ export default function ExampleDetailPage() {
             blocks={example.proseBlocks}
             onNavigateToFile={handleNavigateToFile}
           />
-          <hr className="border-dashed border-gray-700 mt-8 max-w-4xl" />
+          <hr className="border-dashed border-forge-iron-light mt-8 max-w-4xl" />
         </div>
       ) : example.renderedProseHtml ? (
         <div className="mb-10 max-w-4xl">
@@ -191,7 +191,7 @@ export default function ExampleDetailPage() {
             className="prose-content"
             dangerouslySetInnerHTML={{ __html: example.renderedProseHtml }}
           />
-          <hr className="border-dashed border-gray-700 mt-8" />
+          <hr className="border-dashed border-forge-iron-light mt-8" />
         </div>
       ) : null}
 

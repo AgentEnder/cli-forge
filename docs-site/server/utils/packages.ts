@@ -1,7 +1,7 @@
 import { readdir, readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { extractHeadings, type TocEntry } from './docs';
-import { renderMarkdown } from './markdown';
+import { renderMarkdown, stripH1 } from './markdown';
 import { workspaceRoot } from './workspace.js';
 
 export interface PackageInfo {
@@ -59,7 +59,7 @@ export async function scanPackages(): Promise<PackageInfo[]> {
     let renderedHtml = '';
     if (readmeContent) {
       try {
-        renderedHtml = await renderMarkdown(readmeContent);
+        renderedHtml = stripH1(await renderMarkdown(readmeContent));
       } catch (err) {
         console.warn(
           `[docs-site] README rendering failed for "${entry.name}":`,

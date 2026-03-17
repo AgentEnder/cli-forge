@@ -7,8 +7,8 @@ export default function ExamplesPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-100 mb-3">Examples</h1>
-      <p className="text-gray-400 mb-8 max-w-2xl">
+      <h1 className="text-3xl font-bold text-forge-flame-bright mb-3 font-[Cinzel]">Examples</h1>
+      <p className="text-forge-ash mb-8 max-w-2xl">
         Explore working examples demonstrating CLI Forge features.
       </p>
 
@@ -19,7 +19,7 @@ export default function ExamplesPage() {
       </div>
 
       {examples.length === 0 && (
-        <p className="text-gray-500 text-center py-12">
+        <p className="text-forge-ash-dim text-center py-12">
           No examples found. Run the build to generate examples.
         </p>
       )}

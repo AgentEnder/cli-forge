@@ -92,8 +92,8 @@ function addLineNumbersToShikiHtml(
     const lineClass = isHighlighted ? 'line highlighted-line' : 'line';
     const anchorId = anchorPrefix ? `${anchorPrefix}-L${num}` : undefined;
     const gutterTag = anchorId
-      ? `<a id="${anchorId}" href="#${anchorId}" data-line="${num}" onclick="event.preventDefault()" class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(156,163,175,0.4);user-select:none;flex-shrink:0;text-decoration:none">${num}</a>`
-      : `<span class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(156,163,175,0.4);user-select:none;flex-shrink:0">${num}</span>`;
+      ? `<a id="${anchorId}" href="#${anchorId}" data-line="${num}" onclick="event.preventDefault()" class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(106,80,64,0.5);user-select:none;flex-shrink:0;text-decoration:none">${num}</a>`
+      : `<span class="line-number" style="display:inline-block;width:2rem;text-align:right;margin-right:1rem;color:rgba(106,80,64,0.5);user-select:none;flex-shrink:0">${num}</span>`;
     return `<span class="${lineClass}">${gutterTag}`;
   });
 }
@@ -263,26 +263,26 @@ export function CodeBlock({
 
   return (
     <div
-      className={`flex flex-col rounded border border-gray-700 overflow-hidden bg-gray-900 ${className}`}
+      className={`flex flex-col rounded border border-forge-iron-light overflow-hidden bg-forge-bg ${className}`}
     >
       {/* Header bar */}
       {showHeader && (filename || language) && (
-        <div className="flex items-center justify-between px-3 py-1.5 bg-gray-800 border-b border-gray-700">
+        <div className="flex items-center justify-between px-3 py-1.5 bg-forge-bg-surface border-b border-forge-iron-light">
           <div className="flex items-center gap-2">
             {filename && (
-              <span className="text-xs font-mono text-gray-400">
+              <span className="text-xs font-mono text-forge-ash">
                 {filename}
               </span>
             )}
             {!filename && language && (
-              <span className="text-[0.625rem] font-mono text-gray-400 uppercase tracking-wider">
+              <span className="text-[0.625rem] font-mono text-forge-ash uppercase tracking-wider">
                 {language}
               </span>
             )}
           </div>
           <button
             onClick={handleCopy}
-            className="text-gray-400 hover:text-gray-200 transition-colors p-1"
+            className="text-forge-ash hover:text-forge-flame-bright transition-colors p-1"
             aria-label="Copy code"
             title="Copy code"
           >
@@ -321,7 +321,7 @@ export function CodeBlock({
             dangerouslySetInnerHTML={{ __html: processedHtml }}
           />
         ) : (
-          <pre className="p-4 text-sm font-mono leading-relaxed text-gray-200">
+          <pre className="p-4 text-sm font-mono leading-relaxed text-forge-smoke">
             {showLineNumbers ? (
               <code>
                 {displayCode.split('\n').map((line, i) => {
@@ -346,12 +346,12 @@ export function CodeBlock({
                           href={`#${anchorId}`}
                           data-line={num}
                           onClick={(e) => handlePlainLineClick(e, num)}
-                          className="w-8 shrink-0 text-right mr-4 text-gray-600 select-none no-underline hover:text-blue-400 transition-colors"
+                          className="w-8 shrink-0 text-right mr-4 text-forge-steel select-none no-underline hover:text-forge-ember-bright transition-colors"
                         >
                           {num}
                         </a>
                       ) : (
-                        <span className="w-8 shrink-0 text-right mr-4 text-gray-600 select-none">
+                        <span className="w-8 shrink-0 text-right mr-4 text-forge-steel select-none">
                           {num}
                         </span>
                       )}

@@ -1,68 +1,68 @@
 import { createHighlighter } from 'shiki';
 
-export const blueprintTheme = {
-  name: 'blueprint',
+export const forgeTheme = {
+  name: 'forge',
   type: 'dark' as const,
   colors: {
-    'editor.background': '#122a48f2',
-    'editor.foreground': '#e8edf4',
+    'editor.background': '#0d0906f2',
+    'editor.foreground': '#c4a882',
   },
   tokenColors: [
     {
       scope: ['comment', 'punctuation.definition.comment'],
-      settings: { foreground: '#6b8aaa', fontStyle: 'italic' },
+      settings: { foreground: '#6a5040', fontStyle: 'italic' },
     },
     {
       scope: ['keyword', 'storage.type', 'storage.modifier'],
-      settings: { foreground: '#8ec8e8' },
+      settings: { foreground: '#ff8c38' },
     },
     {
       scope: ['string', 'string.quoted'],
-      settings: { foreground: '#7cc9a0' },
+      settings: { foreground: '#ffb347' },
     },
     {
       scope: ['entity.name.function', 'support.function', 'meta.function-call'],
-      settings: { foreground: '#b8d8f0' },
+      settings: { foreground: '#e8c090' },
     },
     {
       scope: ['entity.name.type', 'support.type', 'entity.name.class', 'support.class'],
-      settings: { foreground: '#a8d0f0' },
+      settings: { foreground: '#ffd5a0' },
     },
     {
       scope: ['constant.numeric', 'constant.language'],
-      settings: { foreground: '#d4a94e' },
+      settings: { foreground: '#ff6a35' },
     },
     {
       scope: ['keyword.operator', 'punctuation', 'meta.brace', 'punctuation.separator'],
-      settings: { foreground: '#8fa4be' },
+      settings: { foreground: '#a08060' },
     },
     {
       scope: ['variable', 'variable.other'],
-      settings: { foreground: '#e8edf4' },
+      settings: { foreground: '#c4a882' },
     },
     {
       scope: ['variable.parameter'],
-      settings: { foreground: '#c8d8e8' },
+      settings: { foreground: '#d4b898' },
     },
     {
       scope: ['entity.name.tag'],
-      settings: { foreground: '#8ec8e8' },
+      settings: { foreground: '#ff8c38' },
     },
     {
       scope: ['entity.other.attribute-name'],
-      settings: { foreground: '#b8d8f0' },
+      settings: { foreground: '#e8c090' },
     },
     {
       scope: ['constant.other', 'variable.other.constant'],
-      settings: { foreground: '#d4a94e' },
+      settings: { foreground: '#ff6a35' },
     },
     {
       scope: ['meta.import', 'keyword.control.import', 'keyword.control.from'],
-      settings: { foreground: '#8ec8e8' },
+      settings: { foreground: '#ff8c38' },
     },
     {
       scope: ['string.regexp'],
-      settings: { foreground: '#d0907a' },
+      settings: { foreground: '#d08060' },
     },
   ],
 };
@@ -72,7 +72,7 @@ let highlighterInstance: Awaited<ReturnType<typeof createHighlighter>> | null = 
 export async function getHighlighter() {
   if (!highlighterInstance) {
     highlighterInstance = await createHighlighter({
-      themes: [blueprintTheme],
+      themes: [forgeTheme],
       langs: [
         'typescript', 'javascript', 'json', 'yaml', 'toml',
         'markdown', 'css', 'html', 'bash', 'tsx', 'jsx',

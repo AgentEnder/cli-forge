@@ -32,7 +32,7 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
 
   return (
     <nav className="space-y-1">
-      <p className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+      <p className="text-xs font-semibold uppercase tracking-wider text-forge-ash-dim mb-3">
         On this page
       </p>
       {headings.map((heading) => (
@@ -43,8 +43,8 @@ export function TableOfContents({ headings }: TableOfContentsProps) {
             heading.level === 3 ? 'pl-3' : ''
           } ${
             activeId === heading.id
-              ? 'text-blue-400'
-              : 'text-gray-500 hover:text-gray-300'
+              ? 'text-forge-ember-bright'
+              : 'text-forge-ash-dim hover:text-forge-smoke'
           }`}
         >
           {heading.text}

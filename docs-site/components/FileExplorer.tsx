@@ -56,16 +56,16 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
 
     return (
       <div ref={ref} className={className}>
-        <div className="border border-gray-700 rounded overflow-hidden">
+        <div className="border border-forge-iron-light rounded overflow-hidden">
           <div className="flex flex-col min-h-100">
             {/* Unified header row */}
-            <div className="flex shrink-0 border-b border-gray-700 bg-gray-800">
-              <div className="w-52 shrink-0 flex items-center px-3 py-1.5 border-r border-gray-700">
-                <span className="text-[0.625rem] uppercase tracking-wider text-gray-500 font-mono">FILE EXPLORER</span>
+            <div className="flex shrink-0 border-b border-forge-iron-light bg-forge-bg-surface">
+              <div className="w-52 shrink-0 flex items-center px-3 py-1.5 border-r border-forge-iron-light">
+                <span className="text-[0.625rem] uppercase tracking-wider text-forge-ash-dim font-mono">FILE EXPLORER</span>
               </div>
               <div className="flex-1 flex items-center justify-between px-3 py-1.5 min-w-0">
                 {selectedFile && (
-                  <span className="text-xs font-mono text-gray-400 truncate">
+                  <span className="text-xs font-mono text-forge-ash truncate">
                     {selectedFile.relativePath}
                   </span>
                 )}
@@ -75,7 +75,7 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
             {/* Content panes */}
             <div className="flex flex-1 min-h-0">
               {/* File tree */}
-              <div className="w-52 shrink-0 border-r border-gray-700 overflow-y-auto bg-gray-900">
+              <div className="w-52 shrink-0 border-r border-forge-iron-light overflow-y-auto bg-forge-bg">
                 <FileTree
                   files={files}
                   activeFile={activeFile}
@@ -96,7 +96,7 @@ export const FileExplorer = forwardRef<HTMLDivElement, FileExplorerProps>(
                     anchorPrefix={`explorer-${slugifyFilename(selectedFile.relativePath)}`}
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-gray-500">
+                  <div className="flex items-center justify-center h-full text-forge-ash-dim">
                     <span className="text-[0.625rem] uppercase tracking-wider font-mono">Select a file to preview</span>
                   </div>
                 )}

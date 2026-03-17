@@ -17,8 +17,8 @@ export default function DocsPage() {
 
   return (
     <div>
-      <h1 className="text-3xl font-bold text-gray-100 mb-3">Documentation</h1>
-      <p className="text-gray-400 mb-8 max-w-2xl">
+      <h1 className="text-3xl font-bold text-forge-flame-bright mb-3 font-[Cinzel]">Documentation</h1>
+      <p className="text-forge-ash mb-8 max-w-2xl">
         Guides, references, and tutorials for CLI Forge.
       </p>
 
@@ -27,10 +27,10 @@ export default function DocsPage() {
         <div className="grid grid-cols-1 md:grid-cols-2 gap-3 mb-8">
           {toplevel.map((doc) => (
             <Link key={doc.slug} href={`/docs/${doc.slug}`} className="block no-underline">
-              <div className="border border-gray-700 rounded p-4 hover:bg-gray-800/50 transition-colors h-full">
-                <h3 className="text-base font-semibold text-gray-200 mb-1">{doc.title}</h3>
+              <div className="border border-forge-iron-light rounded p-4 hover:bg-forge-bg-surface/50 transition-colors h-full">
+                <h3 className="text-base font-semibold text-forge-flame-bright mb-1">{doc.title}</h3>
                 {doc.description && (
-                  <p className="text-sm text-gray-400 leading-relaxed">{doc.description}</p>
+                  <p className="text-sm text-forge-ash leading-relaxed">{doc.description}</p>
                 )}
               </div>
             </Link>
@@ -41,7 +41,7 @@ export default function DocsPage() {
       <div className="space-y-8">
         {Array.from(sections.entries()).map(([section, sectionDocs]) => (
           <div key={section}>
-            <h2 className="text-xs font-semibold uppercase tracking-wider text-gray-500 mb-3">
+            <h2 className="text-xs font-semibold uppercase tracking-wider text-forge-ash-dim mb-3">
               {section}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -51,12 +51,12 @@ export default function DocsPage() {
                   href={`/docs/${doc.slug}`}
                   className="block no-underline"
                 >
-                  <div className="border border-gray-700 rounded p-4 hover:bg-gray-800/50 transition-colors h-full">
-                    <h3 className="text-base font-semibold text-gray-200 mb-1">
+                  <div className="border border-forge-iron-light rounded p-4 hover:bg-forge-bg-surface/50 transition-colors h-full">
+                    <h3 className="text-base font-semibold text-forge-flame-bright mb-1">
                       {doc.title}
                     </h3>
                     {doc.description && (
-                      <p className="text-sm text-gray-400 leading-relaxed">
+                      <p className="text-sm text-forge-ash leading-relaxed">
                         {doc.description}
                       </p>
                     )}

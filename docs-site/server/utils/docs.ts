@@ -2,7 +2,7 @@ import matter from 'gray-matter';
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
-import { renderMarkdown } from './markdown';
+import { renderMarkdown, stripH1 } from './markdown';
 
 export interface TocEntry {
   id: string;
@@ -143,7 +143,7 @@ export async function hydrateDocs(docs: DocPage[]): Promise<DocPage[]> {
   for (const doc of docs) {
     let renderedHtml = '';
     try {
-      renderedHtml = await renderMarkdown(doc.content);
+      renderedHtml = stripH1(await renderMarkdown(doc.content));
     } catch (err) {
       console.warn(
         `[docs-site] Markdown rendering failed for "${doc.slug}":`,

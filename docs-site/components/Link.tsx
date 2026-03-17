@@ -10,7 +10,7 @@ export function Link({ children, active, href, className = '', ...props }: LinkP
   return (
     <a
       href={href ? applyBaseUrl(href) : href}
-      className={`transition-colors duration-200 ${active ? 'font-medium' : 'opacity-70 hover:opacity-100'} ${className}`}
+      className={`transition-colors duration-200 ${active ? 'text-forge-flame-bright font-medium' : 'opacity-60 hover:opacity-100'} ${className}`}
       {...props}
     >
       {children}
