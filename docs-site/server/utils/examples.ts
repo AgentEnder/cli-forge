@@ -17,7 +17,12 @@ import { parseProseToBlocks } from './prose-parser';
 export type { ParsedRegion };
 
 /** Shape of an example file with pre-highlighted HTML */
-export class SiteExampleFile extends ExampleFile {
+export class SiteExampleFile {
+  readonly absolutePath: string;
+  readonly relativePath: string;
+  readonly raw: string | undefined;
+  readonly parsed: string | undefined;
+  readonly hunks: ParsedRegion[];
   readonly language: string;
   readonly highlightedHtml: string;
 
@@ -30,7 +35,11 @@ export class SiteExampleFile extends ExampleFile {
     language: string;
     highlightedHtml: string;
   }) {
-    super(data);
+    this.absolutePath = data.absolutePath;
+    this.relativePath = data.relativePath;
+    this.raw = data.raw;
+    this.parsed = data.parsed;
+    this.hunks = data.hunks ?? [];
     this.language = data.language;
     this.highlightedHtml = data.highlightedHtml;
   }

@@ -1,4 +1,3 @@
-import React from 'react';
 import type { ApiExportKind, ApiPackage } from 'vike-plugin-typedoc';
 import { Link } from './Link.js';
 
