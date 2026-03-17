@@ -1,0 +1,29 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`prompting (clack provider) should prompt for all missing required args via fake TTY: tui: prompt name and age 1`] = `
+"│
+◇  Your name
+│  Craigory
+│
+◇  Your age
+│  25
+"
+`;
+
+exports[`prompting (clack provider) should prompt only for name when age is provided: tui: prompt name only 1`] = `
+"│
+◇  Your name
+│  Zara
+"
+`;
+
+exports[`prompting (clack provider) should prompt only for the remaining missing arg: tui: prompt age only 1`] = `
+"│
+◇  Your age
+│  42
+"
+`;
+
+exports[`prompting (clack provider) should skip prompts when all required args are provided: tui: no prompts 1`] = `""`;
+
+exports[`prompting (clack provider) should use default greeting when not specified: tui: no prompts (default greeting) 1`] = `""`;
