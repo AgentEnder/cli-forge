@@ -4,6 +4,12 @@ import { basename, dirname, extname, join } from 'node:path';
 import { parse as parseYaml } from 'yaml';
 import { renderMarkdown } from './markdown';
 
+export interface TocEntry {
+  id: string;
+  text: string;
+  level: number;
+}
+
 export interface DocPage {
   slug: string;
   title: string;
@@ -13,6 +19,7 @@ export interface DocPage {
   filePath: string;
   content: string;
   renderedHtml: string;
+  headings: TocEntry[];
 }
 
 export interface NavigationItem {
@@ -105,10 +112,27 @@ export async function scanDocs(docsDir: string, categories: Map<string, Category
       filePath,
       content,
       renderedHtml: '',
+      headings: [],
     });
   }
 
   return pages.sort((a, b) => a.order - b.order);
+}
+
+/**
+ * Extract h2 and h3 headings (with id attributes) from rendered HTML.
+ */
+export function extractHeadings(html: string): TocEntry[] {
+  const headings: TocEntry[] = [];
+  const regex = /<h([23])\s[^>]*id="([^"]*)"[^>]*>([\s\S]*?)<\/h\1>/gi;
+  for (const match of html.matchAll(regex)) {
+    const level = parseInt(match[1], 10);
+    const id = match[2];
+    // Strip HTML tags from the heading text
+    const text = match[3].replace(/<[^>]+>/g, '').trim();
+    headings.push({ id, text, level });
+  }
+  return headings;
 }
 
 /**
@@ -126,7 +150,7 @@ export async function hydrateDocs(docs: DocPage[]): Promise<DocPage[]> {
         (err as Error).message
       );
     }
-    hydrated.push({ ...doc, renderedHtml });
+    hydrated.push({ ...doc, renderedHtml, headings: extractHeadings(renderedHtml) });
   }
   return hydrated;
 }

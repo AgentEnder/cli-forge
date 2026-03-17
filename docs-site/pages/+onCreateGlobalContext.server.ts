@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { loadTypedocContext } from 'vike-plugin-typedoc/server';
 import {
   buildDocsNavigation,
+  extractHeadings,
   hydrateDocs,
   scanCategories,
   scanDocs,
@@ -106,6 +107,7 @@ export async function onCreateGlobalContext(
       filePath: join(root, 'README.md'),
       content: readmeContent,
       renderedHtml: readmeHtml,
+      headings: extractHeadings(readmeHtml),
     });
   } catch {
     /* no README */
@@ -126,6 +128,7 @@ export async function onCreateGlobalContext(
       filePath: join(root, 'CHANGELOG.md'),
       content: changelogContent,
       renderedHtml: changelogHtml,
+      headings: extractHeadings(changelogHtml),
     });
   } catch {
     /* no CHANGELOG */

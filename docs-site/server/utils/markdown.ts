@@ -2,6 +2,7 @@ import rehypeParse from 'rehype-parse';
 import rehypeShiki from '@shikijs/rehype';
 import { rehypeGithubAlerts } from 'rehype-github-alerts';
 import rehypeRaw from 'rehype-raw';
+import rehypeSlug from 'rehype-slug';
 import rehypeStringify from 'rehype-stringify';
 import type { RehypeTypedocOptions, RemarkCodePropsOptions } from 'rehype-typedoc';
 import { rehypeTypedoc, rehypeTypedocCodeBlocks, remarkCodeProps } from 'rehype-typedoc';
@@ -59,6 +60,7 @@ export async function renderMarkdown(md: string): Promise<string> {
     .use(remarkCodeProps, _remarkCodePropsOptions ?? {})
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(rehypeSlug)
     .use(rehypeGithubAlerts, {});
 
   // Add rehype-typedoc for inline code linking if options have been configured
