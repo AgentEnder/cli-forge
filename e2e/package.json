@@ -3,6 +3,7 @@
   "private": true,
   "dependencies": {
     "cli-forge-scripts": "workspace:*",
+    "cli-forge": "workspace:*",
     "@nx/devkit": "catalog:"
   }
 }

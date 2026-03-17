@@ -4,14 +4,23 @@ import { e2eProjectDir, e2eSubDir } from './setup';
 export function runCommand(
   command: string,
   args: string[],
-  options: SpawnOptions
+  options: SpawnOptions & { stdin?: string }
 ) {
+  const { stdin: stdinInput, ...spawnOptions } = options;
+
   const child = spawn(command, args, {
     shell: true,
     stdio: 'pipe',
     cwd: e2eProjectDir ?? e2eSubDir,
-    ...options,
+    ...spawnOptions,
   });
+
+  // If stdin data was provided, write it and close the stream so the
+  // child process sees EOF and doesn't hang waiting for more input.
+  if (stdinInput !== undefined && child.stdin) {
+    child.stdin.write(stdinInput);
+    child.stdin.end();
+  }
 
   return new Promise<{
     stdout: string;
@@ -34,7 +43,7 @@ export function runCommand(
       } else {
         reject(
           new Error(`Command failed: ${command} ${args.join(' ')}
-        
+
         ${stderr}`)
         );
       }
