@@ -1,4 +1,21 @@
+import type { Readable, Writable } from 'node:stream';
 import type { PromptOption, PromptProvider } from '../lib/prompt-types';
+
+/**
+ * Options for {@link createClackPromptProvider}.
+ */
+export interface ClackPromptProviderOptions {
+  /**
+   * Custom input stream to read from instead of `process.stdin`.
+   * Useful for testing — pass a `Readable` with `isTTY = true` and
+   * a no-op `setRawMode` to emulate a terminal.
+   */
+  input?: Readable;
+  /**
+   * Custom output stream to write to instead of `process.stdout`.
+   */
+  output?: Writable;
+}
 
 /**
  * Creates a prompt provider backed by @clack/prompts.
@@ -7,15 +24,19 @@ import type { PromptOption, PromptProvider } from '../lib/prompt-types';
  * The provider uses dynamic imports so that `@clack/prompts` is only
  * loaded when prompting actually occurs.
  */
-export function createClackPromptProvider(): PromptProvider {
+export function createClackPromptProvider(
+  providerOptions?: ClackPromptProviderOptions
+): PromptProvider {
+  // Build the common stream options once; spread into every prompt call.
+  const streamOpts: { input?: Readable; output?: Writable } = {};
+  if (providerOptions?.input) streamOpts.input = providerOptions.input;
+  if (providerOptions?.output) streamOpts.output = providerOptions.output;
+
   return {
     async promptBatch(
       options: PromptOption[]
     ): Promise<Record<string, unknown>> {
-      // Dynamic import to avoid compile-time module resolution
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const modulePath = '@clack/prompts';
-      const clack = await import(/* webpackIgnore: true */ modulePath);
+      const clack = await import('@clack/prompts');
 
       const results: Record<string, unknown> = {};
 
@@ -27,6 +48,7 @@ export function createClackPromptProvider(): PromptProvider {
 
         if (option.config.type === 'boolean') {
           value = await clack.confirm({
+            ...streamOpts,
             message,
             initialValue:
               typeof defaultValue === 'boolean' ? defaultValue : undefined,
@@ -35,26 +57,30 @@ export function createClackPromptProvider(): PromptProvider {
           const choices = getChoices(option.config);
           if (option.config.type === 'array') {
             value = await clack.multiselect({
+              ...streamOpts,
               message,
               options: choices.map((c) => ({ value: c, label: String(c) })),
             });
           } else {
             value = await clack.select({
+              ...streamOpts,
               message,
               options: choices.map((c) => ({ value: c, label: String(c) })),
             });
           }
         } else if (option.config.type === 'number') {
           const raw = await clack.text({
+            ...streamOpts,
             message,
             placeholder:
               defaultValue !== undefined ? String(defaultValue) : undefined,
             defaultValue:
               defaultValue !== undefined ? String(defaultValue) : undefined,
-            validate: (val: string): string | void => {
+            validate: (val: string | undefined) => {
               if (val && isNaN(Number(val))) {
                 return 'Please enter a valid number';
               }
+              return undefined;
             },
           });
 
@@ -63,11 +89,11 @@ export function createClackPromptProvider(): PromptProvider {
             throw new Error('Prompt cancelled by user');
           }
 
-          value =
-            raw !== undefined && raw !== '' ? Number(raw) : defaultValue;
+          value = raw !== undefined && raw !== '' ? Number(raw) : defaultValue;
         } else {
           // string, array without choices
           value = await clack.text({
+            ...streamOpts,
             message,
             placeholder:
               defaultValue !== undefined ? String(defaultValue) : undefined,
@@ -89,6 +115,11 @@ export function createClackPromptProvider(): PromptProvider {
     },
   };
 }
+
+/**
+ * Default clack prompt provider, uses stdin/stdout
+ */
+export const ClackPromptProvider = createClackPromptProvider();
 
 /**
  * Determine the label to show for a prompt option.
@@ -122,7 +153,10 @@ function getDefault(config: PromptOption['config']): unknown {
 }
 
 function hasChoices(config: PromptOption['config']): boolean {
-  return 'choices' in config && (config as Record<string, unknown>)['choices'] !== undefined;
+  return (
+    'choices' in config &&
+    (config as Record<string, unknown>)['choices'] !== undefined
+  );
 }
 
 function getChoices(config: PromptOption['config']): unknown[] {
