@@ -1,3 +1,13 @@
+## 1.4.0 (2026-03-18)
+
+### 🚀 Features
+
+- **cli-forge:** add config documentation generation and updateConfig support ([f740fe7](https://github.com/agentender/cli-forge/commit/f740fe7))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.3.0 (2026-03-18)
 
 ### 🚀 Features
