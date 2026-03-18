@@ -36,7 +36,8 @@
       "Bash(perl -i -pe:*)",
       "Bash(do echo:*)",
       "Read(//Users/agentender/repos/functional-examples/docs-site/components/**)",
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Read(//tmp/**)"
     ],
     "deny": [],
     "ask": []

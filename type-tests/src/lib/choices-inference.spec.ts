@@ -134,6 +134,78 @@ describe('Choices Type Inference', () => {
     });
   });
 
+  describe('array option choices', () => {
+    it('should narrow string array element type with choices', () => {
+      const code = `
+        import { cli } from 'cli-forge';
+
+        cli('test')
+          .option('formats', {
+            type: 'array',
+            items: 'string',
+            choices: ['json', 'yaml', 'xml'] as const,
+            required: true,
+          })
+          .command('run', {
+            handler: (args) => {
+              console.log(args.formats);
+            },
+          });
+      `;
+
+      const result = findHandlerParamType(code);
+      expect(result).not.toBeNull();
+
+      const formatsType = getPropertyType(
+        result!.type,
+        'formats',
+        result!.typeChecker
+      );
+      expect(formatsType).not.toBeNull();
+
+      // Should be an array of the literal union, not just string[]
+      expect(formatsType).not.toBe('string[]');
+      // Should contain the literal values in an array type
+      expect(formatsType).toMatch(/json/);
+      expect(formatsType).toMatch(/yaml/);
+      expect(formatsType).toMatch(/\[\]/);
+    });
+
+    it('should narrow number array element type with choices', () => {
+      const code = `
+        import { cli } from 'cli-forge';
+
+        cli('test')
+          .option('ports', {
+            type: 'array',
+            items: 'number',
+            choices: [80, 443, 8080] as const,
+            required: true,
+          })
+          .command('run', {
+            handler: (args) => {
+              console.log(args.ports);
+            },
+          });
+      `;
+
+      const result = findHandlerParamType(code);
+      expect(result).not.toBeNull();
+
+      const portsType = getPropertyType(
+        result!.type,
+        'ports',
+        result!.typeChecker
+      );
+      expect(portsType).not.toBeNull();
+
+      // Should be an array of the literal union, not just number[]
+      expect(portsType).not.toBe('number[]');
+      expect(portsType).toMatch(/80/);
+      expect(portsType).toMatch(/\[\]/);
+    });
+  });
+
   describe('number choices', () => {
     it('should narrow number choices to literal union', () => {
       const code = `

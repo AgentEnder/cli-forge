@@ -81,10 +81,16 @@ export type BaseType<T> = T extends { type: 'string' }
 /**
  * Resolve a single option config to its final type.
  * Priority: choices > coerce > base type
+ *
+ * For array options, choices narrow the element type rather than replacing
+ * the entire type. e.g. `{ type: 'array', items: 'string', choices: ['a', 'b'] as const }`
+ * resolves to `('a' | 'b')[]`, not `'a' | 'b'`.
  */
 export type ResolveOptionType<T> = InferChoice<T> extends never
   ? InferCoerce<T, BaseType<T>>
-  : InferChoice<T>;
+  : T extends { type: 'array' }
+    ? InferChoice<T>[]
+    : InferChoice<T>;
 
 /**
  * Wrap a resolved type with undefined if the option is optional.
