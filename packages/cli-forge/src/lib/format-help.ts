@@ -76,6 +76,16 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     }
   }
 
+  const configDocs = command.parser.getConfigurationDocs();
+  if (configDocs.length > 0) {
+    help.push('');
+    help.push('Configuration:');
+    for (const section of configDocs) {
+      help.push(`  ${section.heading}`);
+      help.push(`    ${section.body}`);
+    }
+  }
+
   if (Object.keys(command.registeredCommands).length > 0) {
     help.push(' ');
     help.push(

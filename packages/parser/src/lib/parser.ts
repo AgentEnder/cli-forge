@@ -1,4 +1,5 @@
 import {
+  ConfigurationDocSection,
   ConfigurationProvider,
   resolveConfiguration,
 } from './config-files/configuration-loader';
@@ -133,6 +134,11 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns The localization dictionary, or undefined if not configured
    */
   getLocalizationDictionary(): LocalizationDictionary | undefined;
+  /**
+   * Gets documentation sections for all configured configuration providers.
+   * @returns An array of documentation sections, one per provider that implements describeConfig.
+   */
+  getConfigurationDocs(): ConfigurationDocSection[];
 }
 
 /**
@@ -979,6 +985,16 @@ export class ArgvParser<
    */
   getLocalizationDictionary(): LocalizationDictionary | undefined {
     return this.localizationDictionary;
+  }
+
+  /**
+   * Gets documentation sections for all configured configuration providers.
+   * @returns An array of documentation sections, one per provider that implements describeConfig.
+   */
+  getConfigurationDocs(): ConfigurationDocSection[] {
+    return this.configuredConfigurationProviders
+      .filter((p) => p.describeConfig)
+      .map((p) => p.describeConfig!());
   }
 }
 

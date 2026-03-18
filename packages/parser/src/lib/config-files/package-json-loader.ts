@@ -13,9 +13,22 @@ export function getPackageJsonConfigurationLoader<T>(
 ): ConfigurationProvider<T> {
   const loader = getJsonFileConfigLoader<T>(
     'package.json',
-    (json) => json[key]
+    (json) => json[key],
+    (json, config) => ({ ...json, [key]: config })
   );
   (loader as any)[inspect.custom] = () =>
     'PackageJsonConfigurationLoader: ' + key;
+  loader.describeConfig = () => ({
+    heading: `package.json (key: "${key}")`,
+    body: [
+      `Reads the \`"${key}"\` key from the nearest \`package.json\` file.`,
+      'Resolution walks up the directory tree from the working directory.',
+      '',
+      '**Example:**',
+      '```json',
+      JSON.stringify({ [key]: { option: 'value' } }, null, 2),
+      '```',
+    ].join('\n'),
+  });
   return loader;
 }

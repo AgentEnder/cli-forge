@@ -11,7 +11,8 @@
       ]
     },
     "e2e:jest": {
-      "command": "jest --config {projectRoot}/jest.config.js"
+      "command": "jest --runInBand --config {projectRoot}/jest.config.js",
+      "dependsOn": ["^build"]
     },
     "e2e:examples": {
       "command": "functional-examples test",

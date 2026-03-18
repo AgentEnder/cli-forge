@@ -37,7 +37,8 @@
       "Bash(do echo:*)",
       "Read(//Users/agentender/repos/functional-examples/docs-site/components/**)",
       "Bash(mkdir:*)",
-      "Read(//tmp/**)"
+      "Read(//tmp/**)",
+      "Bash(tar tzf:*)"
     ],
     "deny": [],
     "ask": []

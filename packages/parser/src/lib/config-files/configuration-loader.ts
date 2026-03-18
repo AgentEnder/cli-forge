@@ -1,6 +1,17 @@
 import { join } from 'path';
 
 /**
+ * A structured section of configuration documentation produced by a provider.
+ * Each section has a heading and a markdown body string.
+ */
+export type ConfigurationDocSection = {
+  /** The heading for this documentation section (e.g., "JSON File: app.config.json") */
+  heading: string;
+  /** Markdown-formatted body describing how this provider loads configuration. */
+  body: string;
+};
+
+/**
  * Implement this type to create a custom configuration provider.
  */
 export type ConfigurationProvider<T> = {
@@ -18,6 +29,24 @@ export type ConfigurationProvider<T> = {
    * @returns The loaded configuration object.
    */
   load: (filename: string) => T & { extends?: string };
+
+  /**
+   * Updates the configuration file managed by this provider.
+   * Accepts either a full configuration object to write, or an updater function
+   * that receives the current configuration and returns the new configuration.
+   *
+   * @param configOrUpdater A configuration object to write, or a function that receives the current config and returns the updated config.
+   */
+  updateConfig?: (
+    configOrUpdater: T | ((current: T) => T | Promise<T>)
+  ) => Promise<void>;
+
+  /**
+   * Returns structured documentation describing how this provider resolves and loads configuration.
+   * Each provider knows its own semantics (file traversal, key extraction, transforms)
+   * and can describe them more accurately than a generic renderer.
+   */
+  describeConfig?: () => ConfigurationDocSection;
 };
 
 // Runs all the configuration loaders in order to resolve the configuration file.

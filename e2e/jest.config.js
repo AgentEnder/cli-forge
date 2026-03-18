@@ -14,7 +14,6 @@ module.exports = {
   testTimeout: 150000,
   globalSetup: '../tools/scripts/start-local-registry.ts',
   globalTeardown: '../tools/scripts/stop-local-registry.ts',
-  runInBand: true,
   forceExit: true,
   testEnvironment: 'node',
 };

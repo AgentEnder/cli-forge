@@ -3,6 +3,7 @@ import {
   OptionConfigToType,
   readDefaultValue,
   LocalizationDictionary,
+  ConfigurationFiles,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
@@ -20,6 +21,11 @@ export type Documentation = {
     keys: Array<NormalizedOptionConfig>;
   }>;
   subcommands: Documentation[];
+  /**
+   * Describes how configuration is loaded for this command.
+   * Each section is produced by a provider's `describeConfig` method.
+   */
+  configurationSources?: ConfigurationFiles.ConfigurationDocSection[];
   /**
    * Localized keys for options and commands. Maps from default key to full localization entry.
    * Only present if localization is configured.
@@ -145,6 +151,11 @@ export function generateDocumentation(
     positionals,
     subcommands,
   };
+
+  const configDocs = parser.getConfigurationDocs();
+  if (configDocs.length > 0) {
+    result.configurationSources = configDocs;
+  }
 
   if (localizedKeys) {
     result.localizedKeys = localizedKeys;

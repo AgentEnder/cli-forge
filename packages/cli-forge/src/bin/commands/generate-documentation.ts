@@ -7,8 +7,8 @@ import { pathToFileURL } from 'node:url';
 
 import cli, { ArgumentsOf, CLI } from '../..';
 import { Documentation, generateDocumentation } from '../../lib/documentation';
-import { ensureDirSync } from '../utils/fs';
 import { InternalCLI } from '../../lib/internal-cli';
+import { ensureDirSync } from '../utils/fs';
 
 type mdfactory = typeof import('markdown-factory');
 
@@ -68,6 +68,10 @@ export const generateDocumentationCommand = cli('generate-documentation', {
     const documentation = generateDocumentation(cli);
     if (args.format === 'md') {
       await generateMarkdownDocumentation(documentation, args);
+
+      if (args.llms) {
+        generateLlmsTxt(documentation, args);
+      }
     } else if (args.format === 'json') {
       const outfile = args.output.endsWith('json')
         ? args.output
@@ -75,10 +79,6 @@ export const generateDocumentationCommand = cli('generate-documentation', {
       const outdir = dirname(outfile);
       ensureDirSync(outdir);
       writeFileSync(outfile, JSON.stringify(documentation, null, 2));
-    }
-
-    if (args.llms) {
-      generateLlmsTxt(documentation, args);
     }
   },
 });
@@ -116,7 +116,9 @@ function generateLlmsTxtContent(
       lines.push(docs.description);
       lines.push('');
     }
-    lines.push('This document describes the CLI commands and options for AI agent consumption.');
+    lines.push(
+      'This document describes the CLI commands and options for AI agent consumption.'
+    );
     lines.push('');
   } else {
     lines.push(`${indent}## ${fullCommand}`);
@@ -154,7 +156,9 @@ function generateLlmsTxtContent(
     for (const [, opt] of optionEntries) {
       const typeStr = formatOptionType(opt);
       const aliasStr = opt.alias?.length
-        ? ` (aliases: ${opt.alias.map((a) => (a.length === 1 ? `-${a}` : `--${a}`)).join(', ')})`
+        ? ` (aliases: ${opt.alias
+            .map((a) => (a.length === 1 ? `-${a}` : `--${a}`))
+            .join(', ')})`
         : '';
       const reqStr =
         opt.required && opt.default === undefined ? ' [required]' : '';
@@ -184,7 +188,9 @@ function generateLlmsTxtContent(
       for (const opt of group.keys) {
         const typeStr = formatOptionType(opt);
         const aliasStr = opt.alias?.length
-          ? ` (aliases: ${opt.alias.map((a) => (a.length === 1 ? `-${a}` : `--${a}`)).join(', ')})`
+          ? ` (aliases: ${opt.alias
+              .map((a) => (a.length === 1 ? `-${a}` : `--${a}`))
+              .join(', ')})`
           : '';
         const reqStr =
           opt.required && opt.default === undefined ? ' [required]' : '';
@@ -198,6 +204,16 @@ function generateLlmsTxtContent(
       }
       lines.push('');
     }
+  }
+
+  // Configuration sources
+  if (docs.configurationSources && docs.configurationSources.length > 0) {
+    lines.push(`${indent}Configuration:`);
+    for (const section of docs.configurationSources) {
+      lines.push(`${indent}  ${section.heading}`);
+      lines.push(`${indent}    ${section.body}`);
+    }
+    lines.push('');
   }
 
   // Examples
@@ -214,7 +230,9 @@ function generateLlmsTxtContent(
     lines.push(`${indent}Subcommands:`);
     for (const sub of docs.subcommands) {
       lines.push(
-        `${indent}  ${sub.name}${sub.description ? ` - ${sub.description}` : ''}`
+        `${indent}  ${sub.name}${
+          sub.description ? ` - ${sub.description}` : ''
+        }`
       );
     }
     lines.push('');
@@ -269,12 +287,19 @@ async function generateMarkdownForSingleCommand(
             md
           )
         ),
+        getConfigurationSourcesLink(
+          docs.configurationSources,
+          outdir,
+          docsRoot,
+          md
+        ),
         getSubcommandsFragment(docs.subcommands, outdir, docsRoot, md),
         getExamplesFragment(docs.examples, md),
         getEpilogueFragment(docs.epilogue, md),
       ].filter(isTruthy)
     )
   );
+  writeConfigurationSourcesFile(docs.configurationSources, outdir, md);
   for (const subcommand of docs.subcommands) {
     await generateMarkdownForSingleCommand(
       subcommand,
@@ -344,6 +369,42 @@ function getFlagArgsFragment(
   return md.h2(
     label,
     ...Object.values(options).map((option) => formatOption(option, md))
+  );
+}
+
+function getConfigurationSourcesLink(
+  sources: Documentation['configurationSources'],
+  outdir: string,
+  docsRoot: string,
+  md: mdfactory
+) {
+  if (!sources || sources.length === 0) {
+    return undefined;
+  }
+  const linkPath =
+    './' +
+    joinPathFragments(
+      normalize(relative(docsRoot, outdir)),
+      'configuration.md'
+    );
+  return md.h2('Configuration', md.link(linkPath, 'Configuration'));
+}
+
+function writeConfigurationSourcesFile(
+  sources: Documentation['configurationSources'],
+  outdir: string,
+  md: mdfactory
+) {
+  if (!sources || sources.length === 0) {
+    return;
+  }
+  ensureDirSync(outdir);
+  writeFileSync(
+    join(outdir, 'configuration.md'),
+    md.h1(
+      'Configuration',
+      ...sources.map((section) => md.h2(section.heading, section.body))
+    )
   );
 }
 
