@@ -1,3 +1,39 @@
+## 1.3.0 (2026-03-18)
+
+### 🚀 Features
+
+- **@cli-forge/parser:** support choices type inference for array options ([b9bd96a](https://github.com/agentender/cli-forge/commit/b9bd96a))
+- **cli-forge:** add prompt provider type definitions ([8c570f2](https://github.com/agentender/cli-forge/commit/8c570f2))
+- **cli-forge:** add withPromptProvider registration method ([60da1a3](https://github.com/agentender/cli-forge/commit/60da1a3))
+- **cli-forge:** implement prompt resolution in forge() lifecycle ([2aea85c](https://github.com/agentender/cli-forge/commit/2aea85c))
+- **cli-forge:** add clack prompt provider ([d517620](https://github.com/agentender/cli-forge/commit/d517620))
+- **cli-forge:** propagate prompt providers through clone and command chain ([0a74843](https://github.com/agentender/cli-forge/commit/0a74843))
+- **cli-forge:** add stream options to clack prompt provider ([c257ff4](https://github.com/agentender/cli-forge/commit/c257ff4))
+- **docs-site:** scaffold Vike migration (tasks 1-8) ([624e35e](https://github.com/agentender/cli-forge/commit/624e35e))
+- **docs-site:** add Vike pages, layout, and global context ([694bb27](https://github.com/agentender/cli-forge/commit/694bb27))
+- **docs-site:** integrate TypeDoc API docs and content.md prose rendering ([fe93ca9](https://github.com/agentender/cli-forge/commit/fe93ca9))
+- **docs-site:** render example descriptions through markdown pipeline ([91642a5](https://github.com/agentender/cli-forge/commit/91642a5))
+- **docs-site:** add table-of-contents sidebar for doc pages ([4e19852](https://github.com/agentender/cli-forge/commit/4e19852))
+- **docs-site:** add table-of-contents to all page types ([02eb76d](https://github.com/agentender/cli-forge/commit/02eb76d))
+
+### 🩹 Fixes
+
+- **cli-forge:** address code review feedback for prompt layer ([9b0e8bc](https://github.com/agentender/cli-forge/commit/9b0e8bc))
+- **docs-site:** resolve build issues and update frontmatter ([8ed551c](https://github.com/agentender/cli-forge/commit/8ed551c))
+- **docs-site:** resolve TypeScript errors in server utils and pages ([e512558](https://github.com/agentender/cli-forge/commit/e512558))
+- **docs-site:** fix SiteExampleFile class and remove unused import ([490a9af](https://github.com/agentender/cli-forge/commit/490a9af))
+- **docs-site:** make Home and Changelog top-level nav items ([f6a6087](https://github.com/agentender/cli-forge/commit/f6a6087))
+- **docs-site:** fix breadcrumb for top-level pages and README logo path ([99d564e](https://github.com/agentender/cli-forge/commit/99d564e))
+- **docs-site:** hide _toplevel docs from docs index page ([af70b5a](https://github.com/agentender/cli-forge/commit/af70b5a))
+- **docs-site:** show top-level docs on index, fix content.md syntax ([70396f9](https://github.com/agentender/cli-forge/commit/70396f9))
+- **docs-site:** fix fenced code block regex to handle title metadata ([d2c4d35](https://github.com/agentender/cli-forge/commit/d2c4d35))
+- **docs-site:** formatting and layout tweaks ([fd29a42](https://github.com/agentender/cli-forge/commit/fd29a42))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.2.3 (2026-02-19)
 
 ### 🚀 Features
