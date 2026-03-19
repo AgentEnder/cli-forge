@@ -1,3 +1,25 @@
+## 1.5.0 (2026-03-19)
+
+### 🚀 Features
+
+- **cli-forge:** expose updateConfig and accept AnyConfigProvider in CLI layer ([3fbbe1d](https://github.com/agentender/cli-forge/commit/3fbbe1d))
+- **cli-forge:** update ConfigurationProviders.JsonFile for aggregate return type ([0ed0a5f](https://github.com/agentender/cli-forge/commit/0ed0a5f))
+- **parser:** add AggregateConfigProvider skeleton and type guard ([6702268](https://github.com/agentender/cli-forge/commit/6702268))
+- **parser:** implement AggregateConfigProvider.load with provenance tracking ([54ac294](https://github.com/agentender/cli-forge/commit/54ac294))
+- **parser:** implement AggregateConfigProvider.updateConfig with provenance routing ([8596a31](https://github.com/agentender/cli-forge/commit/8596a31))
+- **parser:** implement AggregateConfigProvider.describeConfig ([dd898bb](https://github.com/agentender/cli-forge/commit/dd898bb))
+- **parser:** integrate AggregateConfigProvider into ArgvParser ([ffa8e58](https://github.com/agentender/cli-forge/commit/ffa8e58))
+
+### 🩹 Fixes
+
+- **cli-forge:** remove as-any cast and apply key-aware describeConfig for multi-file JsonFile ([70da737](https://github.com/agentender/cli-forge/commit/70da737))
+- **cli-forge:** use __dirname instead of import.meta.url in e2e update tests ([f59b26c](https://github.com/agentender/cli-forge/commit/f59b26c))
+- **parser:** fix TS diagnostics in AggregateConfigProvider skeleton ([32357d9](https://github.com/agentender/cli-forge/commit/32357d9))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.4.0 (2026-03-18)
 
 ### 🚀 Features
