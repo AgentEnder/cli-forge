@@ -1,0 +1,7 @@
+{
+  "name": "multi-provider-test",
+  "my-app": {
+    "name": "from-package",
+    "farewell": "pkg-farewell"
+  }
+}

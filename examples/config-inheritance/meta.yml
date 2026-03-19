@@ -1,0 +1,31 @@
+id: config-inheritance
+title: Config Inheritance
+hidden: true
+description: |
+  Tests that config files with "extends" properly inherit values from parent configs,
+  with child values taking precedence over parent values.
+test:
+  - name: 'Inherits values from base config via extends'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'name: app-name'
+  - name: 'Child config overrides base config values'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'greeting: app-greeting'
+  - name: 'Inherits non-overridden values from base'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'farewell: base-farewell'
+  - name: 'CLI args override config values'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts --name cli-name'
+    assertions:
+      stdout:
+        contains: 'name: cli-name'

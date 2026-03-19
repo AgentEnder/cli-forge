@@ -1,0 +1,32 @@
+id: multi-provider-precedence
+title: Multi Provider Precedence
+hidden: true
+description: |
+  Tests that when multiple config providers are registered, the first-registered
+  provider's values take precedence on key conflicts, while non-conflicting values
+  merge from all providers.
+test:
+  - name: 'First-registered provider wins on key conflicts'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'name: from-package'
+  - name: 'Non-conflicting values merge from later providers'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'greeting: json-greeting'
+  - name: 'Values unique to first provider are preserved'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'farewell: pkg-farewell'
+  - name: 'CLI args override all config providers'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts --name cli-override'
+    assertions:
+      stdout:
+        contains: 'name: cli-override'
