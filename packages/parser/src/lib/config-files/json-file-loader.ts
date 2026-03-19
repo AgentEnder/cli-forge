@@ -1,8 +1,11 @@
-import { existsSync, readFileSync } from 'fs';
+import { readFileSync } from 'fs';
 import { writeFile } from 'fs/promises';
-import { dirname, join } from 'path';
 import { inspect } from 'util';
 
+import {
+  AggregateConfigProvider,
+  AnyConfigProvider,
+} from './aggregate-config-provider.js';
 import {
   ConfigurationDocSection,
   ConfigurationProvider,
@@ -11,9 +14,7 @@ import { traverseForFile } from './utils.js';
 
 /**
  * A factory function to create simple configuration providers that load configuration from a JSON file.
- * @param filename The filename (or array of possible filenames) of the JSON file to load.
- *   When an array is provided, the resolver checks all candidates at each directory level
- *   before traversing upward, so the nearest matching file always wins.
+ * @param filename The filename of the JSON file to load.
  * @param transform The function to transform the loaded JSON object into the desired configuration object.
  * @param writeTransform A function that merges the updated config back into the full JSON structure.
  *   Receives the current full JSON and the new config value, and returns the full JSON to write.
@@ -21,11 +22,36 @@ import { traverseForFile } from './utils.js';
  * @returns A `{@link ConfigurationProvider}` that loads configuration from the specified JSON file.
  */
 export function getJsonFileConfigLoader<T>(
+  filename: string,
+  transform?: (json: any) => T,
+  writeTransform?: (json: any, config: T) => any
+): ConfigurationProvider<T>;
+/**
+ * A factory function to create an aggregate configuration provider that wraps
+ * individual single-file loaders for each filename.
+ * @param filename An array of possible filenames to load.
+ * @param transform The function to transform the loaded JSON object into the desired configuration object.
+ * @param writeTransform A function that merges the updated config back into the full JSON structure.
+ * @returns An `{@link AggregateConfigProvider}` wrapping individual loaders.
+ */
+export function getJsonFileConfigLoader<T>(
+  filename: string[],
+  transform?: (json: any) => T,
+  writeTransform?: (json: any, config: T) => any
+): AggregateConfigProvider<T>;
+export function getJsonFileConfigLoader<T>(
   filename: string | string[],
   transform?: (json: any) => T,
   writeTransform?: (json: any, config: T) => any
-): ConfigurationProvider<T> {
-  const filenames = Array.isArray(filename) ? filename : [filename];
+): AnyConfigProvider<T> {
+  if (Array.isArray(filename)) {
+    const providers = filename.map((f) =>
+      getJsonFileConfigLoader(f, transform, writeTransform)
+    );
+    return new AggregateConfigProvider(providers);
+  }
+
+  const singleFilename: string = filename;
 
   function loadJsonFile(filepath: string) {
     return JSON.parse(readFileSync(filepath, 'utf-8'));
@@ -33,27 +59,9 @@ export function getJsonFileConfigLoader<T>(
 
   class JsonFileConfigLoader {
     resolve(configurationRoot: string) {
-      if (filenames.length === 1) {
-        const nearestFile = traverseForFile(filenames[0], configurationRoot);
-        if (nearestFile && nearestFile.endsWith('.json')) {
-          return nearestFile;
-        }
-        return undefined;
-      }
-
-      // Check all candidates at each directory level before traversing upward,
-      // so the nearest matching file wins regardless of its position in the array.
-      let prev: string | undefined;
-      let current = configurationRoot;
-      while (prev !== current) {
-        prev = current;
-        for (const name of filenames) {
-          const testPath = join(current, name);
-          if (existsSync(testPath) && testPath.endsWith('.json')) {
-            return testPath;
-          }
-        }
-        current = dirname(current);
+      const nearestFile = traverseForFile(singleFilename, configurationRoot);
+      if (nearestFile && nearestFile.endsWith('.json')) {
+        return nearestFile;
       }
       return undefined;
     }
@@ -78,7 +86,7 @@ export function getJsonFileConfigLoader<T>(
       const resolvedPath = this.resolve(process.cwd());
       if (!resolvedPath) {
         throw new Error(
-          `Could not resolve configuration file "${filenames.join(', ')}" from ${process.cwd()}`
+          `Could not resolve configuration file "${singleFilename}" from ${process.cwd()}`
         );
       }
 
@@ -101,11 +109,8 @@ export function getJsonFileConfigLoader<T>(
     }
 
     describeConfig(): ConfigurationDocSection {
-      const fileList = filenames.map((f) => `\`${f}\``).join(', ');
       const parts: string[] = [
-        filenames.length > 1
-          ? `Searches for one of: ${fileList}`
-          : `Searches for ${fileList}`,
+        `Searches for \`${singleFilename}\``,
         'Resolution walks up the directory tree from the working directory, using the nearest match.',
       ];
       if (transform) {
@@ -115,13 +120,13 @@ export function getJsonFileConfigLoader<T>(
       }
       parts.push('Supports `"extends"` for configuration inheritance.');
       return {
-        heading: `JSON File: ${filenames.join(', ')}`,
+        heading: `JSON File: ${singleFilename}`,
         body: parts.join('\n\n'),
       };
     }
 
     [inspect.custom]() {
-      return 'JsonFileConfigLoader: ' + filenames.join(', ');
+      return 'JsonFileConfigLoader: ' + singleFilename;
     }
   }
 
