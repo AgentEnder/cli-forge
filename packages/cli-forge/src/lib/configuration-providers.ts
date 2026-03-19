@@ -45,17 +45,31 @@ export const ConfigurationProviders = {
     const writeTransform = key
       ? (json: any, config: T) => ({ ...json, [key]: config })
       : undefined;
+
+    if (Array.isArray(filename)) {
+      const aggregate = ConfigurationFiles.getJsonFileConfigLoader<T>(
+        filename,
+        transform,
+        writeTransform
+      );
+      if (key) {
+        for (let i = 0; i < aggregate.providers.length; i++) {
+          const provider = aggregate.providers[i];
+          if (!ConfigurationFiles.isAggregateConfigProvider(provider)) {
+            applyKeyDescribeConfig(provider, filename[i], key);
+          }
+        }
+      }
+      return aggregate;
+    }
+
     const loader = ConfigurationFiles.getJsonFileConfigLoader<T>(
-      filename as any,
+      filename,
       transform,
       writeTransform
     );
-    if (key && !ConfigurationFiles.isAggregateConfigProvider(loader)) {
-      applyKeyDescribeConfig(
-        loader as ConfigurationFiles.ConfigurationProvider<T>,
-        filename as string,
-        key
-      );
+    if (key) {
+      applyKeyDescribeConfig(loader, filename, key);
     }
     return loader;
   },
