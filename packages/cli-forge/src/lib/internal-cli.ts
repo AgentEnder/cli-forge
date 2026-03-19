@@ -886,12 +886,16 @@ export class InternalCLI<
   }
 
   config(
-    provider: ConfigurationFiles.ConfigurationProvider<TArgs>
+    provider: ConfigurationFiles.AnyConfigProvider<TArgs>
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.parser.config(
-      provider as ConfigurationFiles.ConfigurationProvider<any>
+      provider as ConfigurationFiles.AnyConfigProvider<any>
     );
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
+  async updateConfig(values: Partial<TArgs>): Promise<void> {
+    return this.parser.updateConfig(values as any);
   }
 
   /**

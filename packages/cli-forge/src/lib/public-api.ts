@@ -403,8 +403,16 @@ export interface CLI<
    * @param provider Provider to register.
    */
   config(
-    provider: ConfigurationFiles.ConfigurationProvider<TArgs>
+    provider: ConfigurationFiles.AnyConfigProvider<TArgs>
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Updates configuration by routing each key to its owning provider.
+   * Requires that config providers have been registered and config has been loaded (i.e., parse has been called).
+   *
+   * @param values Partial configuration to write.
+   */
+  updateConfig(values: Partial<TArgs>): Promise<void>;
 
   /**
    * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
