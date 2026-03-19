@@ -1,3 +1,17 @@
+## 1.6.0 (2026-03-19)
+
+### 🚀 Features
+
+- **parser:** support updater functions in updateConfig via proxy tracking ([712420f](https://github.com/agentender/cli-forge/commit/712420f))
+
+### 🩹 Fixes
+
+- **docs-site:** render changelog ([e28bcbd](https://github.com/agentender/cli-forge/commit/e28bcbd))
+
+### ❤️ Thank You
+
+- Craigory Coppola @AgentEnder
+
 ## 1.5.0 (2026-03-19)
 
 ### 🚀 Features
