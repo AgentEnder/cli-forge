@@ -181,7 +181,15 @@ export class AggregateConfigProvider<T> {
    * Aggregates documentation sections from all child providers.
    */
   describeConfig(): ConfigurationDocSection[] {
-    return [];
+    const sections: ConfigurationDocSection[] = [];
+    for (const provider of this.providers) {
+      if (isAggregateConfigProvider(provider)) {
+        sections.push(...provider.describeConfig());
+      } else if (provider.describeConfig) {
+        sections.push(provider.describeConfig());
+      }
+    }
+    return sections;
   }
 }
 

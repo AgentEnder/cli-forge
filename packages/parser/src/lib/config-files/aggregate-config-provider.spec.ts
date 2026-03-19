@@ -242,4 +242,54 @@ describe('AggregateConfigProvider', () => {
       ).rejects.toThrow();
     });
   });
+
+  describe('describeConfig', () => {
+    it('should aggregate documentation from all children', () => {
+      const providerA: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        describeConfig: () => ({ heading: 'Config A', body: 'Description A' }),
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        describeConfig: () => ({ heading: 'Config B', body: 'Description B' }),
+      };
+      const providerC: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        // no describeConfig
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        providerA,
+        providerB,
+        providerC,
+      ]);
+      expect(aggregate.describeConfig()).toEqual([
+        { heading: 'Config A', body: 'Description A' },
+        { heading: 'Config B', body: 'Description B' },
+      ]);
+    });
+
+    it('should flatten nested aggregate documentation', () => {
+      const providerA: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        describeConfig: () => ({ heading: 'A', body: 'A' }),
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        describeConfig: () => ({ heading: 'B', body: 'B' }),
+      };
+      const inner = new AggregateConfigProvider([providerB]);
+      const outer = new AggregateConfigProvider([providerA, inner]);
+
+      expect(outer.describeConfig()).toEqual([
+        { heading: 'A', body: 'A' },
+        { heading: 'B', body: 'B' },
+      ]);
+    });
+  });
 });
