@@ -31,55 +31,68 @@ export const ConfigurationProviders = {
   },
 
   /**
-   * Load configuration from a JSON file.
+   * Load configuration from a JSON file (or files).
    *
    * @param filename The filename (or array of possible filenames) of the JSON file to load.
-   *   When an array is provided, the nearest matching file wins.
+   *   When an array is provided, each filename gets its own provider wrapped in an aggregate.
    * @param key The key in the JSON file to load as configuration. By default, the entire JSON object is loaded.
    */
-  JsonFile<T>(filename: string | string[], key?: string) {
+  JsonFile<T>(
+    filename: string | string[],
+    key?: string
+  ): ConfigurationFiles.AnyConfigProvider<T> {
+    const transform = key ? (json: any) => json[key] : undefined;
+    const writeTransform = key
+      ? (json: any, config: T) => ({ ...json, [key]: config })
+      : undefined;
     const loader = ConfigurationFiles.getJsonFileConfigLoader<T>(
-      filename,
-      key ? (json) => json[key] : undefined,
-      key ? (json, config) => ({ ...json, [key]: config }) : undefined
+      filename as any,
+      transform,
+      writeTransform
     );
-    if (key) {
-      const filenames = Array.isArray(filename) ? filename : [filename];
-      const fileList = filenames.join(', ');
-      loader.describeConfig = () => {
-        const heading = `JSON File: ${fileList} (key: "${key}")`;
-        if (md) {
-          return {
-            heading,
-            body: md.lines(
-              filenames.length > 1
-                ? `Searches for one of: ${filenames.map((f) => md.code(f)).join(', ')}`
-                : `Searches for ${md.code(filenames[0])}`,
-              'Resolution walks up the directory tree from the working directory, using the nearest match.',
-              `Reads the ${md.code(`"${key}"`)} key from the JSON file.`,
-              `Supports ${md.code('"extends"')} for configuration inheritance.`,
-              '',
-              md.bold('Example:'),
-              md.codeBlock(
-                JSON.stringify({ [key]: { option: 'value' } }, null, 2),
-                'json'
-              )
-            ),
-          };
-        }
-        return {
-          heading,
-          body: [
-            filenames.length > 1
-              ? `Searches for one of: ${fileList}`
-              : `Searches for ${filenames[0]}`,
-            'Resolution walks up the directory tree from the working directory, using the nearest match.',
-            `Reads the "${key}" key from the JSON file.`,
-            'Supports "extends" for configuration inheritance.',
-          ].join('\n\n'),
-        };
-      };
+    if (key && !ConfigurationFiles.isAggregateConfigProvider(loader)) {
+      applyKeyDescribeConfig(
+        loader as ConfigurationFiles.ConfigurationProvider<T>,
+        filename as string,
+        key
+      );
     }
     return loader;
   },
 };
+
+function applyKeyDescribeConfig<T>(
+  loader: ConfigurationFiles.ConfigurationProvider<T>,
+  filename: string,
+  key: string
+) {
+  loader.describeConfig = () => {
+    const heading = `JSON File: ${filename} (key: "${key}")`;
+    if (md) {
+      return {
+        heading,
+        body: md.lines(
+          `Searches for ${md.code(filename)}`,
+          'Resolution walks up the directory tree from the working directory, using the nearest match.',
+          `Reads the ${md.code(`"${key}"`)} key from the JSON file.`,
+          `Supports ${md.code('"extends"')} for configuration inheritance.`,
+          '',
+          md.bold('Example:'),
+          md.codeBlock(
+            JSON.stringify({ [key]: { option: 'value' } }, null, 2),
+            'json'
+          )
+        ),
+      };
+    }
+    return {
+      heading,
+      body: [
+        `Searches for ${filename}`,
+        'Resolution walks up the directory tree from the working directory, using the nearest match.',
+        `Reads the "${key}" key from the JSON file.`,
+        'Supports "extends" for configuration inheritance.',
+      ].join('\n\n'),
+    };
+  };
+}
