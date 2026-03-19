@@ -1,3 +1,5 @@
+import { join } from 'path';
+
 import { ConfigurationProvider, ConfigurationDocSection } from './configuration-loader.js';
 
 /**
@@ -24,6 +26,12 @@ export class AggregateConfigProvider<T> {
    */
   provenance: Map<string, ConfigurationProvider<T>> = new Map();
 
+  /**
+   * The last configuration root passed to {@link load}, stored for
+   * use by {@link updateConfig} to find fallback providers.
+   */
+  private lastConfigurationRoot?: string;
+
   constructor(providers: AnyConfigProvider<T>[]) {
     this.providers = providers;
   }
@@ -37,10 +45,76 @@ export class AggregateConfigProvider<T> {
    * @returns The merged configuration object.
    */
   load(
-    _configurationRoot: string,
-    _visited?: Map<ConfigurationProvider<T>, Set<string>>
+    configurationRoot: string,
+    visited?: Map<ConfigurationProvider<T>, Set<string>>
   ): T {
-    throw new Error('Not implemented');
+    const visitedMap =
+      visited ?? new Map<ConfigurationProvider<T>, Set<string>>();
+    this.provenance = new Map();
+    this.lastConfigurationRoot = configurationRoot;
+
+    let combined: T = {} as T;
+
+    for (const provider of this.providers) {
+      if (isAggregateConfigProvider(provider)) {
+        const childResult = provider.load(configurationRoot, visitedMap);
+        for (const key of Object.keys(childResult as any)) {
+          if (!(key in (combined as any))) {
+            (combined as any)[key] = (childResult as any)[key];
+            const childOwner = provider.provenance.get(key);
+            if (childOwner) {
+              this.provenance.set(key, childOwner);
+            }
+          }
+        }
+      } else {
+        const filename = provider.resolve(configurationRoot);
+        if (filename) {
+          const loaderVisited = visitedMap.get(provider) ?? new Set<string>();
+          if (loaderVisited.has(filename)) {
+            throw new Error(
+              `Circular reference detected in configuration file: ${filename}. This is likely caused by an "extends" property pointing to a directory which doesn't contain a configuration file.`
+            );
+          }
+          loaderVisited.add(filename);
+          visitedMap.set(provider, loaderVisited);
+
+          const loaded = this.loadWithExtends(
+            filename,
+            provider,
+            configurationRoot,
+            visitedMap
+          );
+
+          for (const key of Object.keys(loaded as any)) {
+            if (!(key in (combined as any))) {
+              (combined as any)[key] = (loaded as any)[key];
+              this.provenance.set(key, provider);
+            }
+          }
+        }
+      }
+    }
+    return combined;
+  }
+
+  private loadWithExtends(
+    filename: string,
+    provider: ConfigurationProvider<T>,
+    configurationRoot: string,
+    visited: Map<ConfigurationProvider<T>, Set<string>>
+  ): T {
+    const loaded = provider.load(filename);
+    if (loaded.extends) {
+      const extendsRoot = loaded.extends.startsWith('.')
+        ? join(configurationRoot, loaded.extends)
+        : loaded.extends;
+      const extendsAggregate = new AggregateConfigProvider<T>(this.providers);
+      const extended = extendsAggregate.load(extendsRoot, visited);
+      const { extends: _, ...rest } = loaded as any;
+      return { ...extended, ...rest } as T;
+    }
+    return loaded;
   }
 
   /**
