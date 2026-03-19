@@ -30,3 +30,27 @@ test:
     assertions:
       stdout:
         contains: 'name: cli-override'
+  - name: 'updateConfig routes greeting update to app.config.json'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-test.ts'
+    assertions:
+      stdout:
+        contains: 'app.config.json greeting: updated-greeting'
+  - name: 'updateConfig does not leak greeting into package.json'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-test.ts'
+    assertions:
+      stdout:
+        contains: 'package.json greeting: not present'
+  - name: 'updateConfig routes farewell update to package.json'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-test.ts'
+    assertions:
+      stdout:
+        contains: 'package.json farewell: updated-farewell'
+  - name: 'updateConfig does not leak farewell into app.config.json'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-test.ts'
+    assertions:
+      stdout:
+        contains: 'app.config.json farewell: not present'
