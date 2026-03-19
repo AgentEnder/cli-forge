@@ -292,4 +292,62 @@ describe('AggregateConfigProvider', () => {
       ]);
     });
   });
+
+  describe('integration: multi-provider updateConfig routing', () => {
+    it('should route updates to correct providers across nested aggregates', async () => {
+      const updatesA: any[] = [];
+      const updatesB: any[] = [];
+      const updatesC: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ name: 'fromA', debug: false }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ name: 'fromA', debug: false })
+              : updater;
+          updatesA.push(result);
+        },
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configB' : undefined),
+        load: () => ({ port: 3000 }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ port: 3000 })
+              : updater;
+          updatesB.push(result);
+        },
+      };
+      const providerC: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configC' : undefined),
+        load: () => ({ host: 'localhost' }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ host: 'localhost' })
+              : updater;
+          updatesC.push(result);
+        },
+      };
+
+      const inner = new AggregateConfigProvider([providerB, providerC]);
+      const outer = new AggregateConfigProvider([providerA, inner]);
+
+      outer.load('/root');
+
+      await outer.updateConfig({
+        name: 'newName',
+        port: 8080,
+        host: '0.0.0.0',
+      });
+
+      // Each provider should only receive its own keys
+      expect(updatesA).toEqual([{ name: 'newName', debug: false }]);
+      expect(updatesB).toEqual([{ port: 8080 }]);
+      expect(updatesC).toEqual([{ host: '0.0.0.0' }]);
+    });
+  });
 });
