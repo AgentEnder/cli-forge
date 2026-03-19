@@ -1,8 +1,12 @@
 import {
   ConfigurationDocSection,
   ConfigurationProvider,
-  resolveConfiguration,
 } from './config-files/configuration-loader';
+import {
+  AggregateConfigProvider,
+  AnyConfigProvider,
+  isAggregateConfigProvider,
+} from './config-files/aggregate-config-provider';
 import { hideBin } from './helpers';
 import {
   LocalizationDictionary,
@@ -139,6 +143,7 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns An array of documentation sections, one per provider that implements describeConfig.
    */
   getConfigurationDocs(): ConfigurationDocSection[];
+  updateConfig(values: Partial<TArgs>): Promise<void>;
 }
 
 /**
@@ -182,9 +187,7 @@ export class ArgvParser<
    */
   parserMap: Record<string, Parser<any>>;
 
-  private configuredConfigurationProviders: Array<
-    ConfigurationProvider<TArgs>
-  > = [];
+  private configuredConfigurationProviders: AnyConfigProvider<TArgs>[] = [];
 
   /**
    * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
@@ -483,9 +486,24 @@ export class ArgvParser<
    * Registers a configuration provider to read configuration from.
    * @param provider The configuration provider to register.
    */
-  config(provider: ConfigurationProvider<TArgs>) {
+  config(provider: AnyConfigProvider<TArgs>) {
     this.configuredConfigurationProviders.push(provider);
     return this;
+  }
+
+  /**
+   * Updates configuration values by routing each key to the provider that owns it.
+   * Requires that at least one configuration provider has been registered via {@link config}.
+   * @param values Partial configuration to write.
+   */
+  async updateConfig(values: Partial<TArgs>): Promise<void> {
+    if (!this.cachedAggregate) {
+      this.cachedAggregate = new AggregateConfigProvider(
+        this.configuredConfigurationProviders
+      );
+      this.cachedAggregate.load(process.cwd());
+    }
+    return this.cachedAggregate.updateConfig(values);
   }
 
   /**
@@ -855,6 +873,7 @@ export class ArgvParser<
 
   private cachedConfigKey: number | undefined;
   private cachedConfig: Partial<TArgs> | null | undefined;
+  private cachedAggregate?: AggregateConfigProvider<TArgs>;
 
   private getEnvKey(configuration: InternalOptionConfig) {
     const { envKey: configuredKey, prefix } =
@@ -876,10 +895,10 @@ export class ArgvParser<
       this.cachedConfig === undefined ||
       this.cachedConfigKey !== this.configuredConfigurationProviders.length
     ) {
-      this.cachedConfig = resolveConfiguration(
-        process.cwd(),
+      this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
+      this.cachedConfig = this.cachedAggregate.load(process.cwd());
       this.cachedConfigKey = this.configuredConfigurationProviders.length;
     }
     return this.cachedConfig?.[configuration.key as keyof TArgs];
@@ -992,9 +1011,15 @@ export class ArgvParser<
    * @returns An array of documentation sections, one per provider that implements describeConfig.
    */
   getConfigurationDocs(): ConfigurationDocSection[] {
-    return this.configuredConfigurationProviders
-      .filter((p) => p.describeConfig)
-      .map((p) => p.describeConfig!());
+    const sections: ConfigurationDocSection[] = [];
+    for (const provider of this.configuredConfigurationProviders) {
+      if (isAggregateConfigProvider(provider)) {
+        sections.push(...provider.describeConfig());
+      } else if (provider.describeConfig) {
+        sections.push(provider.describeConfig());
+      }
+    }
+    return sections;
   }
 }
 

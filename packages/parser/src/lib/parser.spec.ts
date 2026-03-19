@@ -4,6 +4,7 @@ import { parser } from './parser';
 import 'vitest';
 import { expect, describe, it } from 'vitest';
 import { ConfigurationProvider } from './config-files/configuration-loader';
+import { AggregateConfigProvider } from './config-files/aggregate-config-provider';
 
 interface CustomMatchers<R = unknown> {
   toThrowAggregateErrorContaining: (...expected: Array<string | Error>) => R;
@@ -1252,6 +1253,26 @@ describe('parser', () => {
         .parse([])
     ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
     expect(configRead).toBe(1);
+  });
+
+  it('should support AggregateConfigProvider', () => {
+    const providerA: ConfigurationProvider<any> = {
+      resolve: (dir) => join(dir, '.configA'),
+      load: () => ({ foo: 'fromA' }),
+    };
+    const providerB: ConfigurationProvider<any> = {
+      resolve: (dir) => join(dir, '.configB'),
+      load: () => ({ bar: 2 }),
+    };
+    const aggregate = new AggregateConfigProvider([providerA, providerB]);
+
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .config(aggregate)
+        .parse([])
+    ).toEqual({ foo: 'fromA', bar: 2, unmatched: [] });
   });
 });
 
