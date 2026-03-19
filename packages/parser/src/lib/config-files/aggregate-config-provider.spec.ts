@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
-import { AggregateConfigProvider, isAggregateConfigProvider } from './aggregate-config-provider';
-import { ConfigurationProvider } from './configuration-loader';
+import { AggregateConfigProvider, isAggregateConfigProvider } from './aggregate-config-provider.js';
+import { ConfigurationProvider } from './configuration-loader.js';
 
 describe('AggregateConfigProvider', () => {
   describe('isAggregateConfigProvider', () => {

@@ -37,8 +37,8 @@ export class AggregateConfigProvider<T> {
    * @returns The merged configuration object.
    */
   load(
-    configurationRoot: string,
-    visited?: Map<ConfigurationProvider<T>, Set<string>>
+    _configurationRoot: string,
+    _visited?: Map<ConfigurationProvider<T>, Set<string>>
   ): T {
     throw new Error('Not implemented');
   }
@@ -49,7 +49,7 @@ export class AggregateConfigProvider<T> {
    *
    * @param values Partial configuration to write.
    */
-  async updateConfig(values: Partial<T>): Promise<void> {
+  async updateConfig(_values: Partial<T>): Promise<void> {
     throw new Error('Not implemented');
   }
 
