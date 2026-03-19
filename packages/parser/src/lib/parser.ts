@@ -144,7 +144,8 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns An array of documentation sections, one per provider that implements describeConfig.
    */
   getConfigurationDocs(): ConfigurationDocSection[];
-  updateConfig(valuesOrUpdater: Partial<TArgs> | ConfigUpdater<TArgs>): Promise<void>;
+  updateConfig(values: Partial<TArgs>): Promise<void>;
+  updateConfig(updater: ConfigUpdater<TArgs>): Promise<void>;
 }
 
 /**
@@ -494,11 +495,15 @@ export class ArgvParser<
 
   /**
    * Updates configuration values by routing each key to the provider that owns it.
-   * Requires that at least one configuration provider has been registered via {@link config}.
-   *
-   * @param valuesOrUpdater Partial configuration to write, or an updater function
-   *   that receives the current merged config and mutates it in place.
+   * @param values Partial configuration to write.
    */
+  async updateConfig(values: Partial<TArgs>): Promise<void>;
+  /**
+   * Updates configuration via an updater function that receives the current
+   * merged config and mutates it in place via a proxy.
+   * @param updater Function that receives the current config and mutates it.
+   */
+  async updateConfig(updater: ConfigUpdater<TArgs>): Promise<void>;
   async updateConfig(
     valuesOrUpdater: Partial<TArgs> | ConfigUpdater<TArgs>
   ): Promise<void> {
@@ -507,6 +512,9 @@ export class ArgvParser<
         this.configuredConfigurationProviders
       );
       this.cachedAggregate.load(process.cwd());
+    }
+    if (typeof valuesOrUpdater === 'function') {
+      return this.cachedAggregate.updateConfig(valuesOrUpdater);
     }
     return this.cachedAggregate.updateConfig(valuesOrUpdater);
   }

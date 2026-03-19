@@ -894,6 +894,10 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
+  async updateConfig(values: Partial<TArgs>): Promise<void>;
+  async updateConfig(
+    updater: ConfigurationFiles.ConfigUpdater<TArgs>
+  ): Promise<void>;
   async updateConfig(
     valuesOrUpdater:
       | Partial<TArgs>

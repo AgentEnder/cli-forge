@@ -128,13 +128,17 @@ export class AggregateConfigProvider<T> {
    * Updates configuration by routing each key to its owning provider.
    * Keys not found in provenance are routed to the first resolving provider.
    *
-   * Accepts either a partial config object or an updater function.
-   * When an updater function is provided, the current merged configuration
-   * is wrapped in a proxy that tracks which properties are set. Only the
-   * changed properties are written back to their owning providers.
-   *
-   * @param valuesOrUpdater Partial configuration to write, or an updater function.
+   * @param values Partial configuration to write.
    */
+  async updateConfig(values: Partial<T>): Promise<void>;
+  /**
+   * Updates configuration via an updater function. The current merged
+   * configuration is wrapped in a proxy that tracks which properties are set.
+   * Only the changed properties are written back to their owning providers.
+   *
+   * @param updater A function that receives the current config and mutates it in place.
+   */
+  async updateConfig(updater: ConfigUpdater<T>): Promise<void>;
   async updateConfig(
     valuesOrUpdater: Partial<T> | ConfigUpdater<T>
   ): Promise<void> {

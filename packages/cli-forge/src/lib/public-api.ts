@@ -408,16 +408,19 @@ export interface CLI<
 
   /**
    * Updates configuration by routing each key to its owning provider.
-   * Requires that config providers have been registered and config has been loaded (i.e., parse has been called).
    *
-   * @param valuesOrUpdater Partial configuration to write, or an updater function
-   *   that receives the current merged config and mutates it in place via a proxy.
-   *   Only properties set during the callback are written back.
+   * @param values Partial configuration to write.
+   */
+  updateConfig(values: Partial<TArgs>): Promise<void>;
+  /**
+   * Updates configuration via an updater function. The current merged
+   * configuration is passed via a proxy that tracks which properties are set.
+   * Only properties set during the callback are written back.
+   *
+   * @param updater Function that receives the current config and mutates it.
    */
   updateConfig(
-    valuesOrUpdater:
-      | Partial<TArgs>
-      | ConfigurationFiles.ConfigUpdater<TArgs>
+    updater: ConfigurationFiles.ConfigUpdater<TArgs>
   ): Promise<void>;
 
   /**
