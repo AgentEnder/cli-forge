@@ -1,6 +1,6 @@
+import { ConfigurationProviders, cli } from 'cli-forge';
 import { readFileSync, writeFileSync } from 'fs';
 import { join } from 'path';
-import { ConfigurationProviders, cli } from 'cli-forge';
 
 const appConfigPath = join(__dirname, 'app.config.json');
 

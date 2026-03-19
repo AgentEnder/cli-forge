@@ -143,9 +143,9 @@ export async function onCreateGlobalContext(
   );
 
   const navigation: NavigationItem[] = [
-    { title: 'Home', path: '/docs/index', order: -2 },
+    { title: 'Home', path: '/docs', order: -2 },
     ...docsNavigation,
-    { title: 'Changelog', path: '/docs/changelog', order: 999 },
+    { title: 'Changelog', path: '/changelog', order: 999 },
     {
       title: 'Examples',
       path: '/examples',
