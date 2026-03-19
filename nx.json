@@ -15,7 +15,8 @@
   "targetDefaults": {
     "test": {
       "cache": true,
-      "inputs": ["default", "^production"]
+      "inputs": ["default", "^production"],
+      "dependsOn": ["^build"]
     }
   },
   "release": {

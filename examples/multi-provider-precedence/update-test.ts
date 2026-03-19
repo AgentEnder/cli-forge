@@ -1,8 +1,9 @@
 import { readFileSync, writeFileSync } from 'fs';
+import { join } from 'path';
 import { ConfigurationProviders, cli } from 'cli-forge';
 
-const appConfigPath = new URL('./app.config.json', import.meta.url).pathname;
-const packageJsonPath = new URL('./package.json', import.meta.url).pathname;
+const appConfigPath = join(__dirname, 'app.config.json');
+const packageJsonPath = join(__dirname, 'package.json');
 
 // Save originals for restoration
 const originalAppConfig = readFileSync(appConfigPath, 'utf-8');
