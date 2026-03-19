@@ -894,8 +894,12 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
-  async updateConfig(values: Partial<TArgs>): Promise<void> {
-    return this.parser.updateConfig(values as any);
+  async updateConfig(
+    valuesOrUpdater:
+      | Partial<TArgs>
+      | ConfigurationFiles.ConfigUpdater<TArgs>
+  ): Promise<void> {
+    return this.parser.updateConfig(valuesOrUpdater as any);
   }
 
   /**

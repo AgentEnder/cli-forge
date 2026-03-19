@@ -10,6 +10,13 @@ export type AnyConfigProvider<T> =
   | AggregateConfigProvider<T>;
 
 /**
+ * An updater function that receives the current merged configuration
+ * and mutates it in place. Only the properties that are set during the
+ * callback are written back to their owning providers.
+ */
+export type ConfigUpdater<T> = (current: T) => void;
+
+/**
  * An aggregate configuration provider that wraps multiple child providers.
  * It owns the merge logic, tracks per-key provenance, and routes
  * `updateConfig` writes to the correct underlying provider.
@@ -121,9 +128,23 @@ export class AggregateConfigProvider<T> {
    * Updates configuration by routing each key to its owning provider.
    * Keys not found in provenance are routed to the first resolving provider.
    *
-   * @param values Partial configuration to write.
+   * Accepts either a partial config object or an updater function.
+   * When an updater function is provided, the current merged configuration
+   * is wrapped in a proxy that tracks which properties are set. Only the
+   * changed properties are written back to their owning providers.
+   *
+   * @param valuesOrUpdater Partial configuration to write, or an updater function.
    */
-  async updateConfig(values: Partial<T>): Promise<void> {
+  async updateConfig(
+    valuesOrUpdater: Partial<T> | ConfigUpdater<T>
+  ): Promise<void> {
+    let values: Partial<T>;
+    if (typeof valuesOrUpdater === 'function') {
+      values = this.trackUpdates(valuesOrUpdater);
+    } else {
+      values = valuesOrUpdater;
+    }
+
     // Group keys by their owning provider
     const updatesByProvider = new Map<ConfigurationProvider<T>, Partial<T>>();
 
@@ -161,6 +182,32 @@ export class AggregateConfigProvider<T> {
       );
     }
     await Promise.all(promises);
+  }
+
+  /**
+   * Runs an updater function against a proxy of the merged config,
+   * returning only the properties that were set during the callback.
+   */
+  private trackUpdates(updater: ConfigUpdater<T>): Partial<T> {
+    if (!this.lastConfigurationRoot) {
+      throw new Error(
+        'Cannot use updater function: config has not been loaded yet. Call load() first.'
+      );
+    }
+    // Re-load to get the current merged config
+    const current = this.load(this.lastConfigurationRoot);
+    const changes: Partial<T> = {} as Partial<T>;
+    const proxy = new Proxy(current as object, {
+      set(_target, prop, value) {
+        (changes as any)[prop] = value;
+        return true;
+      },
+      get(target, prop) {
+        return (target as any)[prop];
+      },
+    }) as T;
+    updater(proxy);
+    return changes;
   }
 
   private findFirstResolvingProvider(

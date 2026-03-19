@@ -241,6 +241,95 @@ describe('AggregateConfigProvider', () => {
         aggregate.updateConfig({ foo: 'newFoo' })
       ).rejects.toThrow();
     });
+
+    it('should support updater function via proxy tracking', async () => {
+      const updatedA: any[] = [];
+      const updatedB: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ foo: 'fromA' }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ foo: 'fromA' })
+              : updater;
+          updatedA.push(result);
+        },
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configB' : undefined),
+        load: () => ({ bar: 2 }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({ bar: 2 }) : updater;
+          updatedB.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig((config) => {
+        config.foo = 'updatedFoo';
+        config.bar = 99;
+      });
+
+      expect(updatedA).toEqual([{ foo: 'updatedFoo' }]);
+      expect(updatedB).toEqual([{ bar: 99 }]);
+    });
+
+    it('should only write keys that were actually set in updater', async () => {
+      const updatedA: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ foo: 'fromA', bar: 2 }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ foo: 'fromA', bar: 2 })
+              : updater;
+          updatedA.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig((config) => {
+        // Only set foo, don't touch bar
+        config.foo = 'newFoo';
+      });
+
+      // bar should still be original value, only foo changed
+      expect(updatedA).toEqual([{ foo: 'newFoo', bar: 2 }]);
+    });
+
+    it('should allow updater to read current values', async () => {
+      const updatedA: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ count: 5 }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ count: 5 })
+              : updater;
+          updatedA.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig((config) => {
+        config.count = config.count + 1;
+      });
+
+      expect(updatedA).toEqual([{ count: 6 }]);
+    });
   });
 
   describe('describeConfig', () => {

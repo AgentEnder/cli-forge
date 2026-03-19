@@ -5,6 +5,7 @@ import {
 import {
   AggregateConfigProvider,
   AnyConfigProvider,
+  ConfigUpdater,
   isAggregateConfigProvider,
 } from './config-files/aggregate-config-provider';
 import { hideBin } from './helpers';
@@ -143,7 +144,7 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns An array of documentation sections, one per provider that implements describeConfig.
    */
   getConfigurationDocs(): ConfigurationDocSection[];
-  updateConfig(values: Partial<TArgs>): Promise<void>;
+  updateConfig(valuesOrUpdater: Partial<TArgs> | ConfigUpdater<TArgs>): Promise<void>;
 }
 
 /**
@@ -494,16 +495,20 @@ export class ArgvParser<
   /**
    * Updates configuration values by routing each key to the provider that owns it.
    * Requires that at least one configuration provider has been registered via {@link config}.
-   * @param values Partial configuration to write.
+   *
+   * @param valuesOrUpdater Partial configuration to write, or an updater function
+   *   that receives the current merged config and mutates it in place.
    */
-  async updateConfig(values: Partial<TArgs>): Promise<void> {
+  async updateConfig(
+    valuesOrUpdater: Partial<TArgs> | ConfigUpdater<TArgs>
+  ): Promise<void> {
     if (!this.cachedAggregate) {
       this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
       this.cachedAggregate.load(process.cwd());
     }
-    return this.cachedAggregate.updateConfig(values);
+    return this.cachedAggregate.updateConfig(valuesOrUpdater);
   }
 
   /**
