@@ -158,4 +158,88 @@ describe('AggregateConfigProvider', () => {
       expect(outerAggregate.provenance.get('bar')).toBe(providerB);
     });
   });
+
+  describe('updateConfig', () => {
+    it('should route updates to the provider that owns each key', async () => {
+      const updatedA: any[] = [];
+      const updatedB: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ foo: 'fromA' }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({ foo: 'fromA' }) : updater;
+          updatedA.push(result);
+        },
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configB' : undefined),
+        load: () => ({ bar: 2 }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({ bar: 2 }) : updater;
+          updatedB.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ foo: 'newFoo', bar: 99 });
+
+      expect(updatedA).toEqual([{ foo: 'newFoo' }]);
+      expect(updatedB).toEqual([{ bar: 99 }]);
+    });
+
+    it('should route unknown keys to the first resolving provider', async () => {
+      const updatedA: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ foo: 'fromA' }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({ foo: 'fromA' }) : updater;
+          updatedA.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ newKey: 'newValue' } as any);
+
+      expect(updatedA).toEqual([{ foo: 'fromA', newKey: 'newValue' }]);
+    });
+
+    it('should throw if the target provider does not support updateConfig', async () => {
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
+        load: () => ({ foo: 'fromA' }),
+        // no updateConfig
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA]);
+      aggregate.load('/root');
+
+      await expect(
+        aggregate.updateConfig({ foo: 'newFoo' })
+      ).rejects.toThrow(/updateConfig/);
+    });
+
+    it('should throw if no providers resolve (no provenance, no fallback)', async () => {
+      const providerA: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA]);
+      aggregate.load('/root');
+
+      await expect(
+        aggregate.updateConfig({ foo: 'newFoo' })
+      ).rejects.toThrow();
+    });
+  });
 });

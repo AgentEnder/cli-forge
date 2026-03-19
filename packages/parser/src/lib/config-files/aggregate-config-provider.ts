@@ -123,8 +123,58 @@ export class AggregateConfigProvider<T> {
    *
    * @param values Partial configuration to write.
    */
-  async updateConfig(_values: Partial<T>): Promise<void> {
-    throw new Error('Not implemented');
+  async updateConfig(values: Partial<T>): Promise<void> {
+    // Group keys by their owning provider
+    const updatesByProvider = new Map<ConfigurationProvider<T>, Partial<T>>();
+
+    // Find the first leaf provider that resolves (fallback for new keys)
+    let fallbackProvider: ConfigurationProvider<T> | undefined;
+    if (this.lastConfigurationRoot) {
+      fallbackProvider = this.findFirstResolvingProvider(
+        this.lastConfigurationRoot
+      );
+    }
+
+    for (const key of Object.keys(values) as (keyof T & string)[]) {
+      const owner = this.provenance.get(key) ?? fallbackProvider;
+      if (!owner) {
+        throw new Error(
+          `Cannot update config key "${key}": no provider resolved and no fallback available. ` +
+            'Ensure at least one configuration file exists.'
+        );
+      }
+      if (!owner.updateConfig) {
+        throw new Error(
+          `Cannot update config key "${key}": the owning provider does not implement updateConfig.`
+        );
+      }
+      const existing = updatesByProvider.get(owner) ?? ({} as Partial<T>);
+      (existing as any)[key] = values[key];
+      updatesByProvider.set(owner, existing);
+    }
+
+    // Call each provider's updateConfig with an updater that merges the partial update
+    const promises: Promise<void>[] = [];
+    for (const [provider, partial] of updatesByProvider) {
+      promises.push(
+        provider.updateConfig!((current) => ({ ...current, ...partial }))
+      );
+    }
+    await Promise.all(promises);
+  }
+
+  private findFirstResolvingProvider(
+    configurationRoot: string
+  ): ConfigurationProvider<T> | undefined {
+    for (const provider of this.providers) {
+      if (isAggregateConfigProvider(provider)) {
+        const found = provider.findFirstResolvingProvider(configurationRoot);
+        if (found) return found;
+      } else {
+        if (provider.resolve(configurationRoot)) return provider;
+      }
+    }
+    return undefined;
   }
 
   /**
