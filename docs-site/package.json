@@ -89,7 +89,10 @@
         ]
       },
       "lint:vale": {
-        "command": "vale docs-site/docs docs-site/dist/client",
+        "command": "vale docs dist/client",
+        "options": {
+          "cwd": "{projectRoot}"
+        },
         "dependsOn": [
           "build"
         ]
