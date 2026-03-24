@@ -60,7 +60,7 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   const groupedOptions = parentCLI.getGroupedOptions();
   const nonpositionalOptions = Object.values(
     command.parser.configuredOptions
-  ).filter((c) => !c.positional);
+  ).filter((c) => !c.positional && !c.hidden);
 
   help.push(...getOptionBlock('Options', nonpositionalOptions, command.parser));
 

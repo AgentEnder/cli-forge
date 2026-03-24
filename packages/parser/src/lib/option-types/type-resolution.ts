@@ -131,14 +131,32 @@ export type ResolveProperties<TProperties> = IsAny<TProperties> extends true
 export type ObjectValueType<TProperties> = ResolveProperties<TProperties>;
 
 /**
+ * Keys of T whose value type includes `undefined`.
+ */
+type UndefinedKeys<T> = {
+  [K in keyof T]: undefined extends T[K] ? K : never;
+}[keyof T];
+
+/**
+ * Keys of T whose value type does NOT include `undefined`.
+ */
+type DefinedKeys<T> = {
+  [K in keyof T]: undefined extends T[K] ? never : K;
+}[keyof T];
+
+/**
  * Makes properties whose type includes `undefined` optional.
  * This allows omitting properties like `{ foo?: string | undefined }` from object literals
  * instead of requiring `{ foo: undefined }`.
  *
- * Uses a simpler mapped type approach that works better with generic keys in .d.ts generation.
+ * Uses `Pick` to avoid producing empty `{}` intersection members in TypeDoc output.
+ * When one side has no matching keys, `Pick<T, never>` collapses to `{}` inside a
+ * two-part `& {}` — the `Simplify` wrapper forces TypeScript to flatten the
+ * intersection into a single object type, eliminating the empty half entirely.
  */
-export type MakeUndefinedPropertiesOptional<T> = {
-  [K in keyof T as undefined extends T[K] ? K : never]?: T[K];
-} & {
-  [K in keyof T as undefined extends T[K] ? never : K]: T[K];
-};
+export type MakeUndefinedPropertiesOptional<T> = Simplify<
+  Partial<Pick<T, UndefinedKeys<T>>> & Pick<T, DefinedKeys<T>>
+>;
+
+/** Flatten an intersection into a single object type. */
+type Simplify<T> = { [K in keyof T]: T[K] };

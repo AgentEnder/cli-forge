@@ -18,6 +18,7 @@ import {
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
+import type { CompletionCallback, OptionCompletionCallback } from './completion-types';
 import type { PromptOptionConfig, PromptProvider } from './prompt-types';
 
 /**
@@ -470,7 +471,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -489,7 +490,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -505,7 +506,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -521,7 +522,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -537,7 +538,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -553,7 +554,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -580,7 +581,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -599,7 +600,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -615,7 +616,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -631,7 +632,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -647,7 +648,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -663,7 +664,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
     TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -823,6 +824,20 @@ export interface CLI<
       cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
       args: TArgs
     ) => Promise<void> | void
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Enables shell completion for this CLI.
+   * When called at the root level (no parent), also registers:
+   *   - A hidden `--get-completions` flag for runtime completion
+   *   - A `completion` subcommand for installing shell scripts
+   *
+   * At any level, stores the optional callback for custom completion suggestions.
+   *
+   * @param callback Optional custom completion callback for this command level.
+   */
+  completion(
+    callback?: CompletionCallback<TArgs>
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
