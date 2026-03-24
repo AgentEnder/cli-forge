@@ -20,6 +20,7 @@
 // ---
 import cliForge from 'cli-forge';
 
+// #region cli
 const cli = cliForge('non-strict-mode-example')
   // Strict mode is disabled by default
   .strict(false)
@@ -35,6 +36,7 @@ const cli = cliForge('non-strict-mode-example')
       console.log('Unmatched:', args.unmatched);
     },
   });
+// #endregion cli
 
 export default cli;
 

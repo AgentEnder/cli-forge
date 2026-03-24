@@ -21,6 +21,7 @@
 // ---
 import cliForge from 'cli-forge';
 
+// #region cli
 const cli = cliForge('strict-mode-example')
   // Enable strict mode - unmatched arguments will throw validation errors
   .strict()
@@ -35,6 +36,7 @@ const cli = cliForge('strict-mode-example')
       console.log(`Hello, ${args.name}!`);
     },
   });
+// #endregion cli
 
 export default cli;
 

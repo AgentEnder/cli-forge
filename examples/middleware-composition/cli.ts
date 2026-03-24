@@ -3,6 +3,7 @@ import { cli } from 'cli-forge';
 import { authMiddleware } from './middleware/auth';
 import { timingMiddleware, getElapsedMs } from './middleware/timing';
 
+// #region command
 const app = cli('middleware-demo')
   .command('greet', {
     builder: (cmd) =>
@@ -24,6 +25,7 @@ const app = cli('middleware-demo')
       console.log(`  Request completed in ${getElapsedMs(args.startTime)}ms`);
     },
   });
+// #endregion command
 
 export default app;
 

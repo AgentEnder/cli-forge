@@ -7,6 +7,7 @@ function generateRequestId(): string {
   return `req-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
 }
 
+// #region timing-middleware
 /**
  * Timing middleware that adds request timing context.
  *
@@ -20,6 +21,7 @@ export function timingMiddleware<T>(args: T): T & TimingContext {
     requestId: generateRequestId(),
   };
 }
+// #endregion timing-middleware
 
 /**
  * Helper to calculate elapsed time from a start timestamp.
