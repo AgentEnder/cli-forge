@@ -5,11 +5,11 @@ nav:
   order: 1
 ---
 
-# Getting Started with CLI Forge
+# Getting started with CLI Forge
 
-As CLI Forge is focused on first class TypeScript support, this guide will assume you are using TypeScript. If you are not using TypeScript, you can still use CLI Forge, and can pass `--format js` to the `cli-forge init` command when getting started. The runtime functionality of your CLI will not be affected by this choice, but you will lose out on the type safety and intellisense that TypeScript provides.
+As CLI Forge is focused on first class TypeScript support, the examples below use TypeScript. If you are not using TypeScript, you can still use CLI Forge, and can pass `--format js` to the `cli-forge init` command when getting started. The runtime functionality of your CLI will not be affected by this choice, but you will lose out on the type safety and intellisense that TypeScript provides.
 
-## Manual Installation
+## Manual installation
 
 If adding a cli to an existing project, you may wish to install CLI Forge with npm or yarn:
 
@@ -17,7 +17,7 @@ If adding a cli to an existing project, you may wish to install CLI Forge with n
 npm install cli-forge
 ```
 
-## Automatic Installation (cli-forge init)
+## Automatic installation (cli-forge init)
 
 To get started with a new CLI project, run the following command:
 
@@ -38,7 +38,7 @@ my-cli/
 └── README.md
 ```
 
-Lets take a closer look at each of these files:
+Here's what each file does:
 
 - The `bin/my-cli.ts` acts as the entry point for your CLI. You can start adding commands and options to it right away.
 - The `scripts/build.ts` file is a helper script that will compile your CLI using typescript. You can run this script with `npx tsx scripts/build.ts`, or via the npm script we added via `npm run build`.
@@ -47,7 +47,7 @@ Lets take a closer look at each of these files:
 
 - The `package.json` file contains the metadata for your CLI. You can add dependencies, scripts, and other metadata to this file.
 
-  Let's take a closer look at each of the important sections in the `package.json` file:
+  The important sections in the `package.json` file:
 
   - `name`: The name of your CLI. This should be a unique name on npm.
   - `bin`: Describes the CLI commands made available by your package. By default, this will be set to `{"my-cli": "./bin/my-cli"}`. This enables running your CLI via `npx my-cli` or `my-cli` inside of an npm script. For `npx` to work directly, the `bin` entry should match the name of the package. If it doesn't, you can use `npx -p {package-name} {command}` to run the CLI.
@@ -58,7 +58,7 @@ Lets take a closer look at each of these files:
     - `@tsconfig/node-lts`: A typescript configuration that is optimized for node.js development.
   - `tsconfig.json`: The typescript configuration file for your CLI. This file is used by the typescript compiler to determine how to compile your typescript files. By default, this file will extend the `@tsconfig/node-lts` configuration, which is optimized for node.js development, and setup building to a `dist` directory.
 
-## Writing Your First Command
+## Writing your first command
 
 Let's examine the `bin/my-cli.ts` file that was generated for you:
 
@@ -114,7 +114,7 @@ if (require.main === module) {
 }
 ```
 
-## Invoking Your CLI
+## Invoking your CLI
 
 To run your CLI without building it, you can use [`tsx`](https://npmjs.com/tsx). If you'd rather build your CLI first, you can run `npm run build` to compile your typescript files to javascript.
 
@@ -180,7 +180,7 @@ Our CLI requires a command to be provided because all of the following are true:
 
 Note, registering the root command can be done by either providing options to the `cli` function or by adding a command via `.command($0, ...)`. The result is equivalent.
 
-## The Interactive Shell
+## The interactive shell
 
 The interactive shell is a feature of CLI Forge that allows you to run your CLI in an interactive mode. This mode is useful for users which will run your CLI multiple times with different arguments, or for users who are not familiar with the CLI and want to explore the available commands and options.
 
@@ -248,7 +248,7 @@ goodbye earth
 
 Note that the interactive shell is completely optional, and may not be suitable for all CLIs. If you don't want to use the interactive shell, you can remove the `.enableInteractiveShell` call from your CLI.
 
-## Adding Options
+## Adding options
 
 Options are additional flags that can be passed to a command. They can be either boolean flags (e.g. `--verbose`), or flags that take a value (e.g. `--output-file file.txt`). CLI Forge supports several types of options out of the box, including:
 
@@ -311,7 +311,7 @@ The new CLI can be invoked like this:
 npx tsx bin/my-cli.ts hello --people john jane --newline --repeat 3
 ```
 
-## Adding Subcommands
+## Adding subcommands
 
 Subcommands are commands that are nested under another command. They allow you to group related commands together, and can be used to create complex CLI structures.
 
@@ -350,13 +350,13 @@ The new CLI can be invoked like this:
 npx tsx bin/my-cli.ts auth login --username john --password secret
 ```
 
-## Testing Your CLI
+## Testing your CLI
 
-### Manual Testing
+### Manual testing
 
 We've been testing our CLI manually by running it with `npx tsx bin/my-cli.ts`. This is a good way to test your CLI as you are developing it, but it can be tedious to run the CLI manually every time you make a change to validate that it works as expected.
 
-### Automated Testing (Unit Tests)
+### Automated testing (unit tests)
 
 CLI Forge is no different from any other node compatible library, and can be tested using any testing framework you like. The examples within the docs use node's built-in `assert` and `test` modules, as they are available without any additional dependencies.
 
@@ -388,7 +388,7 @@ In this example, we are using the `TestHarness` class to test the `hello` comman
 
 > The `commandChain` is a representation of the command tree that was executed. E.g. `['auth', 'login']` would be the command chain for the `auth login` command.
 
-### Automated Testing (End-to-End Tests)
+### Automated testing (end-to-end tests)
 
 End-to-end tests are a great way to test your CLI in a real-world scenario. They can be used to test how your CLI behaves when run from the command line, and can be used to test the output of your CLI.
 
