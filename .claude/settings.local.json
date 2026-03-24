@@ -38,7 +38,11 @@
       "Read(//Users/agentender/repos/functional-examples/docs-site/components/**)",
       "Bash(mkdir:*)",
       "Read(//tmp/**)",
-      "Bash(tar tzf:*)"
+      "Bash(tar tzf:*)",
+      "Bash(my-app:*)",
+      "Bash(mise install:*)",
+      "Bash(mise exec:*)",
+      "Skill(docs-style-check)"
     ],
     "deny": [],
     "ask": []
