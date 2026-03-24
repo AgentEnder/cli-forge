@@ -5,7 +5,7 @@ nav:
   order: 3
 ---
 
-# Autogenerate CLI Documentation
+# Autogenerate CLI documentation
 
 Any CLI that is written with CLI forge can utilize `npx cli-forge generate-docs` to generate documentation.
 
@@ -13,7 +13,7 @@ By default, the command will generate documentation for your CLI in markdown. Th
 
 For an example of what this generated documentation looks like, see the [CLI section of the docs](/cli/).
 
-## Enabling Documentation Generation
+## Enabling documentation generation
 
 As mentioned, all CLIs that utilize CLI Forge can generate documentation. There are two conditions for this to work:
 
@@ -25,7 +25,7 @@ As mentioned, all CLIs that utilize CLI Forge can generate documentation. There 
 
   `markdown-factory` is an optional peer dependency of CLI Forge, so you may need to install it yourself. If you created your CLI with `npx cli-forge init`, it will be installed for you. If not, it should be installed as a dev dependency as your CLI will not depend on it at runtime. `markdown-factory` is used to render the dynamic markdown templates that CLI Forge uses to generate documentation.
 
-## Customizing Output
+## Customizing output
 
 Even though the templates are not directly customizable, you can still customize the output of the documentation by using the `--format` flag. This flag allows you to generate json output instead of markdown, which you can then use to generate your own documentation.
 
@@ -35,7 +35,7 @@ npx cli-forge generate-docs ./bin/{my-cli}.js --format json
 
 The json output is the raw data structure that is used when generating the markdown documentation, so it should contain all the information you need to generate your own documentation.
 
-## TypeScript Support
+## TypeScript support
 
 If your CLI is written in TypeScript, CLI Forge will use [`tsx`](https://npmjs.com/tsx) to import the typescript files without needing to compile them first. `tsx` is an optional peer dependency of CLI Forge, so you may need to install it yourself. If you created your CLI with `npx cli-forge init`, it will be installed for you. If not, it should be installed as a dev dependency as your CLI will not depend on it at runtime.
 
