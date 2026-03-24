@@ -23,6 +23,9 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
+      - name: Setup dev tools with mise
+        uses: jdx/mise-action@146a28175021df8ca24f8ee1828cc2a60f980bd5 # v3
+
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
@@ -35,10 +38,10 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Print Task Graph
-        run: npx nx run-many -t build test e2e --graph stdout
+        run: npx nx run-many -t build test e2e lint --graph stdout
 
       - name: Run tests
-        run: npx nx run-many -t build test e2e
+        run: npx nx run-many -t build test e2e lint
 
       - run: npx nx fix-ci
         if: always() && matrix.os == 'ubuntu-latest'
