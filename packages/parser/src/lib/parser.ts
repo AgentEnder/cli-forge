@@ -122,6 +122,14 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
    * Set to false to disable this automatic aliasing behavior.
    */
   stripDashed?: boolean;
+
+  /**
+   * When set to true, suppresses parse-time errors such as missing values
+   * for options (e.g. `--port` with no following token). Instead of throwing,
+   * the option is silently skipped. Useful for completion resolution where
+   * the argv is intentionally incomplete.
+   */
+  lenient?: boolean;
 };
 
 export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
@@ -218,6 +226,7 @@ export class ArgvParser<
       strict: false,
       stripDashed: true,
       validate: true,
+      lenient: false,
       ...options,
     } as Required<ParserOptions<TArgs>>;
     this.parserMap = {
@@ -653,12 +662,16 @@ export class ArgvParser<
         for (const configuredKey of uniqueConfiguredKeys) {
           if (configuredKey) {
             const configuration = this.configuredOptions[configuredKey];
-            const value = tryParseValue(this.parserMap[configuration.type], {
-              config: configuration,
-              tokens: argvClone,
-              current: result[configuration.key],
-              providedFlag: maybeArg,
-            });
+            const value = tryParseValue(
+              this.parserMap[configuration.type],
+              {
+                config: configuration,
+                tokens: argvClone,
+                current: result[configuration.key],
+                providedFlag: maybeArg,
+              },
+              { lenient: this.options.lenient }
+            );
             result[configuration.key] = value;
             arg = argvClone.shift();
           }
@@ -680,11 +693,15 @@ export class ArgvParser<
         }
         if (configuration && configuration.positional === true) {
           argvClone.unshift(arg);
-          const value = tryParseValue(this.parserMap[configuration.type], {
-            config: configuration,
-            tokens: argvClone,
-            current: result[configuration.key],
-          });
+          const value = tryParseValue(
+            this.parserMap[configuration.type],
+            {
+              config: configuration,
+              tokens: argvClone,
+              current: result[configuration.key],
+            },
+            { lenient: this.options.lenient }
+          );
           result[configuration.key] = value;
           matchedPositionals++;
         } else {
@@ -1116,7 +1133,8 @@ function validateOption<TConfig extends Internal<UnknownOptionConfig>, TVal>(
 
 export function tryParseValue(
   parser: Parser<InternalOptionConfig>,
-  input: ParserContext<InternalOptionConfig>
+  input: ParserContext<InternalOptionConfig>,
+  options?: { lenient?: boolean }
 ) {
   if (!parser) {
     throw new Error(
@@ -1136,7 +1154,13 @@ export function tryParseValue(
       if (input.config.default !== undefined) {
         return readDefaultValue(input.config)[0];
       }
+      if (options?.lenient) {
+        return undefined;
+      }
       throw new Error(`Expected a value for ${input.config.key}`);
+    }
+    if (options?.lenient) {
+      return undefined;
     }
     throw e;
   }

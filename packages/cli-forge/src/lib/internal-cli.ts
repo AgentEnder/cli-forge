@@ -22,6 +22,10 @@ import {
   ErrorHandler,
   SDKCommand,
 } from './public-api';
+import type {
+  CompletionCallback,
+  OptionCompletionCallback,
+} from './completion-types';
 import type { PromptProvider, PromptOptionConfig } from './prompt-types';
 import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
@@ -131,6 +135,23 @@ export class InternalCLI<
    * Set when .option() is called with a `prompt` property.
    */
   promptConfigs: Map<string, PromptOptionConfig<any>> = new Map();
+
+  /**
+   * Custom completion callback for this command level.
+   * Set when .completion() is called with a callback argument.
+   */
+  completionCallback?: CompletionCallback<any>;
+
+  /**
+   * Per-option completion callbacks, keyed by option name.
+   * Set when .option() is called with a `completion` property.
+   */
+  completionConfigs: Map<string, OptionCompletionCallback<any>> = new Map();
+
+  /**
+   * Whether .completion() has been called on this CLI instance.
+   */
+  private _completionEnabled = false;
 
   /**
    * Set when a `$0` alias replaces the root builder via `.command()`.
@@ -382,10 +403,19 @@ export class InternalCLI<
   option<
     TOption extends string,
     const TOptionConfig extends OptionConfig<any, any, any>
-  >(name: TOption, config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }) {
-    const { prompt, ...parserConfig } = config;
+  >(
+    name: TOption,
+    config: TOptionConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
+  ) {
+    const { prompt, completion: completionCb, ...parserConfig } = config;
     if (prompt !== undefined) {
       this.promptConfigs.set(name, prompt);
+    }
+    if (completionCb !== undefined) {
+      this.completionConfigs.set(name, completionCb);
     }
     this.parser.option(name, parserConfig as TOptionConfig);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
@@ -395,10 +425,19 @@ export class InternalCLI<
   positional<
     TOption extends string,
     const TOptionConfig extends OptionConfig<any, any, any>
-  >(name: TOption, config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs> }) {
-    const { prompt, ...parserConfig } = config;
+  >(
+    name: TOption,
+    config: TOptionConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
+  ) {
+    const { prompt, completion: completionCb, ...parserConfig } = config;
     if (prompt !== undefined) {
       this.promptConfigs.set(name, prompt);
+    }
+    if (completionCb !== undefined) {
+      this.completionConfigs.set(name, completionCb);
     }
     this.parser.positional(name, parserConfig as TOptionConfig);
     // Interface modifies the return type to reflect new params, cast is necessay.... I think 🤔
@@ -522,6 +561,36 @@ export class InternalCLI<
     ) => Promise<void> | void
   ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
     this.registeredInitHooks.push(callback);
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  }
+
+  completion(
+    callback?: CompletionCallback<any>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+    this._completionEnabled = true;
+    if (callback) {
+      this.completionCallback = callback;
+    }
+
+    // Only register completion infrastructure at root level (no parent)
+    if (!this._parent) {
+      this.parser.option('getCompletions', {
+        type: 'boolean',
+        hidden: true,
+        description: 'Output shell completion suggestions',
+      } as any);
+
+      this.command('completion', {
+        description: 'Install shell completion scripts',
+        handler: async () => {
+          const { installCompletionScripts } = await import(
+            './completion-scripts.js'
+          );
+          await installCompletionScripts(this.name);
+        },
+      });
+    }
+
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
   }
 
@@ -949,6 +1018,14 @@ export class InternalCLI<
         }
       };
 
+      // Check if this is a completion request — enable lenient parsing
+      // so incomplete argv (e.g. `--env ""`) doesn't throw.
+      const isCompletionRequest =
+        this._completionEnabled &&
+        args.some(
+          (a) => a === '--get-completions' || a === '--getCompletions'
+        );
+
       // Iterative command discovery with init hooks.
       // Each level: non-strict parse filtered args → run middleware
       // → run init hooks → find next command in unmatched tokens
@@ -982,6 +1059,7 @@ export class InternalCLI<
             },
             strict: false,
             validate: false,
+            lenient: isCompletionRequest,
           })
           .parse(currentArgs, mergedArgs) as any;
 
@@ -1063,7 +1141,29 @@ export class InternalCLI<
       }
 
       // All builders and init hooks have run. The parser now has
-      // all options registered. Parse the remaining unmatched tokens
+      // all options registered.
+
+      // If this is a completion request, resolve completions now
+      // (after discovery so subcommand builders have run) but before
+      // the strict final parse.
+      if (isCompletionRequest) {
+        const completionArgv = args.filter(
+          (a) => a !== '--get-completions' && a !== '--getCompletions'
+        );
+        const { resolveCompletions } = await import(
+          './resolve-completions.js'
+        );
+        const completions = await resolveCompletions({
+          rootCLI: this,
+          argv: completionArgv,
+        });
+        for (const c of completions) {
+          console.log(c);
+        }
+        return mergedArgs as TArgs;
+      }
+
+      // Parse the remaining unmatched tokens
       // seeded with the accumulated values from the discovery loop.
       // The alreadyParsed values ensure proper required-option
       // validation and prevent positional re-consumption.
@@ -1164,6 +1264,9 @@ export class InternalCLI<
     clone.requiresCommand = this.requiresCommand;
     clone.registeredPromptProviders = [...this.registeredPromptProviders];
     clone.promptConfigs = new Map(this.promptConfigs);
+    clone.completionCallback = this.completionCallback;
+    clone.completionConfigs = new Map(this.completionConfigs);
+    clone._completionEnabled = this._completionEnabled;
     return clone;
   }
 }
