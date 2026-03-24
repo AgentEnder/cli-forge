@@ -76,7 +76,7 @@ export async function onCreateGlobalContext(
   // Phase 2: Load all content in parallel.
   // renderMarkdown calls within these loaders will now
   // automatically apply typedoc symbol links.
-  const [categories, { siteExamples: examplesList }, packageList] =
+  const [categories, { siteExamples: examplesList, scannedExamples }, packageList] =
     await Promise.all([
       scanCategories(docsDir),
       loadExamples(),
@@ -84,7 +84,7 @@ export async function onCreateGlobalContext(
     ]);
 
   const rawDocs = await scanDocs(docsDir, categories);
-  const docs = await hydrateDocs(rawDocs);
+  const docs = await hydrateDocs(rawDocs, scannedExamples);
 
   // Load root README and CHANGELOG as standalone doc pages
   // (not part of any section — they get top-level nav entries)
