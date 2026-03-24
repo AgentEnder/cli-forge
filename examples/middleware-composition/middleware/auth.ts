@@ -12,6 +12,7 @@ function lookupUser(): User {
   };
 }
 
+// #region auth-middleware
 /**
  * Authentication middleware that adds user context to the args.
  *
@@ -27,3 +28,4 @@ export function authMiddleware<T>(args: T): T & AuthContext {
     authenticated: true,
   };
 }
+// #endregion auth-middleware

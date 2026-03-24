@@ -17,11 +17,13 @@
 // ---
 import cliForge from 'cli-forge';
 
+// #region cli
 const cli = cliForge('basic-cli')
   .demandCommand()
   .command('hello', {
     builder: (args) =>
       args
+        // #region static-choices
         .option('name', {
           type: 'string',
           description: 'The name to say hello to',
@@ -31,6 +33,8 @@ const cli = cliForge('basic-cli')
           // If the provided value is not in the choices array, an error will be thrown.
           choices: ['sir', 'madame'],
         })
+        // #endregion static-choices
+        // #region dynamic-choices
         .option('phrase', {
           type: 'string',
           default: 'hello',
@@ -39,12 +43,14 @@ const cli = cliForge('basic-cli')
           // This can be useful if the choices are dynamic or need to be calculated at runtime.
           choices: () => ['hello', 'hi', 'hey'],
         }),
+    // #endregion dynamic-choices
     // Handler is used to define the command's behavior
     handler: (args) => {
       // Note: args.name is typed as 'sir' | 'madame' due to the choices array
       console.log(`${args.phrase}, ${args.name}!`);
     },
   });
+// #endregion cli
 
 export default cli;
 

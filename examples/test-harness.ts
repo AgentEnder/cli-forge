@@ -8,13 +8,16 @@
 //     options:
 //       command: 'npx tsx --test test-harness.ts'
 // ---
+// #region imports
 import { describe, it } from 'node:test';
 import * as assert from 'node:assert';
 
 // We can reuse the CLI from the basic-cli example
 import cli from './basic-cli';
 import { TestHarness } from 'cli-forge';
+// #endregion imports
 
+// #region test
 describe('Basic CLI', () => {
   it('should parse the hello command', async () => {
     // The TestHarness is used to simulate CLI invocations, without actually running the commands.
@@ -36,3 +39,4 @@ describe('Basic CLI', () => {
     assert.deepStrictEqual(args, { name: 'sir', unmatched: [] });
   });
 });
+// #endregion test

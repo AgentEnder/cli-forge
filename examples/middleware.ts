@@ -21,6 +21,7 @@
 // ---
 import cliForge from 'cli-forge';
 
+// #region cli
 const cli = cliForge('basic-cli')
   // Requires a command to be provided
   .demandCommand()
@@ -60,6 +61,7 @@ const cli = cliForge('basic-cli')
       console.log(`Hello, ${args.name}! [${args.env.toUpperCase()}]`);
     },
   });
+// #endregion cli
 
 // We export the CLI for a few reasons:
 // - Testing

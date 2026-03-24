@@ -13,6 +13,7 @@
 // ---
 import cli from 'cli-forge';
 
+// #region builder
 cli('conflicts-and-implications', {
   builder: (args) =>
     args
@@ -47,3 +48,4 @@ cli('conflicts-and-implications', {
     // ...
   },
 }).forge();
+// #endregion builder

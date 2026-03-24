@@ -1,5 +1,6 @@
 import { ConfigurationProviders, cli } from 'cli-forge';
 
+// #region providers
 (async () =>
   await cli('configured-cli', {
     builder: (args) =>
@@ -24,3 +25,4 @@ import { ConfigurationProviders, cli } from 'cli-forge';
       console.log(`${args.farewell}, ${args.name}!`);
     },
   }).forge())();
+// #endregion providers
