@@ -99,6 +99,11 @@ export const initCommand = cli('init', {
       )
         .toString()
         .trim();
+      const latestTypesNodeVersion = execSync(
+        'npm show @types/node version'
+      )
+        .toString()
+        .trim();
       packageJsonContent = mergePackageJsonContents(packageJsonContent, {
         scripts: {
           build: 'tsx scripts/build.ts',
@@ -107,6 +112,7 @@ export const initCommand = cli('init', {
           Object.entries({
             typescript: latestTypescriptVersion,
             '@tsconfig/node-lts': latestTsConfigNodeVersion,
+            '@types/node': latestTypesNodeVersion,
             ...DEV_PEER_DEPS,
           }).sort(([a], [b]) => a.localeCompare(b))
         ),
@@ -130,6 +136,7 @@ cpSync('package.json', 'dist/package.json');
               rootDir: '.',
               outDir: 'dist',
               strict: true,
+              types: ['node'],
             },
             include: ['src/**/*.ts', 'bin/**/*.ts'],
             exclude: ['**/*.{spec,test}.ts'],
