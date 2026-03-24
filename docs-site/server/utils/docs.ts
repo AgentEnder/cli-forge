@@ -1,3 +1,5 @@
+import { createGuideRenderer } from '@functional-examples/documentation';
+import type { ScannedExample } from 'functional-examples';
 import matter from 'gray-matter';
 import { readdir, readFile } from 'node:fs/promises';
 import { basename, dirname, extname, join } from 'node:path';
@@ -137,13 +139,35 @@ export function extractHeadings(html: string): TocEntry[] {
 
 /**
  * Render all doc pages' markdown content to HTML.
+ * When scanned examples are provided, expands Eta template references
+ * (`<%= example('id').file('path') %>`) before rendering markdown.
  */
-export async function hydrateDocs(docs: DocPage[]): Promise<DocPage[]> {
+export async function hydrateDocs(
+  docs: DocPage[],
+  scannedExamples?: ScannedExample[]
+): Promise<DocPage[]> {
+  const renderer = scannedExamples
+    ? createGuideRenderer(scannedExamples)
+    : null;
+
   const hydrated: DocPage[] = [];
   for (const doc of docs) {
+    let expandedContent = doc.content;
+
+    if (renderer) {
+      try {
+        expandedContent = renderer.render(doc.content);
+      } catch (err) {
+        console.warn(
+          `[docs-site] Guide hydration failed for "${doc.slug}":`,
+          (err as Error).message
+        );
+      }
+    }
+
     let renderedHtml = '';
     try {
-      renderedHtml = stripH1(await renderMarkdown(doc.content));
+      renderedHtml = stripH1(await renderMarkdown(expandedContent));
     } catch (err) {
       console.warn(
         `[docs-site] Markdown rendering failed for "${doc.slug}":`,
