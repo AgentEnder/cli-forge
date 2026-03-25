@@ -1,0 +1,77 @@
+# WARNING: This workflow can be run on forks, so it is important to not perform any sensitive operations
+# or expose any secrets.
+#
+# pkg.pr.new as a registry is not the source of truth for the packages, npm is, so even if somehow a
+# malicious actor were able to leverage this workflow to publish malware, nobody would receive it
+# automatically, they would have to install a super specific URL.
+
+name: Publish PR branch to pkg.pr.new
+
+run-name: Publish PR branch to pkg.pr.new for PR ${{ github.event.pull_request.number }}
+
+on:
+  pull_request_review:
+    types: [submitted]
+
+# Minimal permissions by default
+permissions:
+  contents: read
+
+env:
+  NX_NO_CLOUD: true
+  NX_CLOUD_ACCESS_TOKEN: ''
+
+jobs:
+  publish_pr_branch_to_pkg_pr_new:
+    name: Publish PR branch to pkg.pr.new
+    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@pkg-pr-new publish'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Print review comment SHA
+        run: echo "${{ github.event.review.commit_id }}"
+
+      - name: Print pull request URL
+        run: echo "${{ github.event.pull_request.html_url }}"
+
+      # Check out the PR branch HEAD as a shallow clone
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          # Disable caching given this workflow could be run on forks (security risk)
+          cache: ''
+
+      - name: Check PR branch HEAD has not changed since review comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const prNumber = ${{ github.event.pull_request.number }};
+            const response = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+            const headSha = response.data.head.sha;
+            console.log(`The latest commit SHA on PR #${prNumber} is ${headSha}`);
+            if (headSha !== '${{ github.event.review.commit_id }}') {
+              throw new Error('PR branch HEAD has changed since the triggering review comment was made')
+            }
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+      - name: Build packages
+        run: pnpm nx run-many -t build
+
+      - name: Publish PR branch to pkg.pr.new
+        run: pnpm dlx pkg-pr-new publish --pnpm --compact --peerDeps --no-template --comment=off './packages/*'
