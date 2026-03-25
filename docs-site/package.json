@@ -35,7 +35,7 @@
     "vike": "^0.4.252",
     "vike-plugin-typedoc": "^0.2.0",
     "vike-react": "^0.6.19",
-    "yaml": "^2.7.1"
+    "yaml": "^2.8.3"
   },
   "devDependencies": {
     "@tailwindcss/vite": "^4.1.18",
