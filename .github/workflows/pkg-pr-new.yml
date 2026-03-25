@@ -16,6 +16,7 @@ on:
 # Minimal permissions by default
 permissions:
   contents: read
+  pull-requests: write
 
 env:
   NX_NO_CLOUD: true
@@ -74,4 +75,4 @@ jobs:
         run: pnpm nx run-many -t build
 
       - name: Publish PR branch to pkg.pr.new
-        run: pnpm dlx pkg-pr-new publish --pnpm --compact --peerDeps --no-template --comment=off './packages/*'
+        run: pnpm dlx pkg-pr-new publish --pnpm --compact --peerDeps --no-template --comment=update './packages/*'
