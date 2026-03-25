@@ -79,8 +79,8 @@ catalogs:
       specifier: ^1.5.0
       version: 1.5.0
     markdown-factory:
-      specifier: ^0.2.0
-      version: 0.2.0
+      specifier: ^1.0.0
+      version: 1.0.0
     nx:
       specifier: 22.5.1
       version: 22.5.1
@@ -227,7 +227,7 @@ importers:
         version: 1.5.0
       markdown-factory:
         specifier: 'catalog:'
-        version: 0.2.0(yaml@2.8.2)
+        version: 1.0.0(yaml@2.8.2)
       nx:
         specifier: 'catalog:'
         version: 22.5.1(@swc-node/register@1.11.1(@swc/core@1.15.8(@swc/helpers@0.5.18))(@swc/types@0.1.25)(typescript@5.9.3))(@swc/core@1.15.8(@swc/helpers@0.5.18))
@@ -408,7 +408,7 @@ importers:
         version: link:../parser
       markdown-factory:
         specifier: 'catalog:'
-        version: 0.2.0(yaml@2.8.2)
+        version: 1.0.0(yaml@2.8.2)
       tslib:
         specifier: 'catalog:'
         version: 2.8.1
@@ -4686,8 +4686,8 @@ packages:
   makeerror@1.0.12:
     resolution: {integrity: sha512-JmqCvUhmt43madlpFzG4BQzG2Z3m6tvQDNKdClZnO3VbIudJYmxsT0FNJMeiB2+JTSlTQTSbU8QdesVmwJcmLg==}
 
-  markdown-factory@0.2.0:
-    resolution: {integrity: sha512-r4LWKsDZwlxa13nRfMvBDOB5f9lQuY3fOD+4YfCZrPFrfgFu/IQ3cHXMJnYhYavSCGy8oFmCDzUPbjIw06jWFg==}
+  markdown-factory@1.0.0:
+    resolution: {integrity: sha512-5AJ/g5V6S9kQASb6eYz2w3XSzJbjLfy/hEq65NX9VKhqIOJqEqhxOr/Qh7COIxZRrkP8DUVFSLnPQCXud9hLDg==}
     peerDependencies:
       yaml: 2.5.0
     peerDependenciesMeta:
@@ -11236,7 +11236,7 @@ snapshots:
     dependencies:
       tmpl: 1.0.5
 
-  markdown-factory@0.2.0(yaml@2.8.2):
+  markdown-factory@1.0.0(yaml@2.8.2):
     optionalDependencies:
       yaml: 2.8.2
 
