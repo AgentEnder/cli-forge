@@ -1,3 +1,7 @@
+## 1.7.1 (2026-03-25)
+
+This was a version bump only, there were no code changes.
+
 ## 1.7.0 (2026-03-25)
 
 ### 🚀 Features
