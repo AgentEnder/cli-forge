@@ -48,11 +48,11 @@
     "includedScripts": []
   },
   "dependencies": {
-    "@functional-examples/documentation": "0.1.1",
-    "@functional-examples/javascript": "0.1.1",
-    "@functional-examples/test": "0.1.1",
-    "@functional-examples/yaml-manifest": "0.1.1",
-    "functional-examples": "0.1.1",
+    "@functional-examples/documentation": "0.1.2",
+    "@functional-examples/javascript": "0.1.2",
+    "@functional-examples/test": "0.1.2",
+    "@functional-examples/yaml-manifest": "0.1.2",
+    "functional-examples": "0.1.2",
     "react-hot-toast": "catalog:"
   },
   "pnpm": {
