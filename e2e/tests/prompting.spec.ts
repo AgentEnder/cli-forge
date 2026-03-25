@@ -32,8 +32,11 @@ function runPromptingExample(cliArgs: string, stdin?: string) {
  */
 async function runClackFixture(cliArgs: string[], inputs: string[]) {
   const config = JSON.stringify({ cliArgs, inputs });
-  const command = `npx tsx --no-cache ${fixturesDir}/clack-prompting.ts '${config}'`;
-  const { stdout, stderr } = await runCommand(command, [], { cwd: repoRoot });
+  const command = `npx tsx --no-cache ${fixturesDir}/clack-prompting.ts`;
+  const { stdout, stderr } = await runCommand(command, [], {
+    cwd: repoRoot,
+    env: { ...process.env, CLACK_FIXTURE_CONFIG: config },
+  });
   return { stdout, tui: renderTerminalOutput(stderr) };
 }
 

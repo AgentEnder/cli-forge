@@ -24,7 +24,9 @@ interface Config {
   inputs: string[];
 }
 
-const config: Config = JSON.parse(process.argv[2] || '{}');
+const config: Config = JSON.parse(
+  process.env['CLACK_FIXTURE_CONFIG'] || process.argv[2] || '{}'
+);
 
 // --- Fake TTY streams for clack ---
 const input = new Readable({ read() {} }) as any;
