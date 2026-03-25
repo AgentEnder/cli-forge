@@ -1,3 +1,23 @@
+## 1.7.0 (2026-03-25)
+
+### 🚀 Features
+
+- **cli-forge:** add shell completion support ([cd0e16d](https://github.com/agentender/cli-forge/commit/cd0e16d))
+- **docs-site:** support example template references in guide docs ([784b4b9](https://github.com/agentender/cli-forge/commit/784b4b9))
+
+### 🩹 Fixes
+
+- run vale from docs-site cwd ([9a371ab](https://github.com/agentender/cli-forge/commit/9a371ab))
+- **cli-forge:** add @types/node and types config to init template ([ec86d27](https://github.com/agentender/cli-forge/commit/ec86d27))
+- **docs-site:** use sentence case headings in existing guides ([10683cf](https://github.com/agentender/cli-forge/commit/10683cf))
+- **docs-site:** disable heading rule for generated HTML dist files ([e8f9c02](https://github.com/agentender/cli-forge/commit/e8f9c02))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.6.0 (2026-03-19)
 
 ### 🚀 Features
