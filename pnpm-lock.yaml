@@ -135,20 +135,20 @@ importers:
   .:
     dependencies:
       '@functional-examples/documentation':
-        specifier: 0.1.1
-        version: 0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+        specifier: 0.1.2
+        version: 0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       '@functional-examples/javascript':
-        specifier: 0.1.1
-        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)
+        specifier: 0.1.2
+        version: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)
       '@functional-examples/test':
-        specifier: 0.1.1
-        version: 0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+        specifier: 0.1.2
+        version: 0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       '@functional-examples/yaml-manifest':
-        specifier: 0.1.1
-        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)
+        specifier: 0.1.2
+        version: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)
       functional-examples:
-        specifier: 0.1.1
-        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
+        specifier: 0.1.2
+        version: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
       react-hot-toast:
         specifier: 'catalog:'
         version: 2.6.0(react-dom@19.2.4(react@19.2.4))(react@19.2.4)
@@ -271,8 +271,8 @@ importers:
   docs-site:
     dependencies:
       '@functional-examples/documentation':
-        specifier: ^0.1.1
-        version: 0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+        specifier: ^0.1.2
+        version: 0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       '@icons-pack/react-simple-icons':
         specifier: ^13.11.2
         version: 13.12.0(react@19.2.4)
@@ -283,8 +283,8 @@ importers:
         specifier: workspace:*
         version: link:../packages/cli-forge
       functional-examples:
-        specifier: ^0.1.1
-        version: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
+        specifier: ^0.1.2
+        version: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
       gray-matter:
         specifier: ^4.0.3
         version: 4.0.3
@@ -313,8 +313,8 @@ importers:
         specifier: ^10.0.1
         version: 10.0.1
       rehype-typedoc:
-        specifier: ^0.1.0
-        version: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
+        specifier: ^0.2.0
+        version: 0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
       remark-directive:
         specifier: ^3.0.1
         version: 3.0.1
@@ -337,8 +337,8 @@ importers:
         specifier: ^0.4.252
         version: 0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       vike-plugin-typedoc:
-        specifier: ^0.1.0
-        version: 0.1.0(react@19.2.4)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
+        specifier: ^0.2.0
+        version: 0.2.0(react@19.2.4)(shiki@3.23.0)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
       vike-react:
         specifier: ^0.6.19
         version: 0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
@@ -1459,8 +1459,8 @@ packages:
     resolution: {integrity: sha512-43/qtrDUokr7LJqoF2c3+RInu/t4zfrpYdoSDfYyhg52rwLV6TnOvdG4fXm7IkSB3wErkcmJS9iEhjVtOSEjjA==}
     engines: {node: ^18.18.0 || ^20.9.0 || >=21.1.0}
 
-  '@functional-examples/devkit@0.1.1':
-    resolution: {integrity: sha512-PpwjNDnAYkt2fE1hsQh8r7aOTseVGpTumwAOHNZDf3UluJGEoiF3zhZDztimSSMUhQJdn4wHsKUHxRw6j/c5Zw==}
+  '@functional-examples/devkit@0.1.2':
+    resolution: {integrity: sha512-Wbp/dZjDr1a2hlehuSttBn9mbwZJdmrWtNg4YrBnBjosktuH3cBlsjhGkrSX+97eMS/8M0ZX2oIkFlSeW2bEqQ==}
     peerDependencies:
       json5: '>=2.0.0'
       jsonc-parser: '>=3.0.0'
@@ -1479,25 +1479,28 @@ packages:
       yaml:
         optional: true
 
-  '@functional-examples/documentation@0.1.1':
-    resolution: {integrity: sha512-IMEDipwuKLyhq2mRu+EJJFWxgo3dHZbg64gdyq4S50DKX6RreIoCuOKQndoM7NFcF2+I2Wlrfs+0mSu5tYVk/g==}
+  '@functional-examples/documentation@0.1.2':
+    resolution: {integrity: sha512-QhXEWf8P1cx2SXay5uXS5NlksUf+lokYo81B6jMbLRGerf8dtAOAGZ7CeC1LKlWRaOAeVTjHg0lp1UYqRWEK/Q==}
     peerDependencies:
-      functional-examples: 0.1.1
+      functional-examples: 0.1.2
       yaml: '*'
     peerDependenciesMeta:
       yaml:
         optional: true
 
-  '@functional-examples/javascript@0.1.1':
-    resolution: {integrity: sha512-y3qEhMP7Rj+mBwNaMo7+o9g2rxRjeXU0nNgYCyfIv/ls+ArE8W5GUE6QV0c4SBrsUrVncJrx54MUn+lDBF8J2w==}
+  '@functional-examples/javascript@0.1.2':
+    resolution: {integrity: sha512-uC105da0X/Cxrq9e4QXv3n6CH36uVBMsY7bDjpt1yLYawDqDw3nAraGv1UjAAwkez2ZM25i1CL1JHL2j4mcb7Q==}
 
-  '@functional-examples/test@0.1.1':
-    resolution: {integrity: sha512-XTGl+jllG8SWn13/K+M3ovsIlwp0KZbzpz1dTNdF6UK0xPj3fLNWSXjej+V9/R2cKPAfUn3qMsnDpC0a48PuhQ==}
+  '@functional-examples/test@0.1.2':
+    resolution: {integrity: sha512-3NyGZ+JNo+T1Y1AvCBztwcH2U5xQZTD+s2z9jkThm8JN9uP8l2TDrurWV6+z2fSe9sG2LjzIW4MjoYk5QnK72Q==}
     peerDependencies:
-      functional-examples: 0.1.1
+      functional-examples: 0.1.2
 
-  '@functional-examples/yaml-manifest@0.1.1':
-    resolution: {integrity: sha512-xf+4CzgNR0gDjs5vy6Mi9r8qNitN6b34n11llh7SCqklPya9dVmdCCroQ5uHr29bxR1GRwxMMQi2VXWD47ZoDg==}
+  '@functional-examples/yaml-manifest@0.1.2':
+    resolution: {integrity: sha512-R2jdYgUoxycOY3Gp1/WokHZorilHUrVkYGdLW6OIn4aB2MLjRFsjxavuHSvttEvl4Upr9G32m1/4PkVqUBtHzA==}
+
+  '@gerrit0/mini-shiki@3.23.0':
+    resolution: {integrity: sha512-bEMORlG0cqdjVyCEuU0cDQbORWX+kYCeo0kV1lbxF5bt4r7SID2l9bqsxJEM0zndaxpOUT7riCyIVEuqq/Ynxg==}
 
   '@humanfs/core@0.19.1':
     resolution: {integrity: sha512-5DyQ4+1JEUzejeK1JGICcideyfUbGixgS9jNgex5nqkW+cY7WZhxBigmieN5Qnw9ZosSNVC9KQKyb+GUaGyKUA==}
@@ -3455,6 +3458,10 @@ packages:
     resolution: {integrity: sha512-rRqJg/6gd538VHvR3PSrdRBb/1Vy2YfzHqzvbhGIQpDRKIa4FgV/54b5Q1xYSxOOwKvjXweS26E0Q+nAMwp2pQ==}
     engines: {node: '>=8.6'}
 
+  entities@4.5.0:
+    resolution: {integrity: sha512-V0hjH4dGPh9Ao5p0MoRY6BVqtwCjhz6vI5LT8AJ55H+4g9/4vbHx1I54fS0XuclLhDHArPQCiMjDxjaL8fPxhw==}
+    engines: {node: '>=0.12'}
+
   entities@6.0.1:
     resolution: {integrity: sha512-aN97NXWF6AWBTahfVOIrB/NShkzi5H7F9r1s9mD3cDj4Ko5f2qhhVoYMibXF7GlLveb/D2ioWay8lxI97Ven3g==}
     engines: {node: '>=0.12'}
@@ -3786,8 +3793,8 @@ packages:
   function-bind@1.1.2:
     resolution: {integrity: sha512-7XHNxH7qX9xG5mIwxkhumTox/MIRNcOgDrxWsMt2pAr23WHp6MrRlN7FBSFpCpr+oVO0F744iUgR82nJMfG2SA==}
 
-  functional-examples@0.1.1:
-    resolution: {integrity: sha512-cKRSFNfS++I3gIMvUFXLobv2NzNZrlUxXPDIJPnFTjOdaK3Ufbbx8qwCn4LTEHL4pDgjczrF54BdifZJwdj8rA==}
+  functional-examples@0.1.2:
+    resolution: {integrity: sha512-B1DZEMcJxvLkegypxAm17oRbzPhR15OgP47fCliqg0BGHfswuQEL+N2ZEnK2WFjUQ3jRHi8TLYmzwvIErpQr3g==}
     hasBin: true
 
   gensync@1.0.0-beta.2:
@@ -4584,6 +4591,9 @@ packages:
     resolution: {integrity: sha512-cNOjgCnLB+FnvWWtyRTzmB3POJ+cXxTA81LoW7u8JdmhfXzriropYwpjShnz1QLLWsQwY7nIxoDmcPTwphDK9w==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
+  linkify-it@5.0.0:
+    resolution: {integrity: sha512-5aHCbzQRADcdP+ATqnDuhhJ/MRIqDkZX5pyjFHRRysS8vZ5AbqGEoFIb6pYHPZ+L/OC2Lc+xT8uHVVR5CAK/wQ==}
+
   loader-runner@4.3.1:
     resolution: {integrity: sha512-IWqP2SCPhyVFTBtRcgMHdzlf9ul25NwaFx4wCEH/KjAXuuHY4yNjvPXsBokp8jCB936PyWRaPKUNh8NvylLp2Q==}
     engines: {node: '>=6.11.5'}
@@ -4666,6 +4676,9 @@ packages:
     peerDependencies:
       react: ^16.5.1 || ^17.0.0 || ^18.0.0 || ^19.0.0
 
+  lunr@2.3.9:
+    resolution: {integrity: sha512-zTU3DaZaF3Rt9rhN3uBMGQD3dD2/vFQqnvZCDv4dl5iOzq2IZQqTxu90r4E5J+nP70J3ilqVCrbho2eWaeW8Ow==}
+
   lz-string@1.5.0:
     resolution: {integrity: sha512-h5bgJWpxJNswbU7qCrV0tIKQCaS3blPDrqKWx+QxzuzL1zGUzij9XCWLrSLsJPu5t+eWA/ycetzYAO5IOMcWAQ==}
     hasBin: true
@@ -4693,6 +4706,10 @@ packages:
     peerDependenciesMeta:
       yaml:
         optional: true
+
+  markdown-it@14.1.1:
+    resolution: {integrity: sha512-BuU2qnTti9YKgK5N+IeMubp14ZUKUUw7yeJbkjtosvHiP0AZ5c8IAgEMk79D0eC8F23r4Ac/q8cAIFdm2FtyoA==}
+    hasBin: true
 
   markdown-table@3.0.4:
     resolution: {integrity: sha512-wiYz4+JrLyb/DqW2hkFJxP7Vd7JuTDm77fvbM8VfEQdmSMqcImWeeRbHwZjBjIFki/VaMK2BhFi7oUUZeM5bqw==}
@@ -4742,6 +4759,9 @@ packages:
 
   mdast-util-to-string@4.0.0:
     resolution: {integrity: sha512-0H44vDimn51F0YwvxSJSm0eCDOJTRlmN0R1yBh4HLj9wiV1Dn0QoXGbvFAWj2hSItVTlCmBF1hqKlIyUBVFLPg==}
+
+  mdurl@2.0.0:
+    resolution: {integrity: sha512-Lf+9+2r+Tdp5wXDXC4PcIBjTDtq4UKjCPMQhKIuzpJNW0b96kVqSwW0bT7FhRSfmAiFYgP+SCRvdrDozfh0U5w==}
 
   media-typer@0.3.0:
     resolution: {integrity: sha512-dq+qelQ9akHpcOl/gUVRTxVIOkAJ1wR3QAvb4RsVjS8oVoFjDGTc679wJYmUmknUF5HwMLOgb5O+a3KxfWapPQ==}
@@ -4897,9 +4917,6 @@ packages:
   minimatch@10.2.4:
     resolution: {integrity: sha512-oRjTw/97aTBN0RHbYCdtF1MQfvusSIBQM0IZEgzl6426+8jSC0nF1a/GmnVLpfB9yyr6g6FTqWqiZVbxrtaCIg==}
     engines: {node: 18 || 20 || >=22}
-
-  minimatch@3.1.2:
-    resolution: {integrity: sha512-J7p63hRiAjw1NDEww1W7i37+ByIrOWO5XQQAzZ3VOcL0PNybwpfmV/N05zFAzwQ9USyEcX6t3UO+K5aqBQOIHw==}
 
   minimatch@3.1.5:
     resolution: {integrity: sha512-VgjWUsnnT6n+NUk6eZq77zeFdpW2LWDzP6zFGrCbHXiYNul5Dzqk2HHQ5uFH2DNW5Xbp8+jVzaeNt94ssEEl4w==}
@@ -5295,6 +5312,10 @@ packages:
   pumpify@1.5.1:
     resolution: {integrity: sha512-oClZI37HvuUJJxSKKrC17bZ9Cu0ZYhEAGPsPUy9KlMUmv9dKX2o77RUmq7f3XjIxbwyGwYzbzQ1L2Ks8sIradQ==}
 
+  punycode.js@2.3.1:
+    resolution: {integrity: sha512-uxFIHU0YlHYhDQtV4R9J6a52SLx28BCjT+4ieh7IGbgwVJWO+km431c4yRlREUAsAmt/uMjQUyQHNEPf0M39CA==}
+    engines: {node: '>=6'}
+
   punycode@2.3.1:
     resolution: {integrity: sha512-vYt7UD1U9Wg6138shLtLOvdAu+8DsC/ilFtEVHcH+wydcSpNE20AfSOduf6MkRFahL5FY7X1oU7nKVZFtfq8Fg==}
     engines: {node: '>=6'}
@@ -5428,10 +5449,12 @@ packages:
   rehype-stringify@10.0.1:
     resolution: {integrity: sha512-k9ecfXHmIPuFVI61B9DeLPN0qFHfawM6RsuX48hoqlaKSF61RskNjSm1lI8PhBEM0MRdLxVVm4WmTqJQccH9mA==}
 
-  rehype-typedoc@0.1.0:
-    resolution: {integrity: sha512-7ORrExsQ15LCWvCKT3SxMqLJCwZRpXUxxkvH0adMiWV/GrHpl8Zga/hNqZXd8m+9pmJmhnmgBmK3bCaRTDGGTw==}
+  rehype-typedoc@0.2.0:
+    resolution: {integrity: sha512-l5PdLwpU3fJtW0WPKzy0je/5qEjy6ZbcVgdEK3DsRmIULlfBvQZ9HELGXcm8J0vSLgIltJFN7kWtXncRZrOg2Q==}
     peerDependencies:
       remark-directive: '>=3.0.0'
+      typedoc: '>=0.28.0'
+      typescript: '>=5.0.0'
       unified: '>=11.0.0'
 
   remark-breaks@4.0.0:
@@ -5967,10 +5990,20 @@ packages:
     resolution: {integrity: sha512-TkRKr9sUTxEH8MdfuCSP7VizJyzRNMjj2J2do2Jr3Kym598JVdEksuzPQCnlFPW4ky9Q+iA+ma9BGm06XQBy8g==}
     engines: {node: '>= 0.6'}
 
+  typedoc@0.28.18:
+    resolution: {integrity: sha512-NTWTUOFRQ9+SGKKTuWKUioUkjxNwtS3JDRPVKZAXGHZy2wCA8bdv2iJiyeePn0xkmK+TCCqZFT0X7+2+FLjngA==}
+    engines: {node: '>= 18', pnpm: '>= 10'}
+    hasBin: true
+    peerDependencies:
+      typescript: 5.0.x || 5.1.x || 5.2.x || 5.3.x || 5.4.x || 5.5.x || 5.6.x || 5.7.x || 5.8.x || 5.9.x || 6.0.x
+
   typescript@5.9.3:
     resolution: {integrity: sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw==}
     engines: {node: '>=14.17'}
     hasBin: true
+
+  uc.micro@2.1.0:
+    resolution: {integrity: sha512-ARDJmphmdvUk6Glw7y9DQ2bFkKBHwQHLi2lsaH6PPmz/Ka9sFOBsBluozhDltWmnv9u/cF6Rt87znRTPV+yp/A==}
 
   ufo@1.6.3:
     resolution: {integrity: sha512-yDJTmhydvl5lJzBmy/hyOAA0d+aqCBuwl818haVdYCRrWV84o7YyeVm4QlVHStqNrrJSTb6jKuFAVqAFsr+K3Q==}
@@ -6089,14 +6122,20 @@ packages:
   vfile@6.0.3:
     resolution: {integrity: sha512-KzIbH/9tXat2u30jf+smMwFCsno4wHVdNmzFyL+T/L3UGqqk6JKfVqOFOZEpZSHADH1k40ab6NUIXZq422ov3Q==}
 
-  vike-plugin-typedoc@0.1.0:
-    resolution: {integrity: sha512-swVNPenGoPjBFKHVojEK1FioYvW6lu0qRnsPLgOL+t0eS/KRNWY98tE9c2MSJlHr076baktdrS+JaJu1WSXv0Q==}
+  vike-plugin-typedoc@0.2.0:
+    resolution: {integrity: sha512-qwVdWhrgZ3OCpSo7JrEA7gAQZwFzBWG2mVYDOukTEl8QAgF7l2wTfx8AStXv1Iq7/Vl74pSIfdnzf0QAjEEuLw==}
     peerDependencies:
       react: '>=18'
+      shiki: '>=1.0.0'
+      typedoc: '>=0.28.0'
       vike: '>=0.4.250'
       vike-react: '>=0.5'
     peerDependenciesMeta:
       react:
+        optional: true
+      shiki:
+        optional: true
+      typedoc:
         optional: true
       vike:
         optional: true
@@ -7390,7 +7429,7 @@ snapshots:
       '@eslint/core': 0.17.0
       levn: 0.4.1
 
-  '@functional-examples/devkit@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
+  '@functional-examples/devkit@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
     dependencies:
       cli-forge: link:packages/cli-forge
     optionalDependencies:
@@ -7400,12 +7439,13 @@ snapshots:
       tinyglobby: 0.2.15
       yaml: 2.8.2
 
-  '@functional-examples/documentation@0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
+  '@functional-examples/documentation@0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
     dependencies:
-      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+      '@functional-examples/devkit': 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       cli-forge: link:packages/cli-forge
       eta: 3.5.0
-      functional-examples: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
+      functional-examples: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
+      markdown-factory: 1.0.0(yaml@2.8.2)
       zod: 4.3.6
     optionalDependencies:
       yaml: 2.8.2
@@ -7415,9 +7455,9 @@ snapshots:
       - picomatch
       - tinyglobby
 
-  '@functional-examples/javascript@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)':
+  '@functional-examples/javascript@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)':
     dependencies:
-      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+      '@functional-examples/devkit': 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       dependency-tree: 11.3.0
       picomatch: 4.0.3
       tinyglobby: 0.2.15
@@ -7427,11 +7467,11 @@ snapshots:
       - jsonc-parser
       - supports-color
 
-  '@functional-examples/test@0.1.1(functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
+  '@functional-examples/test@0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)':
     dependencies:
-      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+      '@functional-examples/devkit': 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       cli-forge: link:packages/cli-forge
-      functional-examples: 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
+      functional-examples: 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2)
       zod: 4.3.6
     transitivePeerDependencies:
       - json5
@@ -7440,15 +7480,23 @@ snapshots:
       - tinyglobby
       - yaml
 
-  '@functional-examples/yaml-manifest@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)':
+  '@functional-examples/yaml-manifest@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)':
     dependencies:
-      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+      '@functional-examples/devkit': 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       picomatch: 4.0.3
       tinyglobby: 0.2.15
       yaml: 2.8.2
     transitivePeerDependencies:
       - json5
       - jsonc-parser
+
+  '@gerrit0/mini-shiki@3.23.0':
+    dependencies:
+      '@shikijs/engine-oniguruma': 3.23.0
+      '@shikijs/langs': 3.23.0
+      '@shikijs/themes': 3.23.0
+      '@shikijs/types': 3.23.0
+      '@shikijs/vscode-textmate': 10.0.2
 
   '@humanfs/core@0.19.1': {}
 
@@ -8886,7 +8934,7 @@ snapshots:
       '@vue/shared': 3.5.28
       estree-walker: 2.0.2
       magic-string: 0.30.21
-      postcss: 8.5.6
+      postcss: 8.5.8
       source-map-js: 1.2.1
 
   '@vue/compiler-ssr@3.5.28':
@@ -9616,11 +9664,11 @@ snapshots:
     dependencies:
       node-source-walk: 7.0.1
 
-  detective-postcss@7.0.1(postcss@8.5.6):
+  detective-postcss@7.0.1(postcss@8.5.8):
     dependencies:
       is-url: 1.2.4
-      postcss: 8.5.6
-      postcss-values-parser: 6.0.2(postcss@8.5.6)
+      postcss: 8.5.8
+      postcss-values-parser: 6.0.2(postcss@8.5.8)
 
   detective-sass@6.0.1:
     dependencies:
@@ -9636,7 +9684,7 @@ snapshots:
 
   detective-typescript@14.0.0(typescript@5.9.3):
     dependencies:
-      '@typescript-eslint/typescript-estree': 8.56.0(typescript@5.9.3)
+      '@typescript-eslint/typescript-estree': 8.57.1(typescript@5.9.3)
       ast-module-types: 6.0.1
       node-source-walk: 7.0.1
       typescript: 5.9.3
@@ -9723,6 +9771,8 @@ snapshots:
     dependencies:
       ansi-colors: 4.1.3
       strip-ansi: 6.0.1
+
+  entities@4.5.0: {}
 
   entities@6.0.1: {}
 
@@ -10143,13 +10193,13 @@ snapshots:
 
   function-bind@1.1.2: {}
 
-  functional-examples@0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2):
+  functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.2):
     dependencies:
-      '@functional-examples/devkit': 0.1.1(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
+      '@functional-examples/devkit': 0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.2)
       ajv: 8.18.0
       cli-forge: link:packages/cli-forge
       jiti: 2.6.1
-      minimatch: 10.1.1
+      minimatch: 10.2.4
       tinyglobby: 0.2.15
     transitivePeerDependencies:
       - json5
@@ -10223,7 +10273,7 @@ snapshots:
       fs.realpath: 1.0.0
       inflight: 1.0.6
       inherits: 2.0.4
-      minimatch: 3.1.2
+      minimatch: 3.1.5
       once: 1.4.0
       path-is-absolute: 1.0.1
 
@@ -11142,6 +11192,10 @@ snapshots:
 
   lines-and-columns@2.0.3: {}
 
+  linkify-it@5.0.0:
+    dependencies:
+      uc.micro: 2.1.0
+
   loader-runner@4.3.1: {}
 
   local-pkg@0.5.1:
@@ -11214,6 +11268,8 @@ snapshots:
     dependencies:
       react: 19.2.4
 
+  lunr@2.3.9: {}
+
   lz-string@1.5.0: {}
 
   magic-string@0.30.21:
@@ -11239,6 +11295,15 @@ snapshots:
   markdown-factory@1.0.0(yaml@2.8.2):
     optionalDependencies:
       yaml: 2.8.2
+
+  markdown-it@14.1.1:
+    dependencies:
+      argparse: 2.0.1
+      entities: 4.5.0
+      linkify-it: 5.0.0
+      mdurl: 2.0.0
+      punycode.js: 2.3.1
+      uc.micro: 2.1.0
 
   markdown-table@3.0.4: {}
 
@@ -11376,6 +11441,8 @@ snapshots:
   mdast-util-to-string@4.0.0:
     dependencies:
       '@types/mdast': 4.0.4
+
+  mdurl@2.0.0: {}
 
   media-typer@0.3.0: {}
 
@@ -11620,10 +11687,6 @@ snapshots:
   minimatch@10.2.4:
     dependencies:
       brace-expansion: 5.0.4
-
-  minimatch@3.1.2:
-    dependencies:
-      brace-expansion: 1.1.12
 
   minimatch@3.1.5:
     dependencies:
@@ -12001,11 +12064,11 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  postcss-values-parser@6.0.2(postcss@8.5.6):
+  postcss-values-parser@6.0.2(postcss@8.5.8):
     dependencies:
       color-name: 1.1.4
       is-url-superb: 4.0.0
-      postcss: 8.5.6
+      postcss: 8.5.8
       quote-unquote: 1.0.0
 
   postcss@8.5.6:
@@ -12027,7 +12090,7 @@ snapshots:
       detective-amd: 6.0.1
       detective-cjs: 6.0.1
       detective-es6: 5.0.1
-      detective-postcss: 7.0.1(postcss@8.5.6)
+      detective-postcss: 7.0.1(postcss@8.5.8)
       detective-sass: 6.0.1
       detective-scss: 5.0.1
       detective-stylus: 5.0.1
@@ -12035,7 +12098,7 @@ snapshots:
       detective-vue2: 2.2.0(typescript@5.9.3)
       module-definition: 6.0.1
       node-source-walk: 7.0.1
-      postcss: 8.5.6
+      postcss: 8.5.8
       typescript: 5.9.3
     transitivePeerDependencies:
       - supports-color
@@ -12093,6 +12156,8 @@ snapshots:
       duplexify: 3.7.1
       inherits: 2.0.4
       pump: 2.0.1
+
+  punycode.js@2.3.1: {}
 
   punycode@2.3.1: {}
 
@@ -12251,9 +12316,11 @@ snapshots:
       hast-util-to-html: 9.0.5
       unified: 11.0.5
 
-  rehype-typedoc@0.1.0(remark-directive@3.0.1)(unified@11.0.5):
+  rehype-typedoc@0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5):
     dependencies:
       remark-directive: 3.0.1
+      typedoc: 0.28.18(typescript@5.9.3)
+      typescript: 5.9.3
       unified: 11.0.5
       unist-util-visit: 5.1.0
 
@@ -12714,7 +12781,7 @@ snapshots:
     dependencies:
       '@istanbuljs/schema': 0.1.3
       glob: 7.2.3
-      minimatch: 3.1.2
+      minimatch: 3.1.5
 
   text-decoder@1.2.7:
     dependencies:
@@ -12838,7 +12905,18 @@ snapshots:
       media-typer: 0.3.0
       mime-types: 2.1.35
 
+  typedoc@0.28.18(typescript@5.9.3):
+    dependencies:
+      '@gerrit0/mini-shiki': 3.23.0
+      lunr: 2.3.9
+      markdown-it: 14.1.1
+      minimatch: 10.2.4
+      typescript: 5.9.3
+      yaml: 2.8.2
+
   typescript@5.9.3: {}
+
+  uc.micro@2.1.0: {}
 
   ufo@1.6.3: {}
 
@@ -13010,10 +13088,10 @@ snapshots:
       '@types/unist': 3.0.3
       vfile-message: 4.0.3
 
-  vike-plugin-typedoc@0.1.0(react@19.2.4)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))):
+  vike-plugin-typedoc@0.2.0(react@19.2.4)(shiki@3.23.0)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))))(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))):
     dependencies:
       rehype-stringify: 10.0.1
-      rehype-typedoc: 0.1.0(remark-directive@3.0.1)(unified@11.0.5)
+      rehype-typedoc: 0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
       remark-breaks: 4.0.0
       remark-directive: 3.0.1
       remark-gfm: 4.0.1
@@ -13022,10 +13100,13 @@ snapshots:
       unified: 11.0.5
     optionalDependencies:
       react: 19.2.4
+      shiki: 3.23.0
+      typedoc: 0.28.18(typescript@5.9.3)
       vike: 0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))
       vike-react: 0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2)))
     transitivePeerDependencies:
       - supports-color
+      - typescript
 
   vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.255(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.1(@types/node@25.2.3)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.0)(tsx@4.21.0)(yaml@2.8.2))):
     dependencies:
