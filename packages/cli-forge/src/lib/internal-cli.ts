@@ -637,8 +637,8 @@ export class InternalCLI<
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
-          if (!process.stdout.isTTY) {
-            // If we're not in a TTY, we can't run an interactive shell...
+          if (typeof process === 'undefined' || !process.stdout?.isTTY) {
+            // If we're not in a TTY (or in a browser), we can't run an interactive shell...
             // Maybe we should warn here?
           } else if (args.unmatched.length > 0) {
             // If there are unmatched args, we don't run an interactive shell...
@@ -658,7 +658,7 @@ export class InternalCLI<
             );
             await new Promise<void>((res) => {
               ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                process.on(s, () => {
+                process?.on(s, () => {
                   tui.close();
                   res();
                 })
@@ -675,7 +675,7 @@ export class InternalCLI<
         }
       }
     } catch (e) {
-      process.exitCode = 1;
+      if (typeof process !== 'undefined') process.exitCode = 1;
       console.error(e);
       this.printHelp();
     }
@@ -867,7 +867,7 @@ export class InternalCLI<
       throw new Error(
         'Interactive shell is not supported for commands that require a command.'
       );
-    } else if (process.stdout.isTTY) {
+    } else if (typeof process !== 'undefined' && process.stdout?.isTTY) {
       this.requiresCommand = false;
     }
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
@@ -878,14 +878,18 @@ export class InternalCLI<
       console.log(this._versionOverride);
       return;
     }
-    let mainFile = require?.main?.filename;
+    let mainFile = typeof require !== 'undefined' ? require?.main?.filename : undefined;
     mainFile ??= getCallingFile();
     if (!mainFile) {
       console.log('unknown');
       return;
     }
-    const packageJson = getParentPackageJson(mainFile);
-    console.log(packageJson.version ?? 'unknown');
+    try {
+      const packageJson = getParentPackageJson(mainFile);
+      console.log(packageJson.version ?? 'unknown');
+    } catch {
+      console.log('unknown');
+    }
   }
 
   private async withErrorHandlers<T>(cb: () => T): Promise<Awaited<T>> {
@@ -896,7 +900,7 @@ export class InternalCLI<
         try {
           handler(e, {
             exit: (c) => {
-              process.exit(c);
+              if (typeof process !== 'undefined') process.exit(c);
             },
           });
           // Error was handled, no need to continue
@@ -991,7 +995,7 @@ export class InternalCLI<
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
-  forge = (args: string[] = hideBin(process.argv)) =>
+  forge = (args: string[] = typeof process !== 'undefined' ? hideBin(process.argv) : []) =>
     this.withErrorHandlers(async () => {
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;

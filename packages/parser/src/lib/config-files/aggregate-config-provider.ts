@@ -1,6 +1,13 @@
-import { join } from 'path';
-
 import { ConfigurationProvider, ConfigurationDocSection } from './configuration-loader.js';
+
+let _join: ((...paths: string[]) => string) | undefined;
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  _join = require('path').join;
+} catch {
+  // Running in a browser environment — path.join is unavailable.
+  _join = (...parts: string[]) => parts.join('/');
+}
 
 /**
  * A provider child is either a single-file ConfigurationProvider or a nested AggregateConfigProvider.
@@ -114,7 +121,7 @@ export class AggregateConfigProvider<T> {
     const loaded = provider.load(filename);
     if (loaded.extends) {
       const extendsRoot = loaded.extends.startsWith('.')
-        ? join(configurationRoot, loaded.extends)
+        ? _join!(configurationRoot, loaded.extends)
         : loaded.extends;
       const extendsAggregate = new AggregateConfigProvider<T>(this.providers);
       const extended = extendsAggregate.load(extendsRoot, visited);
