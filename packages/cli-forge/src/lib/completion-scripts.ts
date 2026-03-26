@@ -1,6 +1,17 @@
-import * as fs from 'fs';
-import * as os from 'os';
-import * as path from 'path';
+let fs: typeof import('fs') | undefined;
+let os: typeof import('os') | undefined;
+let path: typeof import('path') | undefined;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  fs = require('fs');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  os = require('os');
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  path = require('path');
+} catch {
+  // Running in a browser environment — completion scripts are unavailable.
+}
 
 function sanitizeName(cliName: string): string {
   return cliName.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -71,6 +82,7 @@ function installForShell(
   cliName: string,
   overwrite = false
 ): InstallResult {
+  if (!fs) throw new Error('Shell completion installation is not available in this environment.');
   const marker = `# cli-forge completion for ${cliName}`;
 
   if (overwrite) {
@@ -99,6 +111,7 @@ function installForShell(
 export async function installCompletionScripts(
   cliName: string
 ): Promise<void> {
+  if (!os || !path || !fs) throw new Error('Shell completion installation is not available in this environment.');
   const home = os.homedir();
   const results: InstallResult[] = [];
 

@@ -520,7 +520,7 @@ export class ArgvParser<
       this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
-      this.cachedAggregate.load(process.cwd());
+      this.cachedAggregate.load(typeof process !== 'undefined' ? process.cwd() : '/');
     }
     if (typeof valuesOrUpdater === 'function') {
       return this.cachedAggregate.updateConfig(valuesOrUpdater);
@@ -610,7 +610,7 @@ export class ArgvParser<
    * @returns The parsed arguments
    */
   parse(
-    argv: string[] = hideBin(process.argv),
+    argv: string[] = typeof process !== 'undefined' ? hideBin(process.argv) : [],
     alreadyParsed?: Record<string, unknown>
   ) {
     const argvClone = [...argv];
@@ -928,7 +928,7 @@ export class ArgvParser<
       this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
-      this.cachedConfig = this.cachedAggregate.load(process.cwd());
+      this.cachedConfig = this.cachedAggregate.load(typeof process !== 'undefined' ? process.cwd() : '/');
       this.cachedConfigKey = this.configuredConfigurationProviders.length;
     }
     return this.cachedConfig?.[configuration.key as keyof TArgs];

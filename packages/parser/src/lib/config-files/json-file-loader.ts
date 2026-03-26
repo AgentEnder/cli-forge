@@ -1,6 +1,17 @@
-import { readFileSync } from 'fs';
-import { writeFile } from 'fs/promises';
-import { inspect } from 'util';
+let _readFileSync: ((path: string, encoding: string) => string) | undefined;
+let _writeFile: ((path: string, data: string) => Promise<void>) | undefined;
+let _inspect: { custom?: symbol } | undefined;
+
+try {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  _readFileSync = require('fs').readFileSync;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  _writeFile = require('fs/promises').writeFile;
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  _inspect = require('util').inspect;
+} catch {
+  // Running in a browser environment — JSON file loading is unavailable.
+}
 
 import {
   AggregateConfigProvider,
@@ -54,7 +65,10 @@ export function getJsonFileConfigLoader<T>(
   const singleFilename: string = filename;
 
   function loadJsonFile(filepath: string) {
-    return JSON.parse(readFileSync(filepath, 'utf-8'));
+    if (!_readFileSync) {
+      throw new Error('Configuration file loading is not available in this environment.');
+    }
+    return JSON.parse(_readFileSync(filepath, 'utf-8'));
   }
 
   class JsonFileConfigLoader {
@@ -83,10 +97,10 @@ export function getJsonFileConfigLoader<T>(
         );
       }
 
-      const resolvedPath = this.resolve(process.cwd());
+      const resolvedPath = this.resolve(typeof process !== 'undefined' ? process.cwd() : '/');
       if (!resolvedPath) {
         throw new Error(
-          `Could not resolve configuration file "${singleFilename}" from ${process.cwd()}`
+          `Could not resolve configuration file "${singleFilename}" from ${typeof process !== 'undefined' ? process.cwd() : '/'}`
         );
       }
 
@@ -105,7 +119,10 @@ export function getJsonFileConfigLoader<T>(
           ? writeTransform(fullJson, newConfig)
           : newConfig;
 
-      await writeFile(resolvedPath, JSON.stringify(outputJson, null, 2) + '\n');
+      if (!_writeFile) {
+        throw new Error('Configuration file writing is not available in this environment.');
+      }
+      await _writeFile(resolvedPath, JSON.stringify(outputJson, null, 2) + '\n');
     }
 
     describeConfig(): ConfigurationDocSection {
@@ -125,7 +142,7 @@ export function getJsonFileConfigLoader<T>(
       };
     }
 
-    [inspect.custom]() {
+    [Symbol.for('nodejs.util.inspect.custom')]() {
       return 'JsonFileConfigLoader: ' + singleFilename;
     }
   }
