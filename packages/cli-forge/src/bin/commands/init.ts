@@ -58,6 +58,12 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
       description: 'What format should the CLI be in?',
       choices: ['js', 'ts'],
     })
+    .option('type', {
+      type: 'string',
+      default: 'esm',
+      description: 'Module system for the generated project.',
+      choices: ['esm', 'cjs'],
+    })
     .option('initialVersion', {
       type: 'string',
       default: '0.0.1',
@@ -83,11 +89,13 @@ export const initCommand = cli('init', {
     packageJsonContent = mergePackageJsonContents(packageJsonContent, {
       name: args.cliName,
       version: args.initialVersion,
+      ...(args.type === 'esm' ? { type: 'module' } : {}),
       bin: {
         [args.cliName]: relative(args.output, cliPathWithoutExtension),
       },
       dependencies: {
         'cli-forge': CLI_FORGE_VERSION,
+        ...(args.type === 'esm' ? { 'es-main': '^1.3.0' } : {}),
       },
     });
     if (args.format === 'ts') {
@@ -137,6 +145,9 @@ cpSync('package.json', 'dist/package.json');
               outDir: 'dist',
               strict: true,
               types: ['node'],
+              ...(args.type === 'esm'
+                ? { module: 'NodeNext', moduleResolution: 'NodeNext' }
+                : {}),
             },
             include: ['src/**/*.ts', 'bin/**/*.ts'],
             exclude: ['**/*.{spec,test}.ts'],
@@ -152,6 +163,7 @@ cpSync('package.json', 'dist/package.json');
         orderKeysInJson(packageJsonContent, [
           'name',
           'version',
+          'type',
           'scripts',
           'bin',
           'dependencies',
@@ -162,10 +174,15 @@ cpSync('package.json', 'dist/package.json');
       )
     );
     ensureDirSync(dirname(cliPath));
+    const isEsm = args.type === 'esm';
     writeFileSync(
       cliPath,
       args.format === 'ts'
-        ? TS_CLI_CONTENTS(args.cliName)
+        ? isEsm
+          ? TS_ESM_CLI_CONTENTS(args.cliName)
+          : TS_CLI_CONTENTS(args.cliName)
+        : isEsm
+        ? JS_ESM_CLI_CONTENTS(args.cliName)
         : JS_CLI_CONTENTS(args.cliName)
     );
     writeFileSync(
@@ -234,6 +251,18 @@ if (require.main === module) {
 }
 `;
 
+const JS_ESM_CLI_CONTENTS = (name: string) => `import { cli } from 'cli-forge';
+import isMain from 'es-main';
+
+${COMMON_CONTENTS(name)}
+
+export default myCLI;
+
+if (isMain(import.meta)) {
+  myCLI.forge();
+}
+`;
+
 const TS_CLI_CONTENTS = (name: string) => `import { cli } from 'cli-forge';
 
 ${COMMON_CONTENTS(name)}
@@ -241,6 +270,18 @@ ${COMMON_CONTENTS(name)}
 export default myCLI;
 
 if (require.main === module) {
+  myCLI.forge();
+}
+`;
+
+const TS_ESM_CLI_CONTENTS = (name: string) => `import { cli } from 'cli-forge';
+import isMain from 'es-main';
+
+${COMMON_CONTENTS(name)}
+
+export default myCLI;
+
+if (isMain(import.meta)) {
   myCLI.forge();
 }
 `;
@@ -257,6 +298,7 @@ function readJsonOr<T>(filePath: string, alt: T): T {
 type PackageJson = {
   name: string;
   version?: string;
+  type?: 'module' | 'commonjs';
   bin?: {
     [cmd: string]: string;
   };
