@@ -1,4 +1,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
+import { useData } from 'vike-react/useData';
+import { usePageContext } from 'vike-react/usePageContext';
+import { Link } from '../../components/Link';
+import type { PlaygroundData, PlaygroundExample } from './+data';
 
 const DEFAULT_CODE = `import { cli } from 'cli-forge';
 
@@ -22,15 +26,71 @@ cli('my-app')
 type EnvEntry = { key: string; value: string };
 type FileEntry = { path: string; content: string };
 
+function isCodeFile(path: string): boolean {
+  return /\.(ts|js|tsx|jsx|mjs|cjs)$/.test(path);
+}
+
+function isDataFile(path: string): boolean {
+  return /\.(json|ya?ml|toml|env|cfg|conf|config|ini)$/.test(path);
+}
+
+/**
+ * Loads an example into the playground state.
+ * - Code files go into the editor (concatenated if multiple)
+ * - Data/config files go into the Files panel
+ * - Env vars from the first command go into the Env panel
+ */
+function loadExample(ex: PlaygroundExample) {
+  const codeFiles = ex.files.filter((f) => isCodeFile(f.path));
+  const dataFiles = ex.files.filter((f) => isDataFile(f.path));
+
+  // Use the first code file as the main code, or all files if none match
+  const mainCode =
+    codeFiles.length > 0
+      ? codeFiles.map((f) => f.content).join('\n\n')
+      : ex.files[0]?.content ?? DEFAULT_CODE;
+
+  // Data files become virtual FS entries
+  const fileEntries: FileEntry[] = dataFiles.map((f) => ({
+    path: f.path.startsWith('/') ? f.path : '/' + f.path,
+    content: f.content,
+  }));
+
+  // First command's env vars
+  const firstCmd = ex.commands[0];
+  const envEntries: EnvEntry[] = firstCmd?.env
+    ? Object.entries(firstCmd.env).map(([key, value]) => ({ key, value }))
+    : [];
+
+  const defaultArgs = firstCmd?.args ?? '--help';
+
+  return { code: mainCode, args: defaultArgs, files: fileEntries, envVars: envEntries };
+}
+
 export default function PlaygroundPage() {
-  const [code, setCode] = useState(DEFAULT_CODE);
-  const [args, setArgs] = useState('--name CLI-Forge');
+  const { examples } = useData<PlaygroundData>();
+  const pageContext = usePageContext();
+
+  // Check for ?example=<id> in URL
+  const urlExampleId =
+    typeof window !== 'undefined'
+      ? new URLSearchParams(window.location.search).get('example')
+      : (pageContext.urlParsed?.search as any)?.example ?? null;
+
+  const loadedExample = urlExampleId ? examples[urlExampleId] : null;
+  const initial = loadedExample ? loadExample(loadedExample) : null;
+
+  const [code, setCode] = useState(initial?.code ?? DEFAULT_CODE);
+  const [args, setArgs] = useState(initial?.args ?? '--name CLI-Forge');
   const [output, setOutput] = useState<string[]>([]);
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
-  const [envVars, setEnvVars] = useState<EnvEntry[]>([]);
-  const [files, setFiles] = useState<FileEntry[]>([]);
-  const [activeTab, setActiveTab] = useState<'env' | 'files'>('env');
+  const [envVars, setEnvVars] = useState<EnvEntry[]>(initial?.envVars ?? []);
+  const [files, setFiles] = useState<FileEntry[]>(initial?.files ?? []);
+  const [activeTab, setActiveTab] = useState<'env' | 'files'>(
+    (initial?.files?.length ?? 0) > 0 ? 'files' : 'env'
+  );
+  const [activeExample, setActiveExample] = useState<PlaygroundExample | null>(loadedExample);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const run = useCallback(async () => {
@@ -198,14 +258,45 @@ export default function PlaygroundPage() {
       ? '\u2318'
       : 'Ctrl';
 
+  const applyExample = useCallback(
+    (ex: PlaygroundExample) => {
+      const state = loadExample(ex);
+      setCode(state.code);
+      setArgs(state.args);
+      setEnvVars(state.envVars);
+      setFiles(state.files);
+      setActiveTab(state.files.length > 0 ? 'files' : 'env');
+      setActiveExample(ex);
+      setOutput([]);
+      setError(null);
+    },
+    []
+  );
+
   return (
     <div>
-      <h1 className="text-3xl font-bold text-forge-flame-bright mb-3 font-[Cinzel]">
-        Playground
-      </h1>
+      <div className="flex items-start justify-between gap-4 mb-3">
+        <h1 className="text-3xl font-bold text-forge-flame-bright font-[Cinzel]">
+          Playground
+          {activeExample && (
+            <span className="text-lg text-forge-ash font-normal font-sans ml-3">
+              / {activeExample.title}
+            </span>
+          )}
+        </h1>
+        {activeExample && (
+          <Link
+            href={`/examples/${activeExample.id}`}
+            className="text-xs text-forge-ash hover:text-forge-flame-bright transition-colors shrink-0 mt-2"
+          >
+            View example docs
+          </Link>
+        )}
+      </div>
       <p className="text-forge-ash mb-6 max-w-2xl">
-        Write CLI Forge code and see how it responds to different arguments,
-        environment variables, and configuration files.
+        {activeExample
+          ? activeExample.description
+          : 'Write CLI Forge code and see how it responds to different arguments, environment variables, and configuration files.'}
       </p>
 
       <div
@@ -234,10 +325,34 @@ export default function PlaygroundPage() {
 
           {/* Args input */}
           <div className="border border-forge-iron rounded-lg overflow-hidden bg-forge-bg-surface">
-            <div className="flex items-center px-3 py-2 border-b border-forge-iron bg-forge-bg/50">
+            <div className="flex items-center justify-between px-3 py-2 border-b border-forge-iron bg-forge-bg/50">
               <span className="text-xs font-medium text-forge-ash-dim uppercase tracking-wider">
                 Arguments
               </span>
+              {activeExample && activeExample.commands.length > 1 && (
+                <div className="flex gap-1">
+                  {activeExample.commands.map((cmd, i) => (
+                    <button
+                      key={i}
+                      onClick={() => {
+                        setArgs(cmd.args);
+                        if (cmd.env) {
+                          setEnvVars(
+                            Object.entries(cmd.env).map(([key, value]) => ({
+                              key,
+                              value,
+                            }))
+                          );
+                        }
+                      }}
+                      className="px-2 py-0.5 text-[10px] border border-forge-iron rounded hover:border-forge-flame hover:text-forge-flame-bright text-forge-ash-dim transition-colors"
+                      title={cmd.args}
+                    >
+                      {cmd.name}
+                    </button>
+                  ))}
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2 p-3">
               <span className="text-forge-ash-dim font-mono text-sm shrink-0">
@@ -341,26 +456,23 @@ export default function PlaygroundPage() {
         </div>
       </div>
 
-      {/* Quick Examples */}
+      {/* Examples */}
       <div className="mt-8">
         <h2 className="text-lg font-semibold text-forge-smoke mb-3">
-          Try these examples
+          Try an example
         </h2>
         <div className="flex flex-wrap gap-2">
-          {EXAMPLES.map((example) => (
+          {Object.values(examples).map((ex) => (
             <button
-              key={example.label}
-              onClick={() => {
-                setCode(example.code);
-                setArgs(example.args);
-                setEnvVars(example.env ?? []);
-                setFiles(example.files ?? []);
-                setOutput([]);
-                setError(null);
-              }}
-              className="px-3 py-1.5 text-sm border border-forge-iron rounded-lg hover:border-forge-flame hover:text-forge-flame-bright text-forge-ash transition-colors"
+              key={ex.id}
+              onClick={() => applyExample(ex)}
+              className={`px-3 py-1.5 text-sm border rounded-lg transition-colors ${
+                activeExample?.id === ex.id
+                  ? 'border-forge-flame text-forge-flame-bright bg-forge-flame/10'
+                  : 'border-forge-iron hover:border-forge-flame hover:text-forge-flame-bright text-forge-ash'
+              }`}
             >
-              {example.label}
+              {ex.title}
             </button>
           ))}
         </div>
@@ -533,157 +645,3 @@ function parseArgs(input: string): string[] {
   return args;
 }
 
-// ── Examples ─────────────────────────────────────────────────────────
-
-const EXAMPLES: {
-  label: string;
-  code: string;
-  args: string;
-  env?: EnvEntry[];
-  files?: FileEntry[];
-}[] = [
-  {
-    label: 'Hello World',
-    code: DEFAULT_CODE,
-    args: '--name CLI-Forge',
-  },
-  {
-    label: '--help',
-    code: DEFAULT_CODE,
-    args: '--help',
-  },
-  {
-    label: 'Subcommands',
-    code: `cli('git')
-  .command('clone', {
-    builder: (cmd) =>
-      cmd.positional('repo', {
-        type: 'string',
-        required: true,
-        description: 'Repository URL to clone',
-      }),
-    handler: (args) => {
-      console.log(\`Cloning \${args.repo}...\`);
-    },
-  })
-  .command('status', {
-    handler: () => {
-      console.log('On branch main');
-      console.log('nothing to commit, working tree clean');
-    },
-  })
-  .forge();
-`,
-    args: 'clone https://github.com/user/repo',
-  },
-  {
-    label: 'Env Variables',
-    code: `cli('server')
-  .env('APP')
-  .option('port', {
-    type: 'number',
-    description: 'Port to listen on',
-    default: 3000,
-  })
-  .option('host', {
-    type: 'string',
-    description: 'Host to bind to',
-    default: 'localhost',
-  })
-  .handler((args) => {
-    console.log(\`Server listening on \${args.host}:\${args.port}\`);
-  })
-  .forge();
-`,
-    args: '',
-    env: [
-      { key: 'APP_PORT', value: '8080' },
-      { key: 'APP_HOST', value: '0.0.0.0' },
-    ],
-  },
-  {
-    label: 'Config File',
-    code: `cli('app')
-  .config(
-    getJsonFileConfigLoader('app.config.json')
-  )
-  .option('greeting', {
-    type: 'string',
-    default: 'Hello',
-    description: 'The greeting to use',
-  })
-  .option('name', {
-    type: 'string',
-    default: 'World',
-    description: 'Who to greet',
-  })
-  .handler((args) => {
-    console.log(\`\${args.greeting}, \${args.name}!\`);
-  })
-  .forge();
-`,
-    args: '',
-    files: [
-      {
-        path: '/app.config.json',
-        content: JSON.stringify(
-          { greeting: 'Howdy', name: 'Partner' },
-          null,
-          2
-        ),
-      },
-    ],
-  },
-  {
-    label: 'Validation',
-    code: `cli('app')
-  .option('port', {
-    type: 'number',
-    description: 'Port to listen on',
-    required: true,
-    validate: (v) => {
-      if (v < 1 || v > 65535) throw new Error('Port must be 1-65535');
-      return true;
-    },
-  })
-  .option('host', {
-    type: 'string',
-    default: 'localhost',
-    choices: ['localhost', '0.0.0.0', '127.0.0.1'],
-    description: 'Host to bind to',
-  })
-  .handler((args) => {
-    console.log(\`Server listening on \${args.host}:\${args.port}\`);
-  })
-  .forge();
-`,
-    args: '--port 3000 --host localhost',
-  },
-  {
-    label: 'Boolean Flags',
-    code: `cli('build')
-  .option('watch', {
-    type: 'boolean',
-    alias: ['w'],
-    description: 'Watch for changes',
-  })
-  .option('minify', {
-    type: 'boolean',
-    default: true,
-    description: 'Minify output',
-  })
-  .option('sourcemap', {
-    type: 'boolean',
-    description: 'Generate source maps',
-  })
-  .handler((args) => {
-    console.log('Build configuration:');
-    console.log(\`  watch:     \${args.watch}\`);
-    console.log(\`  minify:    \${args.minify}\`);
-    console.log(\`  sourcemap: \${args.sourcemap}\`);
-  })
-  .forge();
-`,
-    args: '-w --no-minify --sourcemap',
-  },
-];

@@ -173,6 +173,12 @@ export default function ExampleDetailPage() {
               {tag}
             </span>
           ))}
+          <Link
+            href={`/playground?example=${example.id}`}
+            className="inline-flex items-center gap-1.5 px-3 py-0.5 bg-forge-flame hover:bg-forge-flame-bright text-forge-bg text-xs font-semibold uppercase rounded transition-colors no-underline"
+          >
+            Try in Playground
+          </Link>
         </div>
       </div>
 
