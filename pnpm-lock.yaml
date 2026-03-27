@@ -270,6 +270,9 @@ importers:
 
   docs-site:
     dependencies:
+      '@cli-forge/parser':
+        specifier: 'workspace:'
+        version: link:../packages/parser
       '@functional-examples/documentation':
         specifier: ^0.1.2
         version: 0.1.2(functional-examples@0.1.2(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(yaml@2.8.3))(json5@2.2.3)(jsonc-parser@3.2.0)(picomatch@4.0.3)(tinyglobby@0.2.15)(yaml@2.8.3)
