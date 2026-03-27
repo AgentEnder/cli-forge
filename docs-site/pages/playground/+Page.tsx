@@ -101,16 +101,17 @@ export default function PlaygroundPage() {
         '.forge(__argv__)'
       );
 
-      // Import cli-forge and set up providers
+      // Import cli-forge and @cli-forge/parser, set up providers
       const cliForge = await import('cli-forge');
+      const parserPkg = await import('@cli-forge/parser');
       const cli = cliForge.cli || cliForge.default;
 
       // Install in-memory providers
-      cliForge.setEnvironmentProvider(
-        new cliForge.MemoryEnvironmentProvider({ env: envRecord, cwd: '/' })
+      parserPkg.setEnvironmentProvider(
+        new parserPkg.MemoryEnvironmentProvider({ env: envRecord, cwd: '/' })
       );
-      cliForge.setFileSystemProvider(
-        new cliForge.MemoryFileSystemProvider(filesRecord)
+      parserPkg.setFileSystemProvider(
+        new parserPkg.MemoryFileSystemProvider(filesRecord)
       );
 
       const AsyncFunction = Object.getPrototypeOf(
@@ -127,8 +128,8 @@ export default function PlaygroundPage() {
       await fn(
         cli,
         cliForge.ConfigurationProviders,
-        cliForge.ConfigurationFiles.getJsonFileConfigLoader,
-        cliForge.ConfigurationFiles.getPackageJsonConfigurationLoader,
+        parserPkg.ConfigurationFiles.getJsonFileConfigLoader,
+        parserPkg.ConfigurationFiles.getPackageJsonConfigurationLoader,
         argv
       );
     } catch (e: unknown) {
@@ -144,12 +145,12 @@ export default function PlaygroundPage() {
 
       // Restore default providers
       try {
-        const cliForge = await import('cli-forge');
-        cliForge.setEnvironmentProvider(
-          new cliForge.MemoryEnvironmentProvider()
+        const parserPkg = await import('@cli-forge/parser');
+        parserPkg.setEnvironmentProvider(
+          new parserPkg.MemoryEnvironmentProvider()
         );
-        cliForge.setFileSystemProvider(
-          new cliForge.MemoryFileSystemProvider()
+        parserPkg.setFileSystemProvider(
+          new parserPkg.MemoryFileSystemProvider()
         );
       } catch {
         // ignore
