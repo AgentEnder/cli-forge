@@ -1,6 +1,9 @@
 {
   "name": "cli-forge",
   "version": "1.7.2",
+  "scripts": {
+    "build:vite": "vite build"
+  },
   "dependencies": {
     "tslib": "catalog:",
     "@cli-forge/parser": "workspace:*"
@@ -31,7 +34,8 @@
     "vite": "catalog:"
   },
   "type": "commonjs",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "typings": "./dist/index.d.ts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
@@ -45,28 +49,50 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./cli": {
       "require": "./dist/bin/cli.js",
       "types": "./dist/bin/cli.d.ts"
     },
     "./middleware": {
-      "require": "./dist/middleware.js",
-      "types": "./dist/middleware.d.ts"
+      "types": "./dist/middleware.d.ts",
+      "import": "./dist/middleware.mjs",
+      "require": "./dist/middleware.cjs"
     },
     "./middleware/*": {
-      "require": "./dist/middleware/*.js",
-      "types": "./dist/middleware/*.d.ts"
+      "types": "./dist/middleware/*.d.ts",
+      "import": "./dist/middleware/*.mjs",
+      "require": "./dist/middleware/*.cjs"
     },
     "./prompt-providers/clack": {
-      "require": "./dist/prompt-providers/clack.js",
       "types": "./dist/prompt-providers/clack.d.ts",
-      "import": "./dist/prompt-providers/clack.js"
+      "import": "./dist/prompt-providers/clack.mjs",
+      "require": "./dist/prompt-providers/clack.cjs"
     },
     "./package.json": "./package.json"
+  },
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build"],
+        "inputs": ["production", "^production"],
+        "outputs": ["{projectRoot}/dist"],
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "commands": [
+            "rm -rf dist",
+            "tsc --build tsconfig.lib.json --force",
+            "vite build"
+          ],
+          "parallel": false
+        }
+      }
+    }
   },
   "publishConfig": {
     "access": "public"

@@ -13,7 +13,16 @@ import {
 } from '@cli-forge/parser';
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { formatHelp } from './format-help';
-import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
+// Lazy-imported to avoid pulling Node-only modules (readline, child_process)
+// into the module graph when bundled for the browser.
+type InteractiveShellModule = typeof import('./interactive-shell.js');
+let _shellModule: InteractiveShellModule | null = null;
+async function getInteractiveShellModule(): Promise<InteractiveShellModule> {
+  if (!_shellModule) {
+    _shellModule = await import('./interactive-shell.js');
+  }
+  return _shellModule;
+}
 import {
   CLI,
   CLICommandOptions,
@@ -649,21 +658,24 @@ export class InternalCLI<
               )}`
             );
             cmd.printHelp();
-          } else if (!INTERACTIVE_SHELL) {
-            const tui = new InteractiveShell(
-              this as unknown as InternalCLI<any>,
-              {
-                prependArgs: originalArgV,
-              }
-            );
-            await new Promise<void>((res) => {
-              ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                process?.on(s, () => {
-                  tui.close();
-                  res();
-                })
+          } else {
+            const shellMod = await getInteractiveShellModule();
+            if (!shellMod.INTERACTIVE_SHELL) {
+              const tui = new shellMod.InteractiveShell(
+                this as unknown as InternalCLI<any>,
+                {
+                  prependArgs: originalArgV,
+                }
               );
-            });
+              await new Promise<void>((res) => {
+                ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
+                  process?.on(s, () => {
+                    tui.close();
+                    res();
+                  })
+                );
+              });
+            }
           }
         }
         // No subcommands so subshell doesn't make sense

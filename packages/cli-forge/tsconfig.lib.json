@@ -4,6 +4,7 @@
     "baseUrl": ".",
     "outDir": "dist",
     "declaration": true,
+    "emitDeclarationOnly": true,
     "composite": true,
     "types": ["node"],
     "resolveJsonModule": true,
