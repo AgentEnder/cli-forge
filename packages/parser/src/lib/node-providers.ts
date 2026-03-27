@@ -1,12 +1,10 @@
 /**
  * Node.js-specific provider implementations.
  *
- * This module uses top-level imports of `fs`, `fs/promises`, and `path`.
- * In CJS builds these are `require()` calls that resolve normally in Node.
- * In ESM builds they become `import` statements — bundlers targeting the
- * browser will either tree-shake this module away (since it's only imported
- * when `isNodeLike()` is true at the module-level singleton init) or
- * replace the builtins with empty stubs.
+ * This module uses standard static imports of Node builtins.
+ * The library build (vite.config.ts) rewrites these to dynamic
+ * `import().catch()` in the ESM output so they fail gracefully
+ * in browsers.  CJS output uses normal `require()`.
  */
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';

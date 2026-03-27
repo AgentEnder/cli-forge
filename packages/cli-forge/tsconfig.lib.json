@@ -15,6 +15,9 @@
   "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
   "references": [
     {
+      "path": "../../tools/scripts/tsconfig.lib.json"
+    },
+    {
       "path": "../parser/tsconfig.lib.json"
     }
   ]

@@ -1,8 +1,11 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
+import { nodeBuiltinsEsm } from '../../tools/scripts/rollup-plugin-node-builtins-esm';
 
 export default defineConfig({
+  plugins: [nodeBuiltinsEsm()],
   build: {
+    target: 'esnext',
     lib: {
       entry: resolve(__dirname, 'src/index.ts'),
       formats: ['es', 'cjs'],
