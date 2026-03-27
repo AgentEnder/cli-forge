@@ -90,7 +90,7 @@ export default [
           'error',
           {
             ignoredFiles: ['{projectRoot}/vite.config.{js,ts,mjs,mts}'],
-            ignoredDependencies: ['vite'],
+            ignoredDependencies: ['vite', 'tslib'],
           },
         ],
       },

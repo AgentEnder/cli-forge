@@ -1,5 +1,5 @@
 import { builtinModules } from 'module';
-import { resolve } from 'path';
+import { isAbsolute, resolve } from 'path';
 import { defineConfig } from 'vite';
 
 // Rollup plugin: rewrite Node builtin imports to dynamic import() in ESM output.
@@ -69,7 +69,15 @@ export default defineConfig({
         },
       ],
       external: (id) => {
-        if (id.startsWith('.') || id.startsWith('/') || id.startsWith('\0')) {
+        // Keep our own source files (relative, absolute, or Rollup internals)
+        if (
+          id.startsWith('.') ||
+          id.startsWith('\0') ||
+          resolve(__dirname, 'src') === id ||
+          id.includes('/src/') ||
+          id.includes('\\src\\') ||
+          isAbsolute(id)
+        ) {
           return false;
         }
         return true;
