@@ -5,7 +5,8 @@
     "build:vite": "vite build"
   },
   "dependencies": {
-    "@cli-forge/parser": "workspace:*"
+    "@cli-forge/parser": "workspace:*",
+    "tslib": "catalog:"
   },
   "peerDependencies": {
     "@clack/prompts": "*",
