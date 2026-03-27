@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 
-const { default: cli } = require('./dist/bin/cli.cjs');
+const { default: cli } = require('./dist/bin/cli.js');
 
 if (require.main === module) {
   (async () => {
