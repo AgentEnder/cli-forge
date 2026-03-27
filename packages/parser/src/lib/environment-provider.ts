@@ -68,111 +68,11 @@ export interface FileSystemProvider {
   basename(path: string): string;
 }
 
-// ── Node implementations ─────────────────────────────────────────────
+// ── Re-export Node implementations ───────────────────────────────────
+// These live in a separate module so the top-level `import fs` only
+// appears in a file that bundlers can tree-shake when targeting browsers.
 
-/**
- * Default provider that delegates to Node's `process` global.
- * Safe to construct even in browsers — every method checks for `process`
- * and falls back gracefully.
- */
-export class NodeEnvironmentProvider implements EnvironmentProvider {
-  getEnv(key: string): string | undefined {
-    return typeof process !== 'undefined' ? process.env[key] : undefined;
-  }
-
-  setEnv(key: string, value: string): void {
-    if (typeof process !== 'undefined') {
-      process.env[key] = value;
-    }
-  }
-
-  cwd(): string {
-    return typeof process !== 'undefined' ? process.cwd() : '/';
-  }
-}
-
-/**
- * Default file-system provider that delegates to Node's `fs` and `path`.
- * Returns a no-op / empty stub when the Node APIs are unavailable.
- */
-export class NodeFileSystemProvider implements FileSystemProvider {
-  private fs: typeof import('fs') | undefined;
-  private fsPromises: typeof import('fs/promises') | undefined;
-  private path: typeof import('path') | undefined;
-
-  constructor() {
-    try {
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.fs = require('fs');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.fsPromises = require('fs/promises');
-      // eslint-disable-next-line @typescript-eslint/no-require-imports
-      this.path = require('path');
-    } catch {
-      // Running in a browser — all methods will throw or return safe defaults.
-    }
-  }
-
-  existsSync(path: string): boolean {
-    return this.fs?.existsSync(path) ?? false;
-  }
-
-  readFileSync(path: string): string {
-    if (!this.fs) throw new Error('File system is not available in this environment.');
-    return this.fs.readFileSync(path, 'utf-8');
-  }
-
-  writeFileSync(path: string, data: string): void {
-    if (!this.fs) throw new Error('File system is not available in this environment.');
-    this.fs.writeFileSync(path, data);
-  }
-
-  async writeFile(path: string, data: string): Promise<void> {
-    if (!this.fsPromises) throw new Error('File system is not available in this environment.');
-    await this.fsPromises.writeFile(path, data);
-  }
-
-  appendFileSync(path: string, data: string): void {
-    if (!this.fs) throw new Error('File system is not available in this environment.');
-    this.fs.appendFileSync(path, data);
-  }
-
-  readdirSync(dir: string): string[] {
-    if (!this.fs) return [];
-    return this.fs.readdirSync(dir) as string[];
-  }
-
-  mkdirSync(dir: string, options?: { recursive?: boolean }): void {
-    if (!this.fs) throw new Error('File system is not available in this environment.');
-    this.fs.mkdirSync(dir, options);
-  }
-
-  join(...parts: string[]): string {
-    if (!this.path) return parts.join('/');
-    return this.path.join(...parts);
-  }
-
-  resolve(...parts: string[]): string {
-    if (!this.path) return parts.join('/');
-    return this.path.resolve(...parts);
-  }
-
-  dirname(p: string): string {
-    if (!this.path) {
-      const idx = p.lastIndexOf('/');
-      return idx <= 0 ? '/' : p.slice(0, idx);
-    }
-    return this.path.dirname(p);
-  }
-
-  basename(p: string): string {
-    if (!this.path) {
-      const idx = p.lastIndexOf('/');
-      return idx < 0 ? p : p.slice(idx + 1);
-    }
-    return this.path.basename(p);
-  }
-}
+export { NodeEnvironmentProvider, NodeFileSystemProvider } from './node-providers';
 
 // ── In-memory implementations ────────────────────────────────────────
 
@@ -315,6 +215,16 @@ function isNodeLike(): boolean {
 }
 
 // ── Module-level singletons ──────────────────────────────────────────
+
+// The Node providers are re-exported above from `./node-providers`,
+// which statically imports `fs` and `path`.  In CJS builds this is a
+// normal `require('fs')` that works in Node.  In ESM builds it becomes
+// a static `import` — bundlers targeting the browser replace the Node
+// builtins with empty stubs automatically.
+//
+// We import the classes here (separate from the re-export) so we can
+// use them for the default singleton initialisation.
+import { NodeEnvironmentProvider, NodeFileSystemProvider } from './node-providers';
 
 let _env: EnvironmentProvider = isNodeLike()
   ? new NodeEnvironmentProvider()

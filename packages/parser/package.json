@@ -1,6 +1,9 @@
 {
   "name": "@cli-forge/parser",
   "version": "1.7.1",
+  "scripts": {
+    "build:vite": "vite build"
+  },
   "dependencies": {
     "tslib": "catalog:"
   },
@@ -8,7 +11,8 @@
     "vite": "catalog:"
   },
   "type": "commonjs",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
   "typings": "./dist/index.d.ts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
@@ -19,10 +23,10 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/index.js",
       "types": "./dist/index.d.ts",
-      "default": "./dist/index.js",
-      "import": "./dist/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -30,6 +34,25 @@
     "dist/**/*",
     "**/*.md"
   ],
+  "nx": {
+    "targets": {
+      "build": {
+        "dependsOn": ["^build"],
+        "inputs": ["production", "^production"],
+        "outputs": ["{projectRoot}/dist"],
+        "executor": "nx:run-commands",
+        "options": {
+          "cwd": "{projectRoot}",
+          "commands": [
+            "rm -rf dist",
+            "tsc --build tsconfig.lib.json --force",
+            "vite build"
+          ],
+          "parallel": false
+        }
+      }
+    }
+  },
   "publishConfig": {
     "access": "public"
   }

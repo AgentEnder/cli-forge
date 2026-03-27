@@ -1,21 +1,8 @@
+import * as readline from 'readline';
+import { execSync, spawnSync } from 'child_process';
 import { stringToArgs } from './utils';
 import { InternalCLI } from './internal-cli';
 import { getBin } from '@cli-forge/parser';
-
-let readline: typeof import('readline') | undefined;
-let _execSync: typeof import('child_process').execSync | undefined;
-let _spawnSync: typeof import('child_process').spawnSync | undefined;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  readline = require('readline');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const cp = require('child_process');
-  _execSync = cp.execSync;
-  _spawnSync = cp.spawnSync;
-} catch {
-  // Running in a browser environment — interactive shell is unavailable.
-}
 
 export interface InteractiveShellOptions {
   prompt?: string;
@@ -47,13 +34,10 @@ function normalizeShellOptions(
 export let INTERACTIVE_SHELL: InteractiveShell | undefined;
 
 export class InteractiveShell {
-  private readonly rl: import('readline').Interface;
+  private readonly rl: readline.Interface;
   private listeners: any[] = [];
 
   constructor(cli: InternalCLI<any>, opts?: InteractiveShellOptions) {
-    if (!readline) {
-      throw new Error('Interactive shell is not available in this environment.');
-    }
     if (INTERACTIVE_SHELL) {
       throw new Error(
         'Only one interactive shell can be created at a time. Make sure the other instance is closed.'
@@ -85,7 +69,7 @@ export class InteractiveShell {
         currentCommand = currentCommand.registeredCommands[subcommand];
       }
       if (currentCommand.registeredCommands[nextArgs[0]]) {
-        _spawnSync?.(
+        spawnSync(
           process.execPath,
           [
             ...process.execArgv,
@@ -102,7 +86,7 @@ export class InteractiveShell {
         return true;
       } else if (line.trim()) {
         try {
-          _execSync?.(line, { stdio: 'inherit' });
+          execSync(line, { stdio: 'inherit' });
         } catch {
           // ignore
         }
@@ -124,8 +108,8 @@ export class InteractiveShell {
   close() {
     this.listeners.forEach((listener) => this.rl.off('line', listener));
     this.rl.close();
-    readline?.moveCursor(process.stdout, -1 * this.rl.getCursorPos().cols, 0);
-    readline?.clearScreenDown(process.stdout);
+    readline.moveCursor(process.stdout, -1 * this.rl.getCursorPos().cols, 0);
+    readline.clearScreenDown(process.stdout);
     if (INTERACTIVE_SHELL === this) {
       INTERACTIVE_SHELL = undefined;
     }
