@@ -4,9 +4,7 @@
   "scripts": {
     "build:vite": "vite build"
   },
-  "dependencies": {
-    "tslib": "catalog:"
-  },
+  "dependencies": {},
   "devDependencies": {
     "vite": "catalog:"
   },

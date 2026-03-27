@@ -59,7 +59,7 @@ export class AggregateConfigProvider<T> {
     this.provenance = new Map();
     this.lastConfigurationRoot = configurationRoot;
 
-    let combined: T = {} as T;
+    const combined: T = {} as T;
 
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {

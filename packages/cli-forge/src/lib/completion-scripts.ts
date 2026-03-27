@@ -9,6 +9,7 @@ function sanitizeName(cliName: string): string {
  */
 export function bashCompletionScript(cliName: string): string {
   const funcName = `_${sanitizeName(cliName)}_completions`;
+  /* eslint-disable no-useless-escape -- \$ is intentional in bash script template literals */
   return `${funcName}() {
   local cur_word args
   cur_word="\${COMP_WORDS[COMP_CWORD]}"
@@ -20,6 +21,7 @@ export function bashCompletionScript(cliName: string): string {
   COMPREPLY=($(compgen -W "$completions" -- "$cur_word"))
 }
 complete -F ${funcName} "${cliName}"`;
+  /* eslint-enable no-useless-escape */
 }
 
 /**

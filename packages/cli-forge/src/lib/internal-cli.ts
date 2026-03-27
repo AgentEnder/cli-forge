@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+ 
 import {
   ArgvParser,
   EnvOptionConfig,
@@ -70,7 +70,7 @@ const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren = {},
   TParent = undefined
 > implements CLI<TArgs, THandlerReturn, TChildren, TParent>
@@ -327,7 +327,7 @@ export class InternalCLI<
               CLI<TArgs, THandlerReturn, TChildren, TParent>
             >;
           }
-        : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+        :  
           {}),
     TParent
   > {
@@ -1052,7 +1052,7 @@ export class InternalCLI<
       const mergedArgs: any = {};
       const executedMiddleware = new Set<(args: any) => void>();
 
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         // Non-strict parse to get current arg values for init hooks.
         // Seeded with mergedArgs so required options parsed at earlier
