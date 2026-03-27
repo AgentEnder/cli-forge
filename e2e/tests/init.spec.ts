@@ -15,10 +15,15 @@ describe('init', () => {
     ensureCleanWorkingDirectory();
   });
 
-  describe.each([['ts'], ['js']])(`--format %s`, (format) => {
+  describe.each([
+    ['ts', 'cjs'],
+    ['ts', 'esm'],
+    ['js', 'cjs'],
+    ['js', 'esm'],
+  ])(`--format %s --type %s`, (format, type) => {
     it('should generate a new CLI', async () => {
       await runCommand(
-        'npx cli-forge@e2e init my-cli --format ' + format,
+        `npx cli-forge@e2e init my-cli --format ${format} --type ${type}`,
         [],
         {}
       );
@@ -30,6 +35,12 @@ describe('init', () => {
           )
         )
       ).not.toThrow();
+
+      // Verify package.json has correct "type" field for ESM
+      if (type === 'esm') {
+        const packageJson = require(join(e2eProjectDir, 'package.json'));
+        expect(packageJson.type).toBe('module');
+      }
 
       let { stdout } = await runCommand(
         'npx -y tsx ./bin/my-cli hello world',
@@ -74,7 +85,13 @@ describe('init', () => {
         // We are really just testing that the build script works here
         ({ stdout } = await runCommand('npm run build', [], {}));
         expect(stdout).toBeTruthy();
-        ({ stdout } = await runCommand('node dist/bin/my-cli --help', [], {}));
+
+        // For ESM projects, Node needs --experimental-vm-modules or the
+        // built .js files are treated as ESM.  For CJS they're plain .js.
+        const runBuilt = type === 'esm'
+          ? 'node dist/bin/my-cli.js --help'
+          : 'node dist/bin/my-cli --help';
+        ({ stdout } = await runCommand(runBuilt, [], {}));
         expect(stdout).toBeTruthy();
       }
     });
