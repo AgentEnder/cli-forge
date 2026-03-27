@@ -44,7 +44,7 @@
         "options": {
           "cwd": "{projectRoot}",
           "commands": [
-            "rm -rf dist",
+            "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
             "tsc --build tsconfig.lib.json --force",
             "vite build"
           ],
