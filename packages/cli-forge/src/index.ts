@@ -18,15 +18,3 @@ export type {
 export { completionHelpers } from './lib/completion-types';
 export { ConfigurationProviders } from './lib/configuration-providers';
 export type { LocalizationDictionary, LocalizationFunction } from '@cli-forge/parser';
-export { ConfigurationFiles } from '@cli-forge/parser';
-export {
-  setEnvironmentProvider,
-  setFileSystemProvider,
-  getEnvironmentProvider,
-  getFileSystemProvider,
-  NodeEnvironmentProvider,
-  NodeFileSystemProvider,
-  MemoryEnvironmentProvider,
-  MemoryFileSystemProvider,
-} from '@cli-forge/parser';
-export type { EnvironmentProvider, FileSystemProvider } from '@cli-forge/parser';
