@@ -69,8 +69,10 @@ export interface FileSystemProvider {
 }
 
 // ── Re-export Node implementations ───────────────────────────────────
-// These live in a separate module so the top-level `import fs` only
-// appears in a file that bundlers can tree-shake when targeting browsers.
+// These live in a separate module that uses top-level await to
+// dynamically import Node builtins.  In CJS builds Rollup converts
+// the `await import('fs')` to synchronous `require('fs')`.  In ESM
+// browser builds the imports fail silently via `.catch()`.
 
 export { NodeEnvironmentProvider, NodeFileSystemProvider } from './node-providers';
 
@@ -216,15 +218,10 @@ function isNodeLike(): boolean {
 
 // ── Module-level singletons ──────────────────────────────────────────
 
-// The Node providers are re-exported above from `./node-providers`,
-// which statically imports `fs` and `path`.  In CJS builds this is a
-// normal `require('fs')` that works in Node.  In ESM builds it becomes
-// a static `import` — bundlers targeting the browser replace the Node
-// builtins with empty stubs automatically.
-//
-// We import the classes here (separate from the re-export) so we can
-// use them for the default singleton initialisation.
-import { NodeEnvironmentProvider, NodeFileSystemProvider } from './node-providers';
+import {
+  NodeEnvironmentProvider,
+  NodeFileSystemProvider,
+} from './node-providers';
 
 let _env: EnvironmentProvider = isNodeLike()
   ? new NodeEnvironmentProvider()

@@ -1,7 +1,9 @@
 import { resolve } from 'path';
 import { defineConfig } from 'vite';
+import { nodeBuiltinsEsm } from '../../tools/scripts/rollup-plugin-node-builtins-esm';
 
 export default defineConfig({
+  plugins: [nodeBuiltinsEsm()],
   build: {
     lib: {
       entry: {
@@ -16,6 +18,7 @@ export default defineConfig({
       },
       formats: ['es', 'cjs'],
     },
+    target: 'esnext',
     outDir: 'dist',
     sourcemap: true,
     rollupOptions: {

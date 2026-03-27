@@ -17,11 +17,15 @@
     "e2e:examples": {
       "command": "functional-examples test",
       "dependsOn": ["^build"]
+    },
+    "e2e:esm": {
+      "command": "jest --runInBand --config {projectRoot}/jest.esm.config.js",
+      "dependsOn": ["^build"]
     }
   },
   "metadata": {
     "targetGroups": {
-      "E2E": ["e2e", "e2e:jest", "e2e:examples"]
+      "E2E": ["e2e", "e2e:jest", "e2e:examples", "e2e:esm"]
     }
   }
 }
