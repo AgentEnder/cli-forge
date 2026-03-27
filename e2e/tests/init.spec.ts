@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 
 import {
@@ -38,7 +39,9 @@ describe('init', () => {
 
       // Verify package.json has correct "type" field for ESM
       if (type === 'esm') {
-        const packageJson = require(join(e2eProjectDir, 'package.json'));
+        const packageJson = JSON.parse(
+          readFileSync(join(e2eProjectDir, 'package.json'), 'utf-8')
+        );
         expect(packageJson.type).toBe('module');
       }
 
@@ -91,9 +94,10 @@ describe('init', () => {
         ({ stdout } = await runCommand('npm run build', [], {}));
         expect(stdout).toBeTruthy();
 
-        const runBuilt = type === 'esm'
-          ? 'node dist/bin/my-cli.js --help'
-          : 'node dist/bin/my-cli --help';
+        const runBuilt =
+          type === 'esm'
+            ? 'node dist/bin/my-cli.js --help'
+            : 'node dist/bin/my-cli --help';
         ({ stdout } = await runCommand(runBuilt, [], {}));
         expect(stdout).toBeTruthy();
       }
@@ -108,7 +112,9 @@ describe('init', () => {
         {}
       );
       setProjectDir('my-cli');
-      const packageJson = require(join(e2eProjectDir, 'package.json'));
+      const packageJson = JSON.parse(
+        readFileSync(join(e2eProjectDir, 'package.json'), 'utf-8')
+      );
       expect(packageJson).toHaveProperty('version', '1.0.0');
       const { stdout } = await runCommand(
         'npx -y tsx ./bin/my-cli --version',
