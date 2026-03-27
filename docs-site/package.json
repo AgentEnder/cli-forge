@@ -60,6 +60,12 @@
           "^build",
           "extract-cli-docs"
         ],
+        "inputs": [
+          "production",
+          "^production",
+          { "env": "PREVIEW_PATH" },
+          { "env": "BASE_URL" }
+        ],
         "outputs": [
           "{projectRoot}/dist"
         ]

@@ -1,9 +1,12 @@
 import './tailwind.css';
 import { applyBaseUrl } from '../utils/base-url';
 
+const isPreview = !!import.meta.env.PREVIEW_PATH;
+
 export function Head() {
   return (
     <>
+      {isPreview && <meta name="robots" content="noindex, nofollow" />}
       <link rel="icon" type="image/svg+xml" href={applyBaseUrl('/logo.svg')} />
       <link rel="preconnect" href="https://fonts.googleapis.com" />
       <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="" />
