@@ -424,6 +424,10 @@ importers:
         version: 5.4.21(@types/node@25.5.0)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.1)
 
   packages/parser:
+    dependencies:
+      tslib:
+        specifier: 'catalog:'
+        version: 2.8.1
     devDependencies:
       vite:
         specifier: 'catalog:'
