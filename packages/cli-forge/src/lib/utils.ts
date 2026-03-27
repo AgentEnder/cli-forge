@@ -1,22 +1,5 @@
+import { getFileSystemProvider } from '@cli-forge/parser';
 import { CLI } from './public-api';
-
-let _existsSync: ((path: string) => boolean) | undefined;
-let _readFileSync: ((path: string, encoding: string) => string) | undefined;
-let _join: ((...paths: string[]) => string) | undefined;
-let _resolve: ((...paths: string[]) => string) | undefined;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const fs = require('fs');
-  _existsSync = fs.existsSync;
-  _readFileSync = fs.readFileSync;
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const path = require('path');
-  _join = path.join;
-  _resolve = path.resolve;
-} catch {
-  // Running in a browser environment — file system access is unavailable.
-}
 
 export function getCallingFile() {
   // Since this function lives in a utility file, the parent file
@@ -62,23 +45,21 @@ export function getCallingFile() {
 }
 
 export function getParentPackageJson(searchPath: string) {
-  if (!_existsSync || !_readFileSync || !_join || !_resolve) {
-    throw new Error('Package.json resolution is not available in this environment.');
-  }
+  const fs = getFileSystemProvider();
 
   let currentPath = searchPath;
   let packageJsonPath: string | undefined;
 
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    const packagePath = _join(currentPath, 'package.json');
+    const packagePath = fs.join(currentPath, 'package.json');
 
-    if (_existsSync(packagePath)) {
+    if (fs.existsSync(packagePath)) {
       packageJsonPath = packagePath;
       break;
     }
 
-    const nextPath = _resolve(currentPath, '..');
+    const nextPath = fs.resolve(currentPath, '..');
 
     if (nextPath === currentPath) {
       break;
@@ -91,7 +72,7 @@ export function getParentPackageJson(searchPath: string) {
     throw new Error('Could not find package.json');
   }
 
-  return JSON.parse(_readFileSync(packageJsonPath, 'utf-8')) as {
+  return JSON.parse(fs.readFileSync(packageJsonPath)) as {
     name: string;
     version: string;
     bin?: {
