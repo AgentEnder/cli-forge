@@ -58,7 +58,7 @@ export function withInitArgs<T extends ParsedArgs>(cmd: CLI<T>) {
       description: 'What format should the CLI be in?',
       choices: ['js', 'ts'],
     })
-    .option('type', {
+    .option('moduleType', {
       type: 'string',
       default: 'esm',
       description: 'Module system for the generated project.',
@@ -89,13 +89,13 @@ export const initCommand = cli('init', {
     packageJsonContent = mergePackageJsonContents(packageJsonContent, {
       name: args.cliName,
       version: args.initialVersion,
-      ...(args.type === 'esm' ? { type: 'module' } : {}),
+      ...(args.moduleType === 'esm' ? { type: 'module' } : {}),
       bin: {
         [args.cliName]: relative(args.output, cliPathWithoutExtension),
       },
       dependencies: {
         'cli-forge': CLI_FORGE_VERSION,
-        ...(args.type === 'esm' ? { 'es-main': '^1.3.0' } : {}),
+        ...(args.moduleType === 'esm' ? { 'es-main': '^1.3.0' } : {}),
       },
     });
     if (args.format === 'ts') {
@@ -145,7 +145,7 @@ cpSync('package.json', 'dist/package.json');
               outDir: 'dist',
               strict: true,
               types: ['node'],
-              ...(args.type === 'esm'
+              ...(args.moduleType === 'esm'
                 ? { module: 'NodeNext', moduleResolution: 'NodeNext' }
                 : {}),
             },
@@ -174,7 +174,7 @@ cpSync('package.json', 'dist/package.json');
       )
     );
     ensureDirSync(dirname(cliPath));
-    const isEsm = args.type === 'esm';
+    const isEsm = args.moduleType === 'esm';
     writeFileSync(
       cliPath,
       args.format === 'ts'

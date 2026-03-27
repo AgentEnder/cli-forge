@@ -20,10 +20,10 @@ describe('init', () => {
     ['ts', 'esm'],
     ['js', 'cjs'],
     ['js', 'esm'],
-  ])(`--format %s --type %s`, (format, type) => {
+  ])(`--format %s --module-type %s`, (format, type) => {
     it('should generate a new CLI', async () => {
       await runCommand(
-        `npx cli-forge@e2e init my-cli --format ${format} --type ${type}`,
+        `npx cli-forge@e2e init my-cli --format ${format} --module-type ${type}`,
         [],
         {}
       );
@@ -103,7 +103,7 @@ describe('init', () => {
   describe('--initial-version', () => {
     it('should work with --version for the new CLI', async () => {
       await runCommand(
-        'npx cli-forge@e2e init my-cli --initial-version 1.0.0 --type cjs',
+        'npx cli-forge@e2e init my-cli --initial-version 1.0.0 --module-type cjs',
         [],
         {}
       );
