@@ -1,6 +1,5 @@
 import {
   ConfigurationDocSection,
-  ConfigurationProvider,
 } from './config-files/configuration-loader';
 import {
   AggregateConfigProvider,

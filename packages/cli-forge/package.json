@@ -5,7 +5,6 @@
     "build:vite": "vite build"
   },
   "dependencies": {
-    "tslib": "catalog:",
     "@cli-forge/parser": "workspace:*"
   },
   "peerDependencies": {

@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+ 
 import {
   ArrayOptionConfig,
   BooleanOptionConfig,
@@ -89,7 +89,7 @@ export type CommandToChildEntry<T, TParentCLI = undefined> = {
 export interface CLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren = {},
   TParent = undefined
 > {
@@ -123,7 +123,7 @@ export interface CLI<
     TCommandArgs extends TArgs,
     TChildHandlerReturn,
     TKey extends string,
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+     
     TChildChildren = {}
   >(
     key: TKey,
@@ -972,13 +972,13 @@ export interface CLICommandOptions<
   /**
    * The children commands that exist before the builder runs.
    */
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TInitialChildren = {},
   TParent = any,
   /**
    * The children commands after the builder runs (includes TInitialChildren plus any added by builder).
    */
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren = {}
 > {
   /**
@@ -1112,7 +1112,7 @@ export type SDKChildren<TChildren> = {
     infer A,
     infer R,
     infer C,
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+     
     infer _P
   >
     ? SDKCommand<A, R, C>
@@ -1124,7 +1124,7 @@ export type SDKChildren<TChildren> = {
  * Container commands (no handler) are not callable but still provide access to children.
  */
 export type SDKCommand<TArgs, THandlerReturn, TChildren> =
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   // THandlerReturn extends void | undefined
   // ? SDKChildren<TChildren> // No handler = just children (not callable)
   SDKInvokable<TArgs, THandlerReturn> & SDKChildren<TChildren>;
@@ -1138,7 +1138,7 @@ export type SDKCommand<TArgs, THandlerReturn, TChildren> =
 export function cli<
   TArgs extends ParsedArgs,
   THandlerReturn = void,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren = {},
   TName extends string = string
 >(

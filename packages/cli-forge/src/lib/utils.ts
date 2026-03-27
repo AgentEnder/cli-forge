@@ -50,7 +50,7 @@ export function getParentPackageJson(searchPath: string) {
   let currentPath = searchPath;
   let packageJsonPath: string | undefined;
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
     const packagePath = fs.join(currentPath, 'package.json');
 
@@ -99,7 +99,7 @@ export function stringToArgs(str: string) {
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
     if (activeQuote) {
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         if (i >= str.length) {
           break;

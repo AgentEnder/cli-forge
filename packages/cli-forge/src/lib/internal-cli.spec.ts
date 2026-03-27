@@ -463,7 +463,7 @@ describe('cliForge', () => {
         .strict()
         .option('foo', { type: 'string' })
         .forge(['--foo', 'hello', '--unknown', 'arg']);
-    } catch (e) {
+    } catch {
       // Expected to throw
     }
 
