@@ -34,7 +34,7 @@
     "vite": "catalog:"
   },
   "type": "commonjs",
-  "main": "./dist/index.cjs",
+  "main": "./dist/index.js",
   "module": "./dist/index.mjs",
   "typings": "./dist/index.d.ts",
   "license": "ISC",
@@ -51,8 +51,8 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.cjs",
-      "default": "./dist/index.cjs"
+      "require": "./dist/index.js",
+      "default": "./dist/index.js"
     },
     "./cli": {
       "require": "./dist/bin/cli.js",
@@ -61,17 +61,17 @@
     "./middleware": {
       "types": "./dist/middleware.d.ts",
       "import": "./dist/middleware.mjs",
-      "require": "./dist/middleware.cjs"
+      "require": "./dist/middleware.js"
     },
     "./middleware/*": {
       "types": "./dist/middleware/*.d.ts",
       "import": "./dist/middleware/*.mjs",
-      "require": "./dist/middleware/*.cjs"
+      "require": "./dist/middleware/*.js"
     },
     "./prompt-providers/clack": {
       "types": "./dist/prompt-providers/clack.d.ts",
       "import": "./dist/prompt-providers/clack.mjs",
-      "require": "./dist/prompt-providers/clack.cjs"
+      "require": "./dist/prompt-providers/clack.js"
     },
     "./package.json": "./package.json"
   },
