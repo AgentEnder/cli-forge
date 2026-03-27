@@ -1,16 +1,5 @@
 import type { ParsedArgs } from '@cli-forge/parser';
-
-let fs: typeof import('fs') | undefined;
-let path: typeof import('path') | undefined;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  fs = require('fs');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  path = require('path');
-} catch {
-  // Running in a browser environment — filesystem completion helpers are unavailable.
-}
+import { getFileSystemProvider } from '@cli-forge/parser';
 
 /**
  * Context passed to completion callbacks.
@@ -49,10 +38,10 @@ export const completionHelpers = {
    */
   files(glob?: string): OptionCompletionCallback {
     return ({ argv }) => {
-      if (!fs || !path) return [];
+      const fs = getFileSystemProvider();
       const partial = argv[argv.length - 1] || '';
-      const dir = partial ? path.dirname(partial) : '.';
-      const prefix = partial ? path.basename(partial) : '';
+      const dir = partial ? fs.dirname(partial) : '.';
+      const prefix = partial ? fs.basename(partial) : '';
 
       try {
         let entries: string[] = fs.readdirSync(dir === '' ? '.' : dir);
@@ -69,7 +58,7 @@ export const completionHelpers = {
           }
         }
 
-        return entries.map((e) => (dir === '.' ? e : path!.join(dir, e)));
+        return entries.map((e) => (dir === '.' ? e : fs.join(dir, e)));
       } catch {
         return [];
       }

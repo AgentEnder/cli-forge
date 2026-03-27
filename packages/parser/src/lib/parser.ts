@@ -42,6 +42,9 @@ import {
   fromDashedToCamelCase,
   getEnvKey,
 } from './utils/case-transformations';
+import {
+  getEnvironmentProvider,
+} from './environment-provider';
 import { isFlag, isNextFlag, readArgKeys } from './utils/flags';
 import { getConfiguredOptionKey } from './utils/get-configured-key';
 import { readDefaultValue } from './utils/read-default-value';
@@ -520,7 +523,7 @@ export class ArgvParser<
       this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
-      this.cachedAggregate.load(typeof process !== 'undefined' ? process.cwd() : '/');
+      this.cachedAggregate.load(getEnvironmentProvider().cwd());
     }
     if (typeof valuesOrUpdater === 'function') {
       return this.cachedAggregate.updateConfig(valuesOrUpdater);
@@ -857,11 +860,11 @@ export class ArgvParser<
         partial
       );
       if (
-        process.env[
+        getEnvironmentProvider().getEnv(
           this.envPrefix
             ? `${this.envPrefix}_VERBOSE_LOGGING`
             : 'CLI_VERBOSE_LOGGING'
-        ] !== 'true'
+        ) !== 'true'
       ) {
         error.stack = undefined;
       }
@@ -872,7 +875,7 @@ export class ArgvParser<
 
   private readFromEnv(configuration: InternalOptionConfig) {
     const envKey = this.getEnvKey(configuration);
-    const envValue = process.env[envKey];
+    const envValue = getEnvironmentProvider().getEnv(envKey);
     if (envValue) {
       return tryParseValue(this.parserMap[configuration.type], {
         config: configuration,
@@ -897,7 +900,7 @@ export class ArgvParser<
 
     const envKey = this.getEnvKey(configuration);
     if (value !== undefined) {
-      process.env[envKey] = value;
+      getEnvironmentProvider().setEnv(envKey, value);
     }
   }
 
@@ -928,7 +931,7 @@ export class ArgvParser<
       this.cachedAggregate = new AggregateConfigProvider(
         this.configuredConfigurationProviders
       );
-      this.cachedConfig = this.cachedAggregate.load(typeof process !== 'undefined' ? process.cwd() : '/');
+      this.cachedConfig = this.cachedAggregate.load(getEnvironmentProvider().cwd());
       this.cachedConfigKey = this.configuredConfigurationProviders.length;
     }
     return this.cachedConfig?.[configuration.key as keyof TArgs];

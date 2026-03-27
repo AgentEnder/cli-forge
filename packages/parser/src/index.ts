@@ -5,6 +5,7 @@ export * from './lib/option-types';
 export * from './lib/utils/read-default-value';
 export * from './lib/utils/chain';
 export * from './lib/localization';
+export * from './lib/environment-provider';
 
 /**
  * Types and utilities for working with configuration files.

@@ -1,17 +1,4 @@
-let fs: typeof import('fs') | undefined;
-let os: typeof import('os') | undefined;
-let path: typeof import('path') | undefined;
-
-try {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  fs = require('fs');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  os = require('os');
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  path = require('path');
-} catch {
-  // Running in a browser environment — completion scripts are unavailable.
-}
+import { getFileSystemProvider, getEnvironmentProvider } from '@cli-forge/parser';
 
 function sanitizeName(cliName: string): string {
   return cliName.replace(/[^a-zA-Z0-9_]/g, '_');
@@ -82,7 +69,7 @@ function installForShell(
   cliName: string,
   overwrite = false
 ): InstallResult {
-  if (!fs) throw new Error('Shell completion installation is not available in this environment.');
+  const fs = getFileSystemProvider();
   const marker = `# cli-forge completion for ${cliName}`;
 
   if (overwrite) {
@@ -95,7 +82,7 @@ function installForShell(
     return { shell, file, action: 'skipped' };
   }
 
-  const content = fs.readFileSync(file, 'utf-8');
+  const content = fs.readFileSync(file);
   if (content.includes(marker)) {
     return { shell, file, action: 'skipped' };
   }
@@ -111,26 +98,27 @@ function installForShell(
 export async function installCompletionScripts(
   cliName: string
 ): Promise<void> {
-  if (!os || !path || !fs) throw new Error('Shell completion installation is not available in this environment.');
-  const home = os.homedir();
+  const fs = getFileSystemProvider();
+  const env = getEnvironmentProvider();
+  const home = env.getEnv('HOME') ?? env.getEnv('USERPROFILE') ?? '/';
   const results: InstallResult[] = [];
 
   // Bash: ~/.bashrc
-  const bashrc = path.join(home, '.bashrc');
+  const bashrc = fs.join(home, '.bashrc');
   results.push(
     installForShell('bash', bashrc, bashCompletionScript(cliName), cliName)
   );
 
   // Zsh: ~/.zshrc
-  const zshrc = path.join(home, '.zshrc');
+  const zshrc = fs.join(home, '.zshrc');
   results.push(
     installForShell('zsh', zshrc, zshCompletionScript(cliName), cliName)
   );
 
   // Fish: ~/.config/fish/completions/<cliName>.fish
-  const fishDir = path.join(home, '.config', 'fish', 'completions');
-  const fishFile = path.join(fishDir, `${cliName}.fish`);
-  if (fs.existsSync(path.join(home, '.config', 'fish'))) {
+  const fishDir = fs.join(home, '.config', 'fish', 'completions');
+  const fishFile = fs.join(fishDir, `${cliName}.fish`);
+  if (fs.existsSync(fs.join(home, '.config', 'fish'))) {
     if (!fs.existsSync(fishDir)) {
       fs.mkdirSync(fishDir, { recursive: true });
     }
@@ -146,13 +134,13 @@ export async function installCompletionScripts(
   }
 
   // PowerShell: check for profile directory
-  const psProfile = path.join(
+  const psProfile = fs.join(
     home,
     'Documents',
     'PowerShell',
     'Microsoft.PowerShell_profile.ps1'
   );
-  if (fs.existsSync(path.dirname(psProfile))) {
+  if (fs.existsSync(fs.dirname(psProfile))) {
     results.push(
       installForShell(
         'PowerShell',
