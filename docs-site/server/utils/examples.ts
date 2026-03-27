@@ -81,6 +81,8 @@ export interface SiteExample {
   renderedProseHtml: string | null;
   proseBlocks: ProseBlock[] | null;
   headings: TocEntry[];
+  /** Raw metadata from the example's YAML front-matter / meta.yml */
+  metadata: Record<string, unknown>;
 }
 
 const LANG_MAP: Record<string, string> = {
@@ -257,6 +259,7 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
       renderedProseHtml,
       proseBlocks,
       headings: extractHeadings(renderedDescriptionHtml + (renderedProseHtml ?? '')),
+      metadata,
     });
   }
 
