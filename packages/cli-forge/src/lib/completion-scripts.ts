@@ -102,7 +102,13 @@ export async function installCompletionScripts(
 ): Promise<void> {
   const fs = getFileSystemProvider();
   const env = getEnvironmentProvider();
-  const home = env.getEnv('HOME') ?? env.getEnv('USERPROFILE') ?? '/';
+  let home: string;
+  try {
+    const os = await import('os');
+    home = os.homedir();
+  } catch {
+    home = env.getEnv('HOME') ?? env.getEnv('USERPROFILE') ?? '/';
+  }
   const results: InstallResult[] = [];
 
   // Bash: ~/.bashrc

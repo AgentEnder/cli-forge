@@ -9,7 +9,8 @@
     "composite": true,
     "types": ["node"],
     "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo",
-    "noImplicitAny": true
+    "noImplicitAny": true,
+    "importHelpers": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["vite.config.ts", "src/**/*.spec.ts", "src/**/*.test.ts", "src/**/type-debug.ts"]

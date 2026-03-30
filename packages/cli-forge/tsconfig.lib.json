@@ -9,7 +9,8 @@
     "types": ["node"],
     "resolveJsonModule": true,
     "rootDir": "src",
-    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
+    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo",
+    "importHelpers": false
   },
   "include": ["src/**/*.ts"],
   "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],

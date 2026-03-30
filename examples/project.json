@@ -3,6 +3,10 @@
   "targets": {
     "run-example": {
       "command": "tsx --tsconfig {projectRoot}/tsconfig.json {projectRoot}/{args.example}.ts"
+    },
+    "lint": {
+      "executor": "nx:noop",
+      "dependsOn": ["lint:eslint"]
     }
   },
   "implicitDependencies": ["cli-forge", "parser"]

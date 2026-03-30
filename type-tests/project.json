@@ -3,5 +3,11 @@
   "$schema": "../node_modules/nx/schemas/project-schema.json",
   "sourceRoot": "type-tests/src",
   "projectType": "library",
-  "tags": []
+  "tags": [],
+  "targets": {
+    "lint": {
+      "executor": "nx:noop",
+      "dependsOn": ["lint:eslint"]
+    }
+  }
 }

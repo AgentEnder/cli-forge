@@ -19,6 +19,10 @@
       "command": "functional-examples test",
       "dependsOn": ["^build"],
       "parallelism": false
+    },
+    "lint": {
+      "executor": "nx:noop",
+      "dependsOn": ["lint:eslint"]
     }
   },
   "metadata": {
