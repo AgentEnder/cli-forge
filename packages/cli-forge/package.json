@@ -5,8 +5,7 @@
     "build:vite": "vite build"
   },
   "dependencies": {
-    "@cli-forge/parser": "workspace:*",
-    "tslib": "catalog:"
+    "@cli-forge/parser": "workspace:*"
   },
   "peerDependencies": {
     "@clack/prompts": "*",
@@ -49,25 +48,44 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.mjs"
+      },
+      "require": {
+        "types": "./dist/index.d.ts",
+        "default": "./dist/index.js"
+      }
     },
     "./middleware": {
-      "types": "./dist/middleware.d.ts",
-      "import": "./dist/middleware.mjs",
-      "require": "./dist/middleware.js"
+      "import": {
+        "types": "./dist/middleware.d.ts",
+        "default": "./dist/middleware.mjs"
+      },
+      "require": {
+        "types": "./dist/middleware.d.ts",
+        "default": "./dist/middleware.js"
+      }
     },
     "./middleware/*": {
-      "types": "./dist/middleware/*.d.ts",
-      "import": "./dist/middleware/*.mjs",
-      "require": "./dist/middleware/*.js"
+      "import": {
+        "types": "./dist/middleware/*.d.ts",
+        "default": "./dist/middleware/*.mjs"
+      },
+      "require": {
+        "types": "./dist/middleware/*.d.ts",
+        "default": "./dist/middleware/*.js"
+      }
     },
     "./prompt-providers/clack": {
-      "types": "./dist/prompt-providers/clack.d.ts",
-      "import": "./dist/prompt-providers/clack.mjs",
-      "require": "./dist/prompt-providers/clack.js"
+      "import": {
+        "types": "./dist/prompt-providers/clack.d.ts",
+        "default": "./dist/prompt-providers/clack.mjs"
+      },
+      "require": {
+        "types": "./dist/prompt-providers/clack.d.ts",
+        "default": "./dist/prompt-providers/clack.js"
+      }
     },
     "./package.json": "./package.json"
   },
