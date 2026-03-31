@@ -12,7 +12,7 @@
     "@nx/eslint-plugin": "catalog:",
     "@nx/js": "catalog:",
     "@nx/vite": "catalog:",
-    "@nx/vitest": "22.5.1",
+    "@nx/vitest": "22.6.3",
     "@nx/web": "catalog:",
     "@nx/workspace": "catalog:",
     "@swc-node/register": "catalog:",

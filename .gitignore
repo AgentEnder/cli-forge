@@ -51,3 +51,5 @@ vitest.config.*.timestamp*
 
 # Build artifacts in examples directory
 examples/**/*.d.ts
+
+.claude/worktrees
