@@ -569,7 +569,7 @@ async function loadCLIModule(
     if (moduleType === 'esm') {
       const tsx = (await import('tsx/esm/api')) as typeof import('tsx/esm/api');
       return tsx.tsImport(cliPath, {
-        tsconfig: args.tsconfig,
+        ...(args.tsconfig ? { tsconfig: args.tsconfig } : {}),
         parentURL: pathToFileURL(
           join(process.cwd(), 'fake-file-for-import.ts')
         ).toString(),
