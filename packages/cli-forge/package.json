@@ -49,6 +49,10 @@
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
     },
+    "./cli": {
+      "require": "./dist/bin/cli.js",
+      "types": "./dist/bin/cli.d.ts"
+    },
     "./middleware": {
       "require": "./dist/middleware.js",
       "types": "./dist/middleware.d.ts"
