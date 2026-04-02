@@ -583,7 +583,12 @@ async function loadCLIModule(
     }
   } catch {
     try {
-      return await import(cliPath);
+      // Resolve relative paths to absolute file:// URLs so ESM import()
+      // resolves from cwd, not from this file's location in node_modules.
+      const importSpecifier = isAbsolute(cliPath)
+        ? pathToFileURL(cliPath).href
+        : pathToFileURL(join(process.cwd(), cliPath)).href;
+      return await import(importSpecifier);
     } catch (e) {
       if (cliPath.endsWith('.ts')) {
         console.warn(
