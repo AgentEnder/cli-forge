@@ -46,7 +46,9 @@ jobs:
           registry-url: https://registry.npmjs.org/
 
       - name: Upgrade npm for OIDC support
-        run: npm install -g npm@latest
+        run: |
+          npm install -g npm@10
+          npm install -g npm@latest
 
       - name: Setup PNPM
         uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
