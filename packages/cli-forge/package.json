@@ -1,6 +1,6 @@
 {
   "name": "cli-forge",
-  "version": "1.7.1",
+  "version": "1.7.2",
   "scripts": {
     "build:vite": "vite build"
   },
@@ -53,6 +53,10 @@
       "import": "./dist/index.mjs",
       "require": "./dist/index.js",
       "default": "./dist/index.js"
+    },
+    "./cli": {
+      "require": "./dist/bin/cli.js",
+      "types": "./dist/bin/cli.d.ts"
     },
     "./middleware": {
       "types": "./dist/middleware.d.ts",

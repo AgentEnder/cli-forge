@@ -1,3 +1,17 @@
+## 1.7.2 (2026-04-03)
+
+### 🩹 Fixes
+
+- **cli-forge:** resolve CLI module paths from cwd in import() fallback ([#55](https://github.com/agentender/cli-forge/pull/55))
+- **cli-forge:** expose cli export for programmatic access ([41f9beb](https://github.com/agentender/cli-forge/commit/41f9beb))
+- **repo:** step through npm@10 before upgrading to npm@latest in deploy workflow ([#56](https://github.com/agentender/cli-forge/pull/56))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Copilot @Copilot
+- Craigory Coppola @AgentEnder
+
 ## 1.7.1 (2026-03-25)
 
 This was a version bump only, there were no code changes.
