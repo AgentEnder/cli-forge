@@ -180,20 +180,61 @@ Set theme = light
 
 <%= example('default-config').region('init-command') %>
 
-Without `default`, `updateConfig` would fail because there's no file to write to. The `default` option accepts a string path, a `URL`, or a function returning either:
+Without `default`, `updateConfig` would fail because there's no file to write to.
+
+### Choosing the right default path
+
+Where the config file gets created depends on what kind of tool you're building:
+
+**Project tools** (linters, bundlers, test runners) — config lives in the project directory, similar to `tsconfig.json` or `.prettierrc.json`. Users expect to find it next to `package.json`:
 
 ```typescript
-// Static path
-default: join(process.cwd(), 'my-tool.config.json')
-
-// URL (for ESM)
-default: new URL('./my-tool.config.json', import.meta.url)
-
-// Deferred function
-default: () => join(process.cwd(), 'my-tool.config.json')
+.config(ConfigurationFiles.JsonFileConfigLoader, {
+  filename: 'my-tool.config.json',
+  default: () => join(process.cwd(), 'my-tool.config.json'),
+})
 ```
 
-The provider classes (`JsonFileConfigLoader`, `PackageJsonConfigLoader`) are available from the `ConfigurationFiles` namespace:
+**User-level tools** (CLIs installed globally, developer utilities, personal tools) — config lives in the user's home directory. Following the [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/) convention, use `~/.config/`:
+
+```typescript
+import { homedir } from 'os';
+
+.config(ConfigurationFiles.JsonFileConfigLoader, {
+  filename: 'my-tool.json',
+  default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+})
+```
+
+Your users would then see:
+
+```bash
+$ my-tool init
+Config written to ~/.config/my-tool/config.json
+```
+
+**Hybrid tools** — some tools support both project-level and user-level config, with project config taking precedence. Register two providers — the project-level one resolves first, and the user-level one acts as a fallback:
+
+```typescript
+import { homedir } from 'os';
+
+cli('my-tool', {
+  builder: (args) =>
+    args
+      .option('theme', { type: 'string' })
+      // Project config — checked first
+      .config(ConfigurationFiles.JsonFileConfigLoader, {
+        filename: 'my-tool.config.json',
+      })
+      // User config — fallback, with a default for init
+      .config(ConfigurationFiles.JsonFileConfigLoader, {
+        filename: 'my-tool.json',
+        default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+      }),
+});
+```
+
+The `default` option accepts a string path, a `URL`, or a function returning either (sync or async). The provider classes are available from the `ConfigurationFiles` namespace:
 
 ```typescript
 import { ConfigurationFiles } from 'cli-forge';
