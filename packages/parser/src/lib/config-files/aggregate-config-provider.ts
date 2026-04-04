@@ -38,12 +38,12 @@ export type ConfigUpdater<T> = (current: T) => void;
  * it delegates resolution to its children.
  */
 export class AggregateConfigProvider<T> {
-  readonly providers: AnyConfigProvider<T>[];
+  providers: AnyConfigProvider<T>[];
 
   /**
    * Internal entries storing providers with optional framework metadata.
    */
-  private readonly entries: ProviderEntry<T>[];
+  private entries: ProviderEntry<T>[];
 
   /**
    * After {@link load} is called, maps each top-level key to the leaf
@@ -73,7 +73,7 @@ export class AggregateConfigProvider<T> {
   ) {
     const entry: ProviderEntry<T> = { provider, ...metadata };
     this.entries.push(entry);
-    (this.providers as AnyConfigProvider<T>[]).push(provider);
+    this.providers.push(provider);
   }
 
   /**

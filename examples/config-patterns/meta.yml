@@ -1,0 +1,37 @@
+id: config-patterns
+title: Configuration Patterns
+hidden: true
+description: |
+  Demonstrates various configuration patterns: project-root defaults,
+  user-level config, hybrid config, updateConfig usage, and custom providers.
+test:
+  - name: 'Project tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json project-tool.ts'
+    assertions:
+      stdout:
+        contains: 'host: localhost'
+  - name: 'User tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json user-tool.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'Hybrid tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json hybrid-tool.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'updateConfig writes and reads back values'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-usage.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'Custom key-value provider loads config'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json custom-provider.ts'
+    assertions:
+      stdout:
+        contains: 'howdy, partner!'

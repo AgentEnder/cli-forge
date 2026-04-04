@@ -410,7 +410,7 @@ export interface CLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
-   * Register's a configuration provider by class and options.
+   * Registers a configuration provider by class and options.
    * Framework options like `default` are extracted and stored as metadata.
    *
    * @param ctor The provider class constructor.

@@ -188,38 +188,11 @@ Where the config file gets created depends on what kind of tool you're building:
 
 **Project tools** (linters, bundlers, test runners) — config lives at the project root, similar to `tsconfig.json` or `.prettierrc.json`. Users expect to find it next to `package.json` or `.git`. Since users may run the CLI from a subdirectory, walk up the tree to find the root:
 
-```typescript
-import { existsSync } from 'fs';
-import { dirname, join } from 'path';
-
-function findProjectRoot(from = process.cwd()): string {
-  let dir = from;
-  while (true) {
-    if (existsSync(join(dir, 'package.json')) || existsSync(join(dir, '.git'))) {
-      return dir;
-    }
-    const parent = dirname(dir);
-    if (parent === dir) return from; // reached filesystem root, fall back to cwd
-    dir = parent;
-  }
-}
-
-.config(ConfigurationFiles.JsonFileConfigLoader, {
-  filename: 'my-tool.config.json',
-  default: () => join(findProjectRoot(), 'my-tool.config.json'),
-})
-```
+<%= example('config-patterns').region('find-project-root') %>
 
 **User-level tools** (CLIs installed globally, developer utilities, personal tools) — config lives in the user's home directory. Following the [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/) convention, use `~/.config/`:
 
-```typescript
-import { homedir } from 'os';
-
-.config(ConfigurationFiles.JsonFileConfigLoader, {
-  filename: 'my-tool.json',
-  default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
-})
-```
+<%= example('config-patterns').region('user-level') %>
 
 Your users would then see:
 
@@ -230,24 +203,7 @@ Config written to ~/.config/my-tool/config.json
 
 **Hybrid tools** — some tools support both project-level and user-level config, with project config taking precedence. Register two providers — the project-level one resolves first, and the user-level one acts as a fallback:
 
-```typescript
-import { homedir } from 'os';
-
-cli('my-tool', {
-  builder: (args) =>
-    args
-      .option('theme', { type: 'string' })
-      // Project config — checked first
-      .config(ConfigurationFiles.JsonFileConfigLoader, {
-        filename: 'my-tool.config.json',
-      })
-      // User config — fallback, with a default for init
-      .config(ConfigurationFiles.JsonFileConfigLoader, {
-        filename: 'my-tool.json',
-        default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
-      }),
-});
-```
+<%= example('config-patterns').region('hybrid') %>
 
 The `default` option accepts a string path, a `URL`, or a function returning either (sync or async). The provider classes are available from the `ConfigurationFiles` namespace:
 
@@ -261,15 +217,7 @@ import { ConfigurationFiles } from 'cli-forge';
 
 **How to build it:** Call `app.updateConfig()` from any command handler:
 
-```typescript
-// Partial update — only the specified keys change
-await app.updateConfig({ theme: 'dark' });
-
-// Updater function — read-modify-write
-await app.updateConfig((config) => {
-  config.theme = config.theme === 'dark' ? 'light' : 'dark';
-});
-```
+<%= example('config-patterns').region('update-config') %>
 
 When multiple providers are registered, updates route to the correct file. Each key is written to whichever provider originally supplied it:
 
@@ -292,30 +240,9 @@ Your users can set baseline values in a config file and override any of them fro
 
 ## Custom configuration providers
 
-If JSON and `package.json` don't fit your needs — for example, YAML or TOML configs — implement the `ConfigurationProvider` interface:
+If JSON and `package.json` don't fit your needs, implement the `ConfigurationProvider` interface. Here's a working key-value config loader that reads `key=value` files:
 
-```typescript
-import { ConfigurationFiles } from 'cli-forge';
-
-class YamlConfigLoader<T>
-  implements ConfigurationFiles.ConfigurationProvider<T, string>
-{
-  resolve(configurationRoot: string): string | undefined {
-    // Walk up directory tree looking for the config file
-  }
-
-  load(filename: string): T & { extends?: string } {
-    // Parse and return the config object
-  }
-
-  async updateConfig(
-    configOrUpdater: T | ((current: T) => T | Promise<T>),
-    options?: { targetPath?: string }
-  ): Promise<void> {
-    // Write updated config back to disk
-  }
-}
-```
+<%= example('config-patterns').region('custom-provider') %>
 
 The interface requires `resolve` and `load`. The `updateConfig` and `describeConfig` methods are optional.
 
