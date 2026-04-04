@@ -1124,11 +1124,40 @@ export class InternalCLI<
 
   config(
     provider: ConfigurationFiles.AnyConfigProvider<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigurationProvider<TArgs, any>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigurationProvider<TArgs, any>,
+  >(
+    providerOrCtor: ConfigurationFiles.AnyConfigProvider<TArgs> | C,
+    options?: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
-    this.parser.config(
-      provider as ConfigurationFiles.AnyConfigProvider<any>
-    );
+    if (options !== undefined) {
+      this.parser.config(providerOrCtor as any, options);
+    } else {
+      this.parser.config(
+        providerOrCtor as ConfigurationFiles.AnyConfigProvider<any>
+      );
+    }
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  }
   }
 
   async updateConfig(values: Partial<TArgs>): Promise<void>;

@@ -1,3 +1,5 @@
+import { fileURLToPath } from 'node:url';
+
 import { getFileSystemProvider } from '../environment-provider';
 
 export function traverseForFile(
@@ -18,4 +20,13 @@ export function traverseForFile(
     }
   }
   return undefined;
+}
+
+/**
+ * Normalizes a string or URL to a file system path string.
+ * If given a URL, converts it via `fileURLToPath` (only `file://` URLs are supported).
+ * If given a string, returns it as-is.
+ */
+export function toFilePath(pathOrUrl: string | URL): string {
+  return pathOrUrl instanceof URL ? fileURLToPath(pathOrUrl) : pathOrUrl;
 }
