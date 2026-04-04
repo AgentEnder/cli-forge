@@ -38,7 +38,13 @@ export type ConfigUpdater<T> = (current: T) => void;
  * it delegates resolution to its children.
  */
 export class AggregateConfigProvider<T> {
-  providers: AnyConfigProvider<T>[];
+  /**
+   * The list of child providers, derived from {@link entries}.
+   * Read-only to prevent desync with the entries array.
+   */
+  get providers(): ReadonlyArray<AnyConfigProvider<T>> {
+    return this.entries.map((e) => e.provider);
+  }
 
   /**
    * Internal entries storing providers with optional framework metadata.
@@ -61,7 +67,6 @@ export class AggregateConfigProvider<T> {
     this.entries = providers.map((p) =>
       isProviderEntry(p) ? p : { provider: p }
     );
-    this.providers = this.entries.map((e) => e.provider);
   }
 
   /**
@@ -73,7 +78,6 @@ export class AggregateConfigProvider<T> {
   ) {
     const entry: ProviderEntry<T> = { provider, ...metadata };
     this.entries.push(entry);
-    this.providers.push(provider);
   }
 
   /**
@@ -268,7 +272,7 @@ export class AggregateConfigProvider<T> {
     for (const [provider, { partial, targetPath }] of updatesByProvider) {
       promises.push(
         provider.updateConfig!(
-          (current) => ({ ...current, ...partial }),
+          (current) => ({ ...(current ?? ({} as T)), ...partial }),
           targetPath ? { targetPath } : undefined
         )
       );
