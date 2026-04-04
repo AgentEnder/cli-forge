@@ -138,6 +138,36 @@ describe('AggregateConfigProvider', () => {
       expect(result).toEqual({ foo: 'root', bar: 'base' });
     });
 
+    it('should handle deeply nested extends chains (A → B → C)', () => {
+      const provider: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.config';
+          if (dir === '/mid') return '/mid/.config';
+          if (dir === '/base') return '/base/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.config')
+            return { extends: '/mid', root: 'root-val' };
+          if (file === '/mid/.config')
+            return { extends: '/base', mid: 'mid-val', root: 'mid-override' };
+          if (file === '/base/.config')
+            return { base: 'base-val', mid: 'base-override', root: 'base-override' };
+          return {};
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([provider]);
+      const result = aggregate.load('/root');
+
+      // root's explicit "root" wins over mid and base
+      expect(result.root).toBe('root-val');
+      // mid's explicit "mid" wins over base
+      expect(result.mid).toBe('mid-val');
+      // base's "base" fills in (no one else set it)
+      expect(result.base).toBe('base-val');
+    });
+
     it('should prioritize explicit values over extends-derived values regardless of provider order', () => {
       // Provider A (first) has extends that brings in "name" from a base config.
       // Provider B (second) explicitly sets "name" in its own config.
