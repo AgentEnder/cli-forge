@@ -146,7 +146,7 @@ The resolved values are:
 
 The project config inherits `host` from the base and overrides `port` and `debug`. Extends chains can go arbitrarily deep (A extends B extends C). CLI Forge detects circular references and throws a clear error.
 
-**How to build it:** No extra code needed — `extends` works automatically with any JSON file provider.
+**How to build it:** No extra code needed — `extends` works automatically with any configuration provider. The framework handles inheritance at the aggregate level, so custom providers get it for free.
 
 <%= example('config-inheritance').file('cli.ts') %>
 
