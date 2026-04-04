@@ -382,6 +382,193 @@ describe('AggregateConfigProvider', () => {
     });
   });
 
+  describe('updateConfig with default fallback', () => {
+    it('should use default provider when no providers resolve', async () => {
+      const updates: any[] = [];
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined, // no file exists
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          updates.push(result);
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ foo: 'bar' });
+
+      expect(updates).toEqual([{ foo: 'bar' }]);
+      expect(targetPaths).toEqual(['/tmp/default.json']);
+    });
+
+    it('should support default as a function', async () => {
+      const updates: any[] = [];
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          updates.push(result);
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: () => '/tmp/from-function.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual(['/tmp/from-function.json']);
+    });
+
+    it('should support async default function', async () => {
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        {
+          provider,
+          default: async () => '/tmp/async-default.json',
+        },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual(['/tmp/async-default.json']);
+    });
+
+    it('should fall through when default function returns null', async () => {
+      const targetPaths: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const providerB: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider: providerA, default: () => null },
+        { provider: providerB, default: '/tmp/fallback.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      // Should skip providerA (returned null) and use providerB
+      expect(targetPaths).toEqual(['/tmp/fallback.json']);
+    });
+
+    it('should prefer resolving provider over default provider', async () => {
+      const resolvedUpdates: any[] = [];
+      const defaultUpdates: any[] = [];
+
+      const resolvingProvider: ConfigurationProvider<any> = {
+        resolve: (dir) =>
+          dir === '/root' ? '/root/.config.json' : undefined,
+        load: () => ({ existing: true }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ existing: true })
+              : updater;
+          resolvedUpdates.push(result);
+        },
+      };
+
+      const defaultProvider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          defaultUpdates.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        resolvingProvider,
+        { provider: defaultProvider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ newKey: 'value' } as any);
+
+      // Should route to resolving provider, not the default one
+      expect(resolvedUpdates).toEqual([
+        { existing: true, newKey: 'value' },
+      ]);
+      expect(defaultUpdates).toEqual([]);
+    });
+
+    it('should throw when no provider resolves and no default is configured', async () => {
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async () => {},
+      };
+
+      const aggregate = new AggregateConfigProvider([provider]);
+      aggregate.load('/root');
+
+      await expect(
+        aggregate.updateConfig({ foo: 'bar' })
+      ).rejects.toThrow(/no provider resolved/);
+    });
+
+    it('should support URL as default', async () => {
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const defaultUrl = new URL('file:///tmp/url-default.json');
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: defaultUrl },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual([defaultUrl]);
+    });
+  });
+
   describe('integration: multi-provider updateConfig routing', () => {
     it('should route updates to correct providers across nested aggregates', async () => {
       const updatesA: any[] = [];

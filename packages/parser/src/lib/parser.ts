@@ -1,10 +1,14 @@
 import {
   ConfigurationDocSection,
+  ConfigurationProvider,
+  DefaultConfig,
+  ExtractLocation,
 } from './config-files/configuration-loader';
 import {
   AggregateConfigProvider,
   AnyConfigProvider,
   ConfigUpdater,
+  ProviderEntry,
   isAggregateConfigProvider,
 } from './config-files/aggregate-config-provider';
 import { hideBin } from './helpers';
@@ -205,7 +209,7 @@ export class ArgvParser<
    */
   parserMap: Record<string, Parser<any>>;
 
-  private configuredConfigurationProviders: AnyConfigProvider<TArgs>[] = [];
+  private configuredConfigurationProviders: ProviderEntry<TArgs>[] = [];
 
   /**
    * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
@@ -518,8 +522,43 @@ export class ArgvParser<
    * Registers a configuration provider to read configuration from.
    * @param provider The configuration provider to register.
    */
-  config(provider: AnyConfigProvider<TArgs>) {
-    this.configuredConfigurationProviders.push(provider);
+  config(provider: AnyConfigProvider<TArgs>): this;
+  /**
+   * Registers a configuration provider by class and options.
+   * Framework options like `default` are extracted and stored as metadata.
+   *
+   * @param ctor The provider class constructor.
+   * @param options Constructor options merged with framework options (e.g., `default`).
+   */
+  config<
+    C extends new (opts: any) => ConfigurationProvider<TArgs, any>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: DefaultConfig<ExtractLocation<InstanceType<C>>>;
+    }
+  ): this;
+  config<
+    C extends new (opts: any) => ConfigurationProvider<TArgs, any>,
+  >(
+    providerOrCtor: AnyConfigProvider<TArgs> | C,
+    options?: ConstructorParameters<C>[0] & {
+      default?: DefaultConfig<ExtractLocation<InstanceType<C>>>;
+    }
+  ): this {
+    if (options !== undefined) {
+      // Constructor-based overload: extract framework opts, construct provider
+      const { default: defaultConfig, ...providerOpts } = options;
+      const provider = new (providerOrCtor as C)(providerOpts);
+      this.configuredConfigurationProviders.push({
+        provider: provider as unknown as AnyConfigProvider<TArgs>,
+        default: defaultConfig,
+      });
+    } else {
+      this.configuredConfigurationProviders.push({
+        provider: providerOrCtor as AnyConfigProvider<TArgs>,
+      });
+    }
     return this;
   }
 
@@ -1062,7 +1101,8 @@ export class ArgvParser<
    */
   getConfigurationDocs(): ConfigurationDocSection[] {
     const sections: ConfigurationDocSection[] = [];
-    for (const provider of this.configuredConfigurationProviders) {
+    for (const entry of this.configuredConfigurationProviders) {
+      const provider = entry.provider;
       if (isAggregateConfigProvider(provider)) {
         sections.push(...provider.describeConfig());
       } else if (provider.describeConfig) {

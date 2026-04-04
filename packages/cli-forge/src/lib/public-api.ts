@@ -410,6 +410,26 @@ export interface CLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
+   * Register's a configuration provider by class and options.
+   * Framework options like `default` are extracted and stored as metadata.
+   *
+   * @param ctor The provider class constructor.
+   * @param options Constructor options merged with framework options (e.g., `default`).
+   */
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigurationProvider<TArgs, any>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
    * Updates configuration by routing each key to its owning provider.
    *
    * @param values Partial configuration to write.
