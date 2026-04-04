@@ -15,14 +15,17 @@ import {
 import { toFilePath, traverseForFile } from './utils.js';
 
 /**
- * Options for constructing a {@link JsonFileConfigLoader}.
+ * Options for constructing a single-file {@link JsonFileConfigLoader}.
+ * For multiple candidate filenames, use {@link getJsonFileConfigLoader} with
+ * its `string[]` overload, which returns an {@link AggregateConfigProvider}.
  */
 export type JsonFileConfigLoaderOptions<T> = {
   /**
-   * The filename (or array of filenames) to search for.
-   * When an array is provided, the factory returns an {@link AggregateConfigProvider}.
+   * The filename to search for. The {@link JsonFileConfigLoader} constructor
+   * only accepts a single filename. For multiple filenames, use
+   * {@link getJsonFileConfigLoader} which wraps each in its own loader.
    */
-  filename: string | string[];
+  filename: string;
   /**
    * Optional transform applied when loading — extracts the desired config shape from the raw JSON.
    */
