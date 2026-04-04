@@ -4,7 +4,7 @@ import { dirname, join } from 'path';
 import { ConfigurationFiles, cli } from 'cli-forge';
 
 // #region custom-provider
-class KeyValueConfigLoader<T extends Record<string, string>>
+class KeyValueConfigLoader<T>
   implements ConfigurationFiles.ConfigurationProvider<T, string>
 {
   private readonly filename: string;
@@ -55,7 +55,7 @@ class KeyValueConfigLoader<T extends Record<string, string>>
         ? await (configOrUpdater as (c: T) => T | Promise<T>)(current)
         : configOrUpdater;
 
-    const lines = Object.entries(updated)
+    const lines = Object.entries(updated as Record<string, unknown>)
       .map(([k, v]) => `${k}=${v}`)
       .join('\n');
 
