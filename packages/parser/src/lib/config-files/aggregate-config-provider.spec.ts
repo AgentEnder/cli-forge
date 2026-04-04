@@ -138,6 +138,78 @@ describe('AggregateConfigProvider', () => {
       expect(result).toEqual({ foo: 'root', bar: 'base' });
     });
 
+    it('should prioritize explicit values over extends-derived values regardless of provider order', () => {
+      // Provider A (first) has extends that brings in "name" from a base config.
+      // Provider B (second) explicitly sets "name" in its own config.
+      // Provider B's explicit value should win over A's extends-derived value.
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configA';
+          if (dir === '/base') return '/base/.configA';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configA')
+            return { extends: '/base', color: 'red' };
+          if (file === '/base/.configA')
+            return { name: 'from-base', host: 'base-host' };
+          return {};
+        },
+      };
+      const providerB = makeMockProvider({
+        '/root/.configB': { name: 'B-explicit', port: 8080 },
+      });
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      const result = aggregate.load('/root');
+
+      // B's explicit "name" beats A's extends-derived "name"
+      expect(result.name).toBe('B-explicit');
+      // A's explicit "color" is kept
+      expect(result.color).toBe('red');
+      // B's explicit "port" is kept
+      expect(result.port).toBe(8080);
+      // A's extends-derived "host" fills in (no explicit value from anyone)
+      expect(result.host).toBe('base-host');
+    });
+
+    it('should prioritize extends-derived values by provider order when no explicit value exists', () => {
+      // Both providers have extends. When no explicit value exists for a key,
+      // the first provider's extends-derived value should win.
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configA';
+          if (dir === '/baseA') return '/baseA/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configA')
+            return { extends: '/baseA', color: 'red' };
+          if (file === '/baseA/.config') return { theme: 'dark' };
+          return {};
+        },
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configB';
+          if (dir === '/baseB') return '/baseB/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configB')
+            return { extends: '/baseB', port: 8080 };
+          if (file === '/baseB/.config') return { theme: 'light' };
+          return {};
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      const result = aggregate.load('/root');
+
+      // A's extends-derived "theme" wins (first-provider-wins among extends)
+      expect(result.theme).toBe('dark');
+    });
+
     it('should load nested aggregates and merge their provenance', () => {
       const providerA = makeMockProvider({
         '/root/.configA': { foo: 'fromA' },
