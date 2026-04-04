@@ -8,7 +8,9 @@ const app = cli('my-tool', {
       .option('theme', { type: 'string', default: 'light' })
       .option('lang', { type: 'string', default: 'en' })
       // The `default` option tells the framework where to create the config file
-      // when no existing config is found on disk.
+      // when no existing config is found on disk. A real project tool would walk
+      // up to the project root (e.g., nearest package.json or .git) instead of
+      // using cwd directly.
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
         default: () => join(process.cwd(), 'my-tool.config.json'),

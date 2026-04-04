@@ -186,12 +186,27 @@ Without `default`, `updateConfig` would fail because there's no file to write to
 
 Where the config file gets created depends on what kind of tool you're building:
 
-**Project tools** (linters, bundlers, test runners) — config lives in the project directory, similar to `tsconfig.json` or `.prettierrc.json`. Users expect to find it next to `package.json`:
+**Project tools** (linters, bundlers, test runners) — config lives at the project root, similar to `tsconfig.json` or `.prettierrc.json`. Users expect to find it next to `package.json` or `.git`. Since users may run the CLI from a subdirectory, walk up the tree to find the root:
 
 ```typescript
+import { existsSync } from 'fs';
+import { dirname, join } from 'path';
+
+function findProjectRoot(from = process.cwd()): string {
+  let dir = from;
+  while (true) {
+    if (existsSync(join(dir, 'package.json')) || existsSync(join(dir, '.git'))) {
+      return dir;
+    }
+    const parent = dirname(dir);
+    if (parent === dir) return from; // reached filesystem root, fall back to cwd
+    dir = parent;
+  }
+}
+
 .config(ConfigurationFiles.JsonFileConfigLoader, {
   filename: 'my-tool.config.json',
-  default: () => join(process.cwd(), 'my-tool.config.json'),
+  default: () => join(findProjectRoot(), 'my-tool.config.json'),
 })
 ```
 
