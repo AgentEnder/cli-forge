@@ -7,11 +7,14 @@ import {
 import { toFilePath } from './utils.js';
 
 /**
+ * A leaf ConfigurationProvider with any location type.
+ */
+type AnyProvider<T> = ConfigurationProvider<T, any>;
+
+/**
  * A provider child is either a single-file ConfigurationProvider or a nested AggregateConfigProvider.
  */
-export type AnyConfigProvider<T> =
-  | ConfigurationProvider<T, any>
-  | AggregateConfigProvider<T>;
+export type AnyConfigProvider<T> = AnyProvider<T> | AggregateConfigProvider<T>;
 
 /**
  * A provider entry pairs a provider with optional framework-level metadata.
@@ -55,7 +58,7 @@ export class AggregateConfigProvider<T> {
    * After {@link load} is called, maps each top-level key to the leaf
    * {@link ConfigurationProvider} that supplied it.
    */
-  provenance: Map<string, ConfigurationProvider<T, any>> = new Map();
+  provenance: Map<string, AnyProvider<T>> = new Map();
 
   /**
    * The last configuration root passed to {@link load}, stored for
@@ -90,10 +93,10 @@ export class AggregateConfigProvider<T> {
    */
   load(
     configurationRoot: string,
-    visited?: Map<ConfigurationProvider<T, any>, Set<string>>
+    visited?: Map<AnyProvider<T>, Set<string>>
   ): T {
     const visitedMap =
-      visited ?? new Map<ConfigurationProvider<T, any>, Set<string>>();
+      visited ?? new Map<AnyProvider<T>, Set<string>>();
     this.provenance = new Map();
     this.lastConfigurationRoot = configurationRoot;
 
@@ -104,7 +107,7 @@ export class AggregateConfigProvider<T> {
       {
         own: Partial<T>;
         extendsRef?: string;
-        childProvenance?: Map<string, ConfigurationProvider<T, any>>;
+        childProvenance?: Map<string, AnyProvider<T>>;
       }
     >();
 
@@ -157,7 +160,7 @@ export class AggregateConfigProvider<T> {
           } else {
             this.provenance.set(
               key,
-              provider as ConfigurationProvider<T, any>
+              provider as AnyProvider<T>
             );
           }
         }
@@ -182,7 +185,7 @@ export class AggregateConfigProvider<T> {
           (combined as any)[key] = (extended as any)[key];
           this.provenance.set(
             key,
-            provider as ConfigurationProvider<T, any>
+            provider as AnyProvider<T>
           );
         }
       }
@@ -220,12 +223,12 @@ export class AggregateConfigProvider<T> {
 
     // Group keys by their owning provider
     const updatesByProvider = new Map<
-      ConfigurationProvider<T, any>,
+      AnyProvider<T>,
       { partial: Partial<T>; targetPath?: string | URL }
     >();
 
     // Find the first leaf provider that resolves (fallback for new keys)
-    let fallbackProvider: ConfigurationProvider<T, any> | undefined;
+    let fallbackProvider: AnyProvider<T> | undefined;
     let fallbackTargetPath: (string | URL) | undefined;
 
     if (this.lastConfigurationRoot) {
@@ -311,7 +314,7 @@ export class AggregateConfigProvider<T> {
    */
   private findFirstResolvingProvider(
     configurationRoot: string
-  ): ConfigurationProvider<T, any> | undefined {
+  ): AnyProvider<T> | undefined {
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {
         const found = provider.findFirstResolvingProvider(configurationRoot);
@@ -328,7 +331,7 @@ export class AggregateConfigProvider<T> {
    * that resolves to a non-null path. Returns the provider and resolved path.
    */
   private async resolveDefaultProvider(): Promise<
-    | { provider: ConfigurationProvider<T, any>; targetPath: string | URL }
+    | { provider: AnyProvider<T>; targetPath: string | URL }
     | undefined
   > {
     for (const entry of this.entries) {
@@ -358,7 +361,7 @@ export class AggregateConfigProvider<T> {
    */
   private findFirstLeafProvider(
     aggregate: AggregateConfigProvider<T>
-  ): ConfigurationProvider<T, any> | undefined {
+  ): AnyProvider<T> | undefined {
     for (const provider of aggregate.providers) {
       if (isAggregateConfigProvider(provider)) {
         const found = this.findFirstLeafProvider(provider);
