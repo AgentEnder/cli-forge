@@ -88,7 +88,7 @@ export class JsonFileConfigLoader<T>
   ): Promise<void> {
     if (this.transform && !this.writeTransform) {
       throw new Error(
-        'Cannot update config when read transform is supplied without a write transform, doing so would set the untrasnformed file structure to the transformed structure, instead of updating it in place.'
+        'Cannot update config when read transform is supplied without a write transform, doing so would set the untransformed file structure to the transformed structure, instead of updating it in place.'
       );
     }
 

@@ -576,17 +576,23 @@ export class ArgvParser<
       default?: DefaultConfig<ExtractLocation<InstanceType<C>>>;
     }
   ): this {
-    if (options !== undefined) {
+    if (typeof providerOrCtor === 'function') {
+      if (options === undefined) {
+        throw new TypeError(
+          'ArgvParser.config() requires `options` when registering a configuration provider by constructor.'
+        );
+      }
+
       // Constructor-based overload: extract framework opts, construct provider
       const { default: defaultConfig, ...providerOpts } = options;
-      const provider = new (providerOrCtor as C)(providerOpts);
+      const provider = new providerOrCtor(providerOpts);
       this.configuredConfigurationProviders.push({
         provider: provider as unknown as AnyConfigProvider<TArgs>,
         default: defaultConfig,
       });
     } else {
       this.configuredConfigurationProviders.push({
-        provider: providerOrCtor as AnyConfigProvider<TArgs>,
+        provider: providerOrCtor,
       });
     }
     return this;
