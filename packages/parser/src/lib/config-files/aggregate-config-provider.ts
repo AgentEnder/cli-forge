@@ -93,20 +93,24 @@ export class AggregateConfigProvider<T> {
     this.provenance = new Map();
     this.lastConfigurationRoot = configurationRoot;
 
-    const combined: T = {} as T;
+    // Phase 1: Load each provider's own config, separating extends references.
+    // Aggregate children are loaded recursively (they handle extends internally).
+    const results = new Map<
+      AnyConfigProvider<T>,
+      {
+        own: Partial<T>;
+        extendsRef?: string;
+        childProvenance?: Map<string, ConfigurationProvider<T, any>>;
+      }
+    >();
 
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {
         const childResult = provider.load(configurationRoot, visitedMap);
-        for (const key of Object.keys(childResult as any)) {
-          if (!(key in (combined as any))) {
-            (combined as any)[key] = (childResult as any)[key];
-            const childOwner = provider.provenance.get(key);
-            if (childOwner) {
-              this.provenance.set(key, childOwner);
-            }
-          }
-        }
+        results.set(provider, {
+          own: childResult,
+          childProvenance: provider.provenance,
+        });
       } else {
         const filename = provider.resolve(configurationRoot);
         if (filename) {
@@ -120,43 +124,67 @@ export class AggregateConfigProvider<T> {
           loaderVisited.add(filenameStr);
           visitedMap.set(provider, loaderVisited);
 
-          const loaded = this.loadWithExtends(
-            filename,
-            provider,
-            configurationRoot,
-            visitedMap
-          );
+          const loaded = provider.load(filename);
+          const { extends: extendsRef, ...own } = loaded as any;
+          results.set(provider, { own, extendsRef });
+        }
+      }
+    }
 
-          for (const key of Object.keys(loaded as any)) {
-            if (!(key in (combined as any))) {
-              (combined as any)[key] = (loaded as any)[key];
-              this.provenance.set(key, provider);
+    // Phase 2: Merge explicit values in registration order (first-wins).
+    // Explicit values from ANY provider beat extends-derived values.
+    let combined: T = {} as T;
+
+    for (const provider of this.providers) {
+      const result = results.get(provider);
+      if (!result) continue;
+
+      for (const key of Object.keys(result.own as any)) {
+        if (!(key in (combined as any))) {
+          (combined as any)[key] = (result.own as any)[key];
+          if (
+            isAggregateConfigProvider(provider) &&
+            result.childProvenance
+          ) {
+            const childOwner = result.childProvenance.get(key);
+            if (childOwner) {
+              this.provenance.set(key, childOwner);
             }
+          } else {
+            this.provenance.set(
+              key,
+              provider as ConfigurationProvider<T, any>
+            );
           }
         }
       }
     }
-    return combined;
-  }
 
-  private loadWithExtends(
-    filename: string | URL,
-    provider: ConfigurationProvider<T, any>,
-    configurationRoot: string,
-    visited: Map<ConfigurationProvider<T, any>, Set<string>>
-  ): T {
-    const loaded = provider.load(filename);
-    if (loaded.extends) {
-      const fs = getFileSystemProvider();
-      const extendsRoot = loaded.extends.startsWith('.')
-        ? fs.join(configurationRoot, loaded.extends)
-        : loaded.extends;
+    // Phase 3: Resolve extends chains and merge base values underneath.
+    // These only fill keys not already set by any explicit value.
+    const fs = getFileSystemProvider();
+    for (const provider of this.providers) {
+      if (isAggregateConfigProvider(provider)) continue;
+      const result = results.get(provider);
+      if (!result?.extendsRef) continue;
+
+      const extendsRoot = result.extendsRef.startsWith('.')
+        ? fs.join(configurationRoot, result.extendsRef)
+        : result.extendsRef;
       const extendsAggregate = new AggregateConfigProvider<T>(this.entries);
-      const extended = extendsAggregate.load(extendsRoot, visited);
-      const { extends: _, ...rest } = loaded as any;
-      return { ...extended, ...rest } as T;
+      const extended = extendsAggregate.load(extendsRoot, visitedMap);
+      for (const key of Object.keys(extended as any)) {
+        if (!(key in (combined as any))) {
+          (combined as any)[key] = (extended as any)[key];
+          this.provenance.set(
+            key,
+            provider as ConfigurationProvider<T, any>
+          );
+        }
+      }
     }
-    return loaded;
+
+    return combined;
   }
 
   /**

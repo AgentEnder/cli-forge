@@ -1,10 +1,7 @@
 import { inspect } from 'node:util';
 
 import { ConfigurationProvider } from './configuration-loader.js';
-import {
-  getJsonFileConfigLoader,
-  JsonFileConfigLoader,
-} from './json-file-loader.js';
+import { JsonFileConfigLoader } from './json-file-loader.js';
 
 /**
  * Options for constructing a {@link PackageJsonConfigLoader}.
