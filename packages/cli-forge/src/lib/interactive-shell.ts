@@ -1,5 +1,4 @@
-import * as readline from 'readline';
-import { execSync, spawnSync } from 'child_process';
+import { readline, execSync, spawnSync } from '#shell-deps';
 import { stringToArgs } from './utils';
 import { InternalCLI } from './internal-cli';
 import { getBin } from '@cli-forge/parser';

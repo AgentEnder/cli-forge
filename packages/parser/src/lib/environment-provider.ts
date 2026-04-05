@@ -72,7 +72,7 @@ export interface FileSystemProvider {
 export {
   NodeEnvironmentProvider,
   NodeFileSystemProvider,
-} from './node-providers';
+} from '#providers';
 
 // ── In-memory implementations ────────────────────────────────────────
 
@@ -196,35 +196,19 @@ export class MemoryFileSystemProvider implements FileSystemProvider {
   }
 }
 
-// ── Environment detection ────────────────────────────────────────────
-
-/**
- * Returns `true` when running inside Node.js (or a Node-compatible runtime
- * like Bun/Deno with Node compat).  Returns `false` in browsers and other
- * non-Node environments.
- */
-function isNodeLike(): boolean {
-  return (
-    typeof process !== 'undefined' &&
-    typeof process.versions !== 'undefined' &&
-    typeof process.versions.node === 'string'
-  );
-}
-
 // ── Module-level singletons ──────────────────────────────────────────
 
+// `#providers` resolves to `./node-providers` in Node and
+// `./browser-providers` in browser via package.json "imports".
+// In browser, NodeEnvironmentProvider/NodeFileSystemProvider are
+// re-exported aliases for the Memory implementations.
 import {
   NodeEnvironmentProvider,
   NodeFileSystemProvider,
-} from './node-providers';
+} from '#providers';
 
-let _env: EnvironmentProvider = isNodeLike()
-  ? new NodeEnvironmentProvider()
-  : new MemoryEnvironmentProvider();
-
-let _fs: FileSystemProvider = isNodeLike()
-  ? new NodeFileSystemProvider()
-  : new MemoryFileSystemProvider();
+let _env: EnvironmentProvider = new NodeEnvironmentProvider();
+let _fs: FileSystemProvider = new NodeFileSystemProvider();
 
 /**
  * Return the current global {@link EnvironmentProvider}.
