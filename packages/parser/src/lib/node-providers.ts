@@ -1,16 +1,17 @@
 /**
  * Node.js-specific provider implementations.
  *
- * This module uses standard static imports of Node builtins.
- * The library build (vite.config.ts) rewrites these to dynamic
- * `import().catch()` in the ESM output so they fail gracefully
- * in browsers.  CJS output uses normal `require()`.
+ * This module uses standard static imports of Node builtins and is
+ * selected via package import conditions in Node environments.
  */
 import * as fs from 'fs';
 import * as fsPromises from 'fs/promises';
 import * as path from 'path';
 
-import type { EnvironmentProvider, FileSystemProvider } from './environment-provider';
+import type {
+  EnvironmentProvider,
+  FileSystemProvider,
+} from './environment-provider';
 
 /**
  * Default provider that delegates to Node's `process` global.
