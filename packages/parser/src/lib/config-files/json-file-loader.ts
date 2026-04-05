@@ -1,5 +1,3 @@
-import { inspect } from 'node:util';
-
 import {
   getEnvironmentProvider,
   getFileSystemProvider,
@@ -15,15 +13,13 @@ import {
 import { toFilePath, traverseForFile } from './utils.js';
 
 /**
- * Options for constructing a {@link JsonFileConfigLoader}.
+ * Options for constructing a single-file {@link JsonFileConfigLoader}.
  */
-export type JsonFileConfigLoaderOptions<T> = {
+export type JsonFileConfigLoaderSingleOptions<T> = {
   /**
-   * The filename (or array of filenames) to search for.
-   * When multiple filenames are provided, `resolve` tries each in order
-   * and returns the first match found while walking up the directory tree.
+   * The filename to search for.
    */
-  filename: string | string[];
+  filename: string;
   /**
    * Optional transform applied when loading — extracts the desired config shape from the raw JSON.
    */
@@ -35,36 +31,56 @@ export type JsonFileConfigLoaderOptions<T> = {
   writeTransform?: (json: any, config: T) => any;
 };
 
+/**
+ * Options for constructing multiple {@link JsonFileConfigLoader} providers at once.
+ */
+export type JsonFileConfigLoaderMultiOptions<T> = Omit<
+  JsonFileConfigLoaderSingleOptions<T>,
+  'filename'
+> & {
+  /**
+   * The filenames to search for.
+   * Each filename becomes its own provider so provenance and update routing stay per-file.
+   */
+  filename: string[];
+};
+
+/**
+ * Options for constructing one or more {@link JsonFileConfigLoader} providers.
+ */
+export type JsonFileConfigLoaderOptions<T> =
+  | JsonFileConfigLoaderSingleOptions<T>
+  | JsonFileConfigLoaderMultiOptions<T>;
+
+/**
+ * A single JSON file configuration provider instance.
+ */
+export interface JsonFileConfigLoader<T>
+  extends ConfigurationProvider<T, string | URL> {}
+
 function loadJsonFile(filepath: string) {
   const fs = getFileSystemProvider();
   return JSON.parse(fs.readFileSync(filepath));
 }
 
-/**
- * A configuration provider that loads configuration from a JSON file.
- * Supports multiple candidate filenames and `file://` URLs.
- */
-export class JsonFileConfigLoader<T>
-  implements ConfigurationProvider<T, string | URL>
-{
-  private readonly filenames: string[];
+class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
+  private readonly singleFilename: string;
   private readonly transform?: (json: any) => T;
   private readonly writeTransform?: (json: any, config: T) => any;
 
-  constructor(options: JsonFileConfigLoaderOptions<T>) {
-    this.filenames = Array.isArray(options.filename)
-      ? options.filename
-      : [options.filename];
+  constructor(options: JsonFileConfigLoaderSingleOptions<T>) {
+    this.singleFilename = options.filename;
     this.transform = options.transform;
     this.writeTransform = options.writeTransform;
   }
 
   resolve(configurationRoot: string): string | undefined {
-    for (const filename of this.filenames) {
-      const nearestFile = traverseForFile(filename, configurationRoot);
-      if (nearestFile && nearestFile.endsWith('.json')) {
-        return nearestFile;
-      }
+    const nearestFile = traverseForFile(
+      this.singleFilename,
+      configurationRoot
+    );
+    if (nearestFile && nearestFile.endsWith('.json')) {
+      return nearestFile;
     }
     return undefined;
   }
@@ -82,13 +98,14 @@ export class JsonFileConfigLoader<T>
     configOrUpdater: T | ((current: T) => T | Promise<T>),
     options?: { targetPath?: string | URL }
   ): Promise<void> {
+    const env = getEnvironmentProvider();
+
     if (this.transform && !this.writeTransform) {
       throw new Error(
         'Cannot update config when read transform is supplied without a write transform, doing so would set the untransformed file structure to the transformed structure, instead of updating it in place.'
       );
     }
 
-    const env = getEnvironmentProvider();
     const fs = getFileSystemProvider();
     const resolvedPath = options?.targetPath
       ? toFilePath(options.targetPath)
@@ -96,7 +113,7 @@ export class JsonFileConfigLoader<T>
 
     if (!resolvedPath) {
       throw new Error(
-        `Could not resolve configuration file "${this.filenames.join(', ')}" from ${env.cwd()}`
+        `Could not resolve configuration file "${this.singleFilename}" from ${env.cwd()}`
       );
     }
 
@@ -127,17 +144,10 @@ export class JsonFileConfigLoader<T>
   }
 
   describeConfig(): ConfigurationDocSection {
-    const filenameDisplay =
-      this.filenames.length === 1
-        ? `\`${this.filenames[0]}\``
-        : this.filenames.map((f) => `\`${f}\``).join(', ');
     const parts: string[] = [
-      `Searches for ${filenameDisplay}`,
+      `Searches for \`${this.singleFilename}\``,
       'Resolution walks up the directory tree from the working directory, using the nearest match.',
     ];
-    if (this.filenames.length > 1) {
-      parts.push('Filenames are tried in order; the first match wins.');
-    }
     if (this.transform) {
       parts.push(
         'A transform is applied to extract configuration from the file.'
@@ -145,15 +155,42 @@ export class JsonFileConfigLoader<T>
     }
     parts.push('Supports `"extends"` for configuration inheritance.');
     return {
-      heading: `JSON File: ${this.filenames.join(', ')}`,
+      heading: `JSON File: ${this.singleFilename}`,
       body: parts.join('\n\n'),
     };
   }
-
-  [inspect.custom]() {
-    return 'JsonFileConfigLoader: ' + this.filenames.join(', ');
-  }
 }
+
+type JsonFileConfigLoaderConstructor = {
+  new <T>(
+    options: JsonFileConfigLoaderSingleOptions<T>
+  ): JsonFileConfigLoader<T>;
+  new <T>(
+    options: JsonFileConfigLoaderMultiOptions<T>
+  ): JsonFileConfigLoader<T>[];
+};
+
+/**
+ * A configuration provider constructor for JSON-backed config.
+ * With a single filename it returns one provider; with multiple filenames it returns multiple providers.
+ */
+export const JsonFileConfigLoader: JsonFileConfigLoaderConstructor =
+  class JsonFileConfigLoader<T> {
+    constructor(options: JsonFileConfigLoaderOptions<T>) {
+      if (Array.isArray(options.filename)) {
+        return options.filename.map(
+          (filename) =>
+            new JsonFileConfigLoaderInstance<T>({
+              ...options,
+              filename,
+            })
+        );
+      }
+      return new JsonFileConfigLoaderInstance<T>(
+        options as JsonFileConfigLoaderSingleOptions<T>
+      );
+    }
+  } as unknown as JsonFileConfigLoaderConstructor;
 
 /**
  * A factory function to create simple configuration providers that load configuration from a JSON file.

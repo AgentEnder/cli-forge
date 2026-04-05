@@ -17,6 +17,14 @@ type AnyProvider<T> = ConfigurationProvider<T, any>;
 export type AnyConfigProvider<T> = AnyProvider<T> | AggregateConfigProvider<T>;
 
 /**
+ * A config registration can be a single provider or multiple providers.
+ * Parser/CLI registration APIs normalize arrays into separate provider entries.
+ */
+export type ConfigProviderRegistration<T> =
+  | AnyConfigProvider<T>
+  | readonly AnyConfigProvider<T>[];
+
+/**
  * A provider entry pairs a provider with optional framework-level metadata.
  */
 export type ProviderEntry<T> = {

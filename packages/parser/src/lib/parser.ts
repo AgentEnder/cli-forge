@@ -7,6 +7,7 @@ import {
 import {
   AggregateConfigProvider,
   AnyConfigProvider,
+  ConfigProviderRegistration,
   ConfigUpdater,
   ProviderEntry,
   isAggregateConfigProvider,
@@ -62,6 +63,10 @@ export type EnvOptionConfig = {
   reflect?: boolean;
   populate?: boolean;
 };
+
+type RegistrationLocation<R> = R extends readonly (infer P)[]
+  ? ExtractLocation<P>
+  : ExtractLocation<R>;
 
 /**
  * Base type for parsed arguments.
@@ -522,7 +527,7 @@ export class ArgvParser<
    * Registers a configuration provider to read configuration from.
    * @param provider The configuration provider to register.
    */
-  config(provider: AnyConfigProvider<TArgs>): this;
+  config(provider: ConfigProviderRegistration<TArgs>): this;
   /**
    * Registers a configuration provider by class and options.
    * Framework options like `default` are extracted and stored as metadata.
@@ -531,19 +536,19 @@ export class ArgvParser<
    * @param options Constructor options merged with framework options (e.g., `default`).
    */
   config<
-    C extends new (opts: any) => ConfigurationProvider<TArgs, any>,
+    C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
   >(
     ctor: C,
     options: ConstructorParameters<C>[0] & {
-      default?: DefaultConfig<ExtractLocation<InstanceType<C>>>;
+      default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
     }
   ): this;
   config<
-    C extends new (opts: any) => ConfigurationProvider<TArgs, any>,
+    C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
   >(
-    providerOrCtor: AnyConfigProvider<TArgs> | C,
+    providerOrCtor: ConfigProviderRegistration<TArgs> | C,
     options?: ConstructorParameters<C>[0] & {
-      default?: DefaultConfig<ExtractLocation<InstanceType<C>>>;
+      default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
     }
   ): this {
     if (typeof providerOrCtor === 'function') {
@@ -556,16 +561,27 @@ export class ArgvParser<
       // Constructor-based overload: extract framework opts, construct provider
       const { default: defaultConfig, ...providerOpts } = options;
       const provider = new providerOrCtor(providerOpts);
-      this.configuredConfigurationProviders.push({
-        provider: provider as unknown as AnyConfigProvider<TArgs>,
+      this.registerConfigurationProviders(provider, {
         default: defaultConfig,
       });
     } else {
-      this.configuredConfigurationProviders.push({
-        provider: providerOrCtor,
-      });
+      this.registerConfigurationProviders(providerOrCtor);
     }
     return this;
+  }
+
+  private registerConfigurationProviders(
+    providers: ConfigProviderRegistration<TArgs>,
+    metadata?: { default?: DefaultConfig<any> }
+  ) {
+    const registrations = Array.isArray(providers) ? providers : [providers];
+    for (let i = 0; i < registrations.length; i++) {
+      this.configuredConfigurationProviders.push(
+        i === 0 && metadata
+          ? { provider: registrations[i], ...metadata }
+          : { provider: registrations[i] }
+      );
+    }
   }
 
   /**

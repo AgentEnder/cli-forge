@@ -1274,6 +1274,50 @@ describe('parser', () => {
         .parse([])
     ).toEqual({ foo: 'fromA', bar: 2, unmatched: [] });
   });
+
+  it('should support registering multiple providers as an array', () => {
+    const providerA: ConfigurationProvider<any> = {
+      resolve: (dir) => join(dir, '.configA'),
+      load: () => ({ foo: 'fromA' }),
+    };
+    const providerB: ConfigurationProvider<any> = {
+      resolve: (dir) => join(dir, '.configB'),
+      load: () => ({ bar: 2 }),
+    };
+
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .config([providerA, providerB])
+        .parse([])
+    ).toEqual({ foo: 'fromA', bar: 2, unmatched: [] });
+  });
+
+  it('should support constructors that register multiple providers', () => {
+    class LoaderPair {
+      constructor(options: { foo: string; bar: number }) {
+        return [
+          {
+            resolve: () => 'a',
+            load: () => ({ foo: options.foo }),
+          },
+          {
+            resolve: () => 'b',
+            load: () => ({ bar: options.bar }),
+          },
+        ] as ConfigurationProvider<any>[];
+      }
+    }
+
+    expect(
+      parser()
+        .option('foo', { type: 'string' })
+        .option('bar', { type: 'number' })
+        .config(LoaderPair, { foo: 'hello', bar: 42 })
+        .parse([])
+    ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
+  });
 });
 
 

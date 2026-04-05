@@ -1,5 +1,3 @@
-import { inspect } from 'node:util';
-
 import { ConfigurationProvider } from './configuration-loader.js';
 import { JsonFileConfigLoader } from './json-file-loader.js';
 
@@ -44,7 +42,7 @@ export class PackageJsonConfigLoader<T>
     configOrUpdater: T | ((current: T) => T | Promise<T>),
     options?: { targetPath?: string | URL }
   ) {
-    return this.inner.updateConfig(configOrUpdater, options);
+    return this.inner.updateConfig!(configOrUpdater, options);
   }
 
   describeConfig() {
@@ -60,10 +58,6 @@ export class PackageJsonConfigLoader<T>
         '```',
       ].join('\n'),
     };
-  }
-
-  [inspect.custom]() {
-    return 'PackageJsonConfigurationLoader: ' + this.key;
   }
 }
 
