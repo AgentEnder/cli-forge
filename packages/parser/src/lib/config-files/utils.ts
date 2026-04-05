@@ -1,5 +1,3 @@
-import { fileURLToPath } from 'node:url';
-
 import { getFileSystemProvider } from '../environment-provider';
 
 export function traverseForFile(
@@ -24,9 +22,31 @@ export function traverseForFile(
 
 /**
  * Normalizes a string or URL to a file system path string.
- * If given a URL, converts it via `fileURLToPath` (only `file://` URLs are supported).
+ * If given a file URL, converts it without depending on Node-only modules.
  * If given a string, returns it as-is.
  */
 export function toFilePath(pathOrUrl: string | URL): string {
-  return pathOrUrl instanceof URL ? fileURLToPath(pathOrUrl) : pathOrUrl;
+  if (!(pathOrUrl instanceof URL)) {
+    return pathOrUrl;
+  }
+
+  if (pathOrUrl.protocol !== 'file:') {
+    throw new Error(
+      `Unsupported URL protocol "${pathOrUrl.protocol}" for configuration file path.`
+    );
+  }
+
+  let pathname = decodeURIComponent(pathOrUrl.pathname);
+
+  // Normalize Windows file URLs like file:///C:/path/to/file.json.
+  if (/^\/[A-Za-z]:/.test(pathname)) {
+    pathname = pathname.slice(1);
+  }
+
+  // Preserve UNC-style file URLs like file://server/share/config.json.
+  if (pathOrUrl.host) {
+    return `//${pathOrUrl.host}${pathname}`;
+  }
+
+  return pathname;
 }

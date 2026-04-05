@@ -449,7 +449,7 @@ export interface CLI<
    * @param provider Provider to register.
    */
   config(
-    provider: ConfigurationFiles.AnyConfigProvider<TArgs>
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
@@ -462,12 +462,14 @@ export interface CLI<
   config<
     C extends new (
       opts: any
-    ) => ConfigurationFiles.ConfigurationProvider<TArgs, any>,
+    ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
   >(
     ctor: C,
     options: ConstructorParameters<C>[0] & {
       default?: ConfigurationFiles.DefaultConfig<
-        ConfigurationFiles.ExtractLocation<InstanceType<C>>
+        InstanceType<C> extends readonly (infer P)[]
+          ? ConfigurationFiles.ExtractLocation<P>
+          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
       >;
     }
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
