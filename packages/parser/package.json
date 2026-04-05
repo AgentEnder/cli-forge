@@ -24,18 +24,19 @@
         "types": "./dist/lib/node-providers.d.mts",
         "import": "./dist/lib/node-providers.mjs",
         "require": "./dist/lib/node-providers.cjs",
-        "default": "./dist/lib/node-providers.cjs"
+        "default": "./src/lib/node-providers.ts"
       },
       "default": {
         "types": "./dist/lib/browser-providers.d.mts",
         "import": "./dist/lib/browser-providers.mjs",
         "require": "./dist/lib/browser-providers.cjs",
-        "default": "./dist/lib/browser-providers.cjs"
+        "default": "./src/lib/browser-providers.ts"
       }
     }
   },
   "exports": {
     ".": {
+      "browser": "./dist/browser/index.mjs",
       "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
       "require": "./dist/index.cjs",
