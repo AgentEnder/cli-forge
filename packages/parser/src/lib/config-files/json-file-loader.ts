@@ -15,17 +15,15 @@ import {
 import { toFilePath, traverseForFile } from './utils.js';
 
 /**
- * Options for constructing a single-file {@link JsonFileConfigLoader}.
- * For multiple candidate filenames, use {@link getJsonFileConfigLoader} with
- * its `string[]` overload, which returns an {@link AggregateConfigProvider}.
+ * Options for constructing a {@link JsonFileConfigLoader}.
  */
 export type JsonFileConfigLoaderOptions<T> = {
   /**
-   * The filename to search for. The {@link JsonFileConfigLoader} constructor
-   * only accepts a single filename. For multiple filenames, use
-   * {@link getJsonFileConfigLoader} which wraps each in its own loader.
+   * The filename (or array of filenames) to search for.
+   * When multiple filenames are provided, `resolve` tries each in order
+   * and returns the first match found while walking up the directory tree.
    */
-  filename: string;
+  filename: string | string[];
   /**
    * Optional transform applied when loading — extracts the desired config shape from the raw JSON.
    */
@@ -44,34 +42,29 @@ function loadJsonFile(filepath: string) {
 
 /**
  * A configuration provider that loads configuration from a JSON file.
- * Supports `file://` URLs for ESM-friendly usage.
+ * Supports multiple candidate filenames and `file://` URLs.
  */
 export class JsonFileConfigLoader<T>
   implements ConfigurationProvider<T, string | URL>
 {
-  private readonly singleFilename: string;
+  private readonly filenames: string[];
   private readonly transform?: (json: any) => T;
   private readonly writeTransform?: (json: any, config: T) => any;
 
   constructor(options: JsonFileConfigLoaderOptions<T>) {
-    if (Array.isArray(options.filename)) {
-      throw new Error(
-        'JsonFileConfigLoader does not accept an array of filenames. ' +
-          'Use getJsonFileConfigLoader() or pass a single filename.'
-      );
-    }
-    this.singleFilename = options.filename;
+    this.filenames = Array.isArray(options.filename)
+      ? options.filename
+      : [options.filename];
     this.transform = options.transform;
     this.writeTransform = options.writeTransform;
   }
 
   resolve(configurationRoot: string): string | undefined {
-    const nearestFile = traverseForFile(
-      this.singleFilename,
-      configurationRoot
-    );
-    if (nearestFile && nearestFile.endsWith('.json')) {
-      return nearestFile;
+    for (const filename of this.filenames) {
+      const nearestFile = traverseForFile(filename, configurationRoot);
+      if (nearestFile && nearestFile.endsWith('.json')) {
+        return nearestFile;
+      }
     }
     return undefined;
   }
@@ -103,7 +96,7 @@ export class JsonFileConfigLoader<T>
 
     if (!resolvedPath) {
       throw new Error(
-        `Could not resolve configuration file "${this.singleFilename}" from ${env.cwd()}`
+        `Could not resolve configuration file "${this.filenames.join(', ')}" from ${env.cwd()}`
       );
     }
 
@@ -134,10 +127,17 @@ export class JsonFileConfigLoader<T>
   }
 
   describeConfig(): ConfigurationDocSection {
+    const filenameDisplay =
+      this.filenames.length === 1
+        ? `\`${this.filenames[0]}\``
+        : this.filenames.map((f) => `\`${f}\``).join(', ');
     const parts: string[] = [
-      `Searches for \`${this.singleFilename}\``,
+      `Searches for ${filenameDisplay}`,
       'Resolution walks up the directory tree from the working directory, using the nearest match.',
     ];
+    if (this.filenames.length > 1) {
+      parts.push('Filenames are tried in order; the first match wins.');
+    }
     if (this.transform) {
       parts.push(
         'A transform is applied to extract configuration from the file.'
@@ -145,13 +145,13 @@ export class JsonFileConfigLoader<T>
     }
     parts.push('Supports `"extends"` for configuration inheritance.');
     return {
-      heading: `JSON File: ${this.singleFilename}`,
+      heading: `JSON File: ${this.filenames.join(', ')}`,
       body: parts.join('\n\n'),
     };
   }
 
   [inspect.custom]() {
-    return 'JsonFileConfigLoader: ' + this.singleFilename;
+    return 'JsonFileConfigLoader: ' + this.filenames.join(', ');
   }
 }
 
