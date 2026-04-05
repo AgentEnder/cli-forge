@@ -1,8 +1,14 @@
+import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/packages/parser',
+  resolve: {
+    alias: {
+      '#providers': resolve(__dirname, 'src/lib/node-providers.ts'),
+    },
+  },
 
   test: {
     watch: false,
