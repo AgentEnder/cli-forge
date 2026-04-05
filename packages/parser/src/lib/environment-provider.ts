@@ -69,12 +69,10 @@ export interface FileSystemProvider {
 }
 
 // ── Re-export Node implementations ───────────────────────────────────
-// These live in a separate module that uses top-level await to
-// dynamically import Node builtins.  In CJS builds Rollup converts
-// the `await import('fs')` to synchronous `require('fs')`.  In ESM
-// browser builds the imports fail silently via `.catch()`.
-
-export { NodeEnvironmentProvider, NodeFileSystemProvider } from './node-providers';
+export {
+  NodeEnvironmentProvider,
+  NodeFileSystemProvider,
+} from './node-providers';
 
 // ── In-memory implementations ────────────────────────────────────────
 
@@ -86,10 +84,7 @@ export class MemoryEnvironmentProvider implements EnvironmentProvider {
   private readonly env: Record<string, string>;
   private readonly workingDirectory: string;
 
-  constructor(opts?: {
-    env?: Record<string, string>;
-    cwd?: string;
-  }) {
+  constructor(opts?: { env?: Record<string, string>; cwd?: string }) {
     this.env = { ...opts?.env };
     this.workingDirectory = opts?.cwd ?? '/';
   }

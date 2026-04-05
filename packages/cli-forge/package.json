@@ -2,7 +2,7 @@
   "name": "cli-forge",
   "version": "1.7.2",
   "scripts": {
-    "build:vite": "vite build"
+    "build:tsdown": "tsdown"
   },
   "dependencies": {
     "@cli-forge/parser": "workspace:*",
@@ -30,13 +30,10 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "vite": "catalog:"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "typings": "./dist/index.d.ts",
+  "typings": "./dist/index.d.mts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
   "repository": {
@@ -49,45 +46,51 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./cli": {
-      "require": "./dist/bin/cli.js",
-      "types": "./dist/bin/cli.d.ts"
+      "types": "./dist/bin/cli.d.mts",
+      "import": "./dist/bin/cli.mjs",
+      "require": "./dist/bin/cli.cjs"
     },
     "./middleware": {
-      "types": "./dist/middleware.d.ts",
+      "types": "./dist/middleware.d.mts",
       "import": "./dist/middleware.mjs",
-      "require": "./dist/middleware.js"
+      "require": "./dist/middleware.cjs"
     },
     "./middleware/*": {
-      "types": "./dist/middleware/*.d.ts",
+      "types": "./dist/middleware/*.d.mts",
       "import": "./dist/middleware/*.mjs",
-      "require": "./dist/middleware/*.js"
+      "require": "./dist/middleware/*.cjs"
     },
     "./prompt-providers/clack": {
-      "types": "./dist/prompt-providers/clack.d.ts",
+      "types": "./dist/prompt-providers/clack.d.mts",
       "import": "./dist/prompt-providers/clack.mjs",
-      "require": "./dist/prompt-providers/clack.js"
+      "require": "./dist/prompt-providers/clack.cjs"
     },
     "./package.json": "./package.json"
   },
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": ["^build"],
-        "inputs": ["production", "^production"],
-        "outputs": ["{projectRoot}/dist"],
+        "dependsOn": [
+          "^build"
+        ],
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
         "executor": "nx:run-commands",
         "options": {
           "cwd": "{projectRoot}",
           "commands": [
-            "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
-            "tsc --build tsconfig.lib.json --force",
-            "vite build"
+            "pnpm run build:tsdown"
           ],
           "parallel": false
         }

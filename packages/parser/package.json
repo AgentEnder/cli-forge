@@ -2,18 +2,15 @@
   "name": "@cli-forge/parser",
   "version": "1.7.2",
   "scripts": {
-    "build:vite": "vite build"
+    "build:tsdown": "tsdown"
   },
   "dependencies": {
     "tslib": "catalog:"
   },
-  "devDependencies": {
-    "vite": "catalog:"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
+  "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
-  "typings": "./dist/index.d.ts",
+  "typings": "./dist/index.d.mts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
   "repository": {
@@ -23,10 +20,10 @@
   },
   "exports": {
     ".": {
-      "types": "./dist/index.d.ts",
+      "types": "./dist/index.d.mts",
       "import": "./dist/index.mjs",
-      "require": "./dist/index.js",
-      "default": "./dist/index.js"
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },
@@ -37,16 +34,21 @@
   "nx": {
     "targets": {
       "build": {
-        "dependsOn": ["^build"],
-        "inputs": ["production", "^production"],
-        "outputs": ["{projectRoot}/dist"],
+        "dependsOn": [
+          "^build"
+        ],
+        "inputs": [
+          "production",
+          "^production"
+        ],
+        "outputs": [
+          "{projectRoot}/dist"
+        ],
         "executor": "nx:run-commands",
         "options": {
           "cwd": "{projectRoot}",
           "commands": [
-            "node -e \"fs.rmSync('dist',{recursive:true,force:true})\"",
-            "tsc --build tsconfig.lib.json --force",
-            "vite build"
+            "pnpm run build:tsdown"
           ],
           "parallel": false
         }
