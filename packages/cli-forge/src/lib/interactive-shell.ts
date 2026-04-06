@@ -1,4 +1,4 @@
-import { readline, execSync, spawnSync } from '#shell-deps';
+import { readline, execSync, spawnSync } from './node-shell-deps';
 import { stringToArgs } from './utils';
 import { InternalCLI } from './internal-cli';
 import { getBin } from '@cli-forge/parser';

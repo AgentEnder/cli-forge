@@ -44,20 +44,6 @@
   "bin": {
     "cli-forge": "./cli.js"
   },
-  "imports": {
-    "#shell-deps": {
-      "node": {
-        "import": "./dist/lib/node-shell-deps.mjs",
-        "require": "./dist/lib/node-shell-deps.cjs",
-        "default": "./src/lib/node-shell-deps.ts"
-      },
-      "default": {
-        "import": "./dist/lib/browser-shell-deps.mjs",
-        "require": "./dist/lib/browser-shell-deps.cjs",
-        "default": "./src/lib/browser-shell-deps.ts"
-      }
-    }
-  },
   "exports": {
     ".": {
       "browser": "./dist/browser/index.mjs",

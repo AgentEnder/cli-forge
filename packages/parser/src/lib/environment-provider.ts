@@ -72,7 +72,7 @@ export interface FileSystemProvider {
 export {
   NodeEnvironmentProvider,
   NodeFileSystemProvider,
-} from '#providers';
+} from './node-providers';
 
 // ── In-memory implementations ────────────────────────────────────────
 
@@ -198,14 +198,10 @@ export class MemoryFileSystemProvider implements FileSystemProvider {
 
 // ── Module-level singletons ──────────────────────────────────────────
 
-// `#providers` resolves to `./node-providers` in Node and
-// `./browser-providers` in browser via package.json "imports".
-// In browser, NodeEnvironmentProvider/NodeFileSystemProvider are
-// re-exported aliases for the Memory implementations.
 import {
   NodeEnvironmentProvider,
   NodeFileSystemProvider,
-} from '#providers';
+} from './node-providers';
 
 let _env: EnvironmentProvider = new NodeEnvironmentProvider();
 let _fs: FileSystemProvider = new NodeFileSystemProvider();

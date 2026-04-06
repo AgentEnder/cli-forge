@@ -1,19 +1,28 @@
 import { resolve } from 'path';
 import { defineConfig } from 'tsdown';
 
-/** Rolldown plugin that resolves `#shell-deps` to a concrete file. */
-function resolveShellDeps(target) {
+/**
+ * Rolldown plugin for the browser build that swaps the Node shell-deps
+ * module for the browser stub.
+ */
+function browserShellDeps() {
   return {
-    name: 'resolve-shell-deps',
-    resolveId(source) {
-      if (source === '#shell-deps') return resolve(target);
+    name: 'browser-shell-deps',
+    resolveId(source, importer) {
+      if (
+        importer &&
+        (source === './node-shell-deps' ||
+          source.endsWith('/node-shell-deps'))
+      ) {
+        return resolve('src/lib/browser-shell-deps.ts');
+      }
       return null;
     },
   };
 }
 
 export default defineConfig([
-  // Node builds (CJS + ESM) with declarations — preserve #shell-deps as-is
+  // Node builds (CJS + ESM) with declarations
   {
     entry: ['src/**/*.ts', '!src/**/*.spec.ts', '!src/**/*.test.ts'],
     format: ['esm', 'cjs'],
@@ -30,7 +39,7 @@ export default defineConfig([
     platform: 'node',
     exports: false,
   },
-  // Browser build (ESM only, single bundle) — resolves #shell-deps to browser stubs
+  // Browser build (ESM only, single bundle)
   {
     entry: { index: 'src/index.ts' },
     format: ['esm'],
@@ -39,6 +48,6 @@ export default defineConfig([
     sourcemap: true,
     platform: 'browser',
     exports: false,
-    plugins: [resolveShellDeps('src/lib/browser-shell-deps.ts')],
+    plugins: [browserShellDeps()],
   },
 ]);
