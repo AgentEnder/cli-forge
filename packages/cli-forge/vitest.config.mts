@@ -1,14 +1,8 @@
-import { resolve } from 'path';
 import { defineConfig } from 'vite';
 
 export default defineConfig({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/packages/cli-forge',
-  resolve: {
-    alias: {
-      '#shell-deps': resolve(__dirname, 'src/lib/node-shell-deps.ts'),
-    },
-  },
 
   test: {
     watch: false,

@@ -46,18 +46,8 @@
   },
   "imports": {
     "#shell-deps": {
-      "node": {
-        "types": "./dist/lib/node-shell-deps.d.mts",
-        "import": "./dist/lib/node-shell-deps.mjs",
-        "require": "./dist/lib/node-shell-deps.cjs",
-        "default": "./src/lib/node-shell-deps.ts"
-      },
-      "default": {
-        "types": "./dist/lib/browser-shell-deps.d.mts",
-        "import": "./dist/lib/browser-shell-deps.mjs",
-        "require": "./dist/lib/browser-shell-deps.cjs",
-        "default": "./src/lib/browser-shell-deps.ts"
-      }
+      "node": "./src/lib/node-shell-deps.ts",
+      "default": "./src/lib/browser-shell-deps.ts"
     }
   },
   "exports": {
