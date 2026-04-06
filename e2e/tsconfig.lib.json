@@ -12,9 +12,6 @@
   "references": [
     {
       "path": "../tools/scripts/tsconfig.lib.json"
-    },
-    {
-      "path": "../packages/cli-forge/tsconfig.lib.json"
     }
   ]
 }

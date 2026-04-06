@@ -3,12 +3,8 @@
   "compilerOptions": {
     "baseUrl": ".",
     "rootDir": "src",
-    "outDir": "dist",
-    "declaration": true,
-    "emitDeclarationOnly": true,
-    "composite": true,
+    "noEmit": true,
     "types": ["node"],
-    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo",
     "noImplicitAny": true
   },
   "include": ["src/**/*.ts"],
@@ -17,6 +13,5 @@
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "src/**/type-debug.ts"
-  ],
-  "references": []
+  ]
 }

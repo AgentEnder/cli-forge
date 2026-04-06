@@ -51,7 +51,7 @@ jobs:
     # the GITHUB_TOKEN for fork PRs does not have `contents: write` permission
     # to push to gh-pages. This is expected — only PRs from branches within this
     # repository will have docs previews automatically deployed. For fork PRs, a
-    # maintainer can manually trigger a preview by commenting `@ci preview docs`
+    # maintainer can manually trigger a preview by commenting `@preview docs`
     # (handled by the pkg-pr-new workflow).
     runs-on: ubuntu-latest
     needs: build

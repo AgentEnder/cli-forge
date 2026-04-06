@@ -25,7 +25,7 @@ env:
 jobs:
   publish_pr_branch_to_pkg_pr_new:
     name: Publish PR branch to pkg.pr.new
-    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@ci preview publish'
+    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && contains(github.event.review.body, '@preview publish')
     runs-on: ubuntu-latest
     steps:
       - name: React with eyes to review comment
@@ -40,7 +40,7 @@ jobs:
               issue_number: ${{ github.event.pull_request.number }},
             });
             // The review body appears as the last comment matching our trigger text
-            const triggerComment = comments.reverse().find(c => c.body.trim() === '@ci preview publish');
+            const triggerComment = comments.reverse().find(c => c.body?.includes('@preview publish'));
             if (triggerComment) {
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
@@ -118,7 +118,7 @@ jobs:
 
   preview_docs:
     name: Deploy docs preview
-    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@ci preview docs'
+    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && contains(github.event.review.body, '@preview docs')
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -134,7 +134,7 @@ jobs:
               repo: context.repo.repo,
               issue_number: ${{ github.event.pull_request.number }},
             });
-            const triggerComment = comments.reverse().find(c => c.body.trim() === '@ci preview docs');
+            const triggerComment = comments.reverse().find(c => c.body?.includes('@preview docs'));
             if (triggerComment) {
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,

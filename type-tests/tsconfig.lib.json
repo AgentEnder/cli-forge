@@ -12,12 +12,5 @@
   },
   "include": ["src/**/*.ts"],
   "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
-  "references": [
-    {
-      "path": "../packages/parser/tsconfig.lib.json"
-    },
-    {
-      "path": "../packages/cli-forge/tsconfig.lib.json"
-    }
-  ]
+  "references": []
 }

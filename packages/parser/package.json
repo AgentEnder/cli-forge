@@ -2,7 +2,7 @@
   "name": "@cli-forge/parser",
   "version": "1.7.2",
   "scripts": {
-    "build:tsdown": "tsdown"
+    "build": "tsdown"
   },
   "dependencies": {
     "tslib": "catalog:"
@@ -32,30 +32,6 @@
     "dist/**/*",
     "**/*.md"
   ],
-  "nx": {
-    "targets": {
-      "build": {
-        "dependsOn": [
-          "^build"
-        ],
-        "inputs": [
-          "production",
-          "^production"
-        ],
-        "outputs": [
-          "{projectRoot}/dist"
-        ],
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "commands": [
-            "pnpm run build:tsdown"
-          ],
-          "parallel": false
-        }
-      }
-    }
-  },
   "publishConfig": {
     "access": "public"
   }

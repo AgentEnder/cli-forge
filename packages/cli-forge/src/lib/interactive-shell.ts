@@ -1,4 +1,5 @@
 import { readline, execSync, spawnSync } from './node-shell-deps';
+import type { Interface as ReadlineInterface } from 'readline';
 import { stringToArgs } from './utils';
 import { InternalCLI } from './internal-cli';
 import { getBin } from '@cli-forge/parser';
@@ -33,7 +34,7 @@ function normalizeShellOptions(
 export let INTERACTIVE_SHELL: InteractiveShell | undefined;
 
 export class InteractiveShell {
-  private readonly rl: readline.Interface;
+  private readonly rl: ReadlineInterface;
   private listeners: any[] = [];
 
   constructor(cli: InternalCLI<any>, opts?: InteractiveShellOptions) {

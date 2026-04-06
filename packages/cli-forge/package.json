@@ -2,7 +2,7 @@
   "name": "cli-forge",
   "version": "1.7.2",
   "scripts": {
-    "build:tsdown": "tsdown"
+    "build": "tsdown"
   },
   "dependencies": {
     "@cli-forge/parser": "workspace:*",
@@ -73,30 +73,6 @@
       "require": "./dist/prompt-providers/clack.cjs"
     },
     "./package.json": "./package.json"
-  },
-  "nx": {
-    "targets": {
-      "build": {
-        "dependsOn": [
-          "^build"
-        ],
-        "inputs": [
-          "production",
-          "^production"
-        ],
-        "outputs": [
-          "{projectRoot}/dist"
-        ],
-        "executor": "nx:run-commands",
-        "options": {
-          "cwd": "{projectRoot}",
-          "commands": [
-            "pnpm run build:tsdown"
-          ],
-          "parallel": false
-        }
-      }
-    }
   },
   "publishConfig": {
     "access": "public"
