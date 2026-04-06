@@ -25,7 +25,7 @@ env:
 jobs:
   publish_pr_branch_to_pkg_pr_new:
     name: Publish PR branch to pkg.pr.new
-    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@pkg-pr-new publish'
+    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@ci preview publish'
     runs-on: ubuntu-latest
     steps:
       - name: React with eyes to review comment
@@ -40,7 +40,7 @@ jobs:
               issue_number: ${{ github.event.pull_request.number }},
             });
             // The review body appears as the last comment matching our trigger text
-            const triggerComment = comments.reverse().find(c => c.body.trim() === '@pkg-pr-new publish');
+            const triggerComment = comments.reverse().find(c => c.body.trim() === '@ci preview publish');
             if (triggerComment) {
               await github.rest.reactions.createForIssueComment({
                 owner: context.repo.owner,
@@ -99,6 +99,127 @@ jobs:
 
       - name: Publish PR branch to pkg.pr.new
         run: pnpm dlx pkg-pr-new publish --pnpm --compact --peerDeps --no-template --comment=update './packages/*'
+
+      - name: React with check to review comment
+        if: success()
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const commentId = process.env.TRIGGER_COMMENT_ID;
+            if (commentId) {
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: Number(commentId),
+                content: 'rocket',
+              });
+            }
+
+  preview_docs:
+    name: Deploy docs preview
+    if: github.actor == 'AgentEnder' && github.event.review.state == 'commented' && github.event.review.body == '@ci preview docs'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: React with eyes to review comment
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const comments = await github.paginate(github.rest.issues.listComments, {
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: ${{ github.event.pull_request.number }},
+            });
+            const triggerComment = comments.reverse().find(c => c.body.trim() === '@ci preview docs');
+            if (triggerComment) {
+              await github.rest.reactions.createForIssueComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: triggerComment.id,
+                content: 'eyes',
+              });
+              core.exportVariable('TRIGGER_COMMENT_ID', triggerComment.id);
+            }
+
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          run_install: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: ''
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile --prefer-offline --ignore-scripts
+
+      - name: Build docs preview
+        run: pnpm nx build docs-site
+        env:
+          PREVIEW_PATH: pr/${{ github.event.pull_request.number }}
+          BASE_URL: /cli-forge/pr/${{ github.event.pull_request.number }}
+
+      - name: Deploy preview to gh-pages
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PREVIEW_DIR="pr/${PR_NUMBER}"
+
+          git clone --branch gh-pages --single-branch --depth 1 \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            gh-pages-repo
+
+          rm -rf "gh-pages-repo/${PREVIEW_DIR}"
+          mkdir -p "gh-pages-repo/${PREVIEW_DIR}"
+          cp -r docs-site/dist/client/* "gh-pages-repo/${PREVIEW_DIR}/"
+
+          cd gh-pages-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy docs preview for PR #${PR_NUMBER}" --allow-empty
+          git push origin gh-pages
+
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://craigory.dev/cli-forge/pr/${prNumber}/`;
+            const marker = '<!-- docs-preview-comment -->';
+            const body = `${marker}\n**Docs Preview:** ${previewUrl}`;
+
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
 
       - name: React with check to review comment
         if: success()
