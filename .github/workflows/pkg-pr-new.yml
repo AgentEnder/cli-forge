@@ -33,23 +33,17 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            // Find the timeline comment associated with this review
-            const comments = await github.paginate(github.rest.issues.listComments, {
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: ${{ github.event.pull_request.number }},
-            });
-            // The review body appears as the last comment matching our trigger text
-            const triggerComment = comments.reverse().find(c => c.body?.includes('@preview publish'));
-            if (triggerComment) {
-              await github.rest.reactions.createForIssueComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: triggerComment.id,
-                content: 'eyes',
-              });
-              core.exportVariable('TRIGGER_COMMENT_ID', triggerComment.id);
-            }
+<<<<<<< HEAD
+            // React directly to the triggering review via GraphQL using its node_id
+            const reviewNodeId = '${{ github.event.review.node_id }}';
+            await github.graphql(`
+              mutation($subjectId: ID!) {
+                addReaction(input: {subjectId: $subjectId, content: EYES}) {
+                  reaction { content }
+                }
+              }
+            `, { subjectId: reviewNodeId });
+            core.exportVariable('REVIEW_NODE_ID', reviewNodeId);
 
       - name: Print review comment SHA
         run: echo "${{ github.event.review.commit_id }}"
@@ -100,20 +94,21 @@ jobs:
       - name: Publish PR branch to pkg.pr.new
         run: pnpm dlx pkg-pr-new publish --pnpm --compact --peerDeps --no-template --comment=update './packages/*'
 
-      - name: React with check to review comment
+      - name: React with rocket to review comment
         if: success()
         uses: actions/github-script@v7
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const commentId = process.env.TRIGGER_COMMENT_ID;
-            if (commentId) {
-              await github.rest.reactions.createForIssueComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: Number(commentId),
-                content: 'rocket',
-              });
+            const reviewNodeId = process.env.REVIEW_NODE_ID;
+            if (reviewNodeId) {
+              await github.graphql(`
+                mutation($subjectId: ID!) {
+                  addReaction(input: {subjectId: $subjectId, content: ROCKET}) {
+                    reaction { content }
+                  }
+                }
+              `, { subjectId: reviewNodeId });
             }
 
   preview_docs:
