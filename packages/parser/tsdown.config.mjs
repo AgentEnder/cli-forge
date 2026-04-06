@@ -1,23 +1,19 @@
 import { resolve } from 'path';
 import { defineConfig } from 'tsdown';
 
-/** Rolldown plugin that resolves `#providers` based on platform. */
-function resolveProviders(platform) {
-  const target =
-    platform === 'browser'
-      ? resolve('src/lib/browser-providers.ts')
-      : resolve('src/lib/node-providers.ts');
+/** Rolldown plugin that resolves `#providers` to a concrete file. */
+function resolveProviders(target) {
   return {
     name: 'resolve-providers',
     resolveId(source) {
-      if (source === '#providers') return target;
+      if (source === '#providers') return resolve(target);
       return null;
     },
   };
 }
 
 export default defineConfig([
-  // Node builds (CJS + ESM) with declarations
+  // Node builds (CJS + ESM) with declarations — preserve #providers as-is
   {
     entry: [
       'src/**/*.ts',
@@ -38,9 +34,8 @@ export default defineConfig([
     fixedExtension: true,
     platform: 'node',
     exports: false,
-    plugins: [resolveProviders('node')],
   },
-  // Browser build (ESM only, single bundle)
+  // Browser build (ESM only, single bundle) — resolves #providers to browser stubs
   {
     entry: { index: 'src/index.ts' },
     format: ['esm'],
@@ -49,6 +44,6 @@ export default defineConfig([
     sourcemap: true,
     platform: 'browser',
     exports: false,
-    plugins: [resolveProviders('browser')],
+    plugins: [resolveProviders('src/lib/browser-providers.ts')],
   },
 ]);

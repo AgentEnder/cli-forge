@@ -46,8 +46,16 @@
   },
   "imports": {
     "#shell-deps": {
-      "node": "./src/lib/node-shell-deps.ts",
-      "default": "./src/lib/browser-shell-deps.ts"
+      "node": {
+        "import": "./dist/lib/node-shell-deps.mjs",
+        "require": "./dist/lib/node-shell-deps.cjs",
+        "default": "./src/lib/node-shell-deps.ts"
+      },
+      "default": {
+        "import": "./dist/lib/browser-shell-deps.mjs",
+        "require": "./dist/lib/browser-shell-deps.cjs",
+        "default": "./src/lib/browser-shell-deps.ts"
+      }
     }
   },
   "exports": {

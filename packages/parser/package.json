@@ -20,8 +20,16 @@
   },
   "imports": {
     "#providers": {
-      "node": "./src/lib/node-providers.ts",
-      "default": "./src/lib/browser-providers.ts"
+      "node": {
+        "import": "./dist/lib/node-providers.mjs",
+        "require": "./dist/lib/node-providers.cjs",
+        "default": "./src/lib/node-providers.ts"
+      },
+      "default": {
+        "import": "./dist/lib/browser-providers.mjs",
+        "require": "./dist/lib/browser-providers.cjs",
+        "default": "./src/lib/browser-providers.ts"
+      }
     }
   },
   "exports": {
