@@ -35,6 +35,7 @@
     "prettier": "catalog:",
     "style-loader": "catalog:",
     "ts-jest": "catalog:",
+    "tsdown": "^0.21.7",
     "tsx": "catalog:",
     "typescript": "catalog:",
     "verdaccio": "catalog:",

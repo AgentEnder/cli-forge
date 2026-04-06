@@ -1,5 +1,4 @@
-import { existsSync, readFileSync } from 'fs';
-import { join, resolve } from 'path';
+import { getFileSystemProvider } from '@cli-forge/parser';
 import { CLI } from './public-api';
 
 export function getCallingFile() {
@@ -46,19 +45,21 @@ export function getCallingFile() {
 }
 
 export function getParentPackageJson(searchPath: string) {
+  const fs = getFileSystemProvider();
+
   let currentPath = searchPath;
   let packageJsonPath: string | undefined;
 
-  // eslint-disable-next-line no-constant-condition
+   
   while (true) {
-    const packagePath = join(currentPath, 'package.json');
+    const packagePath = fs.join(currentPath, 'package.json');
 
-    if (existsSync(packagePath)) {
+    if (fs.existsSync(packagePath)) {
       packageJsonPath = packagePath;
       break;
     }
 
-    const nextPath = resolve(currentPath, '..');
+    const nextPath = fs.resolve(currentPath, '..');
 
     if (nextPath === currentPath) {
       break;
@@ -71,7 +72,7 @@ export function getParentPackageJson(searchPath: string) {
     throw new Error('Could not find package.json');
   }
 
-  return JSON.parse(readFileSync(packageJsonPath, 'utf-8')) as {
+  return JSON.parse(fs.readFileSync(packageJsonPath)) as {
     name: string;
     version: string;
     bin?: {
@@ -98,7 +99,7 @@ export function stringToArgs(str: string) {
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
     if (activeQuote) {
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         if (i >= str.length) {
           break;

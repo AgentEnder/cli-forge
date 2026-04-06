@@ -1,7 +1,4 @@
-import { readFileSync } from 'fs';
-import { writeFile } from 'fs/promises';
-import { inspect } from 'util';
-
+import { getEnvironmentProvider, getFileSystemProvider } from '../environment-provider.js';
 import {
   AggregateConfigProvider,
   AnyConfigProvider,
@@ -54,7 +51,8 @@ export function getJsonFileConfigLoader<T>(
   const singleFilename: string = filename;
 
   function loadJsonFile(filepath: string) {
-    return JSON.parse(readFileSync(filepath, 'utf-8'));
+    const fs = getFileSystemProvider();
+    return JSON.parse(fs.readFileSync(filepath));
   }
 
   class JsonFileConfigLoader {
@@ -83,10 +81,13 @@ export function getJsonFileConfigLoader<T>(
         );
       }
 
-      const resolvedPath = this.resolve(process.cwd());
+      const env = getEnvironmentProvider();
+      const fs = getFileSystemProvider();
+
+      const resolvedPath = this.resolve(env.cwd());
       if (!resolvedPath) {
         throw new Error(
-          `Could not resolve configuration file "${singleFilename}" from ${process.cwd()}`
+          `Could not resolve configuration file "${singleFilename}" from ${env.cwd()}`
         );
       }
 
@@ -105,7 +106,7 @@ export function getJsonFileConfigLoader<T>(
           ? writeTransform(fullJson, newConfig)
           : newConfig;
 
-      await writeFile(resolvedPath, JSON.stringify(outputJson, null, 2) + '\n');
+      await fs.writeFile(resolvedPath, JSON.stringify(outputJson, null, 2) + '\n');
     }
 
     describeConfig(): ConfigurationDocSection {
@@ -125,7 +126,7 @@ export function getJsonFileConfigLoader<T>(
       };
     }
 
-    [inspect.custom]() {
+    [Symbol.for('nodejs.util.inspect.custom')]() {
       return 'JsonFileConfigLoader: ' + singleFilename;
     }
   }

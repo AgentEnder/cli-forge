@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/no-empty-object-type */
+ 
 import {
   ArgvParser,
   EnvOptionConfig,
@@ -13,7 +13,16 @@ import {
 } from '@cli-forge/parser';
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { formatHelp } from './format-help';
-import { INTERACTIVE_SHELL, InteractiveShell } from './interactive-shell';
+// Lazy-imported to avoid pulling Node-only modules (readline, child_process)
+// into the module graph when bundled for the browser.
+type InteractiveShellModule = typeof import('./interactive-shell.js');
+let _shellModule: InteractiveShellModule | null = null;
+async function getInteractiveShellModule(): Promise<InteractiveShellModule> {
+  if (!_shellModule) {
+    _shellModule = await import('./interactive-shell.js');
+  }
+  return _shellModule;
+}
 import {
   CLI,
   CLICommandOptions,
@@ -61,7 +70,7 @@ const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren = {},
   TParent = undefined
 > implements CLI<TArgs, THandlerReturn, TChildren, TParent>
@@ -318,7 +327,7 @@ export class InternalCLI<
               CLI<TArgs, THandlerReturn, TChildren, TParent>
             >;
           }
-        : // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+        :  
           {}),
     TParent
   > {
@@ -637,8 +646,8 @@ export class InternalCLI<
       } else {
         // We can treat a command as a subshell if it has subcommands
         if (Object.keys(cmd.registeredCommands).length > 0) {
-          if (!process.stdout.isTTY) {
-            // If we're not in a TTY, we can't run an interactive shell...
+          if (typeof process === 'undefined' || !process.stdout?.isTTY) {
+            // If we're not in a TTY (or in a browser), we can't run an interactive shell...
             // Maybe we should warn here?
           } else if (args.unmatched.length > 0) {
             // If there are unmatched args, we don't run an interactive shell...
@@ -649,21 +658,24 @@ export class InternalCLI<
               )}`
             );
             cmd.printHelp();
-          } else if (!INTERACTIVE_SHELL) {
-            const tui = new InteractiveShell(
-              this as unknown as InternalCLI<any>,
-              {
-                prependArgs: originalArgV,
-              }
-            );
-            await new Promise<void>((res) => {
-              ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                process.on(s, () => {
-                  tui.close();
-                  res();
-                })
+          } else {
+            const shellMod = await getInteractiveShellModule();
+            if (!shellMod.INTERACTIVE_SHELL) {
+              const tui = new shellMod.InteractiveShell(
+                this as unknown as InternalCLI<any>,
+                {
+                  prependArgs: originalArgV,
+                }
               );
-            });
+              await new Promise<void>((res) => {
+                ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
+                  process?.on(s, () => {
+                    tui.close();
+                    res();
+                  })
+                );
+              });
+            }
           }
         }
         // No subcommands so subshell doesn't make sense
@@ -675,7 +687,7 @@ export class InternalCLI<
         }
       }
     } catch (e) {
-      process.exitCode = 1;
+      if (typeof process !== 'undefined') process.exitCode = 1;
       console.error(e);
       this.printHelp();
     }
@@ -867,7 +879,7 @@ export class InternalCLI<
       throw new Error(
         'Interactive shell is not supported for commands that require a command.'
       );
-    } else if (process.stdout.isTTY) {
+    } else if (typeof process !== 'undefined' && process.stdout?.isTTY) {
       this.requiresCommand = false;
     }
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
@@ -878,14 +890,18 @@ export class InternalCLI<
       console.log(this._versionOverride);
       return;
     }
-    let mainFile = require?.main?.filename;
+    let mainFile = typeof require !== 'undefined' ? require?.main?.filename : undefined;
     mainFile ??= getCallingFile();
     if (!mainFile) {
       console.log('unknown');
       return;
     }
-    const packageJson = getParentPackageJson(mainFile);
-    console.log(packageJson.version ?? 'unknown');
+    try {
+      const packageJson = getParentPackageJson(mainFile);
+      console.log(packageJson.version ?? 'unknown');
+    } catch {
+      console.log('unknown');
+    }
   }
 
   private async withErrorHandlers<T>(cb: () => T): Promise<Awaited<T>> {
@@ -896,7 +912,7 @@ export class InternalCLI<
         try {
           handler(e, {
             exit: (c) => {
-              process.exit(c);
+              if (typeof process !== 'undefined') process.exit(c);
             },
           });
           // Error was handled, no need to continue
@@ -991,7 +1007,7 @@ export class InternalCLI<
    * @param args argv. Defaults to process.argv.slice(2)
    * @returns Promise that resolves when the handler completes.
    */
-  forge = (args: string[] = hideBin(process.argv)) =>
+  forge = (args: string[] = typeof process !== 'undefined' ? hideBin(process.argv) : []) =>
     this.withErrorHandlers(async () => {
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
@@ -1036,7 +1052,7 @@ export class InternalCLI<
       const mergedArgs: any = {};
       const executedMiddleware = new Set<(args: any) => void>();
 
-      // eslint-disable-next-line no-constant-condition
+       
       while (true) {
         // Non-strict parse to get current arg values for init hooks.
         // Seeded with mergedArgs so required options parsed at earlier

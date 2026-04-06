@@ -14,6 +14,7 @@ const NAV_LINKS = [
   { label: 'Docs', href: '/docs' },
   { label: 'Examples', href: '/examples' },
   { label: 'API', href: '/api' },
+  { label: 'Playground', href: '/playground' },
 ];
 
 export default function Layout({ children }: { children: React.ReactNode }) {

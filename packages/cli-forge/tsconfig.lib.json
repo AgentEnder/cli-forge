@@ -2,19 +2,11 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "baseUrl": ".",
-    "outDir": "dist",
-    "declaration": true,
-    "composite": true,
+    "noEmit": true,
     "types": ["node"],
     "resolveJsonModule": true,
-    "rootDir": "src",
-    "tsBuildInfoFile": "tsconfig.lib.json.tsbuildinfo"
+    "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
-  "references": [
-    {
-      "path": "../parser/tsconfig.lib.json"
-    }
-  ]
+  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"]
 }

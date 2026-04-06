@@ -19,7 +19,7 @@ export type ExtractArgs<T> = T extends CLI<infer A, any, any, any> ? A : never;
  */
 export type ComposableBuilder<
   TArgs2 extends ParsedArgs,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TAddedChildren = {}
 > = <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(
   init: CLI<TInit, THandlerReturn, TChildren, TParent>
@@ -39,11 +39,11 @@ export type ComposableBuilder<
  */
 export function makeComposableBuilder<
   TArgs2 extends ParsedArgs,
-  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+   
   TChildren2 = {}
 >(
   fn: (
-    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
+     
     init: CLI<ParsedArgs, any, {}, any>
   ) => CLI<TArgs2, any, TChildren2, any>
 ) {

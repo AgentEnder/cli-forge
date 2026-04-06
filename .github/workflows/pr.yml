@@ -45,3 +45,93 @@ jobs:
 
       - run: npx nx fix-ci
         if: always() && matrix.os == 'ubuntu-latest'
+
+  deploy-preview:
+    # NOTE: This job will intentionally fail on pull requests from forks because
+    # the GITHUB_TOKEN for fork PRs does not have `contents: write` permission
+    # to push to gh-pages. This is expected — only PRs from branches within this
+    # repository will have docs previews automatically deployed. For fork PRs, a
+    # maintainer can manually trigger a preview by commenting `@preview docs`
+    # (handled by the pkg-pr-new workflow).
+    runs-on: ubuntu-latest
+    needs: build
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+
+      - name: Setup PNPM
+        uses: pnpm/action-setup@41ff72655975bd51cab0327fa583b6e92b6d3061
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build docs preview
+        run: npx nx build docs-site
+        env:
+          PREVIEW_PATH: pr/${{ github.event.pull_request.number }}
+          BASE_URL: /cli-forge/pr/${{ github.event.pull_request.number }}
+
+      - name: Deploy preview to gh-pages
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PREVIEW_DIR="pr/${PR_NUMBER}"
+
+          # Clone just the gh-pages branch (shallow)
+          git clone --branch gh-pages --single-branch --depth 1 \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            gh-pages-repo
+
+          # Clear any previous preview for this PR and copy new build
+          rm -rf "gh-pages-repo/${PREVIEW_DIR}"
+          mkdir -p "gh-pages-repo/${PREVIEW_DIR}"
+          cp -r docs-site/dist/client/* "gh-pages-repo/${PREVIEW_DIR}/"
+
+          # Commit and push
+          cd gh-pages-repo
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .
+          git commit -m "Deploy docs preview for PR #${PR_NUMBER}" --allow-empty
+          git push origin gh-pages
+
+      - name: Comment preview URL
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.payload.pull_request.number;
+            const previewUrl = `https://craigory.dev/cli-forge/pr/${prNumber}/`;
+            const marker = '<!-- docs-preview-comment -->';
+            const body = `${marker}\n**Docs Preview:** ${previewUrl}`;
+
+            // Find existing comment
+            const { data: comments } = await github.rest.issues.listComments({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+            });
+            const existing = comments.find(c => c.body?.includes(marker));
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }

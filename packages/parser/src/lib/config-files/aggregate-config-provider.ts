@@ -1,5 +1,4 @@
-import { join } from 'path';
-
+import { getFileSystemProvider } from '../environment-provider.js';
 import { ConfigurationProvider, ConfigurationDocSection } from './configuration-loader.js';
 
 /**
@@ -60,7 +59,7 @@ export class AggregateConfigProvider<T> {
     this.provenance = new Map();
     this.lastConfigurationRoot = configurationRoot;
 
-    let combined: T = {} as T;
+    const combined: T = {} as T;
 
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {
@@ -113,8 +112,9 @@ export class AggregateConfigProvider<T> {
   ): T {
     const loaded = provider.load(filename);
     if (loaded.extends) {
+      const fs = getFileSystemProvider();
       const extendsRoot = loaded.extends.startsWith('.')
-        ? join(configurationRoot, loaded.extends)
+        ? fs.join(configurationRoot, loaded.extends)
         : loaded.extends;
       const extendsAggregate = new AggregateConfigProvider<T>(this.providers);
       const extended = extendsAggregate.load(extendsRoot, visited);

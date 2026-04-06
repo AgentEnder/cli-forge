@@ -1,15 +1,16 @@
 {
   "name": "@cli-forge/parser",
   "version": "1.7.2",
+  "scripts": {
+    "build": "tsdown"
+  },
   "dependencies": {
     "tslib": "catalog:"
   },
-  "devDependencies": {
-    "vite": "catalog:"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "typings": "./dist/index.d.mts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
   "repository": {
@@ -19,10 +20,11 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts",
-      "default": "./dist/index.js",
-      "import": "./dist/index.js"
+      "browser": "./dist/browser/index.mjs",
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./package.json": "./package.json"
   },

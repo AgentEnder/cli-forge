@@ -19,4 +19,7 @@ export default defineConfig({
     ],
   },
   base: process.env.BASE_URL || '/cli-forge',
+  define: {
+    'import.meta.env.PREVIEW_PATH': JSON.stringify(process.env.PREVIEW_PATH || ''),
+  },
 });

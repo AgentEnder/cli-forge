@@ -1,7 +1,5 @@
 import type { ParsedArgs } from '@cli-forge/parser';
-
-import * as fs from 'fs';
-import * as path from 'path';
+import { getFileSystemProvider } from '@cli-forge/parser';
 
 /**
  * Context passed to completion callbacks.
@@ -40,9 +38,10 @@ export const completionHelpers = {
    */
   files(glob?: string): OptionCompletionCallback {
     return ({ argv }) => {
+      const fs = getFileSystemProvider();
       const partial = argv[argv.length - 1] || '';
-      const dir = partial ? path.dirname(partial) : '.';
-      const prefix = partial ? path.basename(partial) : '';
+      const dir = partial ? fs.dirname(partial) : '.';
+      const prefix = partial ? fs.basename(partial) : '';
 
       try {
         let entries: string[] = fs.readdirSync(dir === '' ? '.' : dir);
@@ -59,7 +58,7 @@ export const completionHelpers = {
           }
         }
 
-        return entries.map((e) => (dir === '.' ? e : path.join(dir, e)));
+        return entries.map((e) => (dir === '.' ? e : fs.join(dir, e)));
       } catch {
         return [];
       }

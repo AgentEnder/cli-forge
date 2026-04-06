@@ -13,6 +13,17 @@
   },
   "nxCloudAccessToken": "MDEwZTk4MGMtMGRiZC00YzhiLWEzYzktNjVkOTYxNDRhOTNjfHJlYWQtd3JpdGU=",
   "targetDefaults": {
+    "build": {
+      "cache": true,
+      "dependsOn": ["^build"],
+      "inputs": ["production", "^production"],
+      "outputs": ["{projectRoot}/dist"]
+    },
+    "typecheck": {
+      "cache": true,
+      "inputs": ["default", "^production"],
+      "dependsOn": ["^build"]
+    },
     "test": {
       "cache": true,
       "inputs": ["default", "^production"],

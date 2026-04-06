@@ -1,5 +1,3 @@
-import { inspect } from 'node:util';
-
 import { ConfigurationProvider } from './configuration-loader.js';
 import { getJsonFileConfigLoader } from './json-file-loader.js';
 
@@ -16,7 +14,7 @@ export function getPackageJsonConfigurationLoader<T>(
     (json) => json[key],
     (json, config) => ({ ...json, [key]: config })
   );
-  (loader as any)[inspect.custom] = () =>
+  (loader as any)[Symbol.for('nodejs.util.inspect.custom')] = () =>
     'PackageJsonConfigurationLoader: ' + key;
   loader.describeConfig = () => ({
     heading: `package.json (key: "${key}")`,

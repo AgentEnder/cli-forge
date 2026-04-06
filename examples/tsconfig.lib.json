@@ -2,17 +2,7 @@
   "extends": "./tsconfig.json",
   "compilerOptions": {
     "rootDir": ".",
-    "outDir": "../dist/out-tsc/examples",
-    "emitDeclarationOnly": true,
-    "composite": true
+    "noEmit": true
   },
-  "references": [
-    {
-      "path": "../packages/parser/tsconfig.lib.json"
-    },
-    {
-      "path": "../packages/cli-forge/tsconfig.lib.json"
-    }
-  ],
   "include": ["**/*.ts"]
 }

@@ -1,9 +1,12 @@
 {
   "name": "cli-forge",
   "version": "1.7.2",
+  "scripts": {
+    "build": "tsdown"
+  },
   "dependencies": {
-    "tslib": "catalog:",
-    "@cli-forge/parser": "workspace:*"
+    "@cli-forge/parser": "workspace:*",
+    "tslib": "catalog:"
   },
   "peerDependencies": {
     "@clack/prompts": "*",
@@ -27,12 +30,10 @@
       "optional": true
     }
   },
-  "devDependencies": {
-    "vite": "catalog:"
-  },
   "type": "commonjs",
-  "main": "./dist/index.js",
-  "typings": "./dist/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "typings": "./dist/index.d.mts",
   "license": "ISC",
   "homepage": "https://craigory.dev/cli-forge/",
   "repository": {
@@ -45,26 +46,31 @@
   },
   "exports": {
     ".": {
-      "require": "./dist/index.js",
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
+      "browser": "./dist/browser/index.mjs",
+      "types": "./dist/index.d.mts",
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs",
+      "default": "./dist/index.cjs"
     },
     "./cli": {
-      "require": "./dist/bin/cli.js",
-      "types": "./dist/bin/cli.d.ts"
+      "types": "./dist/bin/cli.d.mts",
+      "import": "./dist/bin/cli.mjs",
+      "require": "./dist/bin/cli.cjs"
     },
     "./middleware": {
-      "require": "./dist/middleware.js",
-      "types": "./dist/middleware.d.ts"
+      "types": "./dist/middleware.d.mts",
+      "import": "./dist/middleware.mjs",
+      "require": "./dist/middleware.cjs"
     },
     "./middleware/*": {
-      "require": "./dist/middleware/*.js",
-      "types": "./dist/middleware/*.d.ts"
+      "types": "./dist/middleware/*.d.mts",
+      "import": "./dist/middleware/*.mjs",
+      "require": "./dist/middleware/*.cjs"
     },
     "./prompt-providers/clack": {
-      "require": "./dist/prompt-providers/clack.js",
-      "types": "./dist/prompt-providers/clack.d.ts",
-      "import": "./dist/prompt-providers/clack.js"
+      "types": "./dist/prompt-providers/clack.d.mts",
+      "import": "./dist/prompt-providers/clack.mjs",
+      "require": "./dist/prompt-providers/clack.cjs"
     },
     "./package.json": "./package.json"
   },

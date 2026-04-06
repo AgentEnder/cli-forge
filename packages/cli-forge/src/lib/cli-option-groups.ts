@@ -18,7 +18,7 @@ export function readOptionGroupsForCLI(parentCLI: InternalCLI<any>) {
   }
 
   const groups: Record<string, { keys: Set<string>; sortOrder: number }> = {};
-  // eslint-disable-next-line @typescript-eslint/no-this-alias
+   
   let command: InternalCLI<any> = parentCLI;
   registerGroupsFromCLI(command);
   for (const subcommand of parentCLI.commandChain) {

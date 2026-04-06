@@ -78,7 +78,7 @@ export const objectParser: Parser<Internal<ObjectOptionConfig<any, any>>> =
     let currentValue: any;
     let currentConfig: UnknownOptionConfig = config;
     let last: string;
-    // eslint-disable-next-line no-constant-condition
+     
     while (true) {
       if (!currentKey) {
         return {

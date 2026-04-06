@@ -1,0 +1,36 @@
+name: Clean up PR preview
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  cleanup-preview:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Remove preview from gh-pages
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          PREVIEW_DIR="pr/${PR_NUMBER}"
+
+          git clone --branch gh-pages --single-branch --depth 1 \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            gh-pages-repo
+
+          if [ -d "gh-pages-repo/${PREVIEW_DIR}" ]; then
+            rm -rf "gh-pages-repo/${PREVIEW_DIR}"
+
+            cd gh-pages-repo
+            git config user.name "github-actions[bot]"
+            git config user.email "github-actions[bot]@users.noreply.github.com"
+            git add .
+            git commit -m "Remove docs preview for PR #${PR_NUMBER}" --allow-empty
+            git push origin gh-pages
+
+            echo "Cleaned up preview for PR #${PR_NUMBER}"
+          else
+            echo "No preview found for PR #${PR_NUMBER}, nothing to clean up"
+          fi
