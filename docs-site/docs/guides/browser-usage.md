@@ -5,7 +5,7 @@ nav:
   order: 8
 ---
 
-# Browser Usage
+# Browser usage
 
 Both `cli-forge` and `@cli-forge/parser` ship with browser-compatible builds. This means you can run CLI parsing, help generation, and command execution directly in the browser — useful for interactive playgrounds, documentation sites, and web-based developer tools.
 
@@ -13,10 +13,10 @@ Both `cli-forge` and `@cli-forge/parser` ship with browser-compatible builds. Th
 
 Each package publishes three build outputs:
 
-| Output | Path | Description |
-|--------|------|-------------|
-| **CJS** | `dist/*.cjs` | CommonJS for Node.js `require()` |
-| **ESM** | `dist/*.mjs` | ES modules for Node.js `import` |
+| Output      | Path                     | Description                                    |
+| ----------- | ------------------------ | ---------------------------------------------- |
+| **CJS**     | `dist/*.cjs`             | CommonJS for Node.js `require()`               |
+| **ESM**     | `dist/*.mjs`             | ES modules for Node.js `import`                |
 | **Browser** | `dist/browser/index.mjs` | Single ESM bundle with no Node.js dependencies |
 
 The browser build replaces Node-specific providers (file system, environment variables, `readline`, `child_process`) with safe no-op stubs. Features that depend on Node APIs — like config file loading, interactive shells, and shell completions — gracefully degrade rather than throwing errors.
@@ -53,12 +53,7 @@ For interactive use cases (like the [Playground](/playground)), you can swap the
 
 ```typescript
 import { cli } from 'cli-forge';
-import {
-  setEnvironmentProvider,
-  setFileSystemProvider,
-  MemoryEnvironmentProvider,
-  MemoryFileSystemProvider,
-} from '@cli-forge/parser';
+import { setEnvironmentProvider, setFileSystemProvider, MemoryEnvironmentProvider, MemoryFileSystemProvider } from '@cli-forge/parser';
 
 // Set up virtual environment
 setEnvironmentProvider(
@@ -88,25 +83,25 @@ await app.forge(['--help']);
 
 ### `MemoryEnvironmentProvider`
 
-| Method | Behavior |
-|--------|----------|
-| `getEnv(key)` | Returns from the in-memory env record |
-| `setEnv(key, value)` | Writes to the in-memory env record |
-| `cwd()` | Returns the configured working directory (default `'/'`) |
+| Method               | Behavior                                                 |
+| -------------------- | -------------------------------------------------------- |
+| `getEnv(key)`        | Returns from the in-memory env record                    |
+| `setEnv(key, value)` | Writes to the in-memory env record                       |
+| `cwd()`              | Returns the configured working directory (default `'/'`) |
 
 ### `MemoryFileSystemProvider`
 
 Backed by a `Record<string, string>` where keys are absolute paths and values are file contents. Directories are inferred from file paths.
 
-| Method | Behavior |
-|--------|----------|
-| `existsSync(path)` | Checks if the path exists as a file or directory prefix |
-| `readFileSync(path)` | Returns the file content or throws `ENOENT` |
-| `writeFileSync(path, data)` | Stores the content at the given path |
-| `readdirSync(dir)` | Lists entries under the directory |
-| `join(...parts)` | Joins with `/` and normalizes |
-| `resolve(...parts)` | Same as `join` (no real CWD resolution) |
-| `dirname(path)` / `basename(path)` | Pure string operations |
+| Method                             | Behavior                                                |
+| ---------------------------------- | ------------------------------------------------------- |
+| `existsSync(path)`                 | Checks if the path exists as a file or directory prefix |
+| `readFileSync(path)`               | Returns the file content or throws `ENOENT`             |
+| `writeFileSync(path, data)`        | Stores the content at the given path                    |
+| `readdirSync(dir)`                 | Lists entries under the directory                       |
+| `join(...parts)`                   | Joins with `/` and normalizes                           |
+| `resolve(...parts)`                | Same as `join` (no real CWD resolution)                 |
+| `dirname(path)` / `basename(path)` | Pure string operations                                  |
 
 ## What doesn't work in the browser
 
