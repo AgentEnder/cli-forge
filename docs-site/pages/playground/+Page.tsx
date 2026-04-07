@@ -359,6 +359,7 @@ export default function PlaygroundPage() {
               <button
                 key={file.path}
                 onClick={() => setActiveFile(file.path)}
+                aria-pressed={file.path === activeFile}
                 className={`w-full text-left px-3 py-1.5 text-xs font-mono truncate transition-colors ${
                   file.path === activeFile
                     ? 'bg-forge-bg-surface-alt text-forge-smoke'
@@ -420,7 +421,7 @@ export default function PlaygroundPage() {
                     key={i}
                     onClick={() => setArgs(cmd.args)}
                     className="px-2 py-0.5 text-[10px] border border-forge-iron rounded hover:border-forge-flame hover:text-forge-flame-bright text-forge-ash-dim transition-colors"
-                    title={cmd.args}
+                    title={cmd.name}
                   >
                     {cmd.name}
                   </button>
