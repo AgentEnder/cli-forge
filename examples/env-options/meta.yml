@@ -1,0 +1,43 @@
+id: env-options
+title: Environment Variable Options
+description: |
+  Options can be populated from environment variables in two ways:
+
+  **Per-option `env` key** — set `env: 'MY_VAR'` on any individual option.
+  No `.env()` call is needed. Only the options you annotate can read from
+  the environment; everything else stays CLI-flag-only.
+
+  **Global `.env()` call** — enables environment variable support for every
+  option at once, automatically deriving the variable name from the option
+  name and using the CLI name as a prefix (e.g. `greet-app` → `GREET_APP_`).
+
+  In both cases, command-line flags take precedence over environment
+  variables, which in turn take precedence over config files and defaults.
+
+test:
+  - name: "per-option-env: reads from explicit env keys"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json per-option-env.ts hello'
+      env:
+        GREET_NAME: World
+        GREET_GREETING: Hi
+    assertions:
+      stdout:
+        contains: 'Hi, World!'
+
+  - name: "per-option-env: verbose flag (no env key) works via CLI only"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json per-option-env.ts hello --name World --verbose'
+    assertions:
+      stdout:
+        contains: 'Verbose mode enabled'
+
+  - name: "with-global-env: reads all options from env with auto-prefix"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json with-global-env.ts hello'
+      env:
+        GREET_APP_NAME: World
+        GREET_APP_GREETING: Howdy
+    assertions:
+      stdout:
+        contains: 'Howdy, World!'
