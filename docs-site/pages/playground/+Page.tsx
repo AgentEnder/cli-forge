@@ -218,7 +218,7 @@ export default function PlaygroundPage() {
   }, []);
 
   const handleEditorMount: OnMount = useCallback(
-    (editor, monaco) => {
+    (_editor, monaco) => {
       // Register type declarations
       for (const { path, content } of typeDeclarations.cliForge) {
         monaco.languages.typescript.typescriptDefaults.addExtraLib(
@@ -273,7 +273,7 @@ export default function PlaygroundPage() {
 
   const activeFileContent = files.find((f) => f.path === activeFile)?.content ?? '';
   const modKey =
-    typeof navigator !== 'undefined' && navigator.platform?.includes('Mac') ? '⌘' : 'Ctrl';
+    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
 
   return (
     <div>
