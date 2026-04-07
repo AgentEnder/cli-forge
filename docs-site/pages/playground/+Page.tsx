@@ -1,4 +1,4 @@
-import { useState, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
 import type { OnMount } from '@monaco-editor/react';
 import { useData } from 'vike-react/useData';
 import { usePageContext } from 'vike-react/usePageContext';
@@ -280,8 +280,13 @@ export default function PlaygroundPage() {
   );
 
   const activeFileContent = files.find((f) => f.path === activeFile)?.content ?? '';
-  const modKey =
-    typeof navigator !== 'undefined' && /Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl';
+
+  // Start with 'Ctrl' to match SSR output, then update on the client.
+  // A direct navigator check here causes a hydration mismatch.
+  const [modKey, setModKey] = useState('Ctrl');
+  useEffect(() => {
+    setModKey(/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl');
+  }, []);
 
   return (
     <div>
@@ -390,6 +395,7 @@ export default function PlaygroundPage() {
             <Suspense fallback={<div className="h-full w-full bg-forge-bg/30" />}>
               <Editor
                 height="100%"
+                path={`file:///${activeFile}`}
                 language={detectLanguage(activeFile)}
                 value={activeFileContent}
                 onChange={(v) => updateFileContent(activeFile, v ?? '')}
