@@ -22,7 +22,7 @@ CLI Forge is a modern framework for building command-line interfaces in Node.js,
 
 ## Runtime compatibility
 
-CLI Forge is primarily developed against modern Node.js, and is also compatible with Bun for common CLI execution workflows (for example using `bunx tsx` during development and `bun` for running built output).
+CLI Forge is primarily developed against modern Node.js, and is also compatible with Bun for common CLI execution workflows (for example using `bun run ./bin/my-cli.ts` during development and `bun` for running built output).
 
 ## Key Features
 

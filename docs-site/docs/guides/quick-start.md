@@ -356,7 +356,7 @@ npx tsx bin/my-cli.ts auth login --username john --password secret
 
 We've been testing our CLI manually by running it with `npx tsx bin/my-cli.ts`. This is a good way to test your CLI as you are developing it, but it can be tedious to run the CLI manually every time you make a change to validate that it works as expected.
 
-If you use Bun, the same workflow works with `bunx --bun tsx bin/my-cli.ts`.
+If you use Bun, the same workflow works with `bun run bin/my-cli.ts`.
 
 ### Automated testing (unit tests)
 

@@ -26,11 +26,7 @@ const hasBun = (() => {
 
     setProjectDir('bun-cli');
 
-    let result = await runCommand(
-      'bunx --bun tsx ./bin/bun-cli hello bun',
-      [],
-      {}
-    );
+    let result = await runCommand('bun run ./bin/bun-cli.ts hello bun', [], {});
     expect(result.stdout).toContain('hello bun');
 
     await runCommand('bun run build', [], {});
