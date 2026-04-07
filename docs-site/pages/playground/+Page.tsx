@@ -153,6 +153,9 @@ export default function PlaygroundPage() {
           /(?:const|let|var)\s+\{[^}]*\}\s*=\s*require\s*\(\s*['"](?:cli-forge|@cli-forge\/parser)['"]\s*\)\s*;?\s*/g,
           ''
         )
+        // Strip `if (require.main === module)` guards — the braces become a
+        // standalone block statement so the forge() call inside still runs.
+        .replace(/if\s*\(\s*require\.main\s*===\s*module\s*\)/g, '')
         .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
 
       const cliForge = await import('cli-forge');
