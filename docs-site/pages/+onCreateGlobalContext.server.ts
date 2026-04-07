@@ -43,7 +43,7 @@ export async function onCreateGlobalContext(
   let typedocNavigation: NavigationItem[] = [];
   try {
     const typedoc = await loadTypedocContext(context);
-    configureRehypeTypedoc(typedoc.rehypeOptions);
+    configureRehypeTypedoc(typedoc.getRehypePlugins());
     configureRemarkCodeProps({
       resolveSignature: (symbolName, pkg) => {
         const exports = typedoc.apiDocs.allExports;
