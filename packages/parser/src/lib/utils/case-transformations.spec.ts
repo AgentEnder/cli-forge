@@ -40,6 +40,10 @@ describe('utils', () => {
       ['fooBarBaz', 'FOO_BAR_BAZ'],
       ['fooBarBazQux', 'FOO_BAR_BAZ_QUX'],
       ['someCLITool', 'SOME_CLI_TOOL'],
+      // pre-formed snake_case should pass through unchanged
+      ['GREET_NAME', 'GREET_NAME'],
+      ['FOO_BAR', 'FOO_BAR'],
+      ['greet_name', 'GREET_NAME'],
     ])('should convert %s to %s', (input, expected) => {
       expect(fromCamelOrDashedCaseToConstCase(input)).toEqual(expected);
     });
