@@ -8,5 +8,10 @@
     "rootDir": "src"
   },
   "include": ["src/**/*.ts"],
-  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"]
+  "exclude": ["vitest.config.mts", "**/*.spec.ts", "**/*.test.ts"],
+  "references": [
+    {
+      "path": "../../tools/scripts/tsconfig.lib.json"
+    }
+  ]
 }

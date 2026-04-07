@@ -9,7 +9,7 @@
 import {
   MemoryEnvironmentProvider,
   MemoryFileSystemProvider,
-} from './environment-provider';
+} from '../lib/environment-provider';
 
 export {
   MemoryEnvironmentProvider as NodeEnvironmentProvider,
