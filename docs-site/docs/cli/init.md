@@ -56,6 +56,20 @@ What format should the CLI be in?
 
 **Valid values:** `js`, `ts`
 
+### moduleType
+
+**Type:** string
+
+Module system for the generated project.
+
+**Default:** `"esm"`
+
+**Valid values:** `esm`, `cjs`
+
+#### Aliases
+
+- module-type
+
 ### initialVersion
 
 **Type:** string
