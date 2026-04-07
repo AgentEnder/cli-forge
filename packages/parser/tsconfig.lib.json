@@ -13,5 +13,10 @@
     "src/**/*.spec.ts",
     "src/**/*.test.ts",
     "src/**/type-debug.ts"
+  ],
+  "references": [
+    {
+      "path": "../../tools/scripts/tsconfig.lib.json"
+    }
   ]
 }
