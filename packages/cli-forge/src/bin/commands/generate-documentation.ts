@@ -177,6 +177,9 @@ function generateLlmsTxtContent(
           typeof opt.choices === 'function' ? opt.choices() : opt.choices;
         lines.push(`${indent}    Valid values: ${choicesList.join(', ')}`);
       }
+      if ('resolvedEnvKey' in opt && opt.resolvedEnvKey) {
+        lines.push(`${indent}    Env var: ${opt.resolvedEnvKey}`);
+      }
     }
     lines.push('');
   }
@@ -200,6 +203,9 @@ function generateLlmsTxtContent(
         }
         if (opt.default !== undefined) {
           lines.push(`${indent}    Default: ${JSON.stringify(opt.default)}`);
+        }
+        if ('resolvedEnvKey' in opt && opt.resolvedEnvKey) {
+          lines.push(`${indent}    Env var: ${opt.resolvedEnvKey}`);
         }
       }
       lines.push('');
@@ -337,6 +343,9 @@ function formatOption(option: Documentation['options'][string], md: mdfactory) {
             ).map((t: any) => md.code(t.toString()));
             return choicesAsString.join(', ');
           })()
+        : undefined,
+      'resolvedEnvKey' in option && option.resolvedEnvKey
+        ? md.bold('Environment variable:') + ' ' + md.code(option.resolvedEnvKey as string)
         : undefined,
       option.alias?.length
         ? md.h4('Aliases', md.ul(...option.alias))
