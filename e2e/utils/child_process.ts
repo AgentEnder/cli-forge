@@ -1,6 +1,8 @@
 import { SpawnOptions, spawn } from 'child_process';
 import { e2eProjectDir, e2eSubDir } from './setup';
 
+const localRegistry = process.env.E2E_NPM_REGISTRY ?? 'http://localhost:4873';
+
 export function runCommand(
   command: string,
   args: string[],
@@ -12,6 +14,12 @@ export function runCommand(
     shell: true,
     stdio: 'pipe',
     cwd: e2eProjectDir ?? e2eSubDir,
+    env: {
+      ...process.env,
+      npm_config_registry: localRegistry,
+      NPM_CONFIG_REGISTRY: localRegistry,
+      ...(spawnOptions.env ?? {}),
+    },
     ...spawnOptions,
   });
 
