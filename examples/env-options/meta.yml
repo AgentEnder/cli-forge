@@ -9,7 +9,7 @@ description: |
 
   **Global `.env()` call** — enables environment variable support for every
   option at once, automatically deriving the variable name from the option
-  name and using the CLI name as a prefix (e.g. `greet-app` → `GREET_APP_`).
+  name and using the CLI name as a prefix (e.g. `greet-app` → `GREET_APP`).
 
   In both cases, command-line flags take precedence over environment
   variables, which in turn take precedence over config files and defaults.

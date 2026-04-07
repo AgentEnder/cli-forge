@@ -2,7 +2,7 @@ import cli from 'cli-forge';
 
 // Calling .env() enables environment variable support for every option at once.
 // The CLI name is converted to UPPER_SNAKE_CASE and used as a prefix, so the
-// CLI named "greet-app" produces the prefix "GREET_APP_".
+// CLI named "greet-app" produces the prefix "GREET_APP".
 //
 // For example:
 //   --name     reads from GREET_APP_NAME
