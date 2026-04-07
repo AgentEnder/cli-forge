@@ -14,6 +14,75 @@ describe('generate-documentation', () => {
     ensureCleanWorkingDirectory();
   });
 
+  it('should include resolved env keys in generated documentation', async () => {
+    await runCommand('npx cli-forge@e2e init env-docs-cli', [], {});
+    setProjectDir('env-docs-cli');
+
+    writeFileSync(
+      join(e2eProjectDir, 'bin', 'env-cli.ts'),
+      `
+import cli from 'cli-forge';
+
+export default cli('my-app')
+  .env()
+  .option('name', { type: 'string', description: 'The name' })
+  .option('greeting', { type: 'string', env: 'customGreeting' })
+  .option('port', { type: 'number', env: { key: 'port', prefix: false } })
+  .option('debug', { type: 'boolean', env: false, description: 'Debug mode' });
+`.trimStart()
+    );
+
+    const jsonDir = join(e2eProjectDir, 'docs-data');
+    await runCommand(
+      `npx cli-forge generate-documentation ./bin/env-cli.ts --format json --output ${jsonDir} --no-llms`,
+      [],
+      {}
+    );
+
+    const docsPath = join(jsonDir, 'my-app.json');
+    checkFilesExist([docsPath]);
+
+    const docs = JSON.parse(readFileSync(docsPath, 'utf-8'));
+
+    // Global .env() + option key → MY_APP_NAME
+    expect(docs.options.name.resolvedEnvKey).toBe('MY_APP_NAME');
+    // Global prefix + explicit camelCase env key → MY_APP_CUSTOM_GREETING
+    expect(docs.options.greeting.resolvedEnvKey).toBe('MY_APP_CUSTOM_GREETING');
+    // prefix: false on object form → no prefix applied → PORT
+    expect(docs.options.port.resolvedEnvKey).toBe('PORT');
+    // env: false → no env var
+    expect(docs.options.debug.resolvedEnvKey).toBeUndefined();
+
+    // Generate markdown and verify env vars appear in rendered output
+    const mdDir = join(e2eProjectDir, 'docs-md');
+    await runCommand(
+      `npx cli-forge generate-documentation ./bin/env-cli.ts --format md --output ${mdDir}`,
+      [],
+      {}
+    );
+
+    const mdPath = join(e2eProjectDir, 'my-app.md');
+    checkFilesExist([mdPath]);
+
+    const commandMd = readFileSync(mdPath, 'utf-8');
+    expect(commandMd).toContain('MY_APP_NAME');
+    expect(commandMd).toContain('MY_APP_CUSTOM_GREETING');
+    expect(commandMd).toContain('PORT');
+    // debug has env: false, so no env var should appear for it
+    expect(commandMd).not.toContain('MY_APP_DEBUG');
+
+    // Verify llms.txt includes env var lines
+    const llmsPath = join(mdDir, 'llms.txt');
+    checkFilesExist([llmsPath]);
+
+    const llmsTxt = readFileSync(llmsPath, 'utf-8');
+    expect(llmsTxt).toContain('Env var: MY_APP_NAME');
+    expect(llmsTxt).toContain('Env var: MY_APP_CUSTOM_GREETING');
+    expect(llmsTxt).toContain('Env var: PORT');
+    expect(llmsTxt).not.toContain('MY_APP_DEBUG');
+    expect(llmsTxt).not.toContain('MY_APP_PORT');
+  });
+
   it('should generate docs with configuration sources', async () => {
     // Scaffold a project so cli-forge is installed
     await runCommand('npx cli-forge@e2e init docs-cli', [], {});
