@@ -1,12 +1,12 @@
-import { useState, useCallback, useEffect, lazy, Suspense } from 'react';
+import { useState, useCallback, useEffect, useMemo } from 'react';
 import type { OnMount } from '@monaco-editor/react';
 import { useData } from 'vike-react/useData';
 import { usePageContext } from 'vike-react/usePageContext';
 import { Link } from '../../components/Link';
 import type { PlaygroundData, PlaygroundExample } from './+data';
 
-// Lazy-load Monaco so it never runs during SSR/prerender
-const Editor = lazy(() => import('@monaco-editor/react'));
+// Monaco is browser-only — import it after mount to avoid SSR errors.
+type EditorComponent = typeof import('@monaco-editor/react')['default'];
 
 const DEFAULT_CODE = `import { cli } from 'cli-forge';
 
@@ -106,6 +106,11 @@ export default function PlaygroundPage() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [activeExample, setActiveExample] = useState<PlaygroundExample | null>(loadedExample);
+  const [Editor, setEditor] = useState<EditorComponent | null>(null);
+
+  useEffect(() => {
+    import('@monaco-editor/react').then((mod) => setEditor(() => mod.default));
+  }, []);
 
   const run = useCallback(async () => {
     setRunning(true);
@@ -146,44 +151,113 @@ export default function PlaygroundPage() {
       const entryFile = files.find((f) => isCodeFile(f.path));
       const code = entryFile?.content ?? DEFAULT_CODE;
 
-      const transformed = code
-        .replace(/import\s+\{[^}]*\}\s+from\s+['"](?:cli-forge|@cli-forge\/parser)['"];?\s*/g, '')
-        .replace(/import\s+(\w+)\s+from\s+['"](?:cli-forge|@cli-forge\/parser)['"];?\s*/g, '')
+      // Capture import bindings BEFORE stripping so we can re-inject them as
+      // var declarations. This prevents two bugs:
+      //   1. Default import alias (e.g. `cliForge`) becomes undefined after stripping.
+      //   2. Named parameter `cli` clashes with user's `const cli = cliForge(...)`.
+      const parseImports = (
+        src: string,
+        pkg: string
+      ): { defaultAlias: string | null; named: [string, string][] } => {
+        const defaultAlias =
+          src.match(new RegExp(`import\\s+(\\w+)\\s+from\\s+['"]${pkg}['"]`))?.[1] ?? null;
+        const namedStr =
+          src.match(new RegExp(`import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${pkg}['"]`))?.[1] ?? '';
+        const named: [string, string][] = namedStr
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+          .map((s) => {
+            const [orig, alias] = s.split(/\s+as\s+/).map((x) => x.trim());
+            return [orig, alias || orig] as [string, string];
+          });
+        // Also handle CJS: const { cli } = require('cli-forge')
+        const cjsNamed =
+          src.match(
+            new RegExp(
+              `(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*require\\s*\\(\\s*['"]${pkg}['"]\\s*\\)`
+            )
+          )?.[1] ?? '';
+        if (cjsNamed) {
+          cjsNamed
+            .split(',')
+            .map((s) => s.trim())
+            .filter(Boolean)
+            .forEach((s) => {
+              const [orig, alias] = s.split(/\s+as\s+/).map((x) => x.trim());
+              if (!named.find(([, a]) => a === (alias || orig))) {
+                named.push([orig, alias || orig]);
+              }
+            });
+        }
+        return { defaultAlias, named };
+      };
+
+      const cliForgeImports = parseImports(code, 'cli-forge');
+      const parserImports = parseImports(code, '@cli-forge/parser');
+
+      const stripped = code
+        // Strip package imports (ESM and CJS)
+        .replace(
+          /import\s+(?:\{[^}]*\}|\w+)\s+from\s+['"](?:cli-forge|@cli-forge\/parser)['"];?\s*/g,
+          ''
+        )
         .replace(
           /(?:const|let|var)\s+\{[^}]*\}\s*=\s*require\s*\(\s*['"](?:cli-forge|@cli-forge\/parser)['"]\s*\)\s*;?\s*/g,
           ''
         )
+        // Strip remaining imports (other packages) — not valid inside AsyncFunction
+        .replace(/^\s*import\s+.*?from\s+['"][^'"]*['"];?\s*$/gm, '')
+        // Strip `export type X = ...;` and `export interface X { ... }` (TS-only)
+        .replace(/export\s+type\s+\w[^;]*;/g, '')
+        .replace(/export\s+interface\s+\w[\s\S]*?\n\}/gm, '')
+        // `export default <identifier>;` — remove the whole statement
+        .replace(/^\s*export\s+default\s+(?!function\b|class\b|async\b)\S[^\n]*;?\s*$/gm, '')
+        // `export default function/class/async function` — strip `export default`
+        .replace(/export\s+default\s+(?=(?:async\s+)?(?:function|class)\b)/g, '')
+        // `export { X, Y }` and `export * from '...'` — remove entirely
+        .replace(/export\s*\{[^}]*\}\s*(?:from\s*['"][^'"]*['"])?\s*;?/g, '')
+        .replace(/export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]*['"];\s*/g, '')
+        // `export const/let/var/function/class` — keep the declaration, strip `export`
+        .replace(/\bexport\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/g, '')
         .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
 
       const cliForge = await import('cli-forge');
       const parserPkg = await import('@cli-forge/parser');
-      const cli = cliForge.cli || cliForge.default;
 
       parserPkg.setEnvironmentProvider(
         new parserPkg.MemoryEnvironmentProvider({ env: envRecord, cwd: '/' })
       );
       parserPkg.setFileSystemProvider(new parserPkg.MemoryFileSystemProvider(filesRecord));
 
-      // Shim require/module so `if (require.main === module)` guards evaluate
-      // to true — the same reference ensures strict equality holds.
-      const shim = 'var module = {}; var require = { main: module };\n';
+      // Build preamble: shim + re-inject import bindings as var declarations.
+      // Using `var` (not const/let) so they can be legally shadowed by the
+      // user's own declarations without causing "already declared" errors.
+      const preamble = [
+        'var module = {}; var require = { main: module };',
+        // cli-forge default import (e.g. `import cliForge from 'cli-forge'`)
+        ...(cliForgeImports.defaultAlias
+          ? [
+              `var ${cliForgeImports.defaultAlias} = __cliForge__.default || __cliForge__.cli;`,
+            ]
+          : []),
+        // cli-forge named imports (e.g. `import { cli, ConfigurationProviders } from 'cli-forge'`)
+        ...cliForgeImports.named.map(
+          ([orig, alias]) => `var ${alias} = __cliForge__[${JSON.stringify(orig)}];`
+        ),
+        // @cli-forge/parser default import
+        ...(parserImports.defaultAlias
+          ? [`var ${parserImports.defaultAlias} = __parser__;`]
+          : []),
+        // @cli-forge/parser named imports
+        ...parserImports.named.map(
+          ([orig, alias]) => `var ${alias} = __parser__[${JSON.stringify(orig)}];`
+        ),
+      ].join('\n');
 
       const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-      const fn = new AsyncFunction(
-        'cli',
-        'ConfigurationProviders',
-        'getJsonFileConfigLoader',
-        'getPackageJsonConfigurationLoader',
-        '__argv__',
-        shim + transformed
-      );
-      await fn(
-        cli,
-        cliForge.ConfigurationProviders,
-        parserPkg.ConfigurationFiles.getJsonFileConfigLoader,
-        parserPkg.ConfigurationFiles.getPackageJsonConfigurationLoader,
-        argv
-      );
+      const fn = new AsyncFunction('__cliForge__', '__parser__', '__argv__', preamble + '\n' + stripped);
+      await fn(cliForge, parserPkg, argv);
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.includes('process.exit')) setError(msg);
@@ -243,6 +317,15 @@ export default function PlaygroundPage() {
           `file:///node_modules/@cli-forge/parser/dist/${path}`
         );
       }
+      // Declare globals injected by the playground shim so user code
+      // can write `if (require.main === module)` without TS errors.
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        [
+          'declare var require: { main: any; (id: string): any };',
+          'declare var module: { exports: any };',
+        ].join('\n'),
+        'file:///playground-globals.d.ts'
+      );
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         // ModuleResolutionKind.Bundler = 99 in newer Monaco versions
         // Bundler = 99 in Monaco's numeric enum; the named value may not exist in older type versions
@@ -284,6 +367,50 @@ export default function PlaygroundPage() {
   );
 
   const activeFileContent = files.find((f) => f.path === activeFile)?.content ?? '';
+
+  // Derive the CLI root command name from the entry file source so we can
+  // show it as a baked-in prefix in the terminal prompt (e.g. "basic-cli _").
+  const cliName = useMemo(() => {
+    const entry = files.find((f) => isCodeFile(f.path));
+    if (!entry) return null;
+    const src = entry.content;
+
+    // Collect every local identifier that refers to the cli factory or CLI class.
+    // Handles: import { cli } from 'cli-forge'
+    //          import { cli as buildCli, CLI as CLIClass } from 'cli-forge'
+    //          import cliDefault from 'cli-forge'   (default export = cli fn)
+    //          const { cli } = require('cli-forge')
+    const callerNames: string[] = [];
+
+    const namedMatch = src.match(/import\s+\{([^}]+)\}\s+from\s+['"]cli-forge['"]/);
+    if (namedMatch) {
+      for (const part of namedMatch[1].split(',')) {
+        const [orig, alias] = part.trim().split(/\s+as\s+/).map((s) => s.trim());
+        if (orig === 'cli' || orig === 'CLI') callerNames.push(alias || orig);
+      }
+    }
+
+    const defaultMatch = src.match(/import\s+(\w+)\s+from\s+['"]cli-forge['"]/);
+    if (defaultMatch) callerNames.push(defaultMatch[1]);
+
+    const cjsMatch = src.match(/(?:const|let|var)\s+\{([^}]+)\}\s*=\s*require\s*\(\s*['"]cli-forge['"]/);
+    if (cjsMatch) {
+      for (const part of cjsMatch[1].split(',')) {
+        const [orig, alias] = part.trim().split(/\s+as\s+/).map((s) => s.trim());
+        if (orig === 'cli' || orig === 'CLI') callerNames.push(alias || orig);
+      }
+    }
+
+    // Search for the first string argument of any matched name, called as a
+    // function or constructor: name('my-cli') or new name('my-cli')
+    for (const name of callerNames) {
+      const esc = name.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const m = src.match(new RegExp(`(?:new\\s+)?\\b${esc}\\s*\\(\\s*['"\`]([^'"\`]+)['"\`]`));
+      if (m) return m[1];
+    }
+
+    return null;
+  }, [files]);
 
   // Start with 'Ctrl' to match SSR output, then update on the client.
   // A direct navigator check here causes a hydration mismatch.
@@ -394,9 +521,9 @@ export default function PlaygroundPage() {
             ))}
           </div>
 
-          {/* Monaco editor */}
+          {/* Monaco editor — Editor is null until the client-side import resolves */}
           <div className="flex-1 min-w-0">
-            <Suspense fallback={<div className="h-full w-full bg-forge-bg/30" />}>
+            {Editor ? (
               <Editor
                 height="100%"
                 path={`file:///${activeFile}`}
@@ -417,7 +544,9 @@ export default function PlaygroundPage() {
                   scrollbar: { verticalScrollbarSize: 6, horizontalScrollbarSize: 6 },
                 }}
               />
-            </Suspense>
+            ) : (
+              <div className="h-full w-full bg-forge-bg/30" />
+            )}
           </div>
         </div>
 
@@ -426,6 +555,11 @@ export default function PlaygroundPage() {
           {/* Args input row */}
           <div className="flex items-center gap-2 px-3 py-1.5 border-b border-forge-iron bg-forge-bg/80 shrink-0">
             <span className="text-forge-ash-dim font-mono text-sm shrink-0">$</span>
+            {cliName && (
+              <span className="font-mono text-sm text-forge-flame-bright font-semibold shrink-0">
+                {cliName}
+              </span>
+            )}
             <input
               type="text"
               value={args}
