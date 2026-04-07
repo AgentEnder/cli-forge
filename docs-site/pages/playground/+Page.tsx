@@ -1,12 +1,12 @@
-import { useState, useRef, useCallback, lazy, Suspense } from 'react';
+import { useState, useCallback, lazy, Suspense } from 'react';
 import type { OnMount } from '@monaco-editor/react';
 import { useData } from 'vike-react/useData';
-
-// Lazy-load Monaco so it never runs during SSR/prerender
-const Editor = lazy(() => import('@monaco-editor/react'));
 import { usePageContext } from 'vike-react/usePageContext';
 import { Link } from '../../components/Link';
 import type { PlaygroundData, PlaygroundExample } from './+data';
+
+// Lazy-load Monaco so it never runs during SSR/prerender
+const Editor = lazy(() => import('@monaco-editor/react'));
 
 const DEFAULT_CODE = `import { cli } from 'cli-forge';
 
@@ -96,12 +96,9 @@ export default function PlaygroundPage() {
 
   const loadedExample = urlExampleId ? examples[urlExampleId] : null;
 
-  const [files, setFiles] = useState<FileEntry[]>(
-    loadedExample ? initFilesFromExample(loadedExample) : initFilesDefault()
-  );
-  const [activeFile, setActiveFile] = useState<string>(() =>
-    firstCodeFile(loadedExample ? initFilesFromExample(loadedExample) : initFilesDefault())
-  );
+  const initFiles = loadedExample ? initFilesFromExample(loadedExample) : initFilesDefault();
+  const [files, setFiles] = useState<FileEntry[]>(initFiles);
+  const [activeFile, setActiveFile] = useState<string>(() => firstCodeFile(initFiles));
   const [args, setArgs] = useState<string>(
     loadedExample?.commands[0]?.args ?? '--help'
   );
@@ -109,7 +106,6 @@ export default function PlaygroundPage() {
   const [error, setError] = useState<string | null>(null);
   const [running, setRunning] = useState(false);
   const [activeExample, setActiveExample] = useState<PlaygroundExample | null>(loadedExample);
-  const outputRef = useRef<HTMLDivElement>(null);
 
   const run = useCallback(async () => {
     setRunning(true);
@@ -234,6 +230,7 @@ export default function PlaygroundPage() {
       }
       monaco.languages.typescript.typescriptDefaults.setCompilerOptions({
         // ModuleResolutionKind.Bundler = 99 in newer Monaco versions
+        // Bundler = 99 in Monaco's numeric enum; the named value may not exist in older type versions
         moduleResolution: (monaco.languages.typescript.ModuleResolutionKind as any).Bundler ?? 99,
         module: monaco.languages.typescript.ModuleKind.ESNext,
         target: monaco.languages.typescript.ScriptTarget.ESNext,
@@ -378,7 +375,7 @@ export default function PlaygroundPage() {
 
           {/* Monaco editor */}
           <div className="flex-1 min-w-0">
-            <Suspense fallback={<div className="flex-1 bg-forge-bg/30" />}>
+            <Suspense fallback={<div className="h-full w-full bg-forge-bg/30" />}>
               <Editor
                 height="100%"
                 language={detectLanguage(activeFile)}
@@ -433,10 +430,7 @@ export default function PlaygroundPage() {
           </div>
 
           {/* Output */}
-          <div
-            ref={outputRef}
-            className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed"
-          >
+          <div className="flex-1 overflow-y-auto p-3 font-mono text-xs leading-relaxed">
             {output.length === 0 && !error && !running && (
               <span className="text-forge-iron-light">
                 Press {modKey}+Enter or click Run to execute…
