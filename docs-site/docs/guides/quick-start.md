@@ -356,6 +356,8 @@ npx tsx bin/my-cli.ts auth login --username john --password secret
 
 We've been testing our CLI manually by running it with `npx tsx bin/my-cli.ts`. This is a good way to test your CLI as you are developing it, but it can be tedious to run the CLI manually every time you make a change to validate that it works as expected.
 
+If you use Bun, the same workflow works with `bunx --bun tsx bin/my-cli.ts`.
+
 ### Automated testing (unit tests)
 
 CLI Forge is no different from any other node compatible library, and can be tested using any testing framework you like. The examples within the docs use node's built-in `assert` and `test` modules, as they are available without any additional dependencies.
@@ -394,4 +396,4 @@ End-to-end tests are a great way to test your CLI in a real-world scenario. They
 
 If your CLI is going to be published to npm and ran via `npx`, you can use a tool like `verdaccio` to create a local npm registry to test your CLI in a real-world scenario.
 
-The exact setup for e2e is out of scope for this guide, but you can look at the `e2e` directory in the CLI Forge repository for an example of how to set up e2e tests for your CLI.
+The exact setup for e2e is out of scope for this guide, but you can look at the `e2e` directory in the CLI Forge repository for an example of how to set up e2e tests for your CLI, including running generated CLIs with Bun.

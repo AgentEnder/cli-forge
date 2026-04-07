@@ -20,6 +20,10 @@ CLI Forge is a modern framework for building command-line interfaces in Node.js,
 
 **Comprehensive Tooling** — Generate documentation automatically from your CLI definition, test your commands with the built-in test harness, and optionally enable an interactive shell for improved user experience.
 
+## Runtime compatibility
+
+CLI Forge is primarily developed against modern Node.js, and is also compatible with Bun for common CLI execution workflows (for example using `bunx tsx` during development and `bun` for running built output).
+
 ## Key Features
 
 - **Full type inference** for parsed arguments based on your option definitions
@@ -135,6 +139,7 @@ By default, this will generate markdown documentation in a folder called `docs`.
 CLI Forge shares a similar fluent API style with yargs, but makes different tradeoffs:
 
 **What CLI Forge adds:**
+
 - Superior TypeScript inference that tracks every option through the chain
 - Built-in middleware system for argument transformation
 - Interactive shell support (inspired by vorpal)
@@ -143,6 +148,7 @@ CLI Forge shares a similar fluent API style with yargs, but makes different trad
 - Configuration file inheritance with `extends`
 
 **Intentional differences:**
+
 - **No usage string parsing** — To maintain type safety, options must be explicitly declared rather than parsed from usage strings
 - **No unknown option parsing** — Unknown options aren't captured by design; explicit option definitions ensure type safety
 - **No filesystem-based routing** — Commands are registered programmatically for better discoverability and refactoring support
@@ -152,6 +158,7 @@ CLI Forge shares a similar fluent API style with yargs, but makes different trad
 Commander offers a lightweight API, while CLI Forge provides more structure:
 
 **CLI Forge advantages:**
+
 - Full TypeScript type inference throughout the argument chain
 - Richer option types (nested objects with typed properties)
 - Middleware composition
@@ -164,6 +171,7 @@ Commander offers a lightweight API, while CLI Forge provides more structure:
 Vorpal pioneered interactive CLI shells but hasn't been maintained since 2018. CLI Forge brings that concept forward:
 
 **Modern improvements:**
+
 - Active maintenance with TypeScript-first design
 - Opt-in interactive shell (not required)
 - Contemporary Node.js and TypeScript support
