@@ -33,7 +33,6 @@ jobs:
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-<<<<<<< HEAD
             // React directly to the triggering review via GraphQL using its node_id
             const reviewNodeId = '${{ github.event.review.node_id }}';
             await github.graphql(`
