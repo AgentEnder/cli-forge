@@ -67,5 +67,6 @@
     {
       "plugin": "@nx/vitest"
     }
-  ]
+  ],
+  "analytics": true
 }

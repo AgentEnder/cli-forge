@@ -33,7 +33,7 @@
     "remark-rehype": "^11.1.2",
     "shiki": "^3.21.0",
     "unified": "^11.0.5",
-    "vike": "^0.4.252",
+    "vike": "^0.4.256",
     "vike-plugin-typedoc": "^0.2.0",
     "vike-react": "^0.6.19",
     "yaml": "^2.8.3"
@@ -46,7 +46,7 @@
     "pagefind": "^1.4.0",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.7.2",
-    "vite": "^7.3.2"
+    "vite": "catalog:"
   },
   "nx": {
     "name": "docs-site",

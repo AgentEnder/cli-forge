@@ -1,0 +1,39 @@
+diff --git a/dist/deserialize.d.ts b/dist/deserialize.d.ts
+index 9d4e3684d3ceff20544d2c2611156c610fc3f4dd..b1f131f940305c7ecfb03cc18113e883fe38b0d6 100644
+--- a/dist/deserialize.d.ts
++++ b/dist/deserialize.d.ts
+@@ -1,13 +1,4 @@
+-import { type Type } from 'typedoc';
+-import type { ApiDocs, ApiExport, ApiPackage } from './types.js';
+-/**
+- * Extended ApiExport that carries the raw TypeDoc `Type` reference
+- * for downstream type renderers.
+- */
+-export interface ApiExportWithTypeRef extends ApiExport {
+-    /** Raw TypeDoc Type object for linked HTML rendering. */
+-    _typeRef?: Type;
+-}
++import type { ApiDocs, ApiPackage } from './types.js';
+ /**
+  * Deserialize TypeDoc JSON using TypeDoc's native `Deserializer.reviveProject()`
+  * and walk the resulting `ProjectReflection` to produce an `ApiPackage`.
+diff --git a/dist/deserialize.js b/dist/deserialize.js
+index 81e4a1d409d2eb7a186747d7a9ac584c5ada0e5f..2ae3e94c62fd725f974af904fb325da45df17535 100644
+--- a/dist/deserialize.js
++++ b/dist/deserialize.js
+@@ -247,7 +247,6 @@ function buildExport(reflection, packageSlug) {
+         exp.typeParameters = buildTypeParameters(sig.typeParameters);
+         if (sig.type) {
+             exp.returnType = typeToString(sig.type);
+-            exp._typeRef = sig.type;
+         }
+         const typeParamStr = exp.typeParameters
+             ? `<${exp.typeParameters.map((tp) => tp.name).join(', ')}>`
+@@ -268,7 +267,6 @@ function buildExport(reflection, packageSlug) {
+         // Type alias — store type reference and string
+         if (reflection.type) {
+             exp.signature = `type ${reflection.name} = ${typeToString(reflection.type)}`;
+-            exp._typeRef = reflection.type;
+         }
+         // Interface / class children
+         if (reflection.children && reflection.children.length > 0) {
