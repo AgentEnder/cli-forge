@@ -154,6 +154,10 @@ export interface ReadonlyArgvParser<TArgs extends ParsedArgs> {
    * @returns An array of documentation sections, one per provider that implements describeConfig.
    */
   getConfigurationDocs(): ConfigurationDocSection[];
+  /**
+   * Returns the environment variable configuration for this parser, used by documentation generation.
+   */
+  getEnvInfo(): { prefix?: string; enabled: boolean };
   updateConfig(values: Partial<TArgs>): Promise<void>;
   updateConfig(updater: ConfigUpdater<TArgs>): Promise<void>;
 }
@@ -1052,6 +1056,16 @@ export class ArgvParser<
       }
     }
     return sections;
+  }
+
+  /**
+   * Returns the environment variable configuration for this parser, used by documentation generation.
+   */
+  getEnvInfo(): { prefix?: string; enabled: boolean } {
+    return {
+      prefix: this.envPrefix,
+      enabled: this.shouldReadFromEnv ?? false,
+    };
   }
 }
 

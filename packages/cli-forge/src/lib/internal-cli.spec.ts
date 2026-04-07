@@ -315,6 +315,38 @@ describe('cliForge', () => {
     `);
   });
 
+  it('should support fluent .handler() method', async () => {
+    let receivedArgs: any;
+    await cli('test')
+      .option('name', { type: 'string' })
+      .handler((args) => {
+        receivedArgs = args;
+      })
+      .forge(['--name', 'world']);
+    expect(receivedArgs.name).toBe('world');
+  });
+
+  it('should pass context to fluent .handler()', async () => {
+    let receivedCtx: any;
+    await cli('test')
+      .handler((_, ctx) => {
+        receivedCtx = ctx;
+      })
+      .forge([]);
+    expect(receivedCtx.command).toBeDefined();
+  });
+
+  it('should support async fluent .handler()', async () => {
+    let ran = false;
+    await cli('test')
+      .handler(async () => {
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        ran = true;
+      })
+      .forge([]);
+    expect(ran).toBe(true);
+  });
+
   it('should support async handlers', async () => {
     let ran = false;
     await cli('test')

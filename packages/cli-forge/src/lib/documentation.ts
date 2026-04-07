@@ -4,6 +4,7 @@ import {
   readDefaultValue,
   LocalizationDictionary,
   ConfigurationFiles,
+  getEnvKey,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
@@ -33,9 +34,33 @@ export type Documentation = {
   localizedKeys?: LocalizationDictionary;
 };
 
+function resolveEnvKeyForOption(
+  option: UnknownOptionConfig,
+  optionKey: string,
+  envInfo: { prefix?: string; enabled: boolean }
+): string | undefined {
+  const { env } = option;
+
+  if (env === false) return undefined;
+  if (env === undefined && !envInfo.enabled) return undefined;
+
+  if (env === undefined || env === true) {
+    return getEnvKey(envInfo.prefix, optionKey);
+  }
+  if (typeof env === 'string') {
+    return getEnvKey(envInfo.prefix, env);
+  }
+  // Object form
+  if (env.populate === false) return undefined;
+  const envKey = env.key ?? optionKey;
+  const prefix = env.prefix === false ? undefined : envInfo.prefix;
+  return getEnvKey(prefix, envKey);
+}
+
 function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
   option: T,
-  key: string
+  key: string,
+  envInfo?: { prefix?: string; enabled: boolean }
 ) {
   const { default: declaredDefault, ...rest } = option;
   let resolvedDefault: OptionConfigToType<T> | string | undefined;
@@ -46,9 +71,16 @@ function normalizeOptionConfigForDocumentation<T extends UnknownOptionConfig>(
   const result: typeof rest & {
     key: string;
     default?: OptionConfigToType<T> | string | undefined;
+    resolvedEnvKey?: string;
   } = { ...rest, key };
   if (resolvedDefault !== undefined) {
     result.default = resolvedDefault;
+  }
+  if (envInfo) {
+    const resolvedEnvKey = resolveEnvKeyForOption(option, key, envInfo);
+    if (resolvedEnvKey !== undefined) {
+      result.resolvedEnvKey = resolvedEnvKey;
+    }
   }
   return result;
 }
@@ -71,10 +103,11 @@ export function generateDocumentation(
   const parser = cli.getParser();
 
   const groupedOptions = cli.getGroupedOptions();
+  const envInfo = parser.getEnvInfo();
   const options: Record<string, NormalizedOptionConfig> = Object.fromEntries(
     Object.entries(parser.configuredOptions)
       .filter(([, c]) => !c.hidden)
-      .map(([k, v]) => [k, normalizeOptionConfigForDocumentation(v, k)])
+      .map(([k, v]) => [k, normalizeOptionConfigForDocumentation(v, k, envInfo)])
   );
   const positionals = parser.configuredPositionals;
   for (const positional of positionals) {
