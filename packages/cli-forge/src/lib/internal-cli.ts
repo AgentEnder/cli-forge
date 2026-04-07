@@ -563,6 +563,17 @@ export class InternalCLI<
     return this as any;
   }
 
+  handler<R>(
+    fn: (args: TArgs, context: any) => R
+  ): CLI<TArgs, R, TChildren, TParent> {
+    if (!this._configuration) {
+      this._configuration = {};
+    }
+    this._configuration.handler = fn as any;
+    this.requiresCommand = false;
+    return this as any;
+  }
+
   init(
     callback: (
       cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,

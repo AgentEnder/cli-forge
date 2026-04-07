@@ -812,6 +812,30 @@ export interface CLI<
   >;
 
   /**
+   * Registers a handler for this command. Fluent alternative to passing
+   * `handler` in the command configuration object.
+   *
+   * @param fn Handler function receiving parsed args and command context.
+   * @returns Updated CLI instance with the handler return type updated.
+   *
+   * @example
+   * ```ts
+   * cli('serve')
+   *   .option('port', { type: 'number', default: 3000 })
+   *   .handler((args) => {
+   *     console.log(`Listening on port ${args.port}`);
+   *   })
+   *   .forge();
+   * ```
+   */
+  handler<R>(
+    fn: (
+      args: TArgs,
+      context: CLIHandlerContext<TChildren, TParent>
+    ) => R
+  ): CLI<TArgs, R, TChildren, TParent>;
+
+  /**
    * Registers an init hook that runs before command resolution.
    * Init hooks receive partially-parsed args (from currently-registered options)
    * and can modify the CLI (register commands, options, middleware) before the
