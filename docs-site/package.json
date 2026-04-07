@@ -11,10 +11,11 @@
     "extract-cli-docs": "pnpm cli-forge generate-documentation ../packages/cli-forge/src/bin/cli.ts --output ./docs/cli"
   },
   "dependencies": {
+    "@cli-forge/parser": "workspace:",
     "@functional-examples/documentation": "^0.1.2",
     "@icons-pack/react-simple-icons": "^13.11.2",
+    "@monaco-editor/react": "^4.7.0",
     "@shikijs/rehype": "^3.21.0",
-    "@cli-forge/parser": "workspace:",
     "cli-forge": "workspace:",
     "functional-examples": "^0.1.2",
     "gray-matter": "^4.0.3",
@@ -63,8 +64,12 @@
         "inputs": [
           "production",
           "^production",
-          { "env": "PREVIEW_PATH" },
-          { "env": "BASE_URL" }
+          {
+            "env": "PREVIEW_PATH"
+          },
+          {
+            "env": "BASE_URL"
+          }
         ],
         "outputs": [
           "{projectRoot}/dist"
