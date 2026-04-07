@@ -54,6 +54,8 @@ export interface PlaygroundData {
   typeDeclarations: {
     cliForge: TypeDeclarationFile[];
     parser: TypeDeclarationFile[];
+    cliForgePackageJson: string;
+    parserPackageJson: string;
   };
 }
 
@@ -118,11 +120,21 @@ export function data(pageContext: PageContextServer): PlaygroundData {
   const cliForgeDistDir = join(root, 'packages/cli-forge/dist');
   const parserDistDir = join(root, 'packages/parser/dist');
 
+  const readPkg = (pkgDir: string) => {
+    try {
+      return readFileSync(join(pkgDir, 'package.json'), 'utf-8');
+    } catch {
+      return '{}';
+    }
+  };
+
   return {
     examples,
     typeDeclarations: {
       cliForge: readDtsFiles(cliForgeDistDir, cliForgeDistDir),
       parser: readDtsFiles(parserDistDir, parserDistDir),
+      cliForgePackageJson: readPkg(join(root, 'packages/cli-forge')),
+      parserPackageJson: readPkg(join(root, 'packages/parser')),
     },
   };
 }

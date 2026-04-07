@@ -215,7 +215,18 @@ export default function PlaygroundPage() {
 
   const handleEditorMount: OnMount = useCallback(
     (_editor, monaco) => {
-      // Register type declarations
+      // Register package.json files so TypeScript can resolve bare module
+      // specifiers like `import { cli } from 'cli-forge'` to the correct
+      // types entry point via the exports / typings fields.
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        typeDeclarations.cliForgePackageJson,
+        'file:///node_modules/cli-forge/package.json'
+      );
+      monaco.languages.typescript.typescriptDefaults.addExtraLib(
+        typeDeclarations.parserPackageJson,
+        'file:///node_modules/@cli-forge/parser/package.json'
+      );
+      // Register all declaration files
       for (const { path, content } of typeDeclarations.cliForge) {
         monaco.languages.typescript.typescriptDefaults.addExtraLib(
           content,
