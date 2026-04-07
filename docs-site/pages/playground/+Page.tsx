@@ -153,9 +153,6 @@ export default function PlaygroundPage() {
           /(?:const|let|var)\s+\{[^}]*\}\s*=\s*require\s*\(\s*['"](?:cli-forge|@cli-forge\/parser)['"]\s*\)\s*;?\s*/g,
           ''
         )
-        // Strip `if (require.main === module)` guards — the braces become a
-        // standalone block statement so the forge() call inside still runs.
-        .replace(/if\s*\(\s*require\.main\s*===\s*module\s*\)/g, '')
         .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
 
       const cliForge = await import('cli-forge');
@@ -167,6 +164,10 @@ export default function PlaygroundPage() {
       );
       parserPkg.setFileSystemProvider(new parserPkg.MemoryFileSystemProvider(filesRecord));
 
+      // Shim require/module so `if (require.main === module)` guards evaluate
+      // to true — the same reference ensures strict equality holds.
+      const shim = 'var module = {}; var require = { main: module };\n';
+
       const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
       const fn = new AsyncFunction(
         'cli',
@@ -174,7 +175,7 @@ export default function PlaygroundPage() {
         'getJsonFileConfigLoader',
         'getPackageJsonConfigurationLoader',
         '__argv__',
-        transformed
+        shim + transformed
       );
       await fn(
         cli,
