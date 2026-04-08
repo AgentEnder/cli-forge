@@ -1,3 +1,23 @@
+## 1.8.0 (2026-04-08)
+
+### 🚀 Features
+
+- **cli-forge:** add browser compatibility and interactive playground ([#52](https://github.com/agentender/cli-forge/pull/52))
+- **cli-forge:** formalize bun support with e2e tests, docs, and CI ([#61](https://github.com/agentender/cli-forge/pull/61))
+- **cli-forge:** include resolved env keys in generated documentation ([e5cbe18](https://github.com/agentender/cli-forge/commit/e5cbe18))
+- **cli-forge:** add fluent .handler() method ([0345bcd](https://github.com/agentender/cli-forge/commit/0345bcd))
+
+### 🩹 Fixes
+
+- **parser:** handle UPPER_SNAKE_CASE in env key transformation ([#65](https://github.com/agentender/cli-forge/pull/65))
+- **repo:** react to triggering review directly instead of searching issue comments ([#57](https://github.com/agentender/cli-forge/pull/57))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.7.2 (2026-04-03)
 
 ### 🩹 Fixes
