@@ -34,11 +34,7 @@ import {
   MakeUndefinedPropertiesOptional,
   WithOptional,
 } from './option-types/type-resolution';
-import {
-  OneOfOptionConfig,
-  OneOfValueTypeEntry,
-  ResolveOneOfValueTypes,
-} from './option-types/one-of';
+import { OneOfOptionConfig } from './option-types/one-of';
 import { parserMap } from './parsers/parser-map';
 import { NoValueError, Parser, ParserContext } from './parsers/typings';
 import {
@@ -329,17 +325,14 @@ export class ArgvParser<
   // OneOf option overload
   option<
     TOption extends string,
-    const TValueTypes extends readonly OneOfValueTypeEntry[]
+    const TConfig extends OneOfOptionConfig<any>
   >(
     name: TOption,
-    config: OneOfOptionConfig<TValueTypes>
+    config: TConfig
   ): ArgvParser<
     TArgs &
       MakeUndefinedPropertiesOptional<{
-        [key in TOption]: WithOptional<
-          ResolveOneOfValueTypes<TValueTypes>,
-          OneOfOptionConfig<TValueTypes>
-        >;
+        [key in TOption]: OptionConfigToType<TConfig>;
       }>
   >;
   // Generic fallback overload
