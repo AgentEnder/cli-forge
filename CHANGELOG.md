@@ -1,3 +1,30 @@
+## 1.9.0 (2026-04-08)
+
+### 🚀 Features
+
+- **cli-forge:** add oneOf option overload to CLI interface ([3b2b288](https://github.com/agentender/cli-forge/commit/3b2b288))
+- **cli-forge:** add oneOf support to help text formatting ([813ffbc](https://github.com/agentender/cli-forge/commit/813ffbc))
+- **docs-site:** add entry file picker to playground run button ([77cbcdf](https://github.com/agentender/cli-forge/commit/77cbcdf))
+- **parser:** add OneOfOptionConfig type definition ([0e17dab](https://github.com/agentender/cli-forge/commit/0e17dab))
+- **parser:** add oneOf type resolution to BaseType ([4e1de0d](https://github.com/agentender/cli-forge/commit/4e1de0d))
+- **parser:** implement oneOf parser with priority resolution ([fb0eb7b](https://github.com/agentender/cli-forge/commit/fb0eb7b))
+- **parser:** add oneOf option overload with union type inference ([d1e7705](https://github.com/agentender/cli-forge/commit/d1e7705))
+- **parser:** add oneOf option overload with union type inference ([5f45164](https://github.com/agentender/cli-forge/commit/5f45164))
+
+### 🩹 Fixes
+
+- **cli-forge:** flatten handler args type for cleaner tooltips ([4c26fb7](https://github.com/agentender/cli-forge/commit/4c26fb7))
+- **cli-forge:** flatten TArgs at accumulation points ([bf55342](https://github.com/agentender/cli-forge/commit/bf55342))
+- **docs-site:** fix vale errors in comparison guide ([aa2c2d9](https://github.com/agentender/cli-forge/commit/aa2c2d9))
+- **docs-site:** add rehype plugin to prepend base URL to root-relative links ([30aaaa7](https://github.com/agentender/cli-forge/commit/30aaaa7))
+- **docs-site:** address PR review comments ([dc43795](https://github.com/agentender/cli-forge/commit/dc43795))
+- **parser:** fix oneOf type resolution losing union members ([777075b](https://github.com/agentender/cli-forge/commit/777075b))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.8.1 (2026-04-08)
 
 ### 🩹 Fixes
