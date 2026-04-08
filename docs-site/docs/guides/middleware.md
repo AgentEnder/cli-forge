@@ -61,6 +61,6 @@ Middleware follows two rules:
 |---|---|
 | The logic applies to multiple commands | The logic is specific to one command |
 | You need to add typed properties to args | You are consuming args, not transforming them |
-| You want to keep the handler focused | The setup is trivial (one line) |
+| You want to keep the handler focused | The setup is minimal (one line) |
 
 For the full middleware composition example with test assertions, see the [middleware composition example](/examples/middleware-composition).

@@ -7,7 +7,7 @@ nav:
 
 # Testing
 
-CLI Forge provides a `TestHarness` class that lets you test argument parsing and command resolution without executing handlers. Combined with standard Node.js testing tools, you can build a comprehensive test suite for your CLI.
+CLI Forge provides a `TestHarness` class that lets you test argument parsing and command resolution without executing handlers. Combined with standard Node.js testing tools, you can build a thorough test suite for your CLI.
 
 ## The test harness
 
