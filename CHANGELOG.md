@@ -1,3 +1,14 @@
+## 1.8.1 (2026-04-08)
+
+### 🩹 Fixes
+
+- **repo:** prevent scripts package from being published by nx release ([#66](https://github.com/agentender/cli-forge/pull/66))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.8.0 (2026-04-08)
 
 ### 🚀 Features
