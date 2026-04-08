@@ -76,6 +76,10 @@ export type BaseType<T> = T extends { type: 'string' }
   ? P extends Record<string, unknown>
     ? ResolveProperties<P>
     : never
+  : T extends { type: 'oneOf'; valueTypes: infer V }
+  ? V extends readonly { type: string }[]
+    ? ResolveOptionType<V[number]>
+    : never
   : never;
 
 /**

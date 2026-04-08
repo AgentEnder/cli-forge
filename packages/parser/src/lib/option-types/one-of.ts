@@ -3,7 +3,7 @@ import { StringOptionConfig } from './string';
 import { NumberOptionConfig } from './number';
 import { BooleanOptionConfig } from './boolean';
 import { ArrayOptionConfig } from './array';
-import { ResolveOptionType, WithOptional } from './type-resolution';
+import { ResolveOptionType } from './type-resolution';
 
 /**
  * Properties allowed on each entry in `valueTypes`.
