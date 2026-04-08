@@ -12,7 +12,42 @@ import remarkParse from 'remark-parse';
 import remarkRehype from 'remark-rehype';
 import type { Plugin } from 'unified';
 import { unified } from 'unified';
+import type { Root, Element } from 'hast';
 import { forgeTheme } from './highlighter.js';
+
+const BASE_URL = (process.env.BASE_URL || '/cli-forge').replace(/\/$/, '');
+
+/**
+ * Rehype plugin that prepends the site base URL to root-relative links.
+ *
+ * Markdown authors can write `[guide](/docs/guides/middleware)` and this
+ * plugin rewrites the href to `/cli-forge/docs/guides/middleware` so the
+ * link works regardless of the deploy base path.
+ */
+function rehypeBaseUrl(): (tree: Root) => void {
+  return (tree) => {
+    if (!BASE_URL || BASE_URL === '/') return;
+    visitElement(tree, (node) => {
+      if (node.tagName === 'a' && typeof node.properties?.href === 'string') {
+        const href = node.properties.href;
+        if (href.startsWith('/') && !href.startsWith(BASE_URL + '/')) {
+          node.properties.href = BASE_URL + href;
+        }
+      }
+    });
+  };
+}
+
+function visitElement(node: Root | Element, fn: (el: Element) => void): void {
+  if ('children' in node) {
+    for (const child of node.children) {
+      if (child.type === 'element') {
+        fn(child);
+        visitElement(child, fn);
+      }
+    }
+  }
+}
 
 // Pre-configured rehype-typedoc plugins — set once at startup via configureRehypeTypedoc
 let _rehypePlugins: Plugin[] | undefined;
@@ -60,6 +95,7 @@ export async function renderMarkdown(md: string): Promise<string> {
     .use(remarkCodeProps, _remarkCodePropsOptions ?? {})
     .use(remarkRehype, { allowDangerousHtml: true })
     .use(rehypeRaw)
+    .use(rehypeBaseUrl)
     .use(rehypeSlug)
     .use(rehypeGithubAlerts, {});
 
