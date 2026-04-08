@@ -159,9 +159,6 @@ export default function ExampleDetailPage() {
 
         {/* Metadata stamps */}
         <div className="flex gap-3 flex-wrap mb-6">
-          <span className="inline-block px-2 py-0.5 border border-forge-iron-light text-xs uppercase text-forge-ember-bright">
-            {example.extractorName}
-          </span>
           <span className="inline-block px-2 py-0.5 border border-forge-iron-light text-xs uppercase text-forge-ash">
             {example.files.length} FILES
           </span>

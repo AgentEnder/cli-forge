@@ -17,7 +17,7 @@ export function fromCamelOrDashedCaseToConstCase(str: string) {
   let currentPart = '';
   let prev: string | undefined;
   for (const char of str) {
-    if (char === '-') {
+    if (char === '-' || char === '_') {
       if (currentPart.length) {
         parts.push(currentPart);
       }

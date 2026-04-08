@@ -1,5 +1,36 @@
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, relative } from 'node:path';
 import type { PageContextServer } from 'vike/types';
 import type { SiteExample } from '../../server/utils/examples.js';
+import { workspaceRoot } from '../../server/utils/workspace.js';
+
+function readDtsFiles(
+  dir: string,
+  base: string
+): { path: string; content: string }[] {
+  const results: { path: string; content: string }[] = [];
+  let entries: ReturnType<typeof readdirSync>;
+  try {
+    entries = readdirSync(dir, { withFileTypes: true });
+  } catch {
+    return results;
+  }
+  for (const entry of entries) {
+    const fullPath = join(dir, entry.name);
+    if (entry.isDirectory()) {
+      results.push(...readDtsFiles(fullPath, base));
+    } else if (
+      entry.name.endsWith('.d.mts') ||
+      entry.name.endsWith('.d.cts')
+    ) {
+      results.push({
+        path: relative(base, fullPath).replace(/\\/g, '/'),
+        content: readFileSync(fullPath, 'utf-8'),
+      });
+    }
+  }
+  return results;
+}
 
 /**
  * Minimal example shape sent to the playground client.
@@ -13,8 +44,19 @@ export interface PlaygroundExample {
   commands: { name: string; args: string; env?: Record<string, string> }[];
 }
 
+export interface TypeDeclarationFile {
+  path: string;
+  content: string;
+}
+
 export interface PlaygroundData {
   examples: Record<string, PlaygroundExample>;
+  typeDeclarations: {
+    cliForge: TypeDeclarationFile[];
+    parser: TypeDeclarationFile[];
+    cliForgePackageJson: string;
+    parserPackageJson: string;
+  };
 }
 
 function extractArgs(commandStr: string): string {
@@ -74,5 +116,25 @@ export function data(pageContext: PageContextServer): PlaygroundData {
     examples[id] = toPlaygroundExample(ex);
   }
 
-  return { examples };
+  const root = workspaceRoot();
+  const cliForgeDistDir = join(root, 'packages/cli-forge/dist');
+  const parserDistDir = join(root, 'packages/parser/dist');
+
+  const readPkg = (pkgDir: string) => {
+    try {
+      return readFileSync(join(pkgDir, 'package.json'), 'utf-8');
+    } catch {
+      return '{}';
+    }
+  };
+
+  return {
+    examples,
+    typeDeclarations: {
+      cliForge: readDtsFiles(cliForgeDistDir, cliForgeDistDir),
+      parser: readDtsFiles(parserDistDir, parserDistDir),
+      cliForgePackageJson: readPkg(join(root, 'packages/cli-forge')),
+      parserPackageJson: readPkg(join(root, 'packages/parser')),
+    },
+  };
 }

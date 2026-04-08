@@ -4,12 +4,30 @@
 // description: |
 //   This is a simple example that demonstrates how to create a basic CLI using cli-forge
 // test:
-//   - name: "Hello command"
+//   - name: "hello command (default name)"
 //     options:
-//       command: 'echo test'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json basic-cli.ts hello'
 //     assertions:
 //       stdout:
-//         contains: 'test'
+//         contains: 'Hello, World!'
+//   - name: "hello command (custom name)"
+//     options:
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json basic-cli.ts hello --name Alice'
+//     assertions:
+//       stdout:
+//         contains: 'Hello, Alice!'
+//   - name: "goodbye command"
+//     options:
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json basic-cli.ts goodbye --name Alice'
+//     assertions:
+//       stdout:
+//         contains: 'Goodbye, Alice.'
+//   - name: "goodbye excited"
+//     options:
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json basic-cli.ts goodbye --name Alice --excited'
+//     assertions:
+//       stdout:
+//         contains: 'Goodbye, Alice!'
 // ---
 import cliForge from 'cli-forge';
 
