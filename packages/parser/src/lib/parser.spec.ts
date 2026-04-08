@@ -1386,6 +1386,21 @@ describe('oneOf options', () => {
     expect(result.val).toBe('HELLO');
   });
 
+  it('should fall through when per-value-type validate rejects', () => {
+    const result = parser()
+      .option('val', {
+        type: 'oneOf',
+        valueTypes: [
+          { type: 'number', validate: (v: number) => v > 100 },
+          { type: 'string' },
+        ],
+      })
+      .parse(['--val', '42']);
+    // 42 parses as number but validate rejects (42 > 100 is false),
+    // so falls through to string parser
+    expect(result.val).toBe('42');
+  });
+
   it('should use default value', () => {
     const result = parser()
       .option('color', {
