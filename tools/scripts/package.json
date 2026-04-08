@@ -1,5 +1,6 @@
 {
   "name": "cli-forge-scripts",
+  "private": true,
   "exports": {
     "./*": {
       "import": "./*.ts",
