@@ -2,7 +2,7 @@
 
 **A type-safe CLI builder for Node.js with first-class TypeScript support.**
 
-CLI Forge is a modern framework for building command-line interfaces in Node.js, designed with TypeScript developers in mind. It provides full type inference for parsed arguments, automatic help generation, middleware support, and comprehensive documentation tooling.
+CLI Forge is a modern framework for building command-line interfaces in Node.js, designed with TypeScript developers in mind. It provides full type inference for parsed arguments, automatic help generation, middleware support, and built-in documentation tooling.
 
 ## Installation
 
@@ -56,7 +56,7 @@ node my-app.js hello --name "Developer"
 - **Automatic documentation generation** to markdown or JSON formats
 - **Configuration file support** with inheritance via `extends`
 - **Built-in test harness** for unit testing your CLI commands
-- **Comprehensive validation** with custom validators, choices, and cross-option constraints
+- **Rich validation** with custom validators, choices, and cross-option constraints
 
 ## Option Types
 

@@ -891,7 +891,7 @@ export interface CLI<
 
   /**
    * Returns the typed children commands registered with this CLI.
-   * The return type is determined by the commands registered via `command()` or `commands()`.
+   * The return type depends on the commands registered via `command()` or `commands()`.
    *
    * @example
    * ```ts

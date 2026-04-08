@@ -6,7 +6,7 @@
 //   the object-valued options are passed as dot-notation strings. These can be nested for complex option
 //   structures that contain object properties that are themselves objects.
 //
-//   > For a more comprehensive example showcasing defaults, required properties, validation, and JSON input,
+//   > For a more detailed example showcasing defaults, required properties, validation, and JSON input,
 //   > see the `object-arguments` multi-file example.
 //
 //   > Note: This example is a bit more abstract that the others, as real world use cases for object-valued
