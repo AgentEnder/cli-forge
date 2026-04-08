@@ -8,6 +8,7 @@ export * from './boolean';
 export * from './number';
 export * from './object';
 export * from './one-of';
+export * from './guards';
 export * from './string';
 
 export type { OptionConfig, UnknownOptionConfig };

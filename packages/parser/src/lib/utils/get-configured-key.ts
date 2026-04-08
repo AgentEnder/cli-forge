@@ -1,5 +1,4 @@
-import { UnknownOptionConfig } from '../option-types';
-import type { OneOfOptionConfig } from '../option-types/one-of';
+import { UnknownOptionConfig, supportsNegation } from '../option-types';
 import { ParsedArgs } from '../parser';
 
 export function getConfiguredOptionKey<T extends ParsedArgs>(
@@ -44,13 +43,7 @@ export function getConfiguredOptionKey<T extends ParsedArgs>(
       return configuredKey as keyof T;
     }
     // Handles negated booleans that are aliased
-    const hasBooleanType =
-      config?.type === 'boolean' ||
-      (config?.type === 'oneOf' &&
-        (config as OneOfOptionConfig).valueTypes?.some(
-          (vt) => vt.type === 'boolean'
-        ));
-    if (hasBooleanType && config.alias?.includes(normalizedKey)) {
+    if (config && supportsNegation(config) && config.alias?.includes(normalizedKey)) {
       return configuredKey as keyof T;
     }
   }
