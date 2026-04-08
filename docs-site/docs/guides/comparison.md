@@ -17,55 +17,55 @@ A high-level overview of feature support across libraries. See the [detailed com
 
 ### CLI builder libraries
 
-| Feature | cli-forge | [yargs](https://yargs.js.org/) | [commander](https://github.com/tj/commander.js) | [oclif](https://oclif.io/) | [clipanion](https://mael.dev/clipanion/) | [cac](https://github.com/cacjs/cac) |
+| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [yargs](https://yargs.js.org/) | [commander](https://github.com/tj/commander.js) | [oclif](https://oclif.io/) | [clipanion](https://mael.dev/clipanion/) | [cac](https://github.com/cacjs/cac) |
 |---|---|---|---|---|---|---|
-| **Type-safe inference** | Full | Partial | Via plugin | Per-command | Yes | No |
-| **API style** | Fluent builder | Fluent builder | Fluent builder | Class-based | Class-based | Fluent builder |
-| **Subcommands** | Yes | Yes | Yes | Yes (filesystem) | Yes | Yes |
-| **Middleware** | Yes | Yes | Hooks only | Hooks only | No | No |
-| **Object options** | Yes | No | No | No | No | Dot-notation |
-| **Config files** | Yes (with `extends`) | Yes | No | No | No | No |
-| **Auto help generation** | Yes | Yes | Yes | Yes | Yes | Yes |
-| **Doc generation** | Yes | No | No | README only | No | No |
-| **Interactive shell** | Yes | No | No | No | No | No |
-| **Test harness** | Yes | No | No | Yes | No | No |
-| **Env variable support** | Yes | Yes | Yes | Yes | No | No |
-| **Validation** | Yes | Yes | Yes | Yes | Via typanion | No |
-| **Zod integration** | Yes (middleware) | No | No | No | No | No |
-| **Zero dependencies** | No | No | Yes | No | No | Yes |
+| **Type-safe inference** | [Full](/docs/guides/typescript) | [Partial](https://github.com/yargs/yargs/blob/main/docs/typescript.md) | [Via plugin](https://github.com/commander-js/extra-typings) | [Per-command](https://oclif.io/docs/flags/) | [Yes](https://mael.dev/clipanion/docs/options) | No |
+| **API style** | [Fluent builder](/docs/guides/quick-start) | [Fluent builder](https://yargs.js.org/docs/) | [Fluent builder](https://github.com/tj/commander.js#options) | [Class-based](https://oclif.io/docs/commands/) | [Class-based](https://mael.dev/clipanion/docs/getting-started) | [Fluent builder](https://github.com/cacjs/cac#example) |
+| **Subcommands** | [Yes](/docs/guides/quick-start#adding-subcommands) | [Yes](https://yargs.js.org/docs/#api-reference-commanddirdirectory-opts) | [Yes](https://github.com/tj/commander.js#commands) | [Yes (filesystem)](https://oclif.io/docs/command_discovery_strategies/) | [Yes](https://mael.dev/clipanion/docs/paths) | [Yes](https://github.com/cacjs/cac#command-specific-options) |
+| **Middleware** | [Yes](/docs/guides/middleware) | [Yes](https://yargs.js.org/docs/#api-reference-middlewarecallbacks-applybeforevalidation) | [Hooks only](https://github.com/tj/commander.js#life-cycle-hooks) | [Hooks only](https://oclif.io/docs/hooks/) | No | No |
+| **Object options** | [Yes](/docs/guides/quick-start#adding-options) | No | No | No | No | [Dot-notation](https://github.com/cacjs/cac#dot-nested-options) |
+| **Config files** | [Yes (with `extends`)](/docs/guides/configuration-files) | [Yes](https://yargs.js.org/docs/#api-reference-configkey-description-parsefn) | No | No | No | No |
+| **Auto help generation** | [Yes](/docs/guides/quick-start#invoking-your-cli) | [Yes](https://yargs.js.org/docs/#api-reference-help) | [Yes](https://github.com/tj/commander.js#automated-help) | [Yes](https://oclif.io/docs/help_classes/) | [Yes](https://mael.dev/clipanion/docs/api/builtins#builtinshelpcommand) | [Yes](https://github.com/cacjs/cac#display-help-message-and-version) |
+| **Doc generation** | [Yes](/docs/cli/generate-documentation) | No | No | [README only](https://oclif.io/docs/releasing/) | No | No |
+| **Interactive shell** | [Yes](/docs/guides/quick-start#the-interactive-shell) | No | No | No | No | No |
+| **Test harness** | [Yes](/docs/guides/testing) | No | No | [Yes](https://oclif.io/docs/testing/) | No | No |
+| **Env variable support** | [Yes](/docs/guides/configuration-files#value-precedence) | [Yes](https://yargs.js.org/docs/#api-reference-envprefix) | [Yes](https://github.com/tj/commander.js#more-configuration) | [Yes](https://oclif.io/docs/flags/) | No | No |
+| **Validation** | [Yes](/docs/guides/validation) | [Yes](https://yargs.js.org/docs/#api-reference-checkfn-globaltrue) | [Yes](https://github.com/tj/commander.js#more-configuration) | [Yes](https://oclif.io/docs/flags/) | [Via typanion](https://mael.dev/clipanion/docs/validation) | No |
+| **Zod integration** | [Yes (middleware)](/docs/guides/middleware) | No | No | No | No | No |
+| **Zero dependencies** | No | No | [Yes](https://www.npmjs.com/package/commander) | No | No | [Yes](https://github.com/cacjs/cac#readme) |
 
 ### Lightweight and minimal parsers
 
-| Feature | cli-forge | [meow](https://github.com/sindresorhus/meow) | [citty](https://github.com/unjs/citty) | [cleye](https://github.com/privatenumber/cleye) | [Node.js `util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) |
+| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [meow](https://github.com/sindresorhus/meow) | [citty](https://github.com/unjs/citty) | [cleye](https://github.com/privatenumber/cleye) | [Node.js `util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) |
 |---|---|---|---|---|---|
-| **Type-safe inference** | Full | Yes | Yes | Yes | No |
-| **API style** | Fluent builder | Single function | Declarative | Declarative | Single function |
-| **Subcommands** | Yes | Basic | Yes | Yes | No |
-| **Middleware** | Yes | No | Hooks only | No | No |
-| **Object options** | Yes | No | No | No | No |
-| **Config files** | Yes (with `extends`) | No | No | No | No |
-| **Auto help generation** | Yes | Manual | Yes | Yes | No |
-| **Validation** | Yes | Choices only | Basic | Via custom fns | No |
-| **Env variable support** | Yes | No | No | No | No |
-| **Zero dependencies** | No | Yes | Yes | No | Built-in |
+| **Type-safe inference** | [Full](/docs/guides/typescript) | [Yes](https://github.com/sindresorhus/meow#flags) | [Yes](https://github.com/unjs/citty#argument-types) | [Yes](https://github.com/privatenumber/cleye#defining-flags) | No |
+| **API style** | [Fluent builder](/docs/guides/quick-start) | [Single function](https://github.com/sindresorhus/meow#usage) | [Declarative](https://github.com/unjs/citty#usage) | [Declarative](https://github.com/privatenumber/cleye#usage) | [Single function](https://nodejs.org/api/util.html#utilparseargsconfig) |
+| **Subcommands** | [Yes](/docs/guides/quick-start#adding-subcommands) | [Basic](https://github.com/sindresorhus/meow#commands) | [Yes](https://github.com/unjs/citty#sub-commands) | [Yes](https://github.com/privatenumber/cleye#defining-commands) | No |
+| **Middleware** | [Yes](/docs/guides/middleware) | No | [Hooks only](https://github.com/unjs/citty#hooks) | No | No |
+| **Object options** | [Yes](/docs/guides/quick-start#adding-options) | No | No | No | No |
+| **Config files** | [Yes (with `extends`)](/docs/guides/configuration-files) | No | No | No | No |
+| **Auto help generation** | [Yes](/docs/guides/quick-start#invoking-your-cli) | [Manual](https://github.com/sindresorhus/meow#helptext) | [Yes](https://github.com/unjs/citty#usage) | [Yes](https://github.com/privatenumber/cleye#help-customization) | No |
+| **Validation** | [Yes](/docs/guides/validation) | [Choices only](https://github.com/sindresorhus/meow#flags) | [Basic](https://github.com/unjs/citty#argument-types) | [Via custom fns](https://github.com/privatenumber/cleye#custom-flag-types--validation) | No |
+| **Env variable support** | [Yes](/docs/guides/configuration-files#value-precedence) | No | No | No | No |
+| **Zero dependencies** | No | [Yes](https://www.npmjs.com/package/meow) | [Yes](https://www.npmjs.com/package/citty) | No | Built-in |
 
 ### Frameworks and ecosystems
 
-| Feature | cli-forge | [oclif](https://oclif.io/) | [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [gluegun](https://infinitered.github.io/gluegun/) |
+| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [oclif](https://oclif.io/) | [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [gluegun](https://infinitered.github.io/gluegun/) |
 |---|---|---|---|---|
-| **Type-safe inference** | Full | Per-command | Full (Effect types) | No |
-| **API style** | Fluent builder | Class-based | Functional/declarative | Toolbox + filesystem |
-| **Subcommands** | Yes | Yes (filesystem) | Yes | Yes (filesystem) |
-| **Middleware** | Yes | Hooks only | Effect layers | Extensions |
-| **Config files** | Yes (with `extends`) | No | No | Yes (cosmiconfig) |
-| **Plugin system** | No | Yes | No | Yes |
-| **Auto help generation** | Yes | Yes | Yes | Basic |
-| **Doc generation** | Yes | README only | No | No |
-| **Interactive shell** | Yes | No | Wizard mode | No |
-| **Test harness** | Yes | Yes | Via Effect testing | No |
-| **Template/scaffolding** | No | Yes (`oclif generate`) | No | Yes (EJS) |
-| **Distribution packaging** | No | Yes (`oclif pack`) | No | No |
-| **Ecosystem buy-in** | Standalone | oclif conventions | Effect ecosystem | Gluegun toolbox |
+| **Type-safe inference** | [Full](/docs/guides/typescript) | [Per-command](https://oclif.io/docs/flags/) | [Full (Effect types)](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#adding-options-to-commands) | No |
+| **API style** | [Fluent builder](/docs/guides/quick-start) | [Class-based](https://oclif.io/docs/commands/) | [Functional/declarative](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#our-first-command) | [Toolbox + filesystem](https://infinitered.github.io/gluegun/#/runtime) |
+| **Subcommands** | [Yes](/docs/guides/quick-start#adding-subcommands) | [Yes (filesystem)](https://oclif.io/docs/command_discovery_strategies/) | [Yes](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#our-first-command) | [Yes (filesystem)](https://infinitered.github.io/gluegun/#/runtime) |
+| **Middleware** | [Yes](/docs/guides/middleware) | [Hooks only](https://oclif.io/docs/hooks/) | [Effect layers](https://effect.website/docs/getting-started/introduction/) | [Extensions](https://infinitered.github.io/gluegun/#/toolbox-api) |
+| **Config files** | [Yes (with `extends`)](/docs/guides/configuration-files) | No | No | [Yes (cosmiconfig)](https://infinitered.github.io/gluegun/#/runtime) |
+| **Plugin system** | No | [Yes](https://oclif.io/docs/plugins/) | No | [Yes](https://infinitered.github.io/gluegun/#/plugins) |
+| **Auto help generation** | [Yes](/docs/guides/quick-start#invoking-your-cli) | [Yes](https://oclif.io/docs/help_classes/) | [Yes](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options) | [Basic](https://infinitered.github.io/gluegun/#/runtime) |
+| **Doc generation** | [Yes](/docs/cli/generate-documentation) | [README only](https://oclif.io/docs/releasing/) | No | No |
+| **Interactive shell** | [Yes](/docs/guides/quick-start#the-interactive-shell) | No | [Wizard mode](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) | No |
+| **Test harness** | [Yes](/docs/guides/testing) | [Yes](https://oclif.io/docs/testing/) | No | No |
+| **Template/scaffolding** | No | [Yes (`oclif generate`)](https://oclif.io/docs/generating/) | No | [Yes (EJS)](https://infinitered.github.io/gluegun/#/toolbox-template) |
+| **Distribution packaging** | No | [Yes (`oclif pack`)](https://oclif.io/docs/releasing/) | No | No |
+| **Ecosystem buy-in** | Standalone | [oclif conventions](https://oclif.io/docs/configuring_your_cli/) | [Effect ecosystem](https://effect.website/docs/getting-started/introduction/) | [Gluegun toolbox](https://infinitered.github.io/gluegun/#/toolbox-api) |
 
 ## What "type-safe inference" means
 
