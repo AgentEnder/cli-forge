@@ -1082,6 +1082,20 @@ function validateOption<TConfig extends Internal<UnknownOptionConfig>, TVal>(
   optionConfig: TConfig,
   value: TVal
 ) {
+  // oneOf options handle choices/validate per-value-type inside the parser;
+  // only the required check applies at the top level.
+  if (optionConfig.type === 'oneOf') {
+    if (optionConfig.required && value === undefined) {
+      const e = new Error(
+        `Missing required${optionConfig.positional ? ' positional' : ''} option ${
+          optionConfig.key
+        }`
+      );
+      delete e.stack;
+      throw e;
+    }
+    return;
+  }
   if ('choices' in optionConfig && optionConfig.choices) {
     const choices = [
       ...new Set<TVal>(
@@ -1162,6 +1176,10 @@ export function tryParseValue(
     // For object types, defer coerce until after nested defaults are applied
     // For other types, apply coerce immediately
     if (input.config.type === 'object') {
+      return val;
+    }
+    // For oneOf types, coerce is per-value-type and handled inside the parser
+    if (input.config.type === 'oneOf') {
       return val;
     }
     return (input.config.coerce as (s: any) => any)?.(val) ?? val;

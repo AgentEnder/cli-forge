@@ -43,7 +43,13 @@ export function getConfiguredOptionKey<T extends ParsedArgs>(
       return configuredKey as keyof T;
     }
     // Handles negated booleans that are aliased
-    if (config?.type === 'boolean' && config.alias?.includes(normalizedKey)) {
+    const hasBooleanType =
+      config?.type === 'boolean' ||
+      (config?.type === 'oneOf' &&
+        (config as any).valueTypes?.some(
+          (vt: any) => vt.type === 'boolean'
+        ));
+    if (hasBooleanType && config.alias?.includes(normalizedKey)) {
       return configuredKey as keyof T;
     }
   }

@@ -3,6 +3,7 @@ import { stringParser } from './string';
 import { numberParser } from './number';
 import { arrayParser } from './array';
 import { objectParser } from './object';
+import { oneOfParser } from './one-of';
 import { Parser } from './typings';
 
 export const parserMap: Record<string, Parser<any>> = {
@@ -11,4 +12,5 @@ export const parserMap: Record<string, Parser<any>> = {
   boolean: booleanParser,
   array: arrayParser,
   object: objectParser,
+  oneOf: oneOfParser,
 };

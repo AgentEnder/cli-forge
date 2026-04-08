@@ -1277,6 +1277,137 @@ describe('parser', () => {
 });
 
 
+describe('oneOf options', () => {
+  it('should parse string value for oneOf [string, boolean]', () => {
+    const result = parser()
+      .option('color', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+      })
+      .parse(['--color', 'always']);
+    expect(result.color).toBe('always');
+  });
+
+  it('should parse bare flag as true for oneOf with boolean', () => {
+    const result = parser()
+      .option('color', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+      })
+      .parse(['--color']);
+    expect(result.color).toBe(true);
+  });
+
+  it('should parse --no-flag as false for oneOf with boolean', () => {
+    const result = parser()
+      .option('color', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+      })
+      .parse(['--no-color']);
+    expect(result.color).toBe(false);
+  });
+
+  it('should parse true/false literals as boolean when boolean is in valueTypes', () => {
+    const p = parser().option('color', {
+      type: 'oneOf',
+      valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+    });
+    expect(p.parse(['--color', 'true']).color).toBe(true);
+    expect(p.parse(['--color', 'false']).color).toBe(false);
+  });
+
+  it('should error on bare flag when boolean is not in valueTypes', () => {
+    expect(() =>
+      parser()
+        .option('port', {
+          type: 'oneOf',
+          valueTypes: [{ type: 'number' }, { type: 'string' }],
+        })
+        .parse(['--port'])
+    ).toThrow();
+  });
+
+  it('should error on --no-flag when boolean is not in valueTypes', () => {
+    expect(() =>
+      parser()
+        .option('port', {
+          type: 'oneOf',
+          valueTypes: [{ type: 'number' }, { type: 'string' }],
+        })
+        .parse(['--no-port'])
+    ).toThrow();
+  });
+
+  it('should try non-boolean parsers in array order', () => {
+    const result = parser()
+      .option('val', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'number' }, { type: 'string' }],
+      })
+      .parse(['--val', '42']);
+    expect(result.val).toBe(42);
+  });
+
+  it('should fall through to string when number fails', () => {
+    const result = parser()
+      .option('val', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'number' }, { type: 'string' }],
+      })
+      .parse(['--val', 'hello']);
+    expect(result.val).toBe('hello');
+  });
+
+  it('should apply per-value-type choices', () => {
+    expect(() =>
+      parser()
+        .option('color', {
+          type: 'oneOf',
+          valueTypes: [
+            { type: 'string', choices: ['auto', 'always', 'never'] },
+            { type: 'boolean' },
+          ],
+        })
+        .parse(['--color', 'invalid'])
+    ).toThrow(/Invalid value/);
+  });
+
+  it('should apply per-value-type coerce on matched type', () => {
+    const result = parser()
+      .option('val', {
+        type: 'oneOf',
+        valueTypes: [
+          { type: 'string', coerce: (v: string) => v.toUpperCase() },
+          { type: 'boolean' },
+        ],
+      })
+      .parse(['--val', 'hello']);
+    expect(result.val).toBe('HELLO');
+  });
+
+  it('should use default value', () => {
+    const result = parser()
+      .option('color', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+        default: 'auto',
+      })
+      .parse([]);
+    expect(result.color).toBe('auto');
+  });
+
+  it('should work with = syntax', () => {
+    const result = parser()
+      .option('color', {
+        type: 'oneOf',
+        valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+      })
+      .parse(['--color=always']);
+    expect(result.color).toBe('always');
+  });
+});
+
 export async function withEnv(
   env: NodeJS.ProcessEnv,
   cb: () => void | Promise<void>
