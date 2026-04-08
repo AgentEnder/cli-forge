@@ -24,6 +24,7 @@ import {
   OptionConfig,
   StringOptionConfig,
   UnknownOptionConfig,
+  isObjectOptionConfig,
 } from './option-types';
 import { CommonOptionConfig } from './option-types/common';
 import {
@@ -774,14 +775,13 @@ export class ArgvParser<
       }
       // Apply nested defaults for object options (before coerce)
       if (
-        configuration.type === 'object' &&
+        isObjectOptionConfig(configuration) &&
         normalized[configuration.key] !== undefined
       ) {
-        const objectConfig = configuration as ObjectOptionConfig<any, any>;
-        if (objectConfig.properties) {
+        if (configuration.properties) {
           normalized[configuration.key] = applyNestedObjectDefaults(
             normalized[configuration.key],
-            objectConfig
+            configuration
           );
           // Now apply coerce after defaults have been applied
           if (configuration.coerce) {
@@ -838,13 +838,13 @@ export class ArgvParser<
         validateOption(configuration, normalized[configuration.key]);
         // Handle nested object properties
         if (
-          configuration.type === 'object' &&
-          (configuration as ObjectOptionConfig<any, any>).properties &&
+          isObjectOptionConfig(configuration) &&
+          configuration.properties &&
           normalized[configuration.key] !== undefined
         ) {
           normalized[configuration.key] = normalizeAndValidateObjectProperties(
             normalized[configuration.key],
-            configuration as ObjectOptionConfig<any, any>,
+            configuration,
             configuration.key,
             errors
           );
