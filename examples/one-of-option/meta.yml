@@ -1,0 +1,54 @@
+id: one-of-option
+title: OneOf Option
+description: |
+  The `oneOf` option type lets a single flag accept values of different types.
+  This is common in CLI tools where a flag doubles as a boolean toggle and
+  a typed selector — for example `--color` / `--no-color` / `--color=always`.
+
+  When boolean is one of the value types, bare flags (`--flag`), negation
+  (`--no-flag`), and the literals `true` / `false` are claimed exclusively
+  by the boolean parser. All other values are tried against the remaining
+  types in array order.
+
+test:
+  - name: "string value"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json color-output.ts --color always'
+    assertions:
+      stdout:
+        contains: 'Color mode: always'
+
+  - name: "bare flag as boolean true"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json color-output.ts --color'
+    assertions:
+      stdout:
+        contains: 'Color mode: true'
+
+  - name: "negated flag as boolean false"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json color-output.ts --no-color'
+    assertions:
+      stdout:
+        contains: 'Color mode: false'
+
+  - name: "default value when flag is absent"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json color-output.ts'
+    assertions:
+      stdout:
+        contains: 'Color mode: auto'
+
+  - name: "number-or-string: numeric value parsed as number"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json verbosity.ts --verbose 3'
+    assertions:
+      stdout:
+        contains: 'Verbosity (number): 3'
+
+  - name: "number-or-string: string value when not numeric"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json verbosity.ts --verbose debug'
+    assertions:
+      stdout:
+        contains: 'Verbosity (string): debug'
