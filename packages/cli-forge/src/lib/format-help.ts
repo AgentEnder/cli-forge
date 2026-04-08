@@ -108,7 +108,29 @@ function getOptionParts(option: UnknownOptionConfig) {
   if (option.description) {
     parts.push(option.description);
   }
-  if ('choices' in option && option.choices) {
+  if (option.type === 'oneOf' && 'valueTypes' in option) {
+    const valueTypes = (option as any).valueTypes as Array<{
+      type: string;
+      choices?: any;
+      description?: string;
+    }>;
+    const typeNames = valueTypes.map((vt) => vt.type).join('|');
+    parts.push(`[${typeNames}]`);
+    for (const vt of valueTypes) {
+      const subParts: string[] = [];
+      if (vt.description) {
+        subParts.push(vt.description);
+      }
+      if (vt.choices) {
+        const choices =
+          typeof vt.choices === 'function' ? vt.choices() : vt.choices;
+        subParts.push(`(${choices.join(', ')})`);
+      }
+      if (subParts.length > 0) {
+        parts.push(`${vt.type}: ${subParts.join(' ')}`);
+      }
+    }
+  } else if ('choices' in option && option.choices) {
     const choices =
       typeof option.choices === 'function' ? option.choices() : option.choices;
     parts.push(`(${choices.join(', ')})`);
