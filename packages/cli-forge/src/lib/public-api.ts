@@ -6,6 +6,7 @@ import {
   EnvOptionConfig,
   LocalizationDictionary,
   LocalizationFunction,
+  Expand,
   MakeUndefinedPropertiesOptional,
   NumberOptionConfig,
   ObjectOptionConfig,
@@ -847,7 +848,7 @@ export interface CLI<
    */
   handler<R>(
     fn: (
-      args: TArgs,
+      args: Expand<TArgs>,
       context: CLIHandlerContext<TChildren, TParent>
     ) => R
   ): CLI<TArgs, R, TChildren, TParent>;
@@ -863,7 +864,7 @@ export interface CLI<
   init(
     callback: (
       cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
-      args: TArgs
+      args: Expand<TArgs>
     ) => Promise<void> | void
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
@@ -1050,7 +1051,7 @@ export interface CLICommandOptions<
    * @param context Context for the handler. Contains the command instance.
    */
   handler?: (
-    args: NoInfer<TArgs>,
+    args: Expand<NoInfer<TArgs>>,
     context: CLIHandlerContext<NoInfer<TChildren>, TParent>
   ) => THandlerReturn;
 
