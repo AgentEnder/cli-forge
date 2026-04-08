@@ -1,0 +1,8 @@
+{
+  "name": "cli-forge-scripts",
+  "targets": {
+    "nx-release-publish": {
+      "executor": "nx:noop"
+    }
+  }
+}
