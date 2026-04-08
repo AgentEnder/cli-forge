@@ -9,7 +9,7 @@
 //   > For a more detailed example showcasing defaults, required properties, validation, and JSON input,
 //   > see the `object-arguments` multi-file example.
 //
-//   > Note: This example is a bit more abstract that the others, as real world use cases for object-valued
+//   > Note: This example is a bit more abstract than the others, as real world use cases for object-valued
 //   > options and especially nested objects are less common. This example is included to demonstrate the
 //   > flexibility of the CLI Forge APIs and the ability to handle complex option structures with type safety.
 // test:

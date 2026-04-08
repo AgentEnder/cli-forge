@@ -30,7 +30,12 @@ function rehypeBaseUrl(): (tree: Root) => void {
     visitElement(tree, (node) => {
       if (node.tagName === 'a' && typeof node.properties?.href === 'string') {
         const href = node.properties.href;
-        if (href.startsWith('/') && !href.startsWith(BASE_URL + '/')) {
+        if (
+          href.startsWith('/') &&
+          !href.startsWith('//') &&
+          href !== BASE_URL &&
+          !href.startsWith(BASE_URL + '/')
+        ) {
           node.properties.href = BASE_URL + href;
         }
       }
