@@ -1,4 +1,5 @@
 import { UnknownOptionConfig } from '../option-types';
+import type { OneOfOptionConfig } from '../option-types/one-of';
 import { ParsedArgs } from '../parser';
 
 export function getConfiguredOptionKey<T extends ParsedArgs>(
@@ -46,8 +47,8 @@ export function getConfiguredOptionKey<T extends ParsedArgs>(
     const hasBooleanType =
       config?.type === 'boolean' ||
       (config?.type === 'oneOf' &&
-        (config as any).valueTypes?.some(
-          (vt: any) => vt.type === 'boolean'
+        (config as OneOfOptionConfig).valueTypes?.some(
+          (vt) => vt.type === 'boolean'
         ));
     if (hasBooleanType && config.alias?.includes(normalizedKey)) {
       return configuredKey as keyof T;

@@ -2,6 +2,7 @@ import {
   InternalOptionConfig,
   UnknownOptionConfig,
   readDefaultValue,
+  type OneOfOptionConfig,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 
@@ -109,11 +110,7 @@ function getOptionParts(option: UnknownOptionConfig) {
     parts.push(option.description);
   }
   if (option.type === 'oneOf' && 'valueTypes' in option) {
-    const valueTypes = (option as any).valueTypes as Array<{
-      type: string;
-      choices?: any;
-      description?: string;
-    }>;
+    const { valueTypes } = option as OneOfOptionConfig;
     const typeNames = valueTypes.map((vt) => vt.type).join('|');
     parts.push(`[${typeNames}]`);
     for (const vt of valueTypes) {
