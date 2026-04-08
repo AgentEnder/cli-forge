@@ -7,7 +7,7 @@ nav:
 
 # Autogenerate CLI documentation
 
-Any CLI that is written with CLI forge can use `npx cli-forge generate-docs` to generate documentation.
+Any CLI that is written with CLI Forge can use `npx cli-forge generate-docs` to generate documentation.
 
 By default, the command will generate documentation for your CLI in markdown. The templates for the markdown are not customizable.
 

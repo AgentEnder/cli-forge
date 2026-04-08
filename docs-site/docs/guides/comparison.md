@@ -11,7 +11,7 @@ nav:
 
 The Node.js ecosystem has many CLI building libraries, each with different design goals and tradeoffs. This guide compares CLI Forge with the most popular alternatives to help you choose the right tool for your project.
 
-Comparisons were last verified against official documentation in April 2025. See the [version reference](#version-reference) at the bottom of this page for the specific versions compared.
+Comparisons were last verified against official documentation in April 2026. See the [version reference](#version-reference) at the bottom of this page for the specific versions compared.
 
 ## Feature matrix
 
@@ -362,7 +362,7 @@ CLI Forge provides everything that `util.parseArgs` deliberately excludes:
 
 ## Links and references
 
-- **CLI Forge** — [Documentation](https://craigory.dev/cli-forge/) · [GitHub](https://github.com/agentender/cli-forge) · [npm](https://www.npmjs.com/package/cli-forge)
+- **CLI Forge** — [Documentation](https://craigory.dev/cli-forge/) · [GitHub](https://github.com/AgentEnder/cli-forge) · [npm](https://www.npmjs.com/package/cli-forge)
 - **yargs** — [Documentation](https://yargs.js.org/) · [GitHub](https://github.com/yargs/yargs) · [npm](https://www.npmjs.com/package/yargs)
 - **commander** — [GitHub](https://github.com/tj/commander.js) · [npm](https://www.npmjs.com/package/commander)
 - **oclif** — [Documentation](https://oclif.io/) · [GitHub](https://github.com/oclif/oclif) · [npm](https://www.npmjs.com/package/oclif)
