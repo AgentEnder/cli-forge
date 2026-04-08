@@ -93,7 +93,7 @@ cli('app')
 
 ## Detailed comparisons
 
-### vs. yargs
+### Vs. yargs
 
 [Yargs](https://yargs.js.org/) (v18) is one of the most established CLI libraries with ~159 million weekly npm downloads. It shares a similar fluent API style with CLI Forge.
 
@@ -116,7 +116,7 @@ cli('app')
 - **Usage string parsing** — Yargs can define options from [usage strings](https://yargs.js.org/docs/#api-reference-usage-desc-builder-handler) like `'--port <number>'`. CLI Forge requires explicit option objects (by design, for type safety).
 - **Deno and browser support** — Yargs officially supports [Deno](https://github.com/yargs/yargs#deno-example) and [browsers](https://github.com/yargs/yargs/blob/main/docs/browser.md). CLI Forge supports [browsers](/docs/guides/browser-usage).
 
-### vs. commander
+### Vs. commander
 
 [Commander](https://github.com/tj/commander.js) (v14) is the most downloaded CLI library (~1.4 billion monthly npm downloads) with zero runtime dependencies.
 
@@ -137,7 +137,7 @@ cli('app')
 - **Standalone executables** — Commander can [spawn subcommands as separate processes](https://github.com/tj/commander.js#stand-alone-executable-subcommands) (e.g., `git`-style where `my-app install` runs a `my-app-install` binary). CLI Forge runs all commands in-process.
 - **Lightweight API** — Commander's [string-based option definitions](https://github.com/tj/commander.js#options) (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
 
-### vs. oclif
+### Vs. oclif
 
 [oclif](https://oclif.io/) (v4) is a full-featured CLI framework maintained by Salesforce. It powers the Heroku CLI, Salesforce CLI, and Twilio CLI.
 
@@ -159,7 +159,7 @@ cli('app')
 - **JSON output** — Built-in [`--json` flag support](https://oclif.io/docs/json/) with `enableJsonFlag`. CLI Forge requires manual implementation.
 - **Built-in testing** — [`@oclif/test`](https://oclif.io/docs/testing/) package with CLI-specific test utilities.
 
-### vs. clipanion
+### Vs. clipanion
 
 [Clipanion](https://mael.dev/clipanion/) (v3 stable, v4 RC) is a class-based CLI library created by the author of Yarn. It powers Yarn Berry.
 
@@ -182,7 +182,7 @@ cli('app')
 - **Battle-tested** — Powers Yarn Berry, one of the most complex CLIs in the JavaScript ecosystem.
 - **Tree-shakeable** — [Functional core architecture](https://mael.dev/clipanion/) supports bundler tree shaking.
 
-### vs. cac
+### Vs. cac
 
 [cac](https://github.com/cacjs/cac) (v7) is a zero-dependency, single-file CLI library used by Vite and Vitest.
 
@@ -205,7 +205,7 @@ cli('app')
 - **Event system** — [Listen for command events](https://github.com/cacjs/cac#events) (`command:*`) for custom routing logic.
 - **Proven at scale** — Powers Vite, Vitest, and other popular tools.
 
-### vs. meow
+### Vs. meow
 
 [meow](https://github.com/sindresorhus/meow) (v14) is a zero-dependency, minimalist CLI helper by Sindre Sorhus.
 
@@ -223,7 +223,7 @@ cli('app')
 - **Simplicity** — A single function call returns parsed results. No builder chain, no class hierarchy. Ideal for simple scripts that need a few flags.
 - **ESM-native** — ESM-only by design.
 
-### vs. citty
+### Vs. citty
 
 [citty](https://github.com/unjs/citty) (v0.2) is a zero-dependency CLI builder from the [UnJS](https://unjs.io/) ecosystem, built on Node.js's native `util.parseArgs`.
 
@@ -242,7 +242,7 @@ cli('app')
 - **Lazy async commands** — [Subcommands can be dynamically imported](https://github.com/unjs/citty#lazy-commands) for fast startup.
 - **Pre-1.0 flexibility** — Still evolving; the API surface is minimal and focused.
 
-### vs. cleye
+### Vs. cleye
 
 [cleye](https://github.com/privatenumber/cleye) (v2.3) is a declarative CLI builder with strong TypeScript support and responsive help tables.
 
@@ -262,7 +262,7 @@ cli('app')
 - **Command type narrowing** — When checking `argv.command` in TypeScript, available flags and parameters are [automatically narrowed](https://github.com/privatenumber/cleye#defining-commands) to the matched command.
 - **Strict mode with suggestions** — [`strictFlags: true`](https://github.com/privatenumber/cleye#strict-flags) rejects unknown flags and suggests the closest match within 2 edit distance.
 
-### vs. @effect/cli
+### Vs. @effect/cli
 
 [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) (v0.75) is a CLI library built on the [Effect](https://effect.website/) ecosystem. Commands are Effect computations with typed errors, dependency injection, and structured concurrency.
 
@@ -277,13 +277,13 @@ cli('app')
 
 **Where @effect/cli has the edge:**
 
-- **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. If your application already uses Effect, the CLI layer [integrates seamlessly](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#setting-up-the-main-command).
+- **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. If your application already uses Effect, the CLI layer [fits naturally into your application](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#setting-up-the-main-command).
 - **Wizard mode** — Built-in [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) walks users through command options interactively.
 - **Shell completions** — Built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options) generates bash, zsh, and fish completion scripts. CLI Forge does not yet offer shell completions.
 - **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
 - **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt).
 
-### vs. gluegun
+### Vs. gluegun
 
 [Gluegun](https://infinitered.github.io/gluegun/) (v5.2) is a batteries-included toolkit for building CLIs, created by [Infinite Red](https://infinite.red/). It powers Ignite CLI (React Native) and was formerly used by AWS Amplify CLI.
 
@@ -306,7 +306,7 @@ cli('app')
 - **Plugin system** — [Plugins](https://infinitered.github.io/gluegun/#/plugins) can add commands, extensions, and templates via directory conventions.
 - **Prompts** — Built-in interactive prompting. CLI Forge does not include prompts.
 
-### vs. Node.js util.parseArgs
+### Vs. Node.js util.parseArgs
 
 [`util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) is Node.js's built-in argument parser, available since Node.js v18.3.0 (stable in v20.0.0). It is intentionally minimal — a low-level primitive for simple scripts.
 
