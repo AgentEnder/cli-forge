@@ -2,6 +2,7 @@ import { ArrayOptionConfig } from './array';
 import { BooleanOptionConfig } from './boolean';
 import { NumberOptionConfig } from './number';
 import { ObjectOptionConfig } from './object';
+import { OneOfOptionConfig } from './one-of';
 import { StringOptionConfig } from './string';
 
 /**
@@ -10,6 +11,7 @@ import { StringOptionConfig } from './string';
  * - {@link NumberOptionConfig}
  * - {@link ArrayOptionConfig}
  * - {@link BooleanOptionConfig}
+ * - {@link OneOfOptionConfig}
  *
  * @typeParam TCoerce The return type of the `coerce` function if provided.
  */
@@ -23,7 +25,8 @@ export type OptionConfig<
   | NumberOptionConfig<TCoerce, TChoices>
   | ArrayOptionConfig<TCoerce, TChoices>
   | BooleanOptionConfig<TCoerce, TChoices>
-  | ObjectOptionConfig<TCoerce, TObjectProps>;
+  | ObjectOptionConfig<TCoerce, TObjectProps>
+  | OneOfOptionConfig<any>;
 
 /**
  * An OptionConfig with generic parameters set for maximum compatibility.
