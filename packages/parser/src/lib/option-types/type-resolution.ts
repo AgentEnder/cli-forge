@@ -78,8 +78,20 @@ export type BaseType<T> = T extends { type: 'string' }
     : never
   : T extends { type: 'oneOf'; valueTypes: infer V }
   ? V extends readonly { type: string }[]
-    ? ResolveOptionType<V[number]>
+    ? DistributeResolveOptionType<V[number]>
     : never
+  : never;
+
+/**
+ * Forces `ResolveOptionType` to distribute over a union.
+ * `ResolveOptionType` is not naturally distributive because its outer
+ * conditional checks `InferChoice<T>` (not a naked type parameter).
+ * Wrapping in `T extends any` makes `T` naked, so TypeScript evaluates
+ * each union member separately — essential for oneOf where value type
+ * entries with choices must not swallow entries without.
+ */
+type DistributeResolveOptionType<T> = T extends any
+  ? ResolveOptionType<T>
   : never;
 
 /**
@@ -155,12 +167,12 @@ type DefinedKeys<T> = {
  *
  * Uses `Pick` to avoid producing empty `{}` intersection members in TypeDoc output.
  * When one side has no matching keys, `Pick<T, never>` collapses to `{}` inside a
- * two-part `& {}` — the `Simplify` wrapper forces TypeScript to flatten the
- * intersection into a single object type, eliminating the empty half entirely.
+ * two-part `& {}` — the mapped type wrapper `{ [K in keyof ...]: ... }` forces
+ * TypeScript to flatten the intersection into a single object type, eliminating
+ * the empty half entirely and keeping tooltips clean.
  */
-export type MakeUndefinedPropertiesOptional<T> = Simplify<
-  Partial<Pick<T, UndefinedKeys<T>>> & Pick<T, DefinedKeys<T>>
->;
-
-/** Flatten an intersection into a single object type. */
-type Simplify<T> = { [K in keyof T]: T[K] };
+export type MakeUndefinedPropertiesOptional<T> = {
+  [K in keyof (Partial<Pick<T, UndefinedKeys<T>>> &
+    Pick<T, DefinedKeys<T>>)]: (Partial<Pick<T, UndefinedKeys<T>>> &
+    Pick<T, DefinedKeys<T>>)[K];
+};

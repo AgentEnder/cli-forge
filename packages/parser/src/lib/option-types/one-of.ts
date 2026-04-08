@@ -43,9 +43,12 @@ export type OneOfValueTypeEntry =
 
 /**
  * Resolve the TypeScript type for a single valueTypes entry.
- * Uses the same ResolveOptionType logic as standalone options.
+ * Forces distribution so each union member is resolved independently.
+ * Without this, InferChoice from one entry can swallow other entries.
  */
-export type ResolveOneOfEntry<T> = ResolveOptionType<T>;
+export type ResolveOneOfEntry<T> = T extends any
+  ? ResolveOptionType<T>
+  : never;
 
 /**
  * Resolve the union type for the entire `valueTypes` tuple.

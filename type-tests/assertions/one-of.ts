@@ -91,3 +91,17 @@ type T9Name = ReturnType<typeof p9.parse>['name'];
 type T9Color = ReturnType<typeof p9.parse>['color'];
 const t9a: IsTrue<AssertEqual<T9Name, string>> = true;
 const t9b: IsTrue<AssertEqual<T9Color, string | boolean>> = true;
+
+// Test 10: choices narrowing + default (regression: distribution bug)
+// Without distributive resolution, InferChoice from the string entry
+// swallows the boolean entry entirely.
+const p10 = parser().option('color', {
+  type: 'oneOf',
+  valueTypes: [
+    { type: 'string', choices: ['auto', 'always', 'never'] as const },
+    { type: 'boolean' },
+  ],
+  default: 'auto',
+});
+type T10 = ReturnType<typeof p10.parse>['color'];
+const t10: IsTrue<AssertEqual<T10, 'auto' | 'always' | 'never' | boolean>> = true;
