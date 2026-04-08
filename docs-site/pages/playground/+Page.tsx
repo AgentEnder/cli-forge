@@ -56,6 +56,10 @@ function isCodeFile(path: string): boolean {
   return /\.(ts|tsx|js|jsx|mjs|cjs)$/.test(path);
 }
 
+function isEntryFile(content: string): boolean {
+  return /\.forge\s*\(/.test(content);
+}
+
 function initFilesFromExample(ex: PlaygroundExample): FileEntry[] {
   const files: FileEntry[] = ex.files.map((f) => ({
     path: f.path,
@@ -107,10 +111,37 @@ export default function PlaygroundPage() {
   const [running, setRunning] = useState(false);
   const [activeExample, setActiveExample] = useState<PlaygroundExample | null>(loadedExample);
   const [Editor, setEditor] = useState<EditorComponent | null>(null);
+  const [runTargetOverride, setRunTargetOverride] = useState<string | null>(null);
+  const [showRunMenu, setShowRunMenu] = useState(false);
 
   useEffect(() => {
     import('@monaco-editor/react').then((mod) => setEditor(() => mod.default));
   }, []);
+
+  // Close run-target menu on outside click
+  useEffect(() => {
+    if (!showRunMenu) return;
+    const handler = () => setShowRunMenu(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [showRunMenu]);
+
+  const entryFiles = useMemo(
+    () => files.filter((f) => isCodeFile(f.path) && isEntryFile(f.content)),
+    [files]
+  );
+
+  const runTarget = useMemo(() => {
+    // Explicit override takes priority (if file still exists and is an entry)
+    if (runTargetOverride && entryFiles.some((f) => f.path === runTargetOverride)) {
+      return runTargetOverride;
+    }
+    // If the active editor tab is an entry file, run it
+    const activeEntry = entryFiles.find((f) => f.path === activeFile);
+    if (activeEntry) return activeEntry.path;
+    // Fall back to first entry file, then first code file
+    return entryFiles[0]?.path ?? files.find((f) => isCodeFile(f.path))?.path ?? 'cli.ts';
+  }, [runTargetOverride, entryFiles, activeFile, files]);
 
   const run = useCallback(async () => {
     setRunning(true);
@@ -147,8 +178,8 @@ export default function PlaygroundPage() {
         }
       }
 
-      // Get the entry point: first code file
-      const entryFile = files.find((f) => isCodeFile(f.path));
+      // Get the entry point based on the run target
+      const entryFile = files.find((f) => f.path === runTarget);
       const code = entryFile?.content ?? DEFAULT_CODE;
 
       // Capture import bindings BEFORE stripping so we can re-inject them as
@@ -275,7 +306,7 @@ export default function PlaygroundPage() {
       setOutput([...logs]);
       setRunning(false);
     }
-  }, [files, args]);
+  }, [files, args, runTarget]);
 
   const applyExample = useCallback((ex: PlaygroundExample) => {
     const nextFiles = initFilesFromExample(ex);
@@ -285,6 +316,7 @@ export default function PlaygroundPage() {
     setOutput([]);
     setError(null);
     setActiveExample(ex);
+    setRunTargetOverride(null);
   }, []);
 
   const updateFileContent = useCallback((path: string, content: string) => {
@@ -485,14 +517,55 @@ export default function PlaygroundPage() {
               {activeFile}
             </span>
           </div>
-          <button
-            onClick={run}
-            disabled={running}
-            className="flex items-center gap-1.5 px-3 py-1 bg-forge-flame hover:bg-forge-flame-bright text-forge-bg font-semibold text-xs rounded transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {running ? '◌ Running…' : '▶ Run'}
-            <span className="text-forge-bg/60 font-normal">{modKey}↩</span>
-          </button>
+          {/* Split run button */}
+          <div className="relative flex items-center">
+            <button
+              onClick={run}
+              disabled={running}
+              className={`flex items-center gap-1.5 px-3 py-1 bg-forge-flame hover:bg-forge-flame-bright text-forge-bg font-semibold text-xs transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${entryFiles.length > 1 ? 'rounded-l' : 'rounded'}`}
+            >
+              {running ? '◌ Running…' : entryFiles.length > 1 ? `▶ Run ${runTarget}` : '▶ Run'}
+              {entryFiles.length <= 1 && (
+                <span className="text-forge-bg/60 font-normal">{modKey}↩</span>
+              )}
+            </button>
+            {entryFiles.length > 1 && (
+              <>
+                <button
+                  onClick={(e) => { e.stopPropagation(); setShowRunMenu((v) => !v); }}
+                  disabled={running}
+                  className="px-1.5 py-1 bg-forge-flame hover:bg-forge-flame-bright text-forge-bg text-xs border-l border-forge-bg/20 rounded-r transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  aria-label="Select entry file to run"
+                >
+                  ▾
+                </button>
+                {showRunMenu && (
+                  <div
+                    className="absolute right-0 top-full mt-1 z-50 min-w-[180px] border border-forge-iron rounded-lg bg-forge-bg-surface shadow-lg overflow-hidden"
+                  >
+                    {entryFiles.map((f) => (
+                      <button
+                        key={f.path}
+                        onClick={() => {
+                          setRunTargetOverride(f.path);
+                          setActiveFile(f.path);
+                          setShowRunMenu(false);
+                        }}
+                        className={`w-full text-left px-3 py-1.5 text-xs font-mono transition-colors ${
+                          f.path === runTarget
+                            ? 'bg-forge-flame/15 text-forge-flame-bright'
+                            : 'text-forge-ash hover:bg-forge-bg-raised hover:text-forge-smoke'
+                        }`}
+                      >
+                        {f.path === runTarget && <span className="mr-1.5">▶</span>}
+                        {f.path}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         </div>
 
         {/* Editor row: sidebar + Monaco */}
