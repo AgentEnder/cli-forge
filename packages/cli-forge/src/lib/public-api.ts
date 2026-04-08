@@ -9,6 +9,7 @@ import {
   MakeUndefinedPropertiesOptional,
   NumberOptionConfig,
   ObjectOptionConfig,
+  OneOfOptionConfig,
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
@@ -536,6 +537,22 @@ export interface CLI<
   option<
     TOption extends string,
     const TConfig extends ArrayOptionConfig<any, any>
+  >(
+    name: TOption,
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+  ): CLI<
+    TArgs &
+      MakeUndefinedPropertiesOptional<{
+        [key in TOption]: OptionConfigToType<TConfig>;
+      }>,
+    THandlerReturn,
+    TChildren,
+    TParent
+  >;
+  // OneOf option overload
+  option<
+    TOption extends string,
+    const TConfig extends OneOfOptionConfig<any>
   >(
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
