@@ -78,6 +78,143 @@ function getPropertyType(
   return checker.typeToString(propType);
 }
 
+describe('CLI handler args expansion', () => {
+  it('should produce a flat object type with no intersection markers', () => {
+    const code = `
+      import { cli } from 'cli-forge';
+
+      cli('test')
+        .option('name', { type: 'string', required: true })
+        .option('port', { type: 'number', default: 3000 })
+        .option('verbose', { type: 'boolean' })
+        .option('tags', { type: 'array', items: 'string' })
+        .handler((args) => {
+          console.log(args.name, args.port, args.verbose, args.tags);
+        });
+    `;
+
+    const result = findHandlerParamType(code);
+    expect(result).not.toBeNull();
+
+    // Type string should be a flat object, not an intersection chain
+    expect(result!.typeString).not.toContain('&');
+    expect(result!.typeString).not.toContain('MakeUndefinedPropertiesOptional');
+    expect(result!.typeString).not.toContain('Expand');
+
+    // All properties present with correct types
+    expect(getPropertyType(result!.type, 'name', result!.typeChecker)).toBe('string');
+    expect(getPropertyType(result!.type, 'port', result!.typeChecker)).toBe('number');
+    expect(getPropertyType(result!.type, 'verbose', result!.typeChecker)).toContain('boolean');
+    expect(getPropertyType(result!.type, 'tags', result!.typeChecker)).toContain('string[]');
+    expect(getPropertyType(result!.type, 'unmatched', result!.typeChecker)).toBe('string[]');
+  });
+
+  it('should preserve optionality: undefined for optional, none for required/defaulted', () => {
+    const code = `
+      import { cli } from 'cli-forge';
+
+      cli('test')
+        .option('required', { type: 'string', required: true })
+        .option('defaulted', { type: 'number', default: 42 })
+        .option('optional', { type: 'boolean' })
+        .handler((args) => {
+          console.log(args.required, args.defaulted, args.optional);
+        });
+    `;
+
+    const result = findHandlerParamType(code);
+    expect(result).not.toBeNull();
+
+    const requiredType = getPropertyType(result!.type, 'required', result!.typeChecker);
+    const defaultedType = getPropertyType(result!.type, 'defaulted', result!.typeChecker);
+    const optionalType = getPropertyType(result!.type, 'optional', result!.typeChecker);
+
+    expect(requiredType).toBe('string');
+    expect(requiredType).not.toContain('undefined');
+    expect(defaultedType).toBe('number');
+    expect(defaultedType).not.toContain('undefined');
+    expect(optionalType).toContain('boolean');
+    expect(optionalType).toContain('undefined');
+  });
+
+  it('should flatten object option properties into the args type', () => {
+    const code = `
+      import { cli } from 'cli-forge';
+
+      cli('test')
+        .option('config', {
+          type: 'object',
+          properties: {
+            host: { type: 'string', default: 'localhost' },
+            port: { type: 'number', required: true },
+          },
+        })
+        .option('verbose', { type: 'boolean' })
+        .handler((args) => {
+          console.log(args.config, args.verbose);
+        });
+    `;
+
+    const result = findHandlerParamType(code);
+    expect(result).not.toBeNull();
+
+    expect(result!.typeString).not.toContain('&');
+    expect(getPropertyType(result!.type, 'config', result!.typeChecker)).not.toBeNull();
+    expect(getPropertyType(result!.type, 'verbose', result!.typeChecker)).toContain('boolean');
+  });
+
+  it('should flatten choices narrowing into the args type', () => {
+    const code = `
+      import { cli } from 'cli-forge';
+
+      cli('test')
+        .option('format', {
+          type: 'string',
+          choices: ['json', 'yaml', 'xml'] as const,
+          required: true,
+        })
+        .option('indent', { type: 'number', default: 2 })
+        .handler((args) => {
+          console.log(args.format, args.indent);
+        });
+    `;
+
+    const result = findHandlerParamType(code);
+    expect(result).not.toBeNull();
+
+    expect(result!.typeString).not.toContain('&');
+    const formatType = getPropertyType(result!.type, 'format', result!.typeChecker);
+    expect(formatType).toMatch(/json|yaml|xml/);
+    expect(formatType).not.toContain('undefined');
+    expect(getPropertyType(result!.type, 'indent', result!.typeChecker)).toBe('number');
+  });
+
+  it('should flatten args in command config handler (not just fluent)', () => {
+    const code = `
+      import { cli } from 'cli-forge';
+
+      cli('test')
+        .option('verbose', { type: 'boolean' })
+        .command('serve', {
+          builder: (cmd) => cmd
+            .option('port', { type: 'number', default: 3000 })
+            .option('host', { type: 'string', default: 'localhost' }),
+          handler: (args) => {
+            console.log(args.verbose, args.port, args.host);
+          },
+        });
+    `;
+
+    const result = findHandlerParamType(code);
+    expect(result).not.toBeNull();
+
+    expect(result!.typeString).not.toContain('&');
+    expect(getPropertyType(result!.type, 'verbose', result!.typeChecker)).toContain('boolean');
+    expect(getPropertyType(result!.type, 'port', result!.typeChecker)).toBe('number');
+    expect(getPropertyType(result!.type, 'host', result!.typeChecker)).toBe('string');
+  });
+});
+
 describe('oneOf Type Inference (CLI layer)', () => {
   it('should infer string | boolean union in handler args', () => {
     const code = `
