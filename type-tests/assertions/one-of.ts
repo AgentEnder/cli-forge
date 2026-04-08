@@ -50,11 +50,15 @@ type T5 = ReturnType<typeof p5.parse>['color'];
 const t5: IsTrue<AssertEqual<T5, string | boolean>> = true;
 
 // Test 6: choices narrowing on string entry
-// Deferred until Task 5 adds a dedicated oneOf overload.
-// The generic fallback overload doesn't correctly resolve the union when
-// choices are present on individual valueType entries.
-// After Task 5, this should assert:
-//   'auto' | 'always' | 'never' | boolean | undefined
+const p6 = parser().option('color', {
+  type: 'oneOf',
+  valueTypes: [
+    { type: 'string', choices: ['auto', 'always', 'never'] as const },
+    { type: 'boolean' },
+  ],
+});
+type T6 = ReturnType<typeof p6.parse>['color'];
+const t6: IsTrue<AssertEqual<T6, 'auto' | 'always' | 'never' | boolean | undefined>> = true;
 
 // Test 7: all three types (number, string, boolean)
 const p7 = parser().option('level', {
