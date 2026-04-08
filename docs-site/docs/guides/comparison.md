@@ -7,6 +7,8 @@ nav:
 
 # Comparison with other tools
 
+> **Disclaimer:** This page is written and maintained by the CLI Forge team. We've done our best to be accurate and fair, citing official documentation for every claim. If anything feels inaccurate or misrepresented, [PRs are welcome](https://github.com/AgentEnder/cli-forge/edit/main/docs-site/docs/guides/comparison.md).
+
 The Node.js ecosystem has many CLI building libraries, each with different design goals and tradeoffs. This guide compares CLI Forge with the most popular alternatives to help you choose the right tool for your project.
 
 ## Feature matrix
@@ -49,7 +51,7 @@ A high-level overview of feature support across libraries. See the [detailed com
 
 ### Frameworks and ecosystems
 
-| Feature | cli-forge | [oclif](https://oclif.io/) | [@effect/cli](https://effect.website/docs/cli/) | [gluegun](https://infinitered.github.io/gluegun/) |
+| Feature | cli-forge | [oclif](https://oclif.io/) | [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [gluegun](https://infinitered.github.io/gluegun/) |
 |---|---|---|---|---|
 | **Type-safe inference** | Full | Per-command | Full (Effect types) | No |
 | **API style** | Fluent builder | Class-based | Functional/declarative | Toolbox + filesystem |
@@ -83,11 +85,11 @@ cli('app')
   });
 ```
 
-**Partial inference** (yargs) provides some automatic typing via `@types/yargs`, but complex CLIs often need manual `Arguments` interface definitions. The `.parse()` method returns `Arguments | Promise<Arguments>`, requiring consumers to choose `.parseSync()` or `await .parse()`.
+**Partial inference** (yargs) provides some automatic typing via [`@types/yargs`](https://www.npmjs.com/package/@types/yargs), but complex CLIs often need manual `Arguments` interface definitions. The `.parse()` method returns `Arguments | Promise<Arguments>`, requiring consumers to choose `.parseSync()` or `await .parse()`. See the [yargs TypeScript docs](https://github.com/yargs/yargs/blob/main/docs/typescript.md) for details.
 
-**Per-command inference** (oclif) types args and flags within a single command via `this.parse(MyCommand)`, but types don't accumulate across a command hierarchy.
+**Per-command inference** (oclif) types args and flags within a single command via `this.parse(MyCommand)`, but types don't accumulate across a command hierarchy. See [oclif flags documentation](https://oclif.io/docs/flags/).
 
-**Via plugin** (commander) requires the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package for type-safe `.opts()` return values. Core commander types `.opts()` as a generic object.
+**Via plugin** (commander) requires the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package for type-safe `.opts()` return values. Core commander [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript).
 
 ## Detailed comparisons
 
@@ -97,22 +99,22 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Type accumulation** — Each `.option()` call in CLI Forge progressively builds a TypeScript type. Yargs relies on external `@types/yargs` definitions that may lag behind releases, and complex CLIs often require manual interface definitions.
+- **Type accumulation** — Each `.option()` call in CLI Forge [progressively builds a TypeScript type](/docs/guides/typescript). Yargs relies on external [`@types/yargs`](https://www.npmjs.com/package/@types/yargs) definitions that may lag behind releases, and complex CLIs often require [manual interface definitions](https://github.com/yargs/yargs/blob/main/docs/typescript.md).
 - **Object options** — CLI Forge supports `type: 'object'` with fully typed `properties`. Yargs has no equivalent; nested structures require manual parsing.
-- **Documentation generation** — `cli-forge generate-docs` produces markdown or JSON documentation from your CLI definition. Yargs has no built-in doc generation.
-- **Interactive shell** — CLI Forge provides an opt-in REPL for exploring commands interactively. Yargs has no equivalent.
-- **Test harness** — `TestHarness` lets you test parsing and command resolution without running handlers. Yargs testing requires manual setup.
-- **Config file inheritance** — CLI Forge config files support `extends` for composition. Yargs supports config files via `.config()` and `.pkgConf()`, but without inheritance chains.
-- **Zod integration** — CLI Forge provides a middleware for Zod schema validation. Yargs validation is limited to `.check()` callbacks.
+- **Documentation generation** — [`cli-forge generate-docs`](/docs/cli/generate-documentation) produces markdown or JSON documentation from your CLI definition. Yargs has no built-in doc generation.
+- **Interactive shell** — CLI Forge provides an [opt-in REPL](/docs/guides/quick-start#the-interactive-shell) for exploring commands interactively. Yargs has no equivalent.
+- **Test harness** — [`TestHarness`](/docs/guides/testing) lets you test parsing and command resolution without running handlers. Yargs testing requires manual setup.
+- **Config file inheritance** — CLI Forge config files support [`extends` for composition](/docs/guides/configuration-files). Yargs supports config files via [`.config()`](https://yargs.js.org/docs/#api-reference-configkey-description-parsefn) and [`.pkgConf()`](https://yargs.js.org/docs/#api-reference-pkgconfkey-cwd), but without inheritance chains.
+- **Zod integration** — CLI Forge provides a [middleware for Zod schema validation](/docs/guides/middleware). Yargs validation is limited to [`.check()` callbacks](https://yargs.js.org/docs/#api-reference-checkfn-globaltrue).
 
 **Where yargs has the edge:**
 
 - **Ecosystem maturity** — Yargs has extensive community documentation, Stack Overflow answers, and third-party integrations built over many years.
-- **Internationalization** — Built-in i18n support with `.locale()` and `.updateStrings()` for locale-aware help text.
-- **Tab completion** — `.completion()` generates bash/zsh completion scripts. CLI Forge does not yet offer shell completions.
-- **Filesystem routing** — `.commandDir()` loads commands from a directory structure. CLI Forge uses programmatic registration exclusively.
-- **Usage string parsing** — Yargs can define options from usage strings like `'--port <number>'`. CLI Forge requires explicit option objects (by design, for type safety).
-- **Deno and browser support** — Yargs officially supports Deno. Both libraries support browsers.
+- **Internationalization** — Built-in i18n support with [`.locale()`](https://yargs.js.org/docs/#api-reference-localelocale) and [`.updateStrings()`](https://yargs.js.org/docs/#api-reference-updatelocaleobj) for locale-aware help text.
+- **Tab completion** — [`.completion()`](https://yargs.js.org/docs/#api-reference-completioncmd-description-fn) generates bash/zsh completion scripts. CLI Forge does not yet offer shell completions.
+- **Filesystem routing** — [`.commandDir()`](https://yargs.js.org/docs/#api-reference-commanddirdirectory-opts) loads commands from a directory structure. CLI Forge uses programmatic registration exclusively.
+- **Usage string parsing** — Yargs can define options from [usage strings](https://yargs.js.org/docs/#api-reference-usage-desc-builder-handler) like `'--port <number>'`. CLI Forge requires explicit option objects (by design, for type safety).
+- **Deno and browser support** — Yargs officially supports [Deno](https://github.com/yargs/yargs#deno-example) and [browsers](https://github.com/yargs/yargs/blob/main/docs/browser.md). CLI Forge supports [browsers](/docs/guides/browser-usage).
 
 ### vs. commander
 
@@ -120,20 +122,20 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Built-in type inference** — Commander's core types `.opts()` as a generic object. Type-safe options require the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package. CLI Forge infers types from every `.option()` call with no extra packages.
-- **Rich option types** — Commander treats all option arguments as strings by default; numbers, booleans, and arrays require custom processing functions. CLI Forge supports `string`, `number`, `boolean`, `array`, and `object` types natively.
-- **Middleware** — CLI Forge's middleware pipeline transforms args between parsing and handler execution. Commander provides `preAction`/`postAction` hooks but not a general-purpose middleware system.
-- **Config file support** — CLI Forge loads config files with `extends` inheritance. Commander has no config file loading.
-- **Documentation generation** — Built-in `generate-docs` command. Commander has no equivalent.
-- **Interactive shell** — Opt-in REPL mode. Commander has no shell.
-- **Test harness** — `TestHarness` for parsing tests. Commander requires manual test setup.
+- **Built-in type inference** — Commander's core [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript). Type-safe options require the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package. CLI Forge [infers types](/docs/guides/typescript) from every `.option()` call with no extra packages.
+- **Rich option types** — Commander treats all option arguments as strings by default; numbers, booleans, and arrays require [custom processing functions](https://github.com/tj/commander.js#custom-option-processing). CLI Forge supports `string`, `number`, `boolean`, `array`, and `object` types natively.
+- **Middleware** — CLI Forge's [middleware pipeline](/docs/guides/middleware) transforms args between parsing and handler execution. Commander provides [`preAction`/`postAction` hooks](https://github.com/tj/commander.js#life-cycle-hooks) but not a general-purpose middleware system.
+- **Config file support** — CLI Forge loads config files with [`extends` inheritance](/docs/guides/configuration-files). Commander has no config file loading.
+- **Documentation generation** — Built-in [`generate-docs`](/docs/cli/generate-documentation) command. Commander has no equivalent.
+- **Interactive shell** — [Opt-in REPL mode](/docs/guides/quick-start#the-interactive-shell). Commander has no shell.
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests. Commander requires manual test setup.
 
 **Where commander has the edge:**
 
 - **Zero dependencies** — Commander is entirely self-contained. CLI Forge has runtime dependencies.
 - **Adoption** — Ubiquitous in the Node.js ecosystem with extensive documentation and examples.
-- **Standalone executables** — Commander can spawn subcommands as separate processes (e.g., `git`-style where `my-app install` runs a `my-app-install` binary). CLI Forge runs all commands in-process.
-- **Lightweight API** — Commander's string-based option definitions (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
+- **Standalone executables** — Commander can [spawn subcommands as separate processes](https://github.com/tj/commander.js#stand-alone-executable-subcommands) (e.g., `git`-style where `my-app install` runs a `my-app-install` binary). CLI Forge runs all commands in-process.
+- **Lightweight API** — Commander's [string-based option definitions](https://github.com/tj/commander.js#options) (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
 
 ### vs. oclif
 
@@ -141,21 +143,21 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Fluent builder API** — CLI Forge uses a chainable builder pattern. oclif requires class-based commands in separate files with static property declarations.
-- **Type accumulation** — Types flow through the builder chain. In oclif, each command types its own flags/args via `this.parse()` without accumulation across a command tree.
+- **Fluent builder API** — CLI Forge uses a chainable builder pattern. oclif requires [class-based commands](https://oclif.io/docs/commands/) in separate files with static property declarations.
+- **Type accumulation** — Types [flow through the builder chain](/docs/guides/typescript). In oclif, each command types its own [flags](https://oclif.io/docs/flags/)/args via `this.parse()` without accumulation across a command tree.
 - **Object options** — Nested, typed object options. oclif has no equivalent.
-- **Middleware** — General-purpose middleware pipeline. oclif has lifecycle hooks (`init`, `prerun`, `postrun`) but they're file-based declarations, not inline composition.
-- **Config file inheritance** — Built-in config loading with `extends`. oclif has no config file support for end-user options (CLI metadata lives in `package.json`).
-- **Lightweight setup** — Define a CLI in a single file. oclif is designed around code generation and scaffolding with a specific project structure.
+- **Middleware** — General-purpose [middleware pipeline](/docs/guides/middleware). oclif has [lifecycle hooks](https://oclif.io/docs/hooks/) (`init`, `prerun`, `postrun`) but they're file-based declarations, not inline composition.
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files). oclif has [no config file support for end-user options](https://oclif.io/docs/configuring_your_cli/) (CLI metadata lives in `package.json`).
+- **Lightweight setup** — Define a CLI in a single file. oclif is designed around [code generation and scaffolding](https://oclif.io/docs/generating/) with a specific project structure.
 
 **Where oclif has the edge:**
 
-- **Plugin system** — oclif has a mature plugin architecture. Plugins can add commands and hooks, and users can install plugins at runtime. CLI Forge has no plugin system.
-- **Distribution** — `oclif pack` creates installable artifacts (deb, macOS, Windows). CLI Forge doesn't handle distribution.
+- **Plugin system** — oclif has a [mature plugin architecture](https://oclif.io/docs/plugins/). Plugins can add commands and hooks, and users can install plugins at runtime. CLI Forge has no plugin system.
+- **Distribution** — [`oclif pack`](https://oclif.io/docs/releasing/) creates installable artifacts (deb, macOS, Windows). CLI Forge doesn't handle distribution.
 - **Enterprise-proven** — Powers production CLIs at Salesforce, Heroku, Twilio, and Shopify.
-- **Filesystem routing** — Commands are auto-discovered from the directory structure. Large CLI teams can organize commands into files without explicit registration.
-- **JSON output** — Built-in `--json` flag support with `enableJsonFlag`. CLI Forge requires manual implementation.
-- **Built-in testing** — `@oclif/test` package with CLI-specific test utilities.
+- **Filesystem routing** — Commands are [auto-discovered from the directory structure](https://oclif.io/docs/command_discovery_strategies/). Large CLI teams can organize commands into files without explicit registration.
+- **JSON output** — Built-in [`--json` flag support](https://oclif.io/docs/json/) with `enableJsonFlag`. CLI Forge requires manual implementation.
+- **Built-in testing** — [`@oclif/test`](https://oclif.io/docs/testing/) package with CLI-specific test utilities.
 
 ### vs. clipanion
 
@@ -164,21 +166,21 @@ cli('app')
 **Where CLI Forge goes further:**
 
 - **Fluent API** — Chainable builder pattern vs. class-based command definitions with static properties.
-- **Middleware** — CLI Forge has a first-class middleware pipeline. Clipanion has no middleware; class inheritance serves a similar but more limited purpose.
-- **Config file support** — Built-in config loading with `extends`. Clipanion has none.
+- **Middleware** — CLI Forge has a [first-class middleware pipeline](/docs/guides/middleware). Clipanion has no middleware; class inheritance serves a similar but more limited purpose.
+- **Config file support** — Built-in [config loading with `extends`](/docs/guides/configuration-files). Clipanion has none.
 - **Environment variables** — Declarative env var mapping to options. Clipanion provides `env` in the command context but has no automatic option-to-env-var binding.
-- **Object options** — Typed nested objects. Clipanion options are flat strings/booleans/counters/arrays; numbers require typanion validators.
-- **Documentation generation** — Built-in doc generation. Clipanion has none.
-- **Interactive shell** — Opt-in REPL. Clipanion has none.
-- **Test harness** — `TestHarness` for parsing tests. Clipanion requires manual test setup.
+- **Object options** — Typed nested objects. Clipanion [options](https://mael.dev/clipanion/docs/options) are flat strings/booleans/counters/arrays; numbers require [typanion validators](https://mael.dev/clipanion/docs/validation).
+- **Documentation generation** — Built-in [doc generation](/docs/cli/generate-documentation). Clipanion has none.
+- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell). Clipanion has none.
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests. Clipanion requires manual test setup.
 
 **Where clipanion has the edge:**
 
-- **State machine parser** — Clipanion compiles commands into an optimized state machine, enabling advanced features like command overloading (multiple commands sharing paths, disambiguated by required options).
-- **Command proxying** — `Option.Proxy()` captures remaining args transparently without requiring a `--` separator. Useful for wrapper commands.
-- **Typanion validation** — Tight integration with the [typanion](https://github.com/arcanis/typanion) library for composable runtime validation and coercion.
+- **State machine parser** — Clipanion compiles commands into an [optimized state machine](https://mael.dev/clipanion/docs/paths), enabling advanced features like command overloading (multiple commands sharing [path overlaps](https://mael.dev/clipanion/docs/paths#path-overlaps), disambiguated by required options).
+- **Command proxying** — [`Option.Proxy()`](https://mael.dev/clipanion/docs/options#proxies) captures remaining args transparently without requiring a `--` separator. Useful for wrapper commands.
+- **Typanion validation** — Tight integration with the [typanion](https://mael.dev/clipanion/docs/validation) library for composable runtime validation and coercion.
 - **Battle-tested** — Powers Yarn Berry, one of the most complex CLIs in the JavaScript ecosystem.
-- **Tree-shakeable** — Functional core architecture supports bundler tree shaking.
+- **Tree-shakeable** — [Functional core architecture](https://mael.dev/clipanion/) supports bundler tree shaking.
 
 ### vs. cac
 
@@ -186,21 +188,21 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Type inference** — CLI Forge infers types from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
+- **Type inference** — CLI Forge [infers types](/docs/guides/typescript) from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
 - **Rich option types** — Native `number`, `boolean`, `array`, and `object` types. cac infers types from bracket syntax at runtime with no compile-time safety.
-- **Validation** — Choices, conflicts, implications, required options, and custom validators. cac only validates required positional arguments and unknown options.
-- **Middleware** — Full middleware pipeline. cac has none.
-- **Config files** — Built-in loading with `extends`. cac has none.
-- **Documentation generation** — Built-in. cac has none.
-- **Interactive shell** — Opt-in REPL. cac has none.
-- **Test harness** — `TestHarness` for parsing tests. cac requires manual setup.
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), required options, and custom validators. cac only validates required positional arguments and unknown options.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware). cac has none.
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files). cac has none.
+- **Documentation generation** — [Built-in](/docs/cli/generate-documentation). cac has none.
+- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell). cac has none.
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests. cac requires manual setup.
 
 **Where cac has the edge:**
 
 - **Zero dependencies, single file** — Extremely lightweight (~3.5KB minified).
-- **Dot-notation** — `--env.API_SECRET foo` automatically creates nested objects. CLI Forge uses explicit `type: 'object'` with `properties` for typed nesting.
-- **Deno support** — Available via JSR. CLI Forge targets Node.js and Bun.
-- **Event system** — Listen for command events (`command:*`) for custom routing logic.
+- **Dot-notation** — [`--env.API_SECRET foo`](https://github.com/cacjs/cac#dot-nested-options) automatically creates nested objects. CLI Forge uses explicit `type: 'object'` with `properties` for typed nesting.
+- **Deno support** — Available [via JSR](https://github.com/cacjs/cac#with-deno). CLI Forge targets Node.js and Bun.
+- **Event system** — [Listen for command events](https://github.com/cacjs/cac#events) (`command:*`) for custom routing logic.
 - **Proven at scale** — Powers Vite, Vitest, and other popular tools.
 
 ### vs. meow
@@ -209,11 +211,11 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Auto-generated help** — Help text is generated from option definitions. meow requires you to write help text manually as a string.
-- **Subcommands** — Full command tree with nested subcommands and handlers. meow has basic command detection that stops parsing at the command name, requiring manual delegation to a new `meow()` call.
-- **Rich option types** — Native `object` and `array` types. meow supports `string`, `number`, and `boolean`.
-- **Middleware, config files, doc generation, interactive shell, test harness** — All present in CLI Forge, none in meow.
-- **Validation** — Choices, conflicts, implications, and custom validators. meow has `choices` and `isRequired`.
+- **Auto-generated help** — Help text is generated from option definitions. meow requires you to [write help text manually](https://github.com/sindresorhus/meow#helptext) as a string.
+- **Subcommands** — Full command tree with nested subcommands and handlers. meow has [basic command detection](https://github.com/sindresorhus/meow#commands) that stops parsing at the command name, requiring manual delegation to a new `meow()` call.
+- **Rich option types** — Native `object` and `array` types. meow supports [`string`, `number`, and `boolean`](https://github.com/sindresorhus/meow#flags).
+- **[Middleware](/docs/guides/middleware), [config files](/docs/guides/configuration-files), [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — All present in CLI Forge, none in meow.
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. meow has [`choices` and `isRequired`](https://github.com/sindresorhus/meow#flags).
 
 **Where meow has the edge:**
 
@@ -227,17 +229,17 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Rich option types** — `number`, `array`, and `object` options. citty supports `string`, `boolean`, `enum`, and `positional`.
-- **Validation** — Choices, conflicts, implications, and custom validators. citty has `required` and enum constraints.
-- **Middleware** — Full middleware pipeline. citty has `setup`/`cleanup` hooks and a plugin system, but no general middleware.
-- **Config files** — Built-in loading with `extends`. citty has none.
-- **Documentation generation, interactive shell, test harness** — All present in CLI Forge, none in citty.
+- **Rich option types** — `number`, `array`, and `object` options. citty supports [`string`, `boolean`, `enum`, and `positional`](https://github.com/unjs/citty#argument-types).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. citty has `required` and enum constraints.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware). citty has [`setup`/`cleanup` hooks](https://github.com/unjs/citty#hooks) and a [plugin system](https://github.com/unjs/citty#plugins), but no general middleware.
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files). citty has none.
+- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — All present in CLI Forge, none in citty.
 
 **Where citty has the edge:**
 
-- **Zero dependencies** — Uses Node.js's native `util.parseArgs` with no external dependencies.
-- **Plugin system** — `defineCittyPlugin()` for reusable setup/cleanup hooks. CLI Forge has no plugin mechanism.
-- **Lazy async commands** — Subcommands can be dynamically imported for fast startup.
+- **Zero dependencies** — Uses Node.js's native [`util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) with no external dependencies.
+- **Plugin system** — [`defineCittyPlugin()`](https://github.com/unjs/citty#plugins) for reusable setup/cleanup hooks. CLI Forge has no plugin mechanism.
+- **Lazy async commands** — [Subcommands can be dynamically imported](https://github.com/unjs/citty#lazy-commands) for fast startup.
 - **Pre-1.0 flexibility** — Still evolving; the API surface is minimal and focused.
 
 ### vs. cleye
@@ -246,62 +248,62 @@ cli('app')
 
 **Where CLI Forge goes further:**
 
-- **Middleware** — Full middleware pipeline. cleye has none.
-- **Config files** — Built-in loading with `extends`. cleye has none.
-- **Built-in types** — Native `number`, `boolean`, `array`, and `object` types via declarative config. cleye uses JavaScript constructor functions (`String`, `Number`, `Boolean`) or custom `(string) => T` functions.
-- **Validation** — Choices, conflicts, implications, and custom validators. cleye validates via custom type functions (throw to reject).
-- **Documentation generation, interactive shell, test harness** — All present in CLI Forge, none in cleye.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware). cleye has none.
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files). cleye has none.
+- **Built-in types** — Native `number`, `boolean`, `array`, and `object` types via declarative config. cleye uses JavaScript constructor functions (`String`, `Number`, `Boolean`) or [custom `(string) => T` functions](https://github.com/privatenumber/cleye#custom-flag-types--validation).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. cleye validates via [custom type functions](https://github.com/privatenumber/cleye#custom-flag-types--validation) (throw to reject).
+- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — All present in CLI Forge, none in cleye.
 - **Env variable support** — Declarative env var mapping. cleye has none.
 
 **Where cleye has the edge:**
 
-- **Responsive help** — Terminal-width-aware help tables that adapt to the console size, powered by [terminal-columns](https://github.com/privatenumber/terminal-columns).
-- **Custom type functions** — Any `(string) => T` function works as an option type, providing flexible parsing and validation in one step.
-- **Command type narrowing** — When checking `argv.command` in TypeScript, available flags and parameters are automatically narrowed to the matched command.
-- **Strict mode with suggestions** — `strictFlags: true` rejects unknown flags and suggests the closest match within 2 edit distance.
+- **Responsive help** — [Terminal-width-aware help tables](https://github.com/privatenumber/cleye#responsive-tables) that adapt to the console size, powered by [terminal-columns](https://github.com/privatenumber/terminal-columns).
+- **Custom type functions** — Any [`(string) => T` function](https://github.com/privatenumber/cleye#custom-flag-types--validation) works as an option type, providing flexible parsing and validation in one step.
+- **Command type narrowing** — When checking `argv.command` in TypeScript, available flags and parameters are [automatically narrowed](https://github.com/privatenumber/cleye#defining-commands) to the matched command.
+- **Strict mode with suggestions** — [`strictFlags: true`](https://github.com/privatenumber/cleye#strict-flags) rejects unknown flags and suggests the closest match within 2 edit distance.
 
 ### vs. @effect/cli
 
-[@effect/cli](https://effect.website/docs/cli/) (v0.75) is a CLI library built on the [Effect](https://effect.website/) ecosystem. Commands are Effect computations with typed errors, dependency injection, and structured concurrency.
+[@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) (v0.75) is a CLI library built on the [Effect](https://effect.website/) ecosystem. Commands are Effect computations with typed errors, dependency injection, and structured concurrency.
 
 **Where CLI Forge goes further:**
 
 - **Standalone** — CLI Forge is a self-contained library. @effect/cli requires the Effect runtime (`effect`, `@effect/platform`, `@effect/platform-node` or `@effect/platform-bun`), which is a significant dependency and conceptual commitment.
-- **Fluent builder API** — Chainable `.option().command()` pattern. @effect/cli uses separate constructors (`Command.make`, `Options.text`, `Args.text`) composed via `pipe()`.
+- **Fluent builder API** — Chainable `.option().command()` pattern. @effect/cli uses [separate constructors](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#our-first-command) ([`Command.make`](https://effect-ts.github.io/effect/cli/Command.ts.html#make), [`Options.text`](https://effect-ts.github.io/effect/cli/Options.ts.html#text), `Args.text`) composed via `pipe()`.
 - **Object options** — Typed nested objects via `type: 'object'`. @effect/cli defines flat options only.
-- **Config file inheritance** — Built-in config loading with `extends`. @effect/cli has no config file support.
-- **Documentation generation** — Built-in `generate-docs` command. @effect/cli has no equivalent.
-- **Lower learning curve** — Familiar API for developers coming from yargs or commander. @effect/cli requires understanding Effect's programming model (layers, services, fibers).
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files). @effect/cli has no config file support.
+- **Documentation generation** — Built-in [`generate-docs`](/docs/cli/generate-documentation) command. @effect/cli has no equivalent.
+- **Lower learning curve** — Familiar API for developers coming from yargs or commander. @effect/cli requires understanding [Effect's programming model](https://effect.website/docs/getting-started/introduction/) (layers, services, fibers).
 
 **Where @effect/cli has the edge:**
 
-- **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. If your application already uses Effect, the CLI layer integrates seamlessly.
-- **Wizard mode** — Built-in `--wizard` flag walks users through command options interactively.
-- **Shell completions** — Built-in `--completions` flag generates bash, zsh, and fish completion scripts. CLI Forge does not yet offer shell completions.
-- **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using `Options.withSchema()`.
-- **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via `Options.withFallbackPrompt()`.
+- **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. If your application already uses Effect, the CLI layer [integrates seamlessly](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#setting-up-the-main-command).
+- **Wizard mode** — Built-in [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) walks users through command options interactively.
+- **Shell completions** — Built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options) generates bash, zsh, and fish completion scripts. CLI Forge does not yet offer shell completions.
+- **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
+- **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt).
 
 ### vs. gluegun
 
 [Gluegun](https://infinitered.github.io/gluegun/) (v5.2) is a batteries-included toolkit for building CLIs, created by [Infinite Red](https://infinite.red/). It powers Ignite CLI (React Native) and was formerly used by AWS Amplify CLI.
 
-> **Note:** Gluegun is [community-maintained](https://github.com/infinitered/gluegun) and no longer under active development. The maintainers recommend considering alternatives for new projects.
+> **Note:** Gluegun is [community-maintained](https://github.com/infinitered/gluegun#community-supported) and no longer under active development. The maintainers recommend considering alternatives for new projects.
 
 **Where CLI Forge goes further:**
 
-- **Type-safe inference** — CLI Forge infers types from option definitions. Gluegun's toolbox parameters are loosely typed (`{ [key: string]: any }`).
-- **Validation** — Choices, conflicts, implications, and custom validators. Gluegun has no built-in argument validation.
-- **Middleware** — Full middleware pipeline for argument transformation. Gluegun has extensions that modify the toolbox, but no argument middleware.
-- **Programmatic registration** — Commands are defined inline with full type safety. Gluegun requires filesystem-based command files.
-- **Config file inheritance** — Built-in config loading with `extends`. Gluegun uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for config discovery but without inheritance.
-- **Documentation generation** — Built-in. Gluegun has none.
-- **Active maintenance** — CLI Forge is actively developed. Gluegun is in maintenance mode with no new features planned.
+- **Type-safe inference** — CLI Forge [infers types](/docs/guides/typescript) from option definitions. Gluegun's [toolbox](https://infinitered.github.io/gluegun/#/toolbox-api) parameters are loosely typed (`{ [key: string]: any }`).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. Gluegun has no built-in argument validation.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) for argument transformation. Gluegun has extensions that modify the toolbox, but no argument middleware.
+- **Programmatic registration** — Commands are defined inline with full type safety. Gluegun requires [filesystem-based command files](https://infinitered.github.io/gluegun/#/runtime).
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files). Gluegun uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for config discovery but without inheritance.
+- **Documentation generation** — [Built-in](/docs/cli/generate-documentation). Gluegun has none.
+- **Active maintenance** — CLI Forge is actively developed. Gluegun is [in maintenance mode](https://github.com/infinitered/gluegun#community-supported) with no new features planned.
 
 **Where gluegun has the edge:**
 
-- **Batteries included** — Gluegun bundles HTTP client ([apisauce](https://github.com/infinitered/apisauce)), filesystem utilities ([fs-jetpack](https://github.com/szwacz/fs-jetpack)), interactive prompts ([enquirer](https://github.com/enquirer/enquirer)), template engine (EJS), spinners, and colored output. CLI Forge focuses solely on argument parsing and command management.
-- **Template system** — EJS-based code generation from template files is a first-class feature. Ideal for scaffolding tools and project generators.
-- **Plugin system** — Plugins can add commands, extensions, and templates via directory conventions.
+- **Batteries included** — Gluegun [bundles](https://infinitered.github.io/gluegun/#/toolbox-api) HTTP client ([apisauce](https://github.com/infinitered/apisauce)), filesystem utilities ([fs-jetpack](https://github.com/szwacz/fs-jetpack)), interactive prompts ([enquirer](https://github.com/enquirer/enquirer)), template engine (EJS), spinners, and colored output. CLI Forge focuses solely on argument parsing and command management.
+- **Template system** — [EJS-based code generation](https://infinitered.github.io/gluegun/#/toolbox-template) from template files is a first-class feature. Ideal for scaffolding tools and project generators.
+- **Plugin system** — [Plugins](https://infinitered.github.io/gluegun/#/plugins) can add commands, extensions, and templates via directory conventions.
 - **Prompts** — Built-in interactive prompting. CLI Forge does not include prompts.
 
 ### vs. Node.js util.parseArgs
@@ -312,19 +314,19 @@ cli('app')
 
 CLI Forge provides everything that `util.parseArgs` deliberately excludes:
 
-- **Rich option types** — `string`, `number`, `boolean`, `array`, and `object`. `util.parseArgs` supports only `'string'` and `'boolean'`.
-- **Type inference** — Fully typed parsed output. `util.parseArgs` returns untyped `string | boolean | string[] | boolean[]` values.
+- **Rich option types** — `string`, `number`, `boolean`, `array`, and `object`. `util.parseArgs` supports only [`'string'` and `'boolean'`](https://nodejs.org/api/util.html#utilparseargsconfig).
+- **Type inference** — [Fully typed](/docs/guides/typescript) parsed output. `util.parseArgs` returns untyped `string | boolean | string[] | boolean[]` values.
 - **Subcommands** — Full command tree with nested subcommands, builders, and handlers. `util.parseArgs` has no command concept.
 - **Help generation** — Automatic help text from option definitions. `util.parseArgs` generates no output.
-- **Validation** — Required, choices, conflicts, implications, custom validators. `util.parseArgs` has no validation beyond strict mode (rejecting unknown flags).
+- **Validation** — [Required, choices, conflicts, implications](/docs/guides/validation), custom validators. `util.parseArgs` has no validation beyond [strict mode](https://nodejs.org/api/util.html#utilparseargsconfig) (rejecting unknown flags).
 - **Coercion** — Automatic type coercion (strings to numbers, etc.). `util.parseArgs` performs no coercion.
-- **Middleware, config files, env variables, doc generation, interactive shell, test harness** — All present in CLI Forge, none in `util.parseArgs`.
+- **[Middleware](/docs/guides/middleware), [config files](/docs/guides/configuration-files), env variables, [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — All present in CLI Forge, none in `util.parseArgs`.
 
 **Where util.parseArgs has the edge:**
 
 - **Zero dependencies, built-in** — Part of Node.js core. No installation needed.
-- **Minimal API surface** — A single function call with a simple config object. No abstractions to learn.
-- **Tokens API** — Returns detailed parse tokens for custom post-processing, useful when building your own parser on top.
+- **Minimal API surface** — A [single function call](https://nodejs.org/api/util.html#utilparseargsconfig) with a simple config object. No abstractions to learn.
+- **Tokens API** — Returns [detailed parse tokens](https://nodejs.org/api/util.html#parseargs-tokens) for custom post-processing, useful when building your own parser on top.
 - **No lock-in** — As a Node.js built-in, it has no supply chain risk and will be maintained as long as Node.js exists.
 
 `util.parseArgs` is best suited for simple scripts with a handful of flags. For anything involving subcommands, validation, help text, or type safety, a library like CLI Forge will save significant effort.
@@ -357,6 +359,6 @@ CLI Forge provides everything that `util.parseArgs` deliberately excludes:
 - **meow** — [GitHub](https://github.com/sindresorhus/meow) · [npm](https://www.npmjs.com/package/meow)
 - **citty** — [GitHub](https://github.com/unjs/citty) · [npm](https://www.npmjs.com/package/citty)
 - **cleye** — [GitHub](https://github.com/privatenumber/cleye) · [npm](https://www.npmjs.com/package/cleye)
-- **@effect/cli** — [Documentation](https://effect.website/docs/cli/) · [GitHub](https://github.com/Effect-TS/effect/tree/main/packages/cli) · [npm](https://www.npmjs.com/package/@effect/cli)
+- **@effect/cli** — [README](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) · [API Reference](https://effect-ts.github.io/effect/cli/) · [npm](https://www.npmjs.com/package/@effect/cli)
 - **gluegun** — [Documentation](https://infinitered.github.io/gluegun/) · [GitHub](https://github.com/infinitered/gluegun) · [npm](https://www.npmjs.com/package/gluegun)
 - **Node.js util.parseArgs** — [Documentation](https://nodejs.org/api/util.html#utilparseargsconfig) · [Original proposal](https://github.com/pkgjs/parseargs)
