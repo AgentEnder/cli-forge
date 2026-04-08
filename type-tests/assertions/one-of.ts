@@ -67,3 +67,27 @@ const p7 = parser().option('level', {
 });
 type T7 = ReturnType<typeof p7.parse>['level'];
 const t7: IsTrue<AssertEqual<T7, number | string | boolean | undefined>> = true;
+
+// Test 8: coerce on string entry changes the union
+const p8 = parser().option('val', {
+  type: 'oneOf',
+  valueTypes: [
+    { type: 'string', coerce: (v: string) => v.length },
+    { type: 'boolean' },
+  ],
+});
+type T8 = ReturnType<typeof p8.parse>['val'];
+const t8: IsTrue<AssertEqual<T8, number | boolean | undefined>> = true;
+
+// Test 9: oneOf with other options preserves all types
+const p9 = parser()
+  .option('name', { type: 'string', required: true })
+  .option('color', {
+    type: 'oneOf',
+    valueTypes: [{ type: 'string' }, { type: 'boolean' }],
+    default: 'auto',
+  });
+type T9Name = ReturnType<typeof p9.parse>['name'];
+type T9Color = ReturnType<typeof p9.parse>['color'];
+const t9a: IsTrue<AssertEqual<T9Name, string>> = true;
+const t9b: IsTrue<AssertEqual<T9Color, string | boolean>> = true;
