@@ -1,6 +1,6 @@
 {
   "name": "@cli-forge/parser",
-  "version": "1.9.0",
+  "version": "1.9.1",
   "scripts": {
     "build": "tsdown"
   },
@@ -42,13 +42,17 @@
         "options": {
           "cwd": "{projectRoot}"
         },
-        "dependsOn": ["build"],
+        "dependsOn": [
+          "build"
+        ],
         "inputs": [
           "{projectRoot}/src/**/*",
           "{projectRoot}/typedoc.json",
           "{projectRoot}/tsconfig.lib.json"
         ],
-        "outputs": ["{workspaceRoot}/.typedoc/parser.json"]
+        "outputs": [
+          "{workspaceRoot}/.typedoc/parser.json"
+        ]
       }
     }
   }

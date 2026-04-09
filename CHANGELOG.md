@@ -1,3 +1,16 @@
+## 1.9.1 (2026-04-09)
+
+### 🩹 Fixes
+
+- **cli-forge:** flatten types in ComposableBuilder and ArgumentsOf ([#71](https://github.com/agentender/cli-forge/pull/71))
+- **docs-site:** ensure extract-api-docs runs before docs-site build and preview ([5f7b8ab](https://github.com/agentender/cli-forge/commit/5f7b8ab))
+- **docs-site:** patch rehype-typedoc to disambiguate colliding slugs ([#70](https://github.com/agentender/cli-forge/pull/70))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.9.0 (2026-04-08)
 
 ### 🚀 Features
