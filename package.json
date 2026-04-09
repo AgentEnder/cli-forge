@@ -37,6 +37,7 @@
     "ts-jest": "catalog:",
     "tsdown": "^0.21.7",
     "tsx": "catalog:",
+    "typedoc": "catalog:",
     "typescript": "catalog:",
     "verdaccio": "catalog:",
     "vite": "catalog:",
