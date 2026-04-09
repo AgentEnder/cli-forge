@@ -1,4 +1,4 @@
-import { getFileSystemProvider } from '@cli-forge/parser';
+import { type Expand, getFileSystemProvider } from '@cli-forge/parser';
 import { CLI } from './public-api';
 
 export function getCallingFile() {
@@ -141,5 +141,5 @@ export function stringToArgs(str: string) {
  * @typeParam T - A function that takes a CLI instance and returns a new CLI instance with additional options, commands etc.
  */
 export type ArgumentsOf<T> = T extends (...args: any[]) => CLI<infer TArgs>
-  ? TArgs
+  ? Expand<TArgs>
   : never;

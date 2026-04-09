@@ -27,14 +27,18 @@ CLI Forge is primarily developed against modern Node.js, and is also compatible 
 ## Key Features
 
 - **Full type inference** for parsed arguments based on your option definitions
-- **Flexible option types**: strings, numbers, booleans, arrays, and nested objects
+- **Flexible option types**: strings, numbers, booleans, arrays, nested objects, and [`oneOf` unions](https://craigory.dev/cli-forge/examples/one-of-option)
 - **Command hierarchy** with unlimited nesting and inherited options
-- **Middleware system** for transforming arguments before handler execution
+- **Composable builders** with [`chain()` and `makeComposableBuilder()`](https://craigory.dev/cli-forge/examples/composable-options) for reusable option groups
+- **Middleware system** for transforming arguments before handler execution, including [Zod schema validation](https://craigory.dev/cli-forge/docs/guides/middleware)
+- **Environment variable support** with [per-option or global env mapping](https://craigory.dev/cli-forge/examples/env-options)
 - **Interactive shell** (opt-in) for easier exploration of complex command trees
+- **Shell completions** for bash, zsh, fish, and PowerShell
 - **Automatic documentation generation** to markdown or JSON formats
 - **Configuration file support** with inheritance via `extends`
 - **Built-in test harness** for unit testing your CLI commands
 - **Comprehensive validation** with custom validators, choices, and cross-option constraints
+- **Browser support** via [browser-safe stubs](https://craigory.dev/cli-forge/docs/guides/browser-usage)
 
 ## Quick Start
 
@@ -74,43 +78,7 @@ cli('my-cli')
 
 ## Usage
 
-See docs for more examples: [https://craigory.dev/cli-forge/examples](https://craigory.dev/cli-forge/examples)
-
-### Basic Example
-
-To create a new CLI, save the below code to a file (e.g. `my-cli.js`), and run it with Node.js:
-
-```js
-import { cli } from 'cli-forge';
-
-cli('my-cli')
-  .command('hello', {
-    description: 'Say hello to the world',
-    builder: (args) =>
-      args.option('name', {
-        type: 'string',
-        description: 'The name to say hello to',
-      }),
-    handler: (args) => {
-      console.log(`Hello, ${args.name}!`);
-    },
-  })
-  .forge();
-```
-
-Then run the CLI with:
-
-```bash
-node my-cli.js hello --name "World"
-```
-
-Then, to generate documentation for the CLI, run:
-
-```bash
-npx cli-forge generate-docs my-cli.js
-```
-
-This should generate a folder called `docs` containing markdown documentation for the CLI. Alternatively, you can pass `--format json` to generate JSON documentation to further process.
+See the [examples gallery](https://craigory.dev/cli-forge/examples) and the [quick-start guide](https://craigory.dev/cli-forge/docs/guides/quick-start) for more.
 
 ## Subshells
 
@@ -134,53 +102,9 @@ By default, this will generate markdown documentation in a folder called `docs`.
 
 ## How It Compares
 
-### vs. Yargs
+CLI Forge is compared in detail with **yargs**, **commander**, **oclif**, **clipanion**, **cac**, **meow**, **citty**, **cleye**, **@effect/cli**, **gluegun**, and Node.js `util.parseArgs` in the [comparison guide](https://craigory.dev/cli-forge/docs/guides/comparison).
 
-CLI Forge shares a similar fluent API style with yargs, but makes different tradeoffs:
-
-**What CLI Forge adds:**
-
-- Superior TypeScript inference that tracks every option through the chain
-- Built-in middleware system for argument transformation
-- Interactive shell support (inspired by vorpal)
-- Integrated documentation generation (`cli-forge generate-docs`)
-- Test harness for unit testing CLI commands
-- Configuration file inheritance with `extends`
-
-**Intentional differences:**
-
-- **No usage string parsing** — To maintain type safety, options must be explicitly declared rather than parsed from usage strings
-- **No unknown option parsing** — Unknown options aren't captured by design; explicit option definitions ensure type safety
-- **No filesystem-based routing** — Commands are registered programmatically for better discoverability and refactoring support
-
-### vs. Commander
-
-Commander offers a lightweight API, while CLI Forge provides more structure:
-
-**CLI Forge advantages:**
-
-- Full TypeScript type inference throughout the argument chain
-- Richer option types (nested objects with typed properties)
-- Middleware composition
-- Built-in configuration file support with inheritance
-- Automatic documentation generation
-- Interactive shell mode
-
-### vs. Vorpal
-
-Vorpal pioneered interactive CLI shells but hasn't been maintained since 2018. CLI Forge brings that concept forward:
-
-**Modern improvements:**
-
-- Active maintenance with TypeScript-first design
-- Opt-in interactive shell (not required)
-- Contemporary Node.js and TypeScript support
-- Comprehensive testing utilities
-- Documentation generation tooling
-
-### Design Philosophy
-
-CLI Forge prioritizes **user type safety** over internal implementation purity. While the library uses type assertions internally where necessary due to TypeScript limitations, the public API provides full type inference and safety. The goal is a CLI framework that feels natural in TypeScript projects while catching as many errors as possible at compile time.
+The short version: CLI Forge prioritizes **full type inference** (every `.option()` call builds a TypeScript type), **composability** (middleware, composable builders, config file inheritance), and **integrated tooling** (doc generation, test harness, interactive shell) — features that most alternatives only partially cover or omit entirely.
 
 ## Contributing
 
