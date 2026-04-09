@@ -39,7 +39,7 @@ function readDtsFiles(
 export interface PlaygroundExample {
   id: string;
   title: string;
-  description: string;
+  descriptionHtml: string;
   files: { path: string; content: string }[];
   commands: { name: string; args: string; env?: Record<string, string> }[];
 }
@@ -89,7 +89,7 @@ function toPlaygroundExample(ex: SiteExample): PlaygroundExample {
   return {
     id: ex.id,
     title: ex.title,
-    description: ex.description,
+    descriptionHtml: ex.renderedDescriptionHtml,
     files: ex.files
       .filter(
         (f) =>
