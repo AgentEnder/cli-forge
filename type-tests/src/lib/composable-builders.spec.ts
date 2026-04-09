@@ -90,6 +90,48 @@ describe('Composable Builder Type Inference', () => {
       expect(typeHasProperty(result!.type, 'count')).toBe(true);
     });
 
+    it('should produce flat type from ArgumentsOf with composed builders', () => {
+      const code = `
+        import { cli, chain, makeComposableBuilder, ArgumentsOf, CLI } from 'cli-forge';
+
+        const withName = makeComposableBuilder((args) =>
+          args.option('name', { type: 'string', required: true })
+        );
+
+        const withAge = makeComposableBuilder((args) =>
+          args.option('age', { type: 'number', required: true })
+        );
+
+        const builder = <T extends CLI>(args: T) => chain(args, withName, withAge);
+
+        type Args = ArgumentsOf<typeof builder>;
+
+        const testArgs: Args = null! as Args;
+        const _check: string = testArgs.name;
+        const _check2: number = testArgs.age;
+      `;
+
+      const { typeChecker, sourceFile } = createTestProgram(code);
+
+      // Find the Args type alias
+      let argsType: ts.Type | null = null;
+      ts.forEachChild(sourceFile, (node) => {
+        if (
+          ts.isTypeAliasDeclaration(node) &&
+          node.name.text === 'Args'
+        ) {
+          argsType = typeChecker.getTypeAtLocation(node);
+        }
+      });
+
+      expect(argsType).not.toBeNull();
+      const typeString = typeChecker.typeToString(argsType!);
+
+      // Should be a flat object type, not an intersection chain
+      expect(typeString).not.toContain('MakeUndefinedPropertiesOptional');
+      expect(typeString).not.toContain('Expand');
+    });
+
     it('should handle optional vs required in handler', () => {
       const code = `
         import { cli } from 'cli-forge';

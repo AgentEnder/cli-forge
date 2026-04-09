@@ -1,4 +1,4 @@
-import type { ParsedArgs } from '@cli-forge/parser';
+import type { Expand, ParsedArgs } from '@cli-forge/parser';
 import { CLI } from './public-api';
 
 /**
@@ -23,7 +23,7 @@ export type ComposableBuilder<
   TAddedChildren = {}
 > = <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(
   init: CLI<TInit, THandlerReturn, TChildren, TParent>
-) => CLI<TInit & TArgs2, THandlerReturn, TChildren & TAddedChildren, TParent>;
+) => CLI<Expand<TInit & TArgs2>, THandlerReturn, TChildren & TAddedChildren, TParent>;
 
 /**
  * Creates a composable builder function that can be used with `chain`.
@@ -69,7 +69,7 @@ export function makeComposableBuilder<
       current = current[op.method](...op.args);
     }
     return current as unknown as CLI<
-      TInit & TArgs2,
+      Expand<TInit & TArgs2>,
       THandlerReturn,
       TChildren & TChildren2,
       TParent
