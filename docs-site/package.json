@@ -59,7 +59,15 @@
       "build": {
         "dependsOn": [
           "^build",
-          "extract-cli-docs"
+          "extract-cli-docs",
+          {
+            "target": "extract-api-docs",
+            "projects": "cli-forge"
+          },
+          {
+            "target": "extract-api-docs",
+            "projects": "parser"
+          }
         ],
         "inputs": [
           "production",
@@ -109,13 +117,35 @@
           "build"
         ]
       },
+      "preview": {
+        "dependsOn": [
+          "^build",
+          "extract-cli-docs",
+          {
+            "target": "extract-api-docs",
+            "projects": "cli-forge"
+          },
+          {
+            "target": "extract-api-docs",
+            "projects": "parser"
+          }
+        ]
+      },
       "serve": {
         "command": "vike dev",
         "options": {
           "cwd": "{projectRoot}"
         },
         "dependsOn": [
-          "extract-cli-docs"
+          "extract-cli-docs",
+          {
+            "target": "extract-api-docs",
+            "projects": "cli-forge"
+          },
+          {
+            "target": "extract-api-docs",
+            "projects": "parser"
+          }
         ]
       }
     }

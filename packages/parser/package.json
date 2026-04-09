@@ -34,5 +34,22 @@
   ],
   "publishConfig": {
     "access": "public"
+  },
+  "nx": {
+    "targets": {
+      "extract-api-docs": {
+        "command": "typedoc --options typedoc.json",
+        "options": {
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": ["build"],
+        "inputs": [
+          "{projectRoot}/src/**/*",
+          "{projectRoot}/typedoc.json",
+          "{projectRoot}/tsconfig.lib.json"
+        ],
+        "outputs": ["{workspaceRoot}/.typedoc/parser.json"]
+      }
+    }
   }
 }

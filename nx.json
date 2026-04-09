@@ -28,6 +28,9 @@
       "cache": true,
       "inputs": ["default", "^production"],
       "dependsOn": ["^build"]
+    },
+    "extract-api-docs": {
+      "cache": true
     }
   },
   "release": {
