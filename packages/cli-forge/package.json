@@ -79,7 +79,7 @@
   },
   "nx": {
     "targets": {
-      "extract-api-docs": {
+      "extract-docs:api": {
         "command": "typedoc --options typedoc.json --skipErrorChecking",
         "options": {
           "cwd": "{projectRoot}"
@@ -91,6 +91,17 @@
           "{projectRoot}/tsconfig.lib.json"
         ],
         "outputs": ["{workspaceRoot}/.typedoc/cli-forge.json"]
+      },
+      "extract-docs:cli": {
+        "command": "node cli.js generate-documentation ./src/bin/cli.ts --output ../../docs-site/docs/cli",
+        "options": {
+          "cwd": "{projectRoot}"
+        },
+        "dependsOn": ["build"],
+        "inputs": [
+          "{projectRoot}/src/**/*"
+        ],
+        "outputs": ["{workspaceRoot}/docs-site/docs/cli"]
       }
     }
   }

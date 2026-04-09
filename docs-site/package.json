@@ -7,8 +7,7 @@
     "dev": "vike dev",
     "build": "vike build && pnpm exec pagefind --site dist/client",
     "preview": "vike build && pnpm exec pagefind --site dist/client && vike preview",
-    "typecheck": "tsc",
-    "extract-cli-docs": "pnpm cli-forge generate-documentation ../packages/cli-forge/src/bin/cli.ts --output ./docs/cli"
+    "typecheck": "tsc"
   },
   "dependencies": {
     "@cli-forge/parser": "workspace:",
@@ -59,15 +58,7 @@
       "build": {
         "dependsOn": [
           "^build",
-          "extract-cli-docs",
-          {
-            "target": "extract-api-docs",
-            "projects": "cli-forge"
-          },
-          {
-            "target": "extract-api-docs",
-            "projects": "parser"
-          }
+          "^extract-docs:*"
         ],
         "inputs": [
           "production",
@@ -93,14 +84,6 @@
           "directory": "{projectRoot}/dist/client"
         }
       },
-      "extract-cli-docs": {
-        "dependsOn": [
-          {
-            "target": "build",
-            "projects": "cli-forge"
-          }
-        ]
-      },
       "lint": {
         "executor": "nx:noop",
         "dependsOn": [
@@ -120,15 +103,7 @@
       "preview": {
         "dependsOn": [
           "^build",
-          "extract-cli-docs",
-          {
-            "target": "extract-api-docs",
-            "projects": "cli-forge"
-          },
-          {
-            "target": "extract-api-docs",
-            "projects": "parser"
-          }
+          "^extract-docs:*"
         ]
       },
       "serve": {
@@ -137,15 +112,7 @@
           "cwd": "{projectRoot}"
         },
         "dependsOn": [
-          "extract-cli-docs",
-          {
-            "target": "extract-api-docs",
-            "projects": "cli-forge"
-          },
-          {
-            "target": "extract-api-docs",
-            "projects": "parser"
-          }
+          "^extract-docs:*"
         ]
       }
     }

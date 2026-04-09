@@ -37,7 +37,7 @@
   },
   "nx": {
     "targets": {
-      "extract-api-docs": {
+      "extract-docs:api": {
         "command": "typedoc --options typedoc.json",
         "options": {
           "cwd": "{projectRoot}"
