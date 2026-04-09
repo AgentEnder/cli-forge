@@ -227,8 +227,11 @@ export default function PlaygroundPage() {
       const cliForgeImports = parseImports(code, 'cli-forge');
       const parserImports = parseImports(code, '@cli-forge/parser');
 
-      const stripped = code
-        // Strip package imports (ESM and CJS)
+      // Strip cli-forge/parser imports (we re-inject them as runtime vars),
+      // then use TypeScript's transpiler to handle all TS syntax (generics,
+      // type aliases, annotations, etc.) instead of fragile regex stripping.
+      const withoutPkgImports = code
+        // Strip cli-forge and parser imports (ESM and CJS)
         .replace(
           /import\s+(?:\{[^}]*\}|\w+)\s+from\s+['"](?:cli-forge|@cli-forge\/parser)['"];?\s*/g,
           ''
@@ -237,21 +240,28 @@ export default function PlaygroundPage() {
           /(?:const|let|var)\s+\{[^}]*\}\s*=\s*require\s*\(\s*['"](?:cli-forge|@cli-forge\/parser)['"]\s*\)\s*;?\s*/g,
           ''
         )
-        // Strip remaining imports (other packages) — not valid inside AsyncFunction
+        .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
+
+      const ts = await import('typescript');
+      const { outputText: transpiled } = ts.transpileModule(withoutPkgImports, {
+        compilerOptions: {
+          target: ts.ScriptTarget.ESNext,
+          module: ts.ModuleKind.ESNext,
+          esModuleInterop: true,
+          allowSyntheticDefaultImports: true,
+        },
+      });
+
+      // Post-transpile cleanup: strip remaining imports/exports that
+      // can't run inside AsyncFunction (value imports from other packages,
+      // export keywords on declarations, re-exports).
+      const stripped = transpiled
         .replace(/^\s*import\s+.*?from\s+['"][^'"]*['"];?\s*$/gm, '')
-        // Strip `export type X = ...;` and `export interface X { ... }` (TS-only)
-        .replace(/export\s+type\s+\w[^;]*;/g, '')
-        .replace(/export\s+interface\s+\w[\s\S]*?\n\}/gm, '')
-        // `export default <identifier>;` — remove the whole statement
         .replace(/^\s*export\s+default\s+(?!function\b|class\b|async\b)\S[^\n]*;?\s*$/gm, '')
-        // `export default function/class/async function` — strip `export default`
         .replace(/export\s+default\s+(?=(?:async\s+)?(?:function|class)\b)/g, '')
-        // `export { X, Y }` and `export * from '...'` — remove entirely
         .replace(/export\s*\{[^}]*\}\s*(?:from\s*['"][^'"]*['"])?\s*;?/g, '')
         .replace(/export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]*['"];\s*/g, '')
-        // `export const/let/var/function/class` — keep the declaration, strip `export`
-        .replace(/\bexport\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/g, '')
-        .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
+        .replace(/\bexport\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/g, '');
 
       const cliForge = await import('cli-forge');
       const parserPkg = await import('@cli-forge/parser');
@@ -464,11 +474,16 @@ export default function PlaygroundPage() {
               </span>
             )}
           </h1>
-          <p className="text-forge-ash mt-1 max-w-2xl text-sm">
-            {activeExample
-              ? activeExample.description
-              : 'Write CLI Forge code and see how it responds to different arguments and environment variables.'}
-          </p>
+          {activeExample ? (
+            <div
+              className="prose-content text-forge-ash mt-1 max-w-2xl text-sm"
+              dangerouslySetInnerHTML={{ __html: activeExample.descriptionHtml }}
+            />
+          ) : (
+            <p className="text-forge-ash mt-1 max-w-2xl text-sm">
+              Write CLI Forge code and see how it responds to different arguments and environment variables.
+            </p>
+          )}
         </div>
         {activeExample && (
           <Link
