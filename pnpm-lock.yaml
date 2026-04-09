@@ -134,6 +134,9 @@ overrides:
   cli-forge: workspace:*
 
 patchedDependencies:
+  rehype-typedoc@0.2.0:
+    hash: 9bbfc4ce3015d066529ed231b3ae85e688128dca41be8053f31d659cc50f241a
+    path: patches/rehype-typedoc@0.2.0.patch
   vike-plugin-typedoc@0.2.0:
     hash: d6d5a95a0ed6034598052d829318dc079cda8eb12244d9093896039272dfdd23
     path: patches/vike-plugin-typedoc@0.2.0.patch
@@ -334,7 +337,7 @@ importers:
         version: 10.0.1
       rehype-typedoc:
         specifier: ^0.2.0
-        version: 0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
+        version: 0.2.0(patch_hash=9bbfc4ce3015d066529ed231b3ae85e688128dca41be8053f31d659cc50f241a)(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
       remark-directive:
         specifier: ^3.0.1
         version: 3.0.1
@@ -12926,7 +12929,7 @@ snapshots:
       hast-util-to-html: 9.0.5
       unified: 11.0.5
 
-  rehype-typedoc@0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5):
+  rehype-typedoc@0.2.0(patch_hash=9bbfc4ce3015d066529ed231b3ae85e688128dca41be8053f31d659cc50f241a)(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5):
     dependencies:
       remark-directive: 3.0.1
       typedoc: 0.28.18(typescript@5.9.3)
@@ -13777,7 +13780,7 @@ snapshots:
   vike-plugin-typedoc@0.2.0(patch_hash=d6d5a95a0ed6034598052d829318dc079cda8eb12244d9093896039272dfdd23)(react@19.2.4)(shiki@3.23.0)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(vike-react@0.6.21(react-dom@19.2.4(react@19.2.4))(react@19.2.4)(vike@0.4.256(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))))(vike@0.4.256(react-streaming@0.4.16(react-dom@19.2.4(react@19.2.4))(react@19.2.4))(vite@7.3.2(@types/node@25.5.2)(jiti@2.6.1)(lightningcss@1.32.0)(sass@1.97.3)(terser@5.46.1)(tsx@4.21.0)(yaml@2.8.3))):
     dependencies:
       rehype-stringify: 10.0.1
-      rehype-typedoc: 0.2.0(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
+      rehype-typedoc: 0.2.0(patch_hash=9bbfc4ce3015d066529ed231b3ae85e688128dca41be8053f31d659cc50f241a)(remark-directive@3.0.1)(typedoc@0.28.18(typescript@5.9.3))(typescript@5.9.3)(unified@11.0.5)
       remark-breaks: 4.0.0
       remark-directive: 3.0.1
       remark-gfm: 4.0.1

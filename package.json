@@ -62,7 +62,8 @@
       "cli-forge": "workspace:*"
     },
     "patchedDependencies": {
-      "vike-plugin-typedoc@0.2.0": "patches/vike-plugin-typedoc@0.2.0.patch"
+      "vike-plugin-typedoc@0.2.0": "patches/vike-plugin-typedoc@0.2.0.patch",
+      "rehype-typedoc@0.2.0": "patches/rehype-typedoc@0.2.0.patch"
     }
   },
   "packageManager": "pnpm@10.24.0+sha512.01ff8ae71b4419903b65c60fb2dc9d34cf8bb6e06d03bde112ef38f7a34d6904c424ba66bea5cdcf12890230bf39f9580473140ed9c946fef328b6e5238a345a"

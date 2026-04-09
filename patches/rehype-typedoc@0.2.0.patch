@@ -1,0 +1,101 @@
+diff --git a/dist/build-symbols.js b/dist/build-symbols.js
+index fb1b3ff14ae48b7d8a88d88cbb3daa9d8c491d9a..3f36670ccb023b006dd166172db1a0f7e9fcbb7c 100644
+--- a/dist/build-symbols.js
++++ b/dist/build-symbols.js
+@@ -68,6 +68,8 @@ export function buildSymbolsFromDocuments(documents, buildUrl) {
+     const logger = new ConsoleLogger();
+     logger.level = LogLevel.None;
+     const deserializer = new Deserializer(logger);
++    // First pass: collect all symbols with their slugs (defer path computation)
++    const allSymbols = [];
+     for (const { packageSlug, json } of documents) {
+         const registry = new FileRegistry();
+         const project = deserializer.reviveProject(packageSlug, json, {
+@@ -88,33 +90,71 @@ export function buildSymbolsFromDocuments(documents, buildUrl) {
+                 const kind = kindToString(reflection.kind);
+                 if (!kind)
+                     continue;
+-                const symbolSlug = slugify(reflection.name);
+-                const path = buildUrl(packageSlug, symbolSlug);
+                 const reExport = isReExported(reflection, packageSlug);
+-                const sym = {
++                allSymbols.push({
+                     name: reflection.name,
+                     package: packageSlug,
+-                    path,
++                    slug: slugify(reflection.name),
+                     kind,
+                     ...(reExport ? { isReExport: true } : {}),
+-                };
+-                const existing = map.get(reflection.name);
+-                if (!existing) {
+-                    map.set(reflection.name, sym);
+-                }
+-                else if (Array.isArray(existing)) {
+-                    existing.push(sym);
+-                }
+-                else {
+-                    // Promote single entry to array
+-                    map.set(reflection.name, [existing, sym]);
+-                }
++                });
+             }
+         }
+         if (project.children) {
+             walkReflections(project.children);
+         }
+     }
++    // Second pass: disambiguate colliding slugs within each package
++    // by appending the kind suffix (matches vike-plugin-typedoc behavior)
++    const byPackage = new Map();
++    for (const sym of allSymbols) {
++        let pkgSymbols = byPackage.get(sym.package);
++        if (!pkgSymbols) {
++            pkgSymbols = [];
++            byPackage.set(sym.package, pkgSymbols);
++        }
++        pkgSymbols.push(sym);
++    }
++    for (const [, pkgSymbols] of byPackage) {
++        const slugGroups = new Map();
++        for (const sym of pkgSymbols) {
++            let group = slugGroups.get(sym.slug);
++            if (!group) {
++                group = [];
++                slugGroups.set(sym.slug, group);
++            }
++            group.push(sym);
++        }
++        for (const [, group] of slugGroups) {
++            if (group.length < 2)
++                continue;
++            for (const sym of group) {
++                sym.slug = `${sym.slug}-${sym.kind}`;
++            }
++        }
++    }
++    // Third pass: build paths with disambiguated slugs and populate the map
++    for (const sym of allSymbols) {
++        const path = buildUrl(sym.package, sym.slug);
++        const entry = {
++            name: sym.name,
++            package: sym.package,
++            path,
++            kind: sym.kind,
++            ...(sym.isReExport ? { isReExport: true } : {}),
++        };
++        const existing = map.get(sym.name);
++        if (!existing) {
++            map.set(sym.name, entry);
++        }
++        else if (Array.isArray(existing)) {
++            existing.push(entry);
++        }
++        else {
++            // Promote single entry to array
++            map.set(sym.name, [existing, entry]);
++        }
++    }
+     return map;
+ }
+ //# sourceMappingURL=build-symbols.js.map
