@@ -29,7 +29,7 @@
       "inputs": ["default", "^production"],
       "dependsOn": ["^build"]
     },
-    "extract-api-docs": {
+    "extract-docs:*": {
       "cache": true
     }
   },
