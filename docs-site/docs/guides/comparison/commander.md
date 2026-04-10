@@ -9,18 +9,6 @@ nav:
 
 [Commander](https://github.com/tj/commander.js) is the most widely used CLI library in the Node.js ecosystem, with zero runtime dependencies.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### commander
-
-<%= example('framework-comparison').file('commander.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Built-in type inference** — Commander's core [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript). Type-safe options require the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package. CLI Forge [infers types](/docs/guides/typescript) from every `.option()` call with no extra packages.
@@ -37,3 +25,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Adoption** — Ubiquitous in the Node.js ecosystem with extensive documentation and examples.
 - **Standalone executables** — Commander can [spawn subcommands as separate processes](https://github.com/tj/commander.js#stand-alone-executable-subcommands) (e.g., `git`-style where `my-app install` runs a `my-app-install` binary). CLI Forge runs all commands in-process.
 - **Lightweight API** — Commander's [string-based option definitions](https://github.com/tj/commander.js#options) (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
+
+<div class="code-tabs" data-default="commander">
+<div class="code-tab" data-tab="commander">
+
+<%= example('framework-comparison').file('commander.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

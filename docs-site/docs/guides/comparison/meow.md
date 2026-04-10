@@ -9,18 +9,6 @@ nav:
 
 [meow](https://github.com/sindresorhus/meow) is a zero-dependency, minimalist CLI helper by Sindre Sorhus.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note how meow requires manual subcommand dispatch since it has no built-in subcommand system.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### meow
-
-<%= example('framework-comparison').file('meow.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Auto-generated help** — Help text is generated from option definitions. meow requires you to [write help text manually](https://github.com/sindresorhus/meow#helptext) as a string.
@@ -34,3 +22,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Zero dependencies** — Completely self-contained.
 - **Simplicity** — A single function call returns parsed results. No builder chain, no class hierarchy. Ideal for simple scripts that need a few flags.
 - **ESM-native** — ESM-only by design.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note how meow requires manual subcommand dispatch since it has no built-in subcommand system.
+
+<div class="code-tabs" data-default="meow">
+<div class="code-tab" data-tab="meow">
+
+<%= example('framework-comparison').file('meow.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

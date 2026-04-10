@@ -169,6 +169,61 @@ a.line-number:hover {
   font-size: 0.875rem;
   line-height: 1.6;
 }
+/* Line numbers via CSS counters on Shiki .line spans */
+.prose-content pre code {
+  counter-reset: line;
+}
+.prose-content pre code > .line::before {
+  counter-increment: line;
+  content: counter(line);
+  display: inline-block;
+  width: 2.5em;
+  text-align: right;
+  margin-right: 1em;
+  color: #3a2c20;
+  user-select: none;
+  font-size: 0.8em;
+}
+
+/* ─── Code Tabs ─── */
+.prose-content .code-tabs {
+  margin: 1.25em 0;
+}
+.prose-content .code-tab-buttons {
+  display: flex;
+  gap: 0;
+  border-bottom: 1px solid #2a1f16;
+}
+.prose-content .code-tab-buttons button {
+  padding: 0.5em 1.25em;
+  font-size: 0.8rem;
+  font-family: 'JetBrains Mono', 'Cascadia Code', monospace;
+  color: #6a5040;
+  background: transparent;
+  border: 1px solid transparent;
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  cursor: pointer;
+  transition: color 0.15s, background 0.15s, border-color 0.15s;
+}
+.prose-content .code-tab-buttons button:hover {
+  color: #c4a882;
+}
+.prose-content .code-tab-buttons button.active {
+  color: #ffb347;
+  background: rgba(13, 9, 6, 0.95);
+  border-color: rgba(200, 120, 50, 0.12);
+}
+.prose-content .code-tab[data-tab] {
+  display: none;
+}
+.prose-content .code-tab[data-tab].active {
+  display: block;
+}
+.prose-content .code-tab[data-tab].active > pre {
+  margin-top: 0;
+  border-top-left-radius: 0;
+}
 .prose-content ul, .prose-content ol { margin-bottom: 1em; padding-left: 1.5em; color: #a08060; }
 .prose-content li { margin-bottom: 0.375em; }
 .prose-content ul { list-style-type: disc; }

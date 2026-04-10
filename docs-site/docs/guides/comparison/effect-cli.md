@@ -9,18 +9,6 @@ nav:
 
 [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) is a CLI library built on the [Effect](https://effect.website/) ecosystem. Commands are Effect computations with typed errors, dependency injection, and structured concurrency.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note the significant difference in programming model.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### @effect/cli
-
-<%= example('framework-comparison').file('effect-cli.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Standalone** — CLI Forge is a self-contained library. @effect/cli requires the Effect runtime (`effect`, `@effect/platform`, `@effect/printer`, `@effect/printer-ansi`, `@effect/platform-node` or `@effect/platform-bun`), which is a significant dependency and conceptual commitment.
@@ -37,3 +25,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Shell completions** — Built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options) generates shell-specific completion scripts by flag alone. CLI Forge supports [completions](https://github.com/AgentEnder/cli-forge/blob/main/packages/cli-forge/src/lib/completion-scripts.ts) (bash, zsh, fish, PowerShell) via `.completion()` and a `completion` subcommand, but requires an explicit opt-in call.
 - **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
 - **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt).
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note the significant difference in programming model.
+
+<div class="code-tabs" data-default="@effect/cli">
+<div class="code-tab" data-tab="@effect/cli">
+
+<%= example('framework-comparison').file('effect-cli.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

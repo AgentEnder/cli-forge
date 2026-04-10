@@ -9,9 +9,8 @@ nav:
 
 [Gluegun](https://infinitered.github.io/gluegun/) is a batteries-included toolkit for building CLIs, created by [Infinite Red](https://infinite.red/). It powers Ignite CLI (React Native) and was formerly used by AWS Amplify CLI.
 
-> **Note:** Gluegun is in [maintenance mode](https://github.com/infinitered/gluegun#community-supported) — Infinite Red no longer develops new features, but community PRs for stability, performance, and type improvements are still reviewed and released.
-
-Gluegun uses filesystem-based command discovery, so a single-file side-by-side example isn't practical. See the [CLI Forge example](/examples/framework-comparison) for the reference implementation.
+> [!NOTE]
+> Gluegun is in [maintenance mode](https://github.com/infinitered/gluegun#community-supported) — Infinite Red no longer develops new features, but community PRs for stability, performance, and type improvements are still reviewed and released.
 
 ## Where CLI Forge goes further
 
@@ -29,3 +28,7 @@ Gluegun uses filesystem-based command discovery, so a single-file side-by-side e
 - **Template system** — [EJS-based code generation](https://infinitered.github.io/gluegun/#/toolbox-template) from template files is a first-class feature. Ideal for scaffolding tools and project generators.
 - **Plugin system** — [Plugins](https://infinitered.github.io/gluegun/#/plugins) can add commands, extensions, and templates via directory conventions.
 - **Prompts** — Built-in interactive prompting. CLI Forge does not include prompts.
+
+## Side-by-side example
+
+Gluegun uses filesystem-based command discovery, so a single-file side-by-side example isn't practical. See the [CLI Forge implementation](/examples/framework-comparison) for the reference CLI used across all comparisons.

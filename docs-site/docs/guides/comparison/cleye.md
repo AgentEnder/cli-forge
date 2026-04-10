@@ -9,18 +9,6 @@ nav:
 
 [cleye](https://github.com/privatenumber/cleye) is a declarative CLI builder with strong TypeScript support and responsive help tables.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### cleye
-
-<%= example('framework-comparison').file('cleye.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Middleware** — Full [middleware pipeline](/docs/guides/middleware). cleye has none.
@@ -36,3 +24,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Custom type functions** — Any [`(string) => T` function](https://github.com/privatenumber/cleye#custom-flag-types--validation) works as an option type, providing flexible parsing and validation in one step.
 - **Command type narrowing** — When checking `argv.command` in TypeScript, available flags and parameters are [automatically narrowed](https://github.com/privatenumber/cleye#defining-commands) to the matched command.
 - **Strict mode with suggestions** — [`strictFlags: true`](https://github.com/privatenumber/cleye#strict-flags) rejects unknown flags and suggests the closest match within 2 edit distance.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
+
+<div class="code-tabs" data-default="cleye">
+<div class="code-tab" data-tab="cleye">
+
+<%= example('framework-comparison').file('cleye.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

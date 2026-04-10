@@ -9,18 +9,6 @@ nav:
 
 [oclif](https://oclif.io/) is a full-featured CLI framework maintained by Salesforce. It powers the Heroku CLI, Salesforce CLI, and Twilio CLI.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note that oclif normally uses class-based commands in separate files with scaffolding.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### oclif
-
-<%= example('framework-comparison').file('oclif.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Fluent builder API** — CLI Forge uses a chainable builder pattern. oclif requires [class-based commands](https://oclif.io/docs/commands/) in separate files with static property declarations.
@@ -38,3 +26,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Filesystem routing** — Commands are [auto-discovered from the directory structure](https://oclif.io/docs/command_discovery_strategies/). Large CLI teams can organize commands into files without explicit registration.
 - **JSON output** — Built-in [`--json` flag support](https://oclif.io/docs/json/) with `enableJsonFlag`. CLI Forge requires manual implementation.
 - **Built-in testing** — [`@oclif/test`](https://oclif.io/docs/testing/) package with CLI-specific test utilities.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries. Note that oclif normally uses class-based commands in separate files with scaffolding.
+
+<div class="code-tabs" data-default="oclif">
+<div class="code-tab" data-tab="oclif">
+
+<%= example('framework-comparison').file('oclif.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

@@ -9,18 +9,6 @@ nav:
 
 [Clipanion](https://mael.dev/clipanion/) is a class-based CLI library created by the author of Yarn. It powers Yarn Berry.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### clipanion
-
-<%= example('framework-comparison').file('clipanion.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Fluent API** — Chainable builder pattern vs. class-based command definitions with static properties.
@@ -38,3 +26,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Command proxying** — [`Option.Proxy()`](https://mael.dev/clipanion/docs/options#proxies) captures remaining args transparently without requiring a `--` separator. Useful for wrapper commands.
 - **Typanion validation** — Tight integration with the [typanion](https://mael.dev/clipanion/docs/validation) library for composable runtime validation and coercion.
 - **Battle-tested** — Powers Yarn Berry, one of the most complex CLIs in the JavaScript ecosystem.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
+
+<div class="code-tabs" data-default="clipanion">
+<div class="code-tab" data-tab="clipanion">
+
+<%= example('framework-comparison').file('clipanion.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

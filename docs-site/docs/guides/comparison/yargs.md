@@ -9,18 +9,6 @@ nav:
 
 [Yargs](https://yargs.js.org/) is one of the most established CLI libraries in the Node.js ecosystem. It shares a similar fluent API style with CLI Forge.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### yargs
-
-<%= example('framework-comparison').file('yargs.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Type accumulation** — Each `.option()` call in CLI Forge [progressively builds a TypeScript type](/docs/guides/typescript). Yargs relies on external [`@types/yargs`](https://www.npmjs.com/package/@types/yargs) definitions that may lag behind releases, and complex CLIs often require [manual interface definitions](https://github.com/yargs/yargs/blob/main/docs/typescript.md).
@@ -39,3 +27,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Filesystem routing** — [`.commandDir()`](https://yargs.js.org/docs/#api-reference-commanddirdirectory-opts) loads commands from a directory structure. CLI Forge uses programmatic registration exclusively.
 - **Usage string parsing** — Yargs can define options from [usage strings](https://yargs.js.org/docs/#api-reference-usage-desc-builder-handler) like `'--port <number>'`. CLI Forge requires explicit option objects (by design, for type safety).
 - **Deno and browser support** — Yargs officially supports [Deno](https://github.com/yargs/yargs#deno-example) and [browsers](https://github.com/yargs/yargs/blob/main/docs/browser.md). CLI Forge supports [browsers](/docs/guides/browser-usage).
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
+
+<div class="code-tabs" data-default="yargs">
+<div class="code-tab" data-tab="yargs">
+
+<%= example('framework-comparison').file('yargs.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

@@ -9,18 +9,6 @@ nav:
 
 [cac](https://github.com/cacjs/cac) is a zero-dependency, single-file CLI library used by Vite and Vitest.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### cac
-
-<%= example('framework-comparison').file('cac.ts') %>
-
 ## Where CLI Forge goes further
 
 - **Type inference** — CLI Forge [infers types](/docs/guides/typescript) from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
@@ -39,3 +27,20 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 - **Deno support** — Available [via JSR](https://github.com/cacjs/cac#with-deno). CLI Forge targets Node.js and Bun.
 - **Event system** — [Listen for command events](https://github.com/cacjs/cac#events) (`command:*`) for custom routing logic.
 - **Proven at scale** — Powers Vite, Vitest, and other popular tools.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both libraries.
+
+<div class="code-tabs" data-default="cac">
+<div class="code-tab" data-tab="cac">
+
+<%= example('framework-comparison').file('cac.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>

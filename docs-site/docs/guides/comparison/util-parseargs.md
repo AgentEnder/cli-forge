@@ -9,18 +9,6 @@ nav:
 
 [`util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) is Node.js's built-in argument parser, available since Node.js v18.3.0 (stable in v20.0.0). It is intentionally minimal — a low-level primitive for simple scripts.
 
-## Side-by-side example
-
-The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both approaches. Note how `util.parseArgs` requires entirely manual subcommand dispatch and help generation.
-
-### CLI Forge
-
-<%= example('framework-comparison').file('cli-forge.ts') %>
-
-### util.parseArgs
-
-<%= example('framework-comparison').file('parseargs.ts') %>
-
 ## Where CLI Forge goes further
 
 CLI Forge provides everything that `util.parseArgs` deliberately excludes:
@@ -41,3 +29,20 @@ CLI Forge provides everything that `util.parseArgs` deliberately excludes:
 - **No lock-in** — As a Node.js built-in, it has no supply chain risk and will be maintained as long as Node.js exists.
 
 `util.parseArgs` is best suited for simple scripts with a handful of flags. For anything involving subcommands, validation, help text, or type safety, a library like CLI Forge will save significant effort.
+
+## Side-by-side example
+
+The same CLI — a `greet` command with `hello` and `goodbye` subcommands — implemented in both approaches. Note how `util.parseArgs` requires entirely manual subcommand dispatch and help generation.
+
+<div class="code-tabs" data-default="util.parseArgs">
+<div class="code-tab" data-tab="util.parseArgs">
+
+<%= example('framework-comparison').file('parseargs.ts') %>
+
+</div>
+<div class="code-tab" data-tab="CLI Forge">
+
+<%= example('framework-comparison').file('cli-forge.ts') %>
+
+</div>
+</div>
