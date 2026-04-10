@@ -157,6 +157,38 @@ function removeTrailingAndLeadingQuotes(str: string) {
   return str.replace(/^['"]/, '').replace(/['"]$/, '');
 }
 
+/**
+ * Extract the merged properties from a oneOf config's object valueTypes.
+ * When a oneOf has object branches, their properties can be set via dot notation,
+ * so we merge them for display in help output.
+ */
+function getOneOfObjectProperties(
+  config: UnknownOptionConfig
+): Record<string, UnknownOptionConfig> | undefined {
+  if (!isOneOfOptionConfig(config)) return undefined;
+  const merged: Record<string, UnknownOptionConfig> = {};
+  let found = false;
+  for (const vt of config.valueTypes) {
+    if (
+      vt.type === 'object' &&
+      'properties' in vt &&
+      vt.properties &&
+      typeof vt.properties === 'object'
+    ) {
+      found = true;
+      for (const [k, v] of Object.entries(
+        vt.properties as Record<string, UnknownOptionConfig>
+      )) {
+        // First object branch wins for any given key
+        if (!(k in merged)) {
+          merged[k] = v;
+        }
+      }
+    }
+  }
+  return found ? merged : undefined;
+}
+
 function collectObjectProperties(
   parentKey: string,
   properties: Record<string, UnknownOptionConfig>
@@ -173,6 +205,11 @@ function collectObjectProperties(
           config.properties as Record<string, UnknownOptionConfig>
         )
       );
+    } else {
+      const oneOfProps = getOneOfObjectProperties(config);
+      if (oneOfProps) {
+        result.push(...collectObjectProperties(fullKey, oneOfProps));
+      }
     }
   }
   return result;
@@ -253,6 +290,11 @@ function getOptionBlock(
           option.properties as Record<string, UnknownOptionConfig>
         )
       );
+    } else {
+      const oneOfProps = getOneOfObjectProperties(option);
+      if (oneOfProps) {
+        lines.push(...getPropertyLines(option.key, oneOfProps));
+      }
     }
   }
   return lines;

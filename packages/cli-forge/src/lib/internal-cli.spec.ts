@@ -485,6 +485,73 @@ describe('cliForge', () => {
     `);
   });
 
+  it('should display oneOf object property sub-properties in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('filter', {
+        type: 'object',
+        description: 'Filter criteria',
+        properties: {
+          prs: {
+            type: 'oneOf',
+            description: 'PR count filter',
+            valueTypes: [
+              {
+                type: 'object',
+                properties: {
+                  min: { type: 'number', description: 'Minimum PRs' },
+                  max: { type: 'number', description: 'Maximum PRs' },
+                },
+              },
+              { type: 'string' },
+            ],
+          } as any,
+        },
+      })
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help    - Show help for the current command  
+        --version - Show the version number for the CLI
+        --filter  - Filter criteria                    
+          --filter.prs     - PR count filter [object|string]
+          --filter.prs.min - Minimum PRs    
+          --filter.prs.max - Maximum PRs    "
+    `);
+  });
+
+  it('should display top-level oneOf with object valueType properties in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('value', {
+        type: 'oneOf',
+        description: 'A flexible value',
+        valueTypes: [
+          {
+            type: 'object',
+            properties: {
+              host: { type: 'string', description: 'Hostname' },
+              port: { type: 'number', description: 'Port', default: 8080 },
+            },
+          },
+          { type: 'string' },
+        ],
+      } as any)
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help    - Show help for the current command  
+        --version - Show the version number for the CLI
+        --value   - A flexible value                    [object|string]
+          --value.host - Hostname
+          --value.port - Port     [default: 8080]"
+    `);
+  });
+
   it('should run middlewares before command handlers', async () => {
     const executionOrder: string[] = [];
     await cli('test')
