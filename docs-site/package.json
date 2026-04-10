@@ -54,7 +54,7 @@
     "implicitDependencies": [
       "cli-forge",
       "parser",
-      "cli-forge-examples"
+      "examples"
     ],
     "targets": {
       "build": {
