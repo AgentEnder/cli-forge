@@ -103,6 +103,7 @@ a.line-number:hover {
   margin-bottom: 0.75em;
   font-weight: 700;
   letter-spacing: 0.02em;
+  scroll-margin-top: 4.5rem;
 }
 
 /* Heading anchor links */
