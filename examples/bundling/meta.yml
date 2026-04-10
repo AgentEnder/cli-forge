@@ -1,0 +1,208 @@
+id: bundling
+title: Bundling
+playground: false
+description: |
+  Validates that cli-forge works correctly when bundled into a single
+  file by popular bundlers, in both ESM and CJS output formats.
+test:
+  # --- CJS ---
+  - name: "cjs/esbuild: bundle"
+    options:
+      command: 'sh cjs/run-esbuild.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "cjs/esbuild: greet"
+    options:
+      command: 'node dist/cjs/esbuild.cjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "cjs/esbuild: add"
+    options:
+      command: 'node dist/cjs/esbuild.cjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "cjs/rollup: bundle"
+    options:
+      command: 'sh cjs/run-rollup.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "cjs/rollup: greet"
+    options:
+      command: 'node dist/cjs/rollup.cjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "cjs/rollup: add"
+    options:
+      command: 'node dist/cjs/rollup.cjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "cjs/rolldown: bundle"
+    options:
+      command: 'sh cjs/run-rolldown.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "cjs/rolldown: greet"
+    options:
+      command: 'node dist/cjs/rolldown.cjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "cjs/rolldown: add"
+    options:
+      command: 'node dist/cjs/rolldown.cjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "cjs/bun: bundle"
+    options:
+      command: 'sh cjs/run-bun.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "cjs/bun: greet"
+    options:
+      command: 'node dist/cjs/bun.cjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "cjs/bun: add"
+    options:
+      command: 'node dist/cjs/bun.cjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "cjs/tsdown: bundle"
+    options:
+      command: 'sh cjs/run-tsdown.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "cjs/tsdown: greet"
+    options:
+      command: 'node dist/cjs/cli.cjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "cjs/tsdown: add"
+    options:
+      command: 'node dist/cjs/cli.cjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  # --- ESM ---
+  - name: "esm/esbuild: bundle"
+    options:
+      command: 'sh esm/run-esbuild.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "esm/esbuild: greet"
+    options:
+      command: 'node dist/esm/esbuild.mjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "esm/esbuild: add"
+    options:
+      command: 'node dist/esm/esbuild.mjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "esm/rollup: bundle"
+    options:
+      command: 'sh esm/run-rollup.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "esm/rollup: greet"
+    options:
+      command: 'node dist/esm/rollup.mjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "esm/rollup: add"
+    options:
+      command: 'node dist/esm/rollup.mjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "esm/rolldown: bundle"
+    options:
+      command: 'sh esm/run-rolldown.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "esm/rolldown: greet"
+    options:
+      command: 'node dist/esm/rolldown.mjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "esm/rolldown: add"
+    options:
+      command: 'node dist/esm/rolldown.mjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "esm/bun: bundle"
+    options:
+      command: 'sh esm/run-bun.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "esm/bun: greet"
+    options:
+      command: 'node dist/esm/bun.mjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "esm/bun: add"
+    options:
+      command: 'node dist/esm/bun.mjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'
+
+  - name: "esm/tsdown: bundle"
+    options:
+      command: 'sh esm/run-tsdown.sh'
+    assertions:
+      exitCode: 0
+
+  - name: "esm/tsdown: greet"
+    options:
+      command: 'node dist/esm/cli.mjs greet --name CLI-Forge'
+    assertions:
+      stdout:
+        contains: 'Hello, CLI-Forge!'
+
+  - name: "esm/tsdown: add"
+    options:
+      command: 'node dist/esm/cli.mjs add --a 2 --b 3'
+    assertions:
+      stdout:
+        contains: '2 + 3 = 5'

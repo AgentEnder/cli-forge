@@ -194,7 +194,7 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
   const examples: SiteExample[] = [];
 
   for (const ex of result.examples) {
-    if ((ex.metadata as Record<string, unknown>)?.hidden) continue;
+    if (ex.metadata?.hidden) continue;
 
     const files = await Promise.all(
       ex.files.map((f) => transformFile(f, highlighter))
@@ -258,7 +258,9 @@ export async function loadExamples(): Promise<LoadExamplesResult> {
       ),
       renderedProseHtml,
       proseBlocks,
-      headings: extractHeadings(renderedDescriptionHtml + (renderedProseHtml ?? '')),
+      headings: extractHeadings(
+        renderedDescriptionHtml + (renderedProseHtml ?? '')
+      ),
       metadata,
     });
   }

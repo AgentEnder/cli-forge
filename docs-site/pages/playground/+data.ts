@@ -113,6 +113,7 @@ export function data(pageContext: PageContextServer): PlaygroundData {
   >;
 
   for (const [id, ex] of Object.entries(siteExamples)) {
+    if (ex.metadata.playground === false) continue;
     examples[id] = toPlaygroundExample(ex);
   }
 

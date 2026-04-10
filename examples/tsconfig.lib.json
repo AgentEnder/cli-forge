@@ -4,5 +4,6 @@
     "rootDir": ".",
     "noEmit": true
   },
-  "include": ["**/*.ts"]
+  "include": ["**/*.ts"],
+  "exclude": ["bundling/cjs/bun.ts", "bundling/esm/bun.ts"]
 }
