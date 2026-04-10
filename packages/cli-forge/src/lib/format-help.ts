@@ -215,37 +215,20 @@ function collectObjectProperties(
   return result;
 }
 
-function getPropertyLines(
-  parentKey: string,
-  properties: Record<string, UnknownOptionConfig>
-): string[] {
-  const flatProps = collectObjectProperties(parentKey, properties);
-  if (flatProps.length === 0) return [];
-
-  const allParts: Array<[key: string, ...parts: string[]]> = [];
-  for (const { key, config } of flatProps) {
-    allParts.push([key, ...getOptionParts(config)]);
+function getPropertyEntries(
+  option: UnknownOptionConfig
+): Array<{ key: string; config: UnknownOptionConfig }> {
+  let properties: Record<string, UnknownOptionConfig> | undefined;
+  if (isObjectOptionConfig(option) && option.properties) {
+    properties = option.properties as Record<string, UnknownOptionConfig>;
+  } else {
+    properties = getOneOfObjectProperties(option);
   }
-
-  const paddingValues: number[] = [];
-  for (let i = 0; i < allParts.length; i++) {
-    for (let j = 0; j < allParts[i].length; j++) {
-      if (!paddingValues[j]) {
-        paddingValues[j] = 0;
-      }
-      paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
-    }
-  }
-
-  const lines: string[] = [];
-  for (const [key, ...parts] of allParts) {
-    lines.push(
-      `    --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-        .map((part, i) => part.padEnd(paddingValues[i + 1]))
-        .join(' ')}`
-    );
-  }
-  return lines;
+  if (!properties) return [];
+  return collectObjectProperties(
+    (option as InternalOptionConfig).key,
+    properties
+  );
 }
 
 function getOptionBlock(
@@ -260,42 +243,45 @@ function getOptionBlock(
     lines.push(label + ':');
   }
 
-  const allParts: Array<[key: string, ...parts: string[]]> = [];
+  // Collect all entries (options + their property sub-entries) into a flat list
+  const entries: Array<{
+    key: string;
+    parts: string[];
+    indent: number;
+  }> = [];
+
   for (const option of options) {
-    // Use the display key (localized) instead of the storage key
     const displayKey = parser.getDisplayKey(option.key);
-    allParts.push([displayKey, ...getOptionParts(option)]);
-  }
-  const paddingValues: number[] = [];
-  for (let i = 0; i < allParts.length; i++) {
-    for (let j = 0; j < allParts[i].length; j++) {
-      if (!paddingValues[j]) {
-        paddingValues[j] = 0;
-      }
-      paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
+    entries.push({ key: displayKey, parts: getOptionParts(option), indent: 0 });
+    for (const { key, config } of getPropertyEntries(option)) {
+      entries.push({ key, parts: getOptionParts(config), indent: 2 });
     }
   }
-  for (let i = 0; i < allParts.length; i++) {
-    const [key, ...parts] = allParts[i];
+
+  // Compute key column width accounting for indent so all `-` separators align
+  let keyColumnWidth = 0;
+  for (const entry of entries) {
+    keyColumnWidth = Math.max(keyColumnWidth, entry.indent + entry.key.length);
+  }
+
+  // Compute padding for each part column across all entries
+  const partPadding: number[] = [];
+  for (const entry of entries) {
+    for (let j = 0; j < entry.parts.length; j++) {
+      if (!partPadding[j]) {
+        partPadding[j] = 0;
+      }
+      partPadding[j] = Math.max(partPadding[j], entry.parts[j].length);
+    }
+  }
+
+  for (const { key, parts, indent } of entries) {
+    const paddedKey = key.padEnd(keyColumnWidth - indent);
     lines.push(
-      `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-        .map((part, j) => part.padEnd(paddingValues[j + 1]))
-        .join(' ')}`
+      `${' '.repeat(2 + indent)}--${paddedKey}${
+        parts.length ? ' - ' : ''
+      }${parts.map((part, i) => part.padEnd(partPadding[i])).join(' ')}`
     );
-    const option = options[i];
-    if (isObjectOptionConfig(option) && option.properties) {
-      lines.push(
-        ...getPropertyLines(
-          option.key,
-          option.properties as Record<string, UnknownOptionConfig>
-        )
-      );
-    } else {
-      const oneOfProps = getOneOfObjectProperties(option);
-      if (oneOfProps) {
-        lines.push(...getPropertyLines(option.key, oneOfProps));
-      }
-    }
   }
   return lines;
 }
