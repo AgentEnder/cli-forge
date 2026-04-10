@@ -55,7 +55,7 @@ test:
 
   - name: "object property: string shorthand"
     options:
-      command: "npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts --filter.prs '>5'"
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts "--filter.prs=>5"'
     assertions:
       stdout:
         contains: 'prs=">5"'
@@ -69,7 +69,7 @@ test:
 
   - name: "object property: mixed string and dot-notation"
     options:
-      command: "npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts --filter.prs '>5' --filter.stars.min 100"
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts "--filter.prs=>5" --filter.stars.min 100'
     assertions:
       stdout:
         contains: 'prs=">5", stars={"min":100}'
