@@ -53,7 +53,8 @@
     "name": "docs-site",
     "implicitDependencies": [
       "cli-forge",
-      "parser"
+      "parser",
+      "cli-forge-examples"
     ],
     "targets": {
       "build": {
