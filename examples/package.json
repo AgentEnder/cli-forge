@@ -3,8 +3,12 @@
   "private": true,
   "dependencies": {
     "@cli-forge/parser": "workspace:*",
+    "@rollup/plugin-node-resolve": "^16.0.0",
     "cli-forge": "workspace:*",
+    "esbuild": "^0.27.0",
     "i18next": "^25.7.3",
+    "rolldown": "^1.0.0-rc.12",
+    "rollup": "^4.0.0",
     "tslib": "catalog:"
   }
 }
