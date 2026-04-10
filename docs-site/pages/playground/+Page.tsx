@@ -318,6 +318,18 @@ export default function PlaygroundPage() {
     }
   }, [files, args, runTarget]);
 
+  // ATA: acquire types for third-party imports on content changes
+  const ataRef = useRef<((code: string) => void) | null>(null);
+  const ataTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerAta = useCallback((code: string) => {
+    // Debounce ATA calls to avoid hammering the CDN on every keystroke
+    if (ataTimerRef.current) clearTimeout(ataTimerRef.current);
+    ataTimerRef.current = setTimeout(() => {
+      ataRef.current?.(code);
+    }, 800);
+  }, []);
+
   const applyExample = useCallback((ex: PlaygroundExample) => {
     const nextFiles = initFilesFromExample(ex);
     setFiles(nextFiles);
@@ -472,19 +484,8 @@ export default function PlaygroundPage() {
   }, [files]);
 
   // Start with 'Ctrl' to match SSR output, then update on the client.
+  // Start with 'Ctrl' to match SSR output, then update on the client.
   // A direct navigator check here causes a hydration mismatch.
-  // ATA: acquire types for third-party imports on content changes
-  const ataRef = useRef<((code: string) => void) | null>(null);
-  const ataTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const triggerAta = useCallback((code: string) => {
-    // Debounce ATA calls to avoid hammering the CDN on every keystroke
-    if (ataTimerRef.current) clearTimeout(ataTimerRef.current);
-    ataTimerRef.current = setTimeout(() => {
-      ataRef.current?.(code);
-    }, 800);
-  }, []);
-
   const [modKey, setModKey] = useState('Ctrl');
   useEffect(() => {
     setModKey(/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl');

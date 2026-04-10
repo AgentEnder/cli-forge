@@ -1,4 +1,5 @@
 import meow from 'meow';
+import { pathToFileURL } from 'node:url';
 
 // meow is a minimal parser — subcommands are handled manually
 // by reading positional arguments from cli.input.
@@ -19,7 +20,8 @@ const cli = meow(
 `,
   {
     // meow v14 requires import.meta for ESM package resolution.
-    importMeta: { url: import.meta.url } as ImportMeta,
+    // Construct a compatible object from __filename for CJS contexts.
+    importMeta: { url: pathToFileURL(__filename).href } as ImportMeta,
     flags: {
       name: { type: 'string', default: 'World' },
       uppercase: { type: 'boolean', default: false },
