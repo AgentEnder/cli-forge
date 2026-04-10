@@ -1,12 +1,12 @@
-import { cli } from 'cleye';
+import { cli, command } from 'cleye';
 
 // cleye returns a parsed argv object with command narrowing.
-// Subcommands are defined inline with their own flag sets.
+// Subcommands are defined with command() and passed to cli().
 
 const argv = cli({
   name: 'greet',
   commands: [
-    cli({
+    command({
       name: 'hello',
       flags: {
         name: {
@@ -21,7 +21,7 @@ const argv = cli({
         },
       },
     }),
-    cli({
+    command({
       name: 'goodbye',
       flags: {
         name: {

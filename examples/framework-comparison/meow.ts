@@ -18,7 +18,8 @@ const cli = meow(
     --formal      Use formal farewell
 `,
   {
-    importMeta: import.meta,
+    // meow v14 requires import.meta for ESM package resolution.
+    importMeta: { url: import.meta.url } as ImportMeta,
     flags: {
       name: { type: 'string', default: 'World' },
       uppercase: { type: 'boolean', default: false },

@@ -4,11 +4,24 @@
   "dependencies": {
     "@cli-forge/parser": "workspace:*",
     "@rollup/plugin-node-resolve": "^16.0.0",
+    "@effect/cli": "^0.75.0",
+    "@effect/platform": "^0.96.0",
+    "@effect/platform-node": "^0.106.0",
+    "@oclif/core": "^4.10.5",
+    "@types/yargs": "^17.0.35",
+    "cac": "^7.0.0",
+    "citty": "^0.2.2",
+    "cleye": "^2.3.0",
     "cli-forge": "workspace:*",
     "esbuild": "^0.27.0",
+    "clipanion": "4.0.0-rc.4",
+    "commander": "^14.0.3",
+    "effect": "^3.21.0",
     "i18next": "^25.7.3",
     "rolldown": "^1.0.0-rc.12",
     "rollup": "^4.0.0",
-    "tslib": "catalog:"
+    "meow": "^14.1.0",
+    "tslib": "catalog:",
+    "yargs": "^18.0.0"
   }
 }
