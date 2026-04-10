@@ -1,0 +1,37 @@
+id: framework-comparison
+title: Framework Comparison
+description: |
+  The same CLI implemented in multiple frameworks. A `greet` command with
+  two subcommands (`hello` and `goodbye`), string options, and boolean
+  flags — showing how each library approaches the same problem.
+tags:
+  - comparison
+
+test:
+  - name: "Hello (default)"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli-forge.ts hello'
+    assertions:
+      stdout:
+        contains: "Hello, World!"
+
+  - name: "Hello --name Alice --uppercase"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli-forge.ts hello --name Alice --uppercase'
+    assertions:
+      stdout:
+        contains: "HELLO, ALICE!"
+
+  - name: "Goodbye --name Alice --formal"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli-forge.ts goodbye --name Alice --formal'
+    assertions:
+      stdout:
+        contains: "Farewell, Alice."
+
+  - name: "Goodbye (default)"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli-forge.ts goodbye'
+    assertions:
+      stdout:
+        contains: "Bye, World!"

@@ -1,4 +1,4 @@
-import { useState, useCallback, useEffect, useMemo } from 'react';
+import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
 import type { OnMount } from '@monaco-editor/react';
 import { useData } from 'vike-react/useData';
 import { usePageContext } from 'vike-react/usePageContext';
@@ -321,17 +321,23 @@ export default function PlaygroundPage() {
   const applyExample = useCallback((ex: PlaygroundExample) => {
     const nextFiles = initFilesFromExample(ex);
     setFiles(nextFiles);
-    setActiveFile(firstCodeFile(nextFiles));
+    const firstCode = firstCodeFile(nextFiles);
+    setActiveFile(firstCode);
     setArgs(ex.commands[0]?.args ?? '--help');
     setOutput([]);
     setError(null);
     setActiveExample(ex);
     setRunTargetOverride(null);
-  }, []);
+    // Trigger ATA for the new example's entry file
+    const entry = nextFiles.find((f) => f.path === firstCode);
+    if (entry && isCodeFile(entry.path)) triggerAta(entry.content);
+  }, [triggerAta]);
 
   const updateFileContent = useCallback((path: string, content: string) => {
     setFiles((prev) => prev.map((f) => (f.path === path ? { ...f, content } : f)));
-  }, []);
+    // Trigger ATA for third-party type acquisition on code files
+    if (isCodeFile(path)) triggerAta(content);
+  }, [triggerAta]);
 
   const handleEditorMount: OnMount = useCallback(
     (_editor, monaco) => {
@@ -404,6 +410,17 @@ export default function PlaygroundPage() {
         },
       });
       monaco.editor.setTheme('forge-dark');
+
+      // Initialize ATA for third-party type acquisition.
+      // Once ready, feed it the current editor content so types
+      // for any already-present imports are fetched immediately.
+      import('./ata').then(({ initAta }) =>
+        initAta(monaco).then((acquireType) => {
+          ataRef.current = acquireType;
+          const model = _editor.getModel();
+          if (model) acquireType(model.getValue());
+        })
+      );
     },
     [typeDeclarations]
   );
@@ -456,6 +473,18 @@ export default function PlaygroundPage() {
 
   // Start with 'Ctrl' to match SSR output, then update on the client.
   // A direct navigator check here causes a hydration mismatch.
+  // ATA: acquire types for third-party imports on content changes
+  const ataRef = useRef<((code: string) => void) | null>(null);
+  const ataTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const triggerAta = useCallback((code: string) => {
+    // Debounce ATA calls to avoid hammering the CDN on every keystroke
+    if (ataTimerRef.current) clearTimeout(ataTimerRef.current);
+    ataTimerRef.current = setTimeout(() => {
+      ataRef.current?.(code);
+    }, 800);
+  }, []);
+
   const [modKey, setModKey] = useState('Ctrl');
   useEffect(() => {
     setModKey(/Mac|iPhone|iPad/.test(navigator.userAgent) ? '⌘' : 'Ctrl');

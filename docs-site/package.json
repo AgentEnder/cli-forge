@@ -15,6 +15,7 @@
     "@icons-pack/react-simple-icons": "^13.11.2",
     "@monaco-editor/react": "^4.7.0",
     "@shikijs/rehype": "^3.21.0",
+    "@typescript/ata": "^0.9.8",
     "cli-forge": "workspace:",
     "functional-examples": "^0.1.2",
     "gray-matter": "^4.0.3",
