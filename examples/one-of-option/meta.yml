@@ -52,3 +52,31 @@ test:
     assertions:
       stdout:
         contains: 'Verbosity (string): debug'
+
+  - name: "object property: string shorthand"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts "--filter.prs=>5"'
+    assertions:
+      stdout:
+        contains: 'prs=">5"'
+
+  - name: "object property: dot-notation into object branch"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts --filter.prs.min 1 --filter.prs.max 10'
+    assertions:
+      stdout:
+        contains: 'prs={"min":1,"max":10}'
+
+  - name: "object property: mixed string and dot-notation"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts "--filter.prs=>5" --filter.stars.min 100'
+    assertions:
+      stdout:
+        contains: 'prs=">5", stars={"min":100}'
+
+  - name: "object property: no filters"
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json object-property.ts'
+    assertions:
+      stdout:
+        contains: 'No filters applied'
