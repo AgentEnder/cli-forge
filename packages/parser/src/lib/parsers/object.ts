@@ -107,9 +107,22 @@ export const objectParser: Parser<Internal<ObjectOptionConfig<any, any>>> =
       if (nextKey) {
         currentObject = currentObject[last];
       }
-      const c = (currentConfig as ObjectOptionConfig<any, any>).properties[
-        last
-      ];
+      let c: UnknownOptionConfig | undefined;
+      if (
+        (currentConfig as any).type === 'oneOf' &&
+        Array.isArray((currentConfig as any).valueTypes)
+      ) {
+        // For oneOf properties, search the valueTypes for an object branch
+        // that contains the requested sub-property.
+        for (const vt of (currentConfig as any).valueTypes) {
+          if (vt.type === 'object' && vt.properties && last in vt.properties) {
+            c = vt.properties[last];
+            break;
+          }
+        }
+      } else {
+        c = (currentConfig as ObjectOptionConfig<any, any>).properties[last];
+      }
       if (!c) {
         throw new Error(`No configuration found for ${last} in ${config.key}`);
       }

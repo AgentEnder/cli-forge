@@ -17,29 +17,21 @@
  *     notation but rejects `--filter.prs='>1'` (providedFlag pass-through
  *     causes the inner object parser to misinterpret the flag).
  *
- * ### 2. oneOf as a property type — partial support
+ * ### 2. oneOf as a property type — supported
  *
  * oneOf IS registered in parserMap, so the object parser can dispatch to it
- * for direct assignment (`--filter.prs='>1'` → string branch wins). However,
- * dot-notation traversal through a oneOf property fails because `parsePath`
- * casts the config as ObjectOptionConfig and looks for `.properties[nextKey]`,
- * which doesn't exist on a oneOf config.
+ * for direct assignment (`--filter.prs='>1'` → string branch wins). And
+ * dot-notation traversal through a oneOf property also works: `parsePath`
+ * recognizes `type: 'oneOf'` and searches the `valueTypes` array for an
+ * object branch that contains the requested sub-property.
  *
- * ### 3. providedFlag pass-through issue
+ * ### 3. providedFlag pass-through issue (remaining limitation)
  *
  * When the object parser dispatches to a sub-parser for a nested property,
  * it passes `providedFlag` unmodified (e.g. `'--filter.prs'`). If the sub-
  * parser is itself an objectParser, it re-splits the flag and tries to
  * interpret `'prs'` as a sub-property name in its OWN config. This prevents
- * JSON assignment at nested object levels entirely.
- *
- * ### 4. What would be needed
- *
- * To fully support both forms, the object parser's `parsePath` would need to:
- *   a) Recognize `type: 'oneOf'` during path traversal and search the
- *      `valueTypes` array for an object entry that has the needed property.
- *   b) Fix the `providedFlag` pass-through so nested object parsers only
- *      see their own segment of the flag path.
+ * JSON assignment at nested object levels (a separate issue from oneOf).
  */
 import { parser } from './parser';
 import { describe, it, expect } from 'vitest';
@@ -199,30 +191,60 @@ describe('oneOf as object property type', () => {
     expect(result.filter).toEqual({ prs: 5 });
   });
 
-  it('CANNOT traverse dot-notation into a oneOf property with an object branch', () => {
-    // --filter.prs.min=1 should ideally find the object branch in oneOf's
-    // valueTypes and traverse into it. Currently parsePath casts the config
-    // as ObjectOptionConfig and accesses .properties['min']. A oneOf config
-    // has no .properties, so this throws.
-    expect(() =>
-      parser()
-        .option('filter', {
-          type: 'object',
-          properties: {
-            prs: {
-              type: 'oneOf',
-              valueTypes: [
-                {
-                  type: 'object',
-                  properties: { min: { type: 'number' } },
-                },
-                { type: 'string' },
-              ],
-            } as any,
-          },
-        })
-        .parse(['--filter.prs.min', '1'])
-    ).toThrow();
+  it('can traverse dot-notation into a oneOf property with an object branch', () => {
+    // --filter.prs.min=1 finds the object branch in oneOf's valueTypes,
+    // looks up 'min' in its properties, and parses the value as a number.
+    const result = parser()
+      .option('filter', {
+        type: 'object',
+        properties: {
+          prs: {
+            type: 'oneOf',
+            valueTypes: [
+              {
+                type: 'object',
+                properties: { min: { type: 'number' } },
+              },
+              { type: 'string' },
+            ],
+          } as any,
+        },
+      })
+      .parse(['--filter.prs.min', '1']);
+
+    expect(result.filter).toEqual({ prs: { min: 1 } });
+  });
+
+  it('supports both string and dot-notation on the same oneOf property', () => {
+    const p = parser().option('filter', {
+      type: 'object',
+      properties: {
+        prs: {
+          type: 'oneOf',
+          valueTypes: [
+            {
+              type: 'object',
+              properties: {
+                min: { type: 'number' },
+                max: { type: 'number' },
+              },
+            },
+            { type: 'string' },
+          ],
+        } as any,
+      },
+    });
+
+    // String shorthand
+    expect(p.parse(['--filter.prs', '>5']).filter).toEqual({ prs: '>5' });
+
+    // Dot-notation into object branch
+    expect(p.parse(['--filter.prs.min', '1']).filter).toEqual({
+      prs: { min: 1 },
+    });
+
+    // Numeric value (number parser in object branch fails, string wins)
+    expect(p.parse(['--filter.prs', '5']).filter).toEqual({ prs: '5' });
   });
 });
 

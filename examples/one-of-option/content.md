@@ -35,3 +35,27 @@ number `3`, not the string `"3"`. If the value is not numeric (like
 
 Without boolean in `valueTypes`, bare flags (`--verbose`) and negation
 (`--no-verbose`) are errors — the option always requires an explicit value.
+
+## Inside object properties
+
+`oneOf` can be used as the type for an object property. This lets a single
+dot-notation path accept values of different types. In this example, each
+filter property accepts **either** a shorthand string (`--filter.prs ">5"`)
+**or** structured sub-properties via dot-notation (`--filter.prs.min 1`).
+
+<%= file('object-property.ts') %>
+
+When the value is set directly (e.g. `--filter.prs ">5"`), the `oneOf`
+parser tries each value type in order. The object parser fails on `">5"`
+(not valid JSON), so the string parser takes over.
+
+When dot-notation is used (e.g. `--filter.prs.min 1`), the object parser
+recognizes the `oneOf` type and searches its `valueTypes` for an object
+branch that has the requested sub-property.
+
+| Input | Result |
+|-------|--------|
+| `--filter.prs ">5"` | `{ prs: ">5" }` — string branch wins |
+| `--filter.prs.min 1` | `{ prs: { min: 1 } }` — object branch, dot-notation |
+| `--filter.prs.min 1 --filter.prs.max 10` | `{ prs: { min: 1, max: 10 } }` |
+| `--filter.prs ">5" --filter.stars.min 100` | `{ prs: ">5", stars: { min: 100 } }` — mixed |
