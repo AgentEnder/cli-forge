@@ -3,6 +3,7 @@ import {
   UnknownOptionConfig,
   readDefaultValue,
   isOneOfOptionConfig,
+  isObjectOptionConfig,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 
@@ -156,6 +157,60 @@ function removeTrailingAndLeadingQuotes(str: string) {
   return str.replace(/^['"]/, '').replace(/['"]$/, '');
 }
 
+function collectObjectProperties(
+  parentKey: string,
+  properties: Record<string, UnknownOptionConfig>
+): Array<{ key: string; config: UnknownOptionConfig }> {
+  const result: Array<{ key: string; config: UnknownOptionConfig }> = [];
+  for (const [name, config] of Object.entries(properties)) {
+    if (config.hidden) continue;
+    const fullKey = `${parentKey}.${name}`;
+    result.push({ key: fullKey, config });
+    if (isObjectOptionConfig(config) && config.properties) {
+      result.push(
+        ...collectObjectProperties(
+          fullKey,
+          config.properties as Record<string, UnknownOptionConfig>
+        )
+      );
+    }
+  }
+  return result;
+}
+
+function getPropertyLines(
+  parentKey: string,
+  properties: Record<string, UnknownOptionConfig>
+): string[] {
+  const flatProps = collectObjectProperties(parentKey, properties);
+  if (flatProps.length === 0) return [];
+
+  const allParts: Array<[key: string, ...parts: string[]]> = [];
+  for (const { key, config } of flatProps) {
+    allParts.push([key, ...getOptionParts(config)]);
+  }
+
+  const paddingValues: number[] = [];
+  for (let i = 0; i < allParts.length; i++) {
+    for (let j = 0; j < allParts[i].length; j++) {
+      if (!paddingValues[j]) {
+        paddingValues[j] = 0;
+      }
+      paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
+    }
+  }
+
+  const lines: string[] = [];
+  for (const [key, ...parts] of allParts) {
+    lines.push(
+      `    --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
+        .map((part, i) => part.padEnd(paddingValues[i + 1]))
+        .join(' ')}`
+    );
+  }
+  return lines;
+}
+
 function getOptionBlock(
   label: string,
   options: InternalOptionConfig[],
@@ -183,12 +238,22 @@ function getOptionBlock(
       paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
     }
   }
-  for (const [key, ...parts] of allParts) {
+  for (let i = 0; i < allParts.length; i++) {
+    const [key, ...parts] = allParts[i];
     lines.push(
       `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-        .map((part, i) => part.padEnd(paddingValues[i + 1]))
+        .map((part, j) => part.padEnd(paddingValues[j + 1]))
         .join(' ')}`
     );
+    const option = options[i];
+    if (isObjectOptionConfig(option) && option.properties) {
+      lines.push(
+        ...getPropertyLines(
+          option.key,
+          option.properties as Record<string, UnknownOptionConfig>
+        )
+      );
+    }
   }
   return lines;
 }
