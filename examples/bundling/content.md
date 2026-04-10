@@ -24,7 +24,7 @@ esbuild activates the `"import"` export condition whenever source code uses `imp
 
 The fix is simple: use TypeScript's `import = require(...)` syntax for the esbuild CJS entry point. This tells esbuild to resolve the `"require"` export condition instead:
 
-<%= region('cli-esbuild-cjs.ts', 'import') %>
+<%= file('cli-esbuild-cjs.ts').region('import') %>
 
 With that change, no plugins or configuration tweaks are needed:
 
