@@ -103,6 +103,35 @@ a.line-number:hover {
   margin-bottom: 0.75em;
   font-weight: 700;
   letter-spacing: 0.02em;
+  position: relative;
+}
+
+/* Heading anchor links */
+.prose-content .heading-anchor {
+  position: absolute;
+  left: -1.5em;
+  top: 50%;
+  transform: translateY(-50%);
+  color: transparent;
+  text-decoration: none;
+  transition: color 0.15s ease;
+  line-height: 1;
+}
+.prose-content .heading-anchor svg {
+  display: block;
+}
+.prose-content h1:hover .heading-anchor,
+.prose-content h2:hover .heading-anchor,
+.prose-content h3:hover .heading-anchor,
+.prose-content h4:hover .heading-anchor,
+.prose-content .heading-anchor:focus-visible {
+  color: #6a5040;
+}
+.prose-content .heading-anchor:hover {
+  color: #ff8c38 !important;
+}
+.prose-content .heading-anchor.copied {
+  color: #7cc9a0 !important;
 }
 .prose-content h1 { font-size: 1.5rem; }
 .prose-content h2 {
