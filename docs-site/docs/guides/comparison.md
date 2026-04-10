@@ -138,36 +138,21 @@ Each page below includes a side-by-side code example and a detailed feature brea
 | Scaffolding/code generation with templates and prompts | **gluegun** or **oclif** |
 | No third-party dependencies at all | **`util.parseArgs`** (built into Node.js) |
 
-## Links and references
+## Links and version reference
 
-- **CLI Forge** — [Documentation](https://craigory.dev/cli-forge/) · [GitHub](https://github.com/AgentEnder/cli-forge) · [npm](https://www.npmjs.com/package/cli-forge)
-- **yargs** — [Documentation](https://yargs.js.org/) · [GitHub](https://github.com/yargs/yargs) · [npm](https://www.npmjs.com/package/yargs)
-- **commander** — [GitHub](https://github.com/tj/commander.js) · [npm](https://www.npmjs.com/package/commander)
-- **oclif** — [Documentation](https://oclif.io/) · [GitHub](https://github.com/oclif/oclif) · [npm](https://www.npmjs.com/package/oclif)
-- **clipanion** — [Documentation](https://mael.dev/clipanion/) · [GitHub](https://github.com/arcanis/clipanion) · [npm](https://www.npmjs.com/package/clipanion)
-- **cac** — [GitHub](https://github.com/cacjs/cac) · [npm](https://www.npmjs.com/package/cac)
-- **meow** — [GitHub](https://github.com/sindresorhus/meow) · [npm](https://www.npmjs.com/package/meow)
-- **citty** — [GitHub](https://github.com/unjs/citty) · [npm](https://www.npmjs.com/package/citty)
-- **cleye** — [GitHub](https://github.com/privatenumber/cleye) · [npm](https://www.npmjs.com/package/cleye)
-- **@effect/cli** — [README](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) · [API Reference](https://effect-ts.github.io/effect/cli/) · [npm](https://www.npmjs.com/package/@effect/cli)
-- **gluegun** — [Documentation](https://infinitered.github.io/gluegun/) · [GitHub](https://github.com/infinitered/gluegun) · [npm](https://www.npmjs.com/package/gluegun)
-- **Node.js util.parseArgs** — [Documentation](https://nodejs.org/api/util.html#utilparseargsconfig) · [Original proposal](https://github.com/pkgjs/parseargs)
+Comparisons were last verified against official documentation in April 2026. If a tool has released a major update since, some details may have changed.
 
-## Version reference
-
-The comparisons on this page were verified against the following versions. If a tool has released a major update since, some details may have changed.
-
-| Tool | Version compared | npm |
-|---|---|---|
-| cli-forge | 1.8.1 | [npm](https://www.npmjs.com/package/cli-forge) |
-| yargs | 18.x | [npm](https://www.npmjs.com/package/yargs) |
-| commander | 14.x | [npm](https://www.npmjs.com/package/commander) |
-| oclif | 4.x (`@oclif/core` 4.x) | [npm](https://www.npmjs.com/package/@oclif/core) |
-| clipanion | 3.x (stable) | [npm](https://www.npmjs.com/package/clipanion) |
-| cac | 7.x | [npm](https://www.npmjs.com/package/cac) |
-| meow | 14.x | [npm](https://www.npmjs.com/package/meow) |
-| citty | 0.2.x | [npm](https://www.npmjs.com/package/citty) |
-| cleye | 2.x | [npm](https://www.npmjs.com/package/cleye) |
-| @effect/cli | 0.x (pre-1.0) | [npm](https://www.npmjs.com/package/@effect/cli) |
-| gluegun | 5.x | [npm](https://www.npmjs.com/package/gluegun) |
-| Node.js util.parseArgs | Stable since Node.js 20.0.0 | [docs](https://nodejs.org/api/util.html#utilparseargsconfig) |
+| Tool | Version | Docs | GitHub | npm |
+|---|---|---|---|---|
+| CLI Forge | 1.8.1 | [craigory.dev](https://craigory.dev/cli-forge/) | [GitHub](https://github.com/AgentEnder/cli-forge) | [npm](https://www.npmjs.com/package/cli-forge) |
+| yargs | 18.x | [yargs.js.org](https://yargs.js.org/) | [GitHub](https://github.com/yargs/yargs) | [npm](https://www.npmjs.com/package/yargs) |
+| commander | 14.x | — | [GitHub](https://github.com/tj/commander.js) | [npm](https://www.npmjs.com/package/commander) |
+| oclif | 4.x | [oclif.io](https://oclif.io/) | [GitHub](https://github.com/oclif/oclif) | [npm](https://www.npmjs.com/package/@oclif/core) |
+| clipanion | 3.x | [mael.dev](https://mael.dev/clipanion/) | [GitHub](https://github.com/arcanis/clipanion) | [npm](https://www.npmjs.com/package/clipanion) |
+| cac | 7.x | — | [GitHub](https://github.com/cacjs/cac) | [npm](https://www.npmjs.com/package/cac) |
+| meow | 14.x | — | [GitHub](https://github.com/sindresorhus/meow) | [npm](https://www.npmjs.com/package/meow) |
+| citty | 0.2.x | — | [GitHub](https://github.com/unjs/citty) | [npm](https://www.npmjs.com/package/citty) |
+| cleye | 2.x | — | [GitHub](https://github.com/privatenumber/cleye) | [npm](https://www.npmjs.com/package/cleye) |
+| @effect/cli | 0.x | [README](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [GitHub](https://github.com/Effect-TS/effect) | [npm](https://www.npmjs.com/package/@effect/cli) |
+| gluegun | 5.x | [infinitered.github.io](https://infinitered.github.io/gluegun/) | [GitHub](https://github.com/infinitered/gluegun) | [npm](https://www.npmjs.com/package/gluegun) |
+| util.parseArgs | Node.js 20+ | [Node.js docs](https://nodejs.org/api/util.html#utilparseargsconfig) | [proposal](https://github.com/pkgjs/parseargs) | — |
