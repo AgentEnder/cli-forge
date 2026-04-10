@@ -118,9 +118,11 @@ jobs:
         with:
           script: |
             const prNumber = context.payload.pull_request.number;
+            const sha = context.payload.pull_request.head.sha;
+            const shortSha = sha.slice(0, 7);
             const previewUrl = `https://craigory.dev/cli-forge/pr/${prNumber}/`;
             const marker = '<!-- docs-preview-comment -->';
-            const body = `${marker}\n**Docs Preview:** ${previewUrl}`;
+            const body = `${marker}\n**Docs Preview:** ${previewUrl}\n\nDeployed commit: ${shortSha} (${sha})`;
 
             // Find existing comment
             const { data: comments } = await github.rest.issues.listComments({

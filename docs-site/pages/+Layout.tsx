@@ -33,6 +33,22 @@ export default function Layout({ children }: { children: React.ReactNode }) {
     setMobileMenuOpen(false);
   }, [pathname]);
 
+  // Global click handler for heading anchor links — copies the heading URL to clipboard
+  useEffect(() => {
+    function handleAnchorClick(e: MouseEvent) {
+      const anchor = (e.target as Element).closest?.('a.heading-anchor');
+      if (!anchor) return;
+      e.preventDefault();
+      const url = new URL(anchor.getAttribute('href')!, window.location.href);
+      url.pathname = window.location.pathname;
+      navigator.clipboard.writeText(url.toString());
+      anchor.classList.add('copied');
+      setTimeout(() => anchor.classList.remove('copied'), 1500);
+    }
+    document.addEventListener('click', handleAnchorClick);
+    return () => document.removeEventListener('click', handleAnchorClick);
+  }, []);
+
   return (
     <div className="min-h-screen bg-forge-bg text-forge-smoke relative">
       <ForgeBackground />
