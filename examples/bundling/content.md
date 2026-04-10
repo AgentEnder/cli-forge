@@ -4,6 +4,30 @@ Bundling is **not required** to distribute a cli-forge CLI. You can publish your
 
 That said, bundling can be useful when you want a single portable file, faster cold starts, or when embedding a CLI inside a larger tool.
 
+## Which tool should I pick?
+
+If you want the simplest setup, Bun is a strong option. It has a built-in bundler, and [`bun build --compile`](https://bun.sh/docs/bundler/executables) can produce a standalone executable that embeds the Bun runtime, so Bun does not become a runtime dependency for your users.
+
+If you want to stay Node-only, esbuild and Rolldown are both good default choices. Rollup gives you a similar model with a more established plugin ecosystem, while tsdown is a good fit when you want bundler-style transforms and tree-shaking without necessarily producing a fully self-contained single-file bundle.
+
+## Shipping a bundled CLI
+
+The examples below focus on module-format compatibility and bundling behavior. If you want to publish the built output as an executable CLI, there is one extra packaging step: make sure the final file has a Node shebang and is exposed through your package's `bin` field.
+
+```typescript
+#!/usr/bin/env node
+```
+
+```json
+{
+  "bin": {
+    "my-cli": "./dist/esm/my-cli.mjs"
+  }
+}
+```
+
+Most bundlers can prepend the shebang with a banner option, or you can add it in a small postbuild step and mark the file as executable with `chmod +x`.
+
 ## Shared CLI source
 
 All builds (except esbuild CJS) use this shared entry point:
@@ -62,7 +86,7 @@ Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages,
 
 ## [Bun](https://bun.sh/docs/bundler)
 
-Bun includes a built-in bundler accessible via the [`Bun.build()`](https://bun.sh/docs/bundler) API. These build scripts are run with `bun run` rather than `tsx`.
+Bun includes a built-in bundler accessible via the [`Bun.build()`](https://bun.sh/docs/bundler) API. It is the simplest setup in this example set, and if you later switch to [`bun build --compile`](https://bun.sh/docs/bundler/executables), Bun can also produce a standalone executable that embeds the runtime. These build scripts are run with `bun run` rather than `tsx`.
 
 ### CJS
 
@@ -76,7 +100,7 @@ Bun includes a built-in bundler accessible via the [`Bun.build()`](https://bun.s
 
 ## [tsdown](https://tsdown.dev/)
 
-tsdown keeps dependencies external by default — it transpiles your code but doesn't inline `node_modules` packages into the bundle. This is often the right choice for CLIs that will be installed via npm, since Node.js resolves dependencies at runtime.
+tsdown sits somewhere between bundling and plain transpilation. It still uses a bundler-style pipeline, so you get tree-shaking and related optimizations, but it keeps dependencies external by default instead of inlining `node_modules` into a single file. This is often the right choice for CLIs that will be installed via npm, since Node.js resolves dependencies at runtime.
 
 ### CJS
 
