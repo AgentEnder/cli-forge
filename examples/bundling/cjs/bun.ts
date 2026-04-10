@@ -1,7 +1,12 @@
-// Bun.build() is a Bun-runtime API. This script shells out to
-// the bun CLI to stay compatible with the Node-based test runner.
-import { execSync } from 'child_process';
-
-execSync('bun build cli.ts --outfile dist/cjs/bun.cjs --target node --format cjs', {
-  stdio: 'inherit',
+const result = await Bun.build({
+  entrypoints: ['cli.ts'],
+  outdir: 'dist/cjs',
+  target: 'node',
+  format: 'cjs',
+  naming: 'bun.cjs',
 });
+
+if (!result.success) {
+  console.error(result.logs);
+  process.exit(1);
+}

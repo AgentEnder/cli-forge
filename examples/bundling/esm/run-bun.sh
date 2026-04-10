@@ -1,2 +1,1 @@
-#!/bin/sh
-npx tsx esm/bun.ts
+bun run esm/bun.ts

@@ -1,2 +1,1 @@
-#!/bin/sh
-npx tsx cjs/bun.ts
+bun run cjs/bun.ts

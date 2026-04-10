@@ -4,21 +4,15 @@ Bundling is **not required** to distribute a cli-forge CLI. You can publish your
 
 That said, bundling can be useful when you want a single portable file, faster cold starts, or when embedding a CLI inside a larger tool.
 
-## ESM output
+## Shared CLI source
 
-ESM bundles work out of the box with every bundler tested — no workarounds needed:
+All builds (except esbuild CJS) use this shared entry point:
 
-<%= file('esm/run-esbuild.sh') %>
-<%= file('esm/run-rollup.sh') %>
-<%= file('esm/run-rolldown.sh') %>
-<%= file('esm/run-tsdown.sh') %>
-<%= file('esm/run-bun.sh') %>
+<%= file('cli.ts') %>
 
-## CJS output
+## esbuild
 
-Most bundlers handle CJS output correctly. The one exception is **esbuild**, which requires a small change to how you import cli-forge.
-
-### esbuild gotcha
+### CJS
 
 esbuild activates the `"import"` export condition whenever source code uses `import ... from` syntax — **regardless of the output format**. This means even with `format: 'cjs'` and `platform: 'node'`, esbuild resolves the ESM entry from dual-format packages. If that entry contains `import.meta` (valid in ESM, undefined in CJS), the bundle crashes at runtime.
 
@@ -31,31 +25,59 @@ With that change, no plugins or configuration tweaks are needed:
 <%= file('cjs/run-esbuild.sh') %>
 <%= file('cjs/esbuild.ts') %>
 
-### Rollup, Rolldown, tsdown, and Bun
+### ESM
 
-These bundlers resolve the correct entry for each output format automatically. Standard `import ... from` syntax works:
+ESM bundles work out of the box — no workarounds needed:
+
+<%= file('esm/run-esbuild.sh') %>
+<%= file('esm/esbuild.ts') %>
+
+## Rollup
+
+Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages, so it uses a config file.
+
+### CJS
 
 <%= file('cjs/run-rollup.sh') %>
-<%= file('cjs/run-rolldown.sh') %>
-<%= file('cjs/run-tsdown.sh') %>
-<%= file('cjs/run-bun.sh') %>
-
-Note that **tsdown** keeps dependencies external by default — it transpiles your code but doesn't inline `node_modules` packages into the bundle. This is often the right choice for CLIs that will be installed via npm, since Node.js resolves dependencies at runtime.
-
-## Build configs
-
-Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages, so it uses a config file:
-
 <%= file('cjs/rollup.config.mjs') %>
 
-esbuild, rolldown, and bun use small per-format build scripts. Here are the ESM variants (CJS is identical except for the format and output path):
+### ESM
 
-<%= file('esm/esbuild.ts') %>
+<%= file('esm/run-rollup.sh') %>
+<%= file('esm/rollup.config.mjs') %>
+
+## Rolldown
+
+### CJS
+
+<%= file('cjs/run-rolldown.sh') %>
+<%= file('cjs/rolldown.ts') %>
+
+### ESM
+
+<%= file('esm/run-rolldown.sh') %>
 <%= file('esm/rolldown.ts') %>
+
+## Bun
+
+### CJS
+
+<%= file('cjs/run-bun.sh') %>
+<%= file('cjs/bun.ts') %>
+
+### ESM
+
+<%= file('esm/run-bun.sh') %>
 <%= file('esm/bun.ts') %>
 
-## Shared CLI source
+## tsdown
 
-All builds (except esbuild CJS) use this shared entry point:
+tsdown keeps dependencies external by default — it transpiles your code but doesn't inline `node_modules` packages into the bundle. This is often the right choice for CLIs that will be installed via npm, since Node.js resolves dependencies at runtime.
 
-<%= file('cli.ts') %>
+### CJS
+
+<%= file('cjs/run-tsdown.sh') %>
+
+### ESM
+
+<%= file('esm/run-tsdown.sh') %>
