@@ -7,7 +7,10 @@ import {
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 
-export function formatHelp(parentCLI: InternalCLI<any>): string {
+export function formatHelp(
+  parentCLI: InternalCLI<any>,
+  hiddenKeys?: Set<string>
+): string {
   const help: string[] = [];
   let command = parentCLI;
   let epilogue = parentCLI.configuration?.epilogue;
@@ -62,7 +65,9 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   const groupedOptions = parentCLI.getGroupedOptions();
   const nonpositionalOptions = Object.values(
     command.parser.configuredOptions
-  ).filter((c) => !c.positional && !c.hidden);
+  ).filter(
+    (c) => !c.positional && !c.hidden && !(hiddenKeys && hiddenKeys.has(c.key))
+  );
 
   help.push(...getOptionBlock('Options', nonpositionalOptions, command.parser));
 
@@ -103,6 +108,30 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   }
 
   return help.join('\n');
+}
+
+/**
+ * Renders a single option's help text line, applying any per-option
+ * `formatHelpText` override.
+ *
+ * Note: The returned text is **not** column-aligned, since alignment
+ * requires knowing all sibling options. This matches the `defaultText`
+ * passed to `formatHelpText` callbacks in the full help output.
+ *
+ * @param option The option configuration.
+ * @param displayKey The display key (may be localized).
+ * @returns The formatted help text line for this option.
+ */
+export function renderOptionHelpText(
+  option: UnknownOptionConfig & { key: string },
+  displayKey: string
+): string {
+  const parts = getOptionParts(option);
+  const defaultText = `  --${displayKey}${parts.length ? ' - ' : ''}${parts.join(' ')}`;
+  if (option.formatHelpText) {
+    return option.formatHelpText(option as any, defaultText);
+  }
+  return defaultText;
 }
 
 function getOptionParts(option: UnknownOptionConfig) {
@@ -243,30 +272,47 @@ function getOptionBlock(
     lines.push(label + ':');
   }
 
-  // Collect all entries (options + their property sub-entries) into a flat list
+  // Collect all entries (options + their property sub-entries) into a flat list.
+  // Options with a custom `formatHelpText` get a `customRender` function that
+  // replaces the standard aligned rendering for that entry.
   const entries: Array<{
     key: string;
     parts: string[];
     indent: number;
+    customRender?: (defaultText: string) => string;
   }> = [];
 
   for (const option of options) {
     const displayKey = parser.getDisplayKey(option.key);
-    entries.push({ key: displayKey, parts: getOptionParts(option), indent: 0 });
+    entries.push({
+      key: displayKey,
+      parts: getOptionParts(option),
+      indent: 0,
+      customRender: option.formatHelpText
+        ? (_defaultText) => option.formatHelpText!(option as any, _defaultText)
+        : undefined,
+    });
     for (const { key, config } of getPropertyEntries(option)) {
       entries.push({ key, parts: getOptionParts(config), indent: 2 });
     }
   }
 
-  // Compute key column width accounting for indent so all `-` separators align
+  // Compute key column width accounting for indent so all `-` separators align.
+  // Custom-rendered entries are excluded from padding calculation.
   let keyColumnWidth = 0;
   for (const entry of entries) {
-    keyColumnWidth = Math.max(keyColumnWidth, entry.indent + entry.key.length);
+    if (!entry.customRender) {
+      keyColumnWidth = Math.max(
+        keyColumnWidth,
+        entry.indent + entry.key.length
+      );
+    }
   }
 
-  // Compute padding for each part column across all entries
+  // Compute padding for each part column across standard entries
   const partPadding: number[] = [];
   for (const entry of entries) {
+    if (entry.customRender) continue;
     for (let j = 0; j < entry.parts.length; j++) {
       if (!partPadding[j]) {
         partPadding[j] = 0;
@@ -275,13 +321,22 @@ function getOptionBlock(
     }
   }
 
-  for (const { key, parts, indent } of entries) {
-    const paddedKey = key.padEnd(keyColumnWidth - indent);
-    lines.push(
-      `${' '.repeat(2 + indent)}--${paddedKey}${
-        parts.length ? ' - ' : ''
-      }${parts.map((part, i) => part.padEnd(partPadding[i])).join(' ')}`
-    );
+  // Render in original order — custom entries use their callback,
+  // standard entries use column-aligned formatting.
+  for (const { key, parts, indent, customRender } of entries) {
+    const defaultText = `${' '.repeat(2 + indent)}--${key}${
+      parts.length ? ' - ' : ''
+    }${parts.join(' ')}`;
+    if (customRender) {
+      lines.push(customRender(defaultText));
+    } else {
+      const paddedKey = key.padEnd(keyColumnWidth - indent);
+      lines.push(
+        `${' '.repeat(2 + indent)}--${paddedKey}${
+          parts.length ? ' - ' : ''
+        }${parts.map((part, i) => part.padEnd(partPadding[i])).join(' ')}`
+      );
+    }
   }
   return lines;
 }

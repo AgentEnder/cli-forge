@@ -1,4 +1,4 @@
- 
+/* eslint-disable @typescript-eslint/no-empty-object-type */
 import {
   ArrayOptionConfig,
   BooleanOptionConfig,
@@ -6,16 +6,15 @@ import {
   EnvOptionConfig,
   LocalizationDictionary,
   LocalizationFunction,
-  Expand,
   MakeUndefinedPropertiesOptional,
   NumberOptionConfig,
   ObjectOptionConfig,
-  OneOfOptionConfig,
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
   ResolveProperties,
   StringOptionConfig,
+  UnknownOptionConfig,
   WithOptional,
 } from '@cli-forge/parser';
 
@@ -57,6 +56,105 @@ export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any>
   : void;
 
 /**
+ * Public-facing representation of a configured option with a method to render
+ * its help text line (respecting any per-option `formatHelpText` override).
+ */
+export interface OptionInfo {
+  /** The option key (storage name). */
+  key: string;
+  /** The option's full configuration. */
+  config: UnknownOptionConfig;
+  /**
+   * Renders the help text line for this option, applying any per-option
+   * `formatHelpText` override. Returns the default formatted line if no
+   * override is set.
+   */
+  renderHelpText: () => string;
+}
+
+/**
+ * Context object passed to help callbacks.
+ *
+ * @typeParam TArgs - The accumulated argument types. Typed as `Partial`
+ *   because help may be invoked before a successful parse.
+ */
+export interface HelpContext<TArgs extends ParsedArgs = ParsedArgs> {
+  /** The CLI instance for the command being helped. */
+  cli: CLI<TArgs, any, any, any>;
+  /** The parsed arguments at the time --help was invoked (partial — parse may not have succeeded). */
+  args: Partial<TArgs>;
+  /**
+   * Renders the full default help text that would be shown without customization.
+   * Call this to get the standard help output and augment it.
+   */
+  renderDefaultHelp: () => string;
+  /**
+   * All visible (non-hidden, non-positional) options with their configs and
+   * a `renderHelpText()` method that respects per-option overrides.
+   */
+  options: OptionInfo[];
+}
+
+/**
+ * Callback for customizing help text generation.
+ * Receives a context object with the CLI instance, parsed args, configured
+ * options, and a function to render the default help text.
+ * Returns the custom help text string.
+ */
+export type HelpCallback<TArgs extends ParsedArgs = ParsedArgs> = (context: HelpContext<TArgs>) => string;
+
+/**
+ * Context object passed to version callbacks.
+ *
+ * @typeParam TArgs - The accumulated argument types. Typed as `Partial`
+ *   because version may be invoked before a successful parse.
+ */
+export interface VersionContext<TArgs extends ParsedArgs = ParsedArgs> {
+  /** The CLI instance. */
+  cli: CLI<TArgs, any, any, any>;
+  /** The parsed arguments at the time --version was invoked (partial — parse may not have succeeded). */
+  args: Partial<TArgs>;
+  /**
+   * Renders the default version string that would be shown without customization.
+   */
+  renderDefaultVersion: () => string;
+}
+
+/**
+ * Callback for customizing version output.
+ * Receives a context object with the CLI instance, parsed args, and a function
+ * to render the default version string.
+ * Returns the custom version string.
+ */
+export type VersionCallback<TArgs extends ParsedArgs = ParsedArgs> = (context: VersionContext<TArgs>) => string;
+
+/**
+ * Callback for handling errors during CLI execution, similar to `Promise.catch()`.
+ *
+ * - If the handler returns normally, the error is **suppressed** and `forge()` returns.
+ * - If the handler rethrows (or throws a new error), the error **propagates** to the caller.
+ *
+ * When registered, this replaces the default validation-error handler entirely.
+ */
+export type CatchHandler<TArgs extends ParsedArgs = ParsedArgs> = (
+  error: unknown,
+  context: {
+    /** The CLI instance. */
+    cli: CLI<TArgs, any, any, any>;
+    /**
+     * Exit the process with the given code. Prefer using this helper over
+     * calling `process.exit` directly so the CLI can manage process
+     * termination consistently across environments.
+     */
+    exit: (code?: number) => void;
+    /**
+     * Render the default help text. Useful for printing help alongside error messages.
+     */
+    renderDefaultHelp: () => string;
+  }
+) => void;
+
+/**
  * Converts a Command to its child CLI entry for TChildren tracking.
  * TParentCLI is the parent CLI type that will be set as the child's TParent.
  */
@@ -91,7 +189,7 @@ export type CommandToChildEntry<T, TParentCLI = undefined> = {
 export interface CLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-   
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TChildren = {},
   TParent = undefined
 > {
@@ -125,7 +223,7 @@ export interface CLI<
     TCommandArgs extends TArgs,
     TChildHandlerReturn,
     TKey extends string,
-     
+    // eslint-disable-next-line @typescript-eslint/no-empty-object-type
     TChildChildren = {}
   >(
     key: TKey,
@@ -475,13 +573,13 @@ export interface CLI<
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: WithOptional<
           unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
           ObjectOptionConfig<TCoerce, TProps>
         >;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -494,10 +592,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -510,10 +608,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -526,10 +624,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -542,26 +640,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
-    THandlerReturn,
-    TChildren,
-    TParent
-  >;
-  // OneOf option overload
-  option<
-    TOption extends string,
-    const TConfig extends OneOfOptionConfig<any>
-  >(
-    name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
-  ): CLI<
-    Expand<TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -574,10 +656,10 @@ export interface CLI<
     name: TOption,
     config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -601,13 +683,13 @@ export interface CLI<
     name: TOption,
     config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: WithOptional<
           unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
           ObjectOptionConfig<TCoerce, TProps>
         >;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -620,10 +702,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -636,10 +718,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -652,10 +734,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -668,10 +750,10 @@ export interface CLI<
     name: TOption,
     config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -684,10 +766,10 @@ export interface CLI<
     name: TOption,
     config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
   ): CLI<
-    Expand<TArgs &
+    TArgs &
       MakeUndefinedPropertiesOptional<{
         [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>>,
+      }>,
     THandlerReturn,
     TChildren,
     TParent
@@ -797,14 +879,54 @@ export interface CLI<
   /**
    * Allows overriding the version displayed when passing `--version`. Defaults to crawling
    * the file system to get the package.json of the currently executing command.
-   * @param override
+   *
+   * Can also be used to disable the `--version` flag by passing `false`
+   * (works at any command level), or to provide a custom version handler
+   * callback. Calling `.version(string|callback)` after `.version(false)`
+   * re-enables it.
+   *
+   * @param override A version string, `false` to disable, or a callback for custom version output.
    */
-  version(override?: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(override: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(callback: VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(overrideOrCallbackOrEnabled?: string | false | VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Configures the `--help` flag behavior.
+   *
+   * - Pass `false` to disable `--help` for this command. The flag is still
+   *   parsed but won't trigger help output and won't appear in help text.
+   *   Works at any command level (root or subcommand).
+   *   Calling `.help(callback)` after `.help(false)` re-enables it.
+   * - Pass a callback to customize help text generation for this command.
+   *   The callback receives a {@link HelpContext} with the CLI instance, parsed args,
+   *   configured options (each with a `renderHelpText()` method), and a
+   *   `renderDefaultHelp()` function for the full default help text.
+   *   If a subcommand does not have its own help callback, it will inherit from its closest
+   *   ancestor that has one.
+   *
+   * @param callbackOrEnabled `false` to disable, or a callback for custom help output.
+   */
+  help(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  help(callback: HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  help(callbackOrEnabled?: false | HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Prints help text to stdout.
+   * @param args Optional parsed args to pass to a custom help callback.
    */
-  printHelp(): void;
+  printHelp(args?: Partial<TArgs>): void;
+
+  /**
+   * Registers an error handler that replaces the default validation-error behavior
+   * (which prints help + error messages and exits). Works like `Promise.catch()`:
+   * if the handler returns normally, the error is suppressed and `forge()` returns.
+   * If the handler rethrows (or throws a new error), the error propagates.
+   *
+   * @param handler Called when an error occurs during `forge()`.
+   */
+  catch(handler: CatchHandler<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   group({
     label,
@@ -823,35 +945,11 @@ export interface CLI<
   middleware<TArgs2>(
     callback: MiddlewareFunction<TArgs, TArgs2>
   ): CLI<
-    TArgs2 extends void ? TArgs : Expand<TArgs & TArgs2>,
+    TArgs2 extends void ? TArgs : TArgs & TArgs2,
     THandlerReturn,
     TChildren,
     TParent
   >;
-
-  /**
-   * Registers a handler for this command. Fluent alternative to passing
-   * `handler` in the command configuration object.
-   *
-   * @param fn Handler function receiving parsed args and command context.
-   * @returns Updated CLI instance with the handler return type updated.
-   *
-   * @example
-   * ```ts
-   * cli('serve')
-   *   .option('port', { type: 'number', default: 3000 })
-   *   .handler((args) => {
-   *     console.log(`Listening on port ${args.port}`);
-   *   })
-   *   .forge();
-   * ```
-   */
-  handler<R>(
-    fn: (
-      args: TArgs,
-      context: CLIHandlerContext<TChildren, TParent>
-    ) => R
-  ): CLI<TArgs, R, TChildren, TParent>;
 
   /**
    * Registers an init hook that runs before command resolution.
@@ -891,7 +989,7 @@ export interface CLI<
 
   /**
    * Returns the typed children commands registered with this CLI.
-   * The return type depends on the commands registered via `command()` or `commands()`.
+   * The return type is determined by the commands registered via `command()` or `commands()`.
    *
    * @example
    * ```ts
@@ -1014,13 +1112,13 @@ export interface CLICommandOptions<
   /**
    * The children commands that exist before the builder runs.
    */
-   
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TInitialChildren = {},
   TParent = any,
   /**
    * The children commands after the builder runs (includes TInitialChildren plus any added by builder).
    */
-   
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TChildren = {}
 > {
   /**
@@ -1154,7 +1252,7 @@ export type SDKChildren<TChildren> = {
     infer A,
     infer R,
     infer C,
-     
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     infer _P
   >
     ? SDKCommand<A, R, C>
@@ -1166,7 +1264,7 @@ export type SDKChildren<TChildren> = {
  * Container commands (no handler) are not callable but still provide access to children.
  */
 export type SDKCommand<TArgs, THandlerReturn, TChildren> =
-   
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   // THandlerReturn extends void | undefined
   // ? SDKChildren<TChildren> // No handler = just children (not callable)
   SDKInvokable<TArgs, THandlerReturn> & SDKChildren<TChildren>;
@@ -1180,7 +1278,7 @@ export type SDKCommand<TArgs, THandlerReturn, TChildren> =
 export function cli<
   TArgs extends ParsedArgs,
   THandlerReturn = void,
-   
+  // eslint-disable-next-line @typescript-eslint/no-empty-object-type
   TChildren = {},
   TName extends string = string
 >(
