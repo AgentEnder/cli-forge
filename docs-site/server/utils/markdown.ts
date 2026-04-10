@@ -104,7 +104,7 @@ export async function renderMarkdown(md: string): Promise<string> {
     .use(rehypeBaseUrl)
     .use(rehypeSlug)
     .use(rehypeAutolinkHeadings, {
-      behavior: 'prepend',
+      behavior: 'append',
       properties: {
         className: ['heading-anchor'],
         ariaHidden: 'true',

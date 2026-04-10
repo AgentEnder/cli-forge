@@ -103,22 +103,18 @@ a.line-number:hover {
   margin-bottom: 0.75em;
   font-weight: 700;
   letter-spacing: 0.02em;
-  position: relative;
 }
 
 /* Heading anchor links */
 .prose-content .heading-anchor {
-  position: absolute;
-  left: -1.5em;
-  top: 50%;
-  transform: translateY(-50%);
   color: transparent;
   text-decoration: none;
   transition: color 0.15s ease;
-  line-height: 1;
+  margin-left: 0.5em;
+  vertical-align: middle;
 }
 .prose-content .heading-anchor svg {
-  display: block;
+  display: inline-block;
 }
 .prose-content h1:hover .heading-anchor,
 .prose-content h2:hover .heading-anchor,
