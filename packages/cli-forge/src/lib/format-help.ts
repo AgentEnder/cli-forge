@@ -3,6 +3,7 @@ import {
   UnknownOptionConfig,
   readDefaultValue,
   isOneOfOptionConfig,
+  isObjectOptionConfig,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 
@@ -156,6 +157,80 @@ function removeTrailingAndLeadingQuotes(str: string) {
   return str.replace(/^['"]/, '').replace(/['"]$/, '');
 }
 
+/**
+ * Extract the merged properties from a oneOf config's object valueTypes.
+ * When a oneOf has object branches, their properties can be set via dot notation,
+ * so we merge them for display in help output.
+ */
+function getOneOfObjectProperties(
+  config: UnknownOptionConfig
+): Record<string, UnknownOptionConfig> | undefined {
+  if (!isOneOfOptionConfig(config)) return undefined;
+  const merged: Record<string, UnknownOptionConfig> = {};
+  let found = false;
+  for (const vt of config.valueTypes) {
+    if (
+      vt.type === 'object' &&
+      'properties' in vt &&
+      vt.properties &&
+      typeof vt.properties === 'object'
+    ) {
+      found = true;
+      for (const [k, v] of Object.entries(
+        vt.properties as Record<string, UnknownOptionConfig>
+      )) {
+        // First object branch wins for any given key
+        if (!(k in merged)) {
+          merged[k] = v;
+        }
+      }
+    }
+  }
+  return found ? merged : undefined;
+}
+
+function collectObjectProperties(
+  parentKey: string,
+  properties: Record<string, UnknownOptionConfig>
+): Array<{ key: string; config: UnknownOptionConfig }> {
+  const result: Array<{ key: string; config: UnknownOptionConfig }> = [];
+  for (const [name, config] of Object.entries(properties)) {
+    if (config.hidden) continue;
+    const fullKey = `${parentKey}.${name}`;
+    result.push({ key: fullKey, config });
+    if (isObjectOptionConfig(config) && config.properties) {
+      result.push(
+        ...collectObjectProperties(
+          fullKey,
+          config.properties as Record<string, UnknownOptionConfig>
+        )
+      );
+    } else {
+      const oneOfProps = getOneOfObjectProperties(config);
+      if (oneOfProps) {
+        result.push(...collectObjectProperties(fullKey, oneOfProps));
+      }
+    }
+  }
+  return result;
+}
+
+function getPropertyEntries(
+  option: UnknownOptionConfig
+): Array<{ key: string; config: UnknownOptionConfig }> {
+  let properties: Record<string, UnknownOptionConfig> | undefined;
+  if (isObjectOptionConfig(option) && option.properties) {
+    properties = option.properties as Record<string, UnknownOptionConfig>;
+  } else {
+    properties = getOneOfObjectProperties(option);
+  }
+  if (!properties) return [];
+  return collectObjectProperties(
+    (option as InternalOptionConfig).key,
+    properties
+  );
+}
+
 function getOptionBlock(
   label: string,
   options: InternalOptionConfig[],
@@ -168,26 +243,44 @@ function getOptionBlock(
     lines.push(label + ':');
   }
 
-  const allParts: Array<[key: string, ...parts: string[]]> = [];
+  // Collect all entries (options + their property sub-entries) into a flat list
+  const entries: Array<{
+    key: string;
+    parts: string[];
+    indent: number;
+  }> = [];
+
   for (const option of options) {
-    // Use the display key (localized) instead of the storage key
     const displayKey = parser.getDisplayKey(option.key);
-    allParts.push([displayKey, ...getOptionParts(option)]);
-  }
-  const paddingValues: number[] = [];
-  for (let i = 0; i < allParts.length; i++) {
-    for (let j = 0; j < allParts[i].length; j++) {
-      if (!paddingValues[j]) {
-        paddingValues[j] = 0;
-      }
-      paddingValues[j] = Math.max(paddingValues[j], allParts[i][j].length);
+    entries.push({ key: displayKey, parts: getOptionParts(option), indent: 0 });
+    for (const { key, config } of getPropertyEntries(option)) {
+      entries.push({ key, parts: getOptionParts(config), indent: 2 });
     }
   }
-  for (const [key, ...parts] of allParts) {
+
+  // Compute key column width accounting for indent so all `-` separators align
+  let keyColumnWidth = 0;
+  for (const entry of entries) {
+    keyColumnWidth = Math.max(keyColumnWidth, entry.indent + entry.key.length);
+  }
+
+  // Compute padding for each part column across all entries
+  const partPadding: number[] = [];
+  for (const entry of entries) {
+    for (let j = 0; j < entry.parts.length; j++) {
+      if (!partPadding[j]) {
+        partPadding[j] = 0;
+      }
+      partPadding[j] = Math.max(partPadding[j], entry.parts[j].length);
+    }
+  }
+
+  for (const { key, parts, indent } of entries) {
+    const paddedKey = key.padEnd(keyColumnWidth - indent);
     lines.push(
-      `  --${key.padEnd(paddingValues[0])}${parts.length ? ' - ' : ''}${parts
-        .map((part, i) => part.padEnd(paddingValues[i + 1]))
-        .join(' ')}`
+      `${' '.repeat(2 + indent)}--${paddedKey}${
+        parts.length ? ' - ' : ''
+      }${parts.map((part, i) => part.padEnd(partPadding[i])).join(' ')}`
     );
   }
   return lines;

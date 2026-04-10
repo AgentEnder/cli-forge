@@ -410,6 +410,148 @@ describe('cliForge', () => {
     `);
   });
 
+  it('should display object option property details in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('config', {
+        type: 'object',
+        description: 'App configuration',
+        properties: {
+          host: {
+            type: 'string',
+            description: 'Server hostname',
+            default: 'localhost',
+          },
+          port: {
+            type: 'number',
+            description: 'Server port',
+            required: true,
+          },
+        },
+      })
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help          - Show help for the current command  
+        --version       - Show the version number for the CLI
+        --config        - App configuration                  
+          --config.host - Server hostname                     [default: localhost]
+          --config.port - Server port                         [required]          "
+    `);
+  });
+
+  it('should display nested object property details in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('config', {
+        type: 'object',
+        description: 'App configuration',
+        properties: {
+          server: {
+            type: 'object',
+            description: 'Server settings',
+            properties: {
+              host: {
+                type: 'string',
+                description: 'Hostname',
+                default: 'localhost',
+              },
+              port: {
+                type: 'number',
+                description: 'Port number',
+              },
+            },
+          },
+          debug: {
+            type: 'boolean',
+            description: 'Enable debug mode',
+          },
+        },
+      })
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help                 - Show help for the current command  
+        --version              - Show the version number for the CLI
+        --config               - App configuration                  
+          --config.server      - Server settings                    
+          --config.server.host - Hostname                            [default: localhost]
+          --config.server.port - Port number                        
+          --config.debug       - Enable debug mode                  "
+    `);
+  });
+
+  it('should display oneOf object property sub-properties in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('filter', {
+        type: 'object',
+        description: 'Filter criteria',
+        properties: {
+          prs: {
+            type: 'oneOf',
+            description: 'PR count filter',
+            valueTypes: [
+              {
+                type: 'object',
+                properties: {
+                  min: { type: 'number', description: 'Minimum PRs' },
+                  max: { type: 'number', description: 'Maximum PRs' },
+                },
+              },
+              { type: 'string' },
+            ],
+          } as any,
+        },
+      })
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help             - Show help for the current command  
+        --version          - Show the version number for the CLI
+        --filter           - Filter criteria                    
+          --filter.prs     - PR count filter                     [object|string]
+          --filter.prs.min - Minimum PRs                        
+          --filter.prs.max - Maximum PRs                        "
+    `);
+  });
+
+  it('should display top-level oneOf with object valueType properties in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('value', {
+        type: 'oneOf',
+        description: 'A flexible value',
+        valueTypes: [
+          {
+            type: 'object',
+            properties: {
+              host: { type: 'string', description: 'Hostname' },
+              port: { type: 'number', description: 'Port', default: 8080 },
+            },
+          },
+          { type: 'string' },
+        ],
+      } as any)
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help         - Show help for the current command  
+        --version      - Show the version number for the CLI
+        --value        - A flexible value                    [object|string]
+          --value.host - Hostname                           
+          --value.port - Port                                [default: 8080]"
+    `);
+  });
+
   it('should run middlewares before command handlers', async () => {
     const executionOrder: string[] = [];
     await cli('test')
