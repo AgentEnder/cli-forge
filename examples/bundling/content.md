@@ -10,7 +10,7 @@ All builds (except esbuild CJS) use this shared entry point:
 
 <%= file('cli.ts') %>
 
-## esbuild
+## [esbuild](https://esbuild.github.io/)
 
 ### CJS
 
@@ -32,7 +32,7 @@ ESM bundles work out of the box — no workarounds needed:
 <%= file('esm/run-esbuild.sh') %>
 <%= file('esm/esbuild.ts') %>
 
-## Rollup
+## [Rollup](https://rollupjs.org/)
 
 Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages, so it uses a config file.
 
@@ -46,7 +46,9 @@ Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages,
 <%= file('esm/run-rollup.sh') %>
 <%= file('esm/rollup.config.mjs') %>
 
-## Rolldown
+## [Rolldown](https://rolldown.rs/)
+
+[Rolldown](https://rolldown.rs/) is a Rust-based bundler designed as a drop-in replacement for Rollup with better performance. It uses a JavaScript API similar to Rollup's.
 
 ### CJS
 
@@ -58,7 +60,9 @@ Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages,
 <%= file('esm/run-rolldown.sh') %>
 <%= file('esm/rolldown.ts') %>
 
-## Bun
+## [Bun](https://bun.sh/docs/bundler)
+
+Bun includes a built-in bundler accessible via the [`Bun.build()`](https://bun.sh/docs/bundler) API. These build scripts are run with `bun run` rather than `tsx`.
 
 ### CJS
 
@@ -70,7 +74,7 @@ Rollup requires `@rollup/plugin-node-resolve` to bundle `node_modules` packages,
 <%= file('esm/run-bun.sh') %>
 <%= file('esm/bun.ts') %>
 
-## tsdown
+## [tsdown](https://tsdown.dev/)
 
 tsdown keeps dependencies external by default — it transpiles your code but doesn't inline `node_modules` packages into the bundle. This is often the right choice for CLIs that will be installed via npm, since Node.js resolves dependencies at runtime.
 
