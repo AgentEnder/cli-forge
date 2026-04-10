@@ -484,7 +484,6 @@ export default function PlaygroundPage() {
   }, [files]);
 
   // Start with 'Ctrl' to match SSR output, then update on the client.
-  // Start with 'Ctrl' to match SSR output, then update on the client.
   // A direct navigator check here causes a hydration mismatch.
   const [modKey, setModKey] = useState('Ctrl');
   useEffect(() => {

@@ -32,6 +32,17 @@ exceptions:
   - npm
   - pnpm
   - Yarn
+  - Forge
+  - yargs
+  - commander
+  - oclif
+  - clipanion
+  - cac
+  - meow
+  - citty
+  - cleye
+  - gluegun
+  - util.parseArgs
   # Abbreviations
   - AI
   - CI
@@ -48,3 +59,4 @@ exceptions:
   - REPL
   # API identifiers that must keep their casing
   - parseArgs
+  - '@effect/cli'
