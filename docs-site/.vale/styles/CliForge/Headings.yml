@@ -43,6 +43,7 @@ exceptions:
   - cleye
   - gluegun
   - util.parseArgs
+  - effect
   # Abbreviations
   - AI
   - CI
@@ -59,4 +60,3 @@ exceptions:
   - REPL
   # API identifiers that must keep their casing
   - parseArgs
-  - '@effect/cli'
