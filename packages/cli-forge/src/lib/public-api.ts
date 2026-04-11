@@ -1105,7 +1105,7 @@ export type ErrorHandler = (
 ) => void;
 
 /** Type alias for a CLI instance with any type parameters. */
-export type AnyCLI = CLI<ParsedArgs, any, any, any>;
+export type AnyCLI = CLI<any, any, any, any>;
 
 /** @deprecated Use AnyCLI instead */
 export type UnknownCLI = AnyCLI;

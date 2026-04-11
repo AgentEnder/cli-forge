@@ -41,7 +41,7 @@ import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
 
 /** Type alias for an InternalCLI instance with any type parameters. */
-export type AnyInternalCLI = InternalCLI<ParsedArgs, any, any, any>;
+export type AnyInternalCLI = InternalCLI<any, any, any, any>;
 
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
@@ -1276,7 +1276,7 @@ export class InternalCLI<
   }
 
   getSubcommands() {
-    return this.registeredCommands as Readonly<Record<string, InternalCLI>>;
+    return this.registeredCommands as Readonly<Record<string, AnyInternalCLI>>;
   }
 
   clone() {
