@@ -401,7 +401,7 @@ export interface CLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
-   * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
+   * Registers a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
    *
    * @param provider Provider to register.
    */

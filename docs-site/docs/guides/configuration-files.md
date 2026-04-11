@@ -32,63 +32,29 @@ my-project/
 └── src/
 ```
 
-```json
-{
-  "host": "localhost",
-  "port": 8080,
-  "debug": true
-}
-```
+<%= example('configuration-files').file('configured-cli.config.json') %>
 
 Running `my-tool` from anywhere inside the project picks up these values. The file is found by walking up the directory tree from the working directory, so `cd my-project/src && my-tool` still works.
 
 **How to build it:**
 
-```typescript
-import { cli, ConfigurationProviders } from 'cli-forge';
-
-cli('my-tool', {
-  builder: (args) =>
-    args
-      .option('host', { type: 'string', default: 'localhost' })
-      .option('port', { type: 'number', default: 3000 })
-      .option('debug', { type: 'boolean', default: false })
-      .config(ConfigurationProviders.JsonFile('my-tool.config.json')),
-  handler: (args) => {
-    // args.host, args.port, args.debug are populated from the config file
-  },
-});
-```
+<%= example('configuration-files').region('json-file-config') %>
 
 If the config should live under a key instead of at the root of the JSON file, pass the key name as the second argument:
 
-```typescript
-// Reads from { "my-tool": { "host": "...", "port": ... } }
-.config(ConfigurationProviders.JsonFile('other.config.json', 'my-tool'))
-```
+<%= example('configuration-files').region('nested-key-config') %>
 
 ## `package.json` key
 
 **What your users see:** Configuration lives inside `package.json` under a key. No extra file needed. Similar to how Jest uses `"jest"` and Babel uses `"babel"` in `package.json`.
 
-```json
-{
-  "name": "my-project",
-  "version": "1.0.0",
-  "my-tool": {
-    "host": "localhost",
-    "port": 8080
-  }
-}
-```
+<%= example('configuration-files').file('package.json') %>
 
 This works well for tools with a small number of options where adding a separate file feels heavy.
 
 **How to build it:**
 
-```typescript
-.config(ConfigurationProviders.PackageJson('my-tool'))
-```
+<%= example('configuration-files').region('package-json-config') %>
 
 ## Multiple config sources
 
@@ -109,13 +75,9 @@ When the same key appears in multiple sources, the first registered provider win
 
 Given these config files:
 
-```json
-// package.json
-{ "my-app": { "name": "from-package", "farewell": "pkg-farewell" } }
+<%= example('multi-provider-precedence').file('package.json') %>
 
-// app.config.json
-{ "name": "from-json", "greeting": "json-greeting" }
-```
+<%= example('multi-provider-precedence').file('app.config.json') %>
 
 The resolved values are:
 - `name`: `"from-package"` — PackageJson was registered first, so it wins
@@ -126,33 +88,15 @@ The resolved values are:
 
 **What your users see:** A base config that other configs extend, just like `tsconfig.json` with `"extends"`. Teams publish a shared config package or keep a base config in the repo root, and individual projects override specific values.
 
-```json
-// base.config.json — shared team defaults
-{
-  "host": "0.0.0.0",
-  "port": 3000,
-  "debug": false
-}
-```
+<%= example('config-inheritance').file('base/app.config.json') %>
 
-```json
-// my-tool.config.json — project overrides
-{
-  "extends": "./base.config.json",
-  "port": 8080,
-  "debug": true
-}
-```
+<%= example('config-inheritance').file('app.config.json') %>
 
-The project config inherits `host` from the base and overrides `port` and `debug`. Extends chains can go arbitrarily deep (A extends B extends C). CLI Forge detects circular references and throws a clear error.
+The project config inherits values from the base and overrides specific keys. Extends chains can go arbitrarily deep (A extends B extends C). CLI Forge detects circular references and throws a clear error.
 
 **How to build it:** No extra code needed — `extends` works automatically with any configuration provider. The framework handles inheritance at the aggregate level, so custom providers get it for free.
 
 <%= example('config-inheritance').file('cli.ts') %>
-
-<%= example('config-inheritance').file('app.config.json') %>
-
-<%= example('config-inheritance').file('base/app.config.json') %>
 
 ## Init commands and config bootstrapping
 
