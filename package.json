@@ -54,6 +54,7 @@
     "@functional-examples/javascript": "0.1.2",
     "@functional-examples/test": "0.1.2",
     "@functional-examples/yaml-manifest": "0.1.2",
+    "@typescript/ata": "^0.9.8",
     "functional-examples": "0.1.2",
     "react-hot-toast": "catalog:"
   },

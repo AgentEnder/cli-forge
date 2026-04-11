@@ -32,6 +32,18 @@ exceptions:
   - npm
   - pnpm
   - Yarn
+  - Forge
+  - yargs
+  - commander
+  - oclif
+  - clipanion
+  - cac
+  - meow
+  - citty
+  - cleye
+  - gluegun
+  - util.parseArgs
+  - effect
   # Abbreviations
   - AI
   - CI
