@@ -1,0 +1,16 @@
+id: providers
+title: Dependency Injection with Providers
+description: |
+  Demonstrates using `.provide()` and `getCommandContext()` to register
+  and inject services without threading them through function calls.
+
+  The logger provider is registered once on the CLI with a factory that
+  receives parsed args, then any command handler can access it via
+  `getCommandContext(app).inject('logger')` — no prop drilling needed.
+test:
+  - name: 'Logs deployment target using injected logger'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts deploy --target production --apiUrl http://example.com'
+    assertions:
+      stdout:
+        contains: 'Deploying to production'
