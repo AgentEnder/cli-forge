@@ -1113,7 +1113,7 @@ export interface CLICommandOptions<
   // Note: Builder uses 'any' for THandlerReturn to avoid inference conflicts with the handler.
   // The handler's return type is inferred independently from the handler function itself.
   builder?: (
-    parser: CLI<TInitial, any, TInitialChildren, TParent, any>
+    parser: CLI<TInitial, any, TInitialChildren, TParent, {}>
   ) => CLI<TArgs, any, TChildren, any, any>;
 
   /**
