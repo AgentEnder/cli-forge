@@ -8,7 +8,7 @@ import { getCommandContext } from 'cli-forge/context';
 
 const app = cli('test')
   .provide('logger', { info: (msg: string) => console.log(msg) })
-  .provide('api', { get: (url: string) => fetch(url) });
+  .provide('api', { get: (url: string) => url });
 
 // getCommandContext(app) infers providers from the CLI instance
 app.handler(() => {

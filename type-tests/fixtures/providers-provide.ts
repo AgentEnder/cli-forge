@@ -11,7 +11,7 @@ import { cli } from 'cli-forge';
 // Eager value provider accumulates type
 const _app1 = cli('test')
   .provide('logger', { log: (msg: string) => console.log(msg) })
-  .provide('api', { get: (url: string) => fetch(url) });
+  .provide('api', { get: (url: string) => url });
 
 // Factory provider (executionScope) — factory receives args
 const _app2 = cli('test')

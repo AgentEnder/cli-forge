@@ -77,8 +77,10 @@ function readStore(): ForgeContextData {
   return store;
 }
 
-function resolveProvider(store: ForgeContextData, key: string): unknown {
-  // 1. Check pre-cached/pre-resolved providers
+const NOT_FOUND = Symbol('NOT_FOUND');
+
+function resolveProvider(store: ForgeContextData, key: string): unknown | typeof NOT_FOUND {
+  // 1. Check pre-cached/pre-resolved providers (use .has() to handle undefined values)
   if (store.providers.has(key)) {
     return store.providers.get(key);
   }
@@ -86,7 +88,7 @@ function resolveProvider(store: ForgeContextData, key: string): unknown {
   // 2. Lazy-resolve from factories
   const registration = store.providerFactories.get(key);
   if (!registration) {
-    return undefined;
+    return NOT_FOUND;
   }
 
   const { factory, lifetime } = registration;
@@ -120,7 +122,7 @@ function createCommandContext(store: ForgeContextData): CommandContext<any, any,
 
     inject(key: string, defaultValue?: unknown): unknown {
       const resolved = resolveProvider(store, key);
-      if (resolved === undefined) {
+      if (resolved === NOT_FOUND) {
         if (arguments.length >= 2) {
           return defaultValue;
         }
