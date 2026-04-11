@@ -9,22 +9,22 @@ nav:
 
 [cac](https://github.com/cacjs/cac) is a zero-dependency, single-file CLI library used by Vite and Vitest.
 
-## Where CLI Forge goes further
+## CLI Forge strengths
 
-- **Type inference** — CLI Forge [infers types](/docs/guides/typescript) from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
-- **Rich option types** — Native `number`, `boolean`, `array`, and `object` types. cac infers types from bracket syntax at runtime with no compile-time safety.
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), required options, and custom validators. cac only validates required positional arguments and unknown options.
-- **Middleware** — Full [middleware pipeline](/docs/guides/middleware). cac has none.
-- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files). cac has none.
-- **Documentation generation** — [Built-in](/docs/cli/generate-documentation). cac has none.
-- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell). cac has none.
-- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests. cac requires manual setup.
+- **Type inference** — [Infers types](/docs/guides/typescript) from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
+- **Rich option types** — Native `number`, `boolean`, `array`, and `object` types with compile-time safety. cac infers types from bracket syntax at runtime only.
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), required options, and custom validators. cac validates only required positional arguments and unknown options.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware).
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files).
+- **Documentation generation** — [Built-in](/docs/cli/generate-documentation).
+- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell).
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests.
 
-## Where cac has the edge
+## cac strengths
 
 - **Zero dependencies, single file** — Extremely lightweight (~3.5KB minified).
-- **Dot-notation** — [`--env.API_SECRET foo`](https://github.com/cacjs/cac#dot-nested-options) automatically creates nested objects. CLI Forge uses explicit `type: 'object'` with `properties` for typed nesting.
-- **Deno support** — Available [via JSR](https://github.com/cacjs/cac#with-deno). CLI Forge targets Node.js and Bun.
+- **Dot-notation** — [`--env.API_SECRET foo`](https://github.com/cacjs/cac#dot-nested-options) automatically creates nested objects. CLI Forge uses explicit `type: 'object'` with `properties`.
+- **Deno support** — Available [via JSR](https://github.com/cacjs/cac#with-deno).
 - **Event system** — [Listen for command events](https://github.com/cacjs/cac#events) (`command:*`) for custom routing logic.
 - **Proven at scale** — Powers Vite, Vitest, and other popular tools.
 
@@ -44,3 +44,7 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 
 </div>
 </div>
+
+---
+
+[Back to comparison overview](/docs/guides/comparison) · [View all framework examples](/examples/framework-comparison)

@@ -9,22 +9,22 @@ nav:
 
 [Commander](https://github.com/tj/commander.js) is the most widely used CLI library in the Node.js ecosystem, with zero runtime dependencies.
 
-## Where CLI Forge goes further
+## CLI Forge strengths
 
-- **Built-in type inference** — Commander's core [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript). Type-safe options require the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package. CLI Forge [infers types](/docs/guides/typescript) from every `.option()` call with no extra packages.
-- **Rich option types** — Commander treats value option arguments as strings by default; numbers require [custom processing functions](https://github.com/tj/commander.js#custom-option-processing) (booleans and variadic arrays are supported natively). CLI Forge supports `string`, `number`, `boolean`, `array`, and `object` types natively with automatic coercion.
-- **Middleware** — CLI Forge's [middleware pipeline](/docs/guides/middleware) transforms args between parsing and handler execution. Commander provides [`preAction`/`postAction` hooks](https://github.com/tj/commander.js#life-cycle-hooks) but not a general-purpose middleware system.
-- **Config file support** — CLI Forge loads config files with [`extends` inheritance](/docs/guides/configuration-files). Commander has no config file loading.
-- **Documentation generation** — Built-in [`generate-docs`](/docs/cli/generate-documentation) command. Commander has no equivalent.
-- **Interactive shell** — [Opt-in REPL mode](/docs/guides/quick-start#the-interactive-shell). Commander has no shell.
-- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests. Commander requires manual test setup.
+- **Built-in type inference** — Commander's core [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript); type-safe options require the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package. CLI Forge [infers types](/docs/guides/typescript) from every `.option()` call with no extra packages.
+- **Rich option types** — Native `string`, `number`, `boolean`, `array`, and `object` with automatic coercion. Commander treats values as strings by default; numbers require [custom processing functions](https://github.com/tj/commander.js#custom-option-processing).
+- **Middleware** — [Middleware pipeline](/docs/guides/middleware) transforms args between parsing and handler execution. Commander has [`preAction`/`postAction` hooks](https://github.com/tj/commander.js#life-cycle-hooks) but no general-purpose middleware.
+- **Config file support** — [Config loading with `extends` inheritance](/docs/guides/configuration-files). Commander has none.
+- **Documentation generation** — Built-in [`generate-docs`](/docs/cli/generate-documentation) command.
+- **Interactive shell** — [Opt-in REPL mode](/docs/guides/quick-start#the-interactive-shell).
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests.
 
-## Where commander has the edge
+## commander strengths
 
-- **Zero dependencies** — Commander is entirely self-contained. CLI Forge has runtime dependencies.
+- **Zero dependencies** — Entirely self-contained.
 - **Adoption** — Ubiquitous in the Node.js ecosystem with extensive documentation and examples.
-- **Standalone executables** — Commander can [spawn subcommands as separate processes](https://github.com/tj/commander.js#stand-alone-executable-subcommands) (e.g., `git`-style where `my-app install` runs a `my-app-install` binary). CLI Forge runs all commands in-process.
-- **Lightweight API** — Commander's [string-based option definitions](https://github.com/tj/commander.js#options) (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
+- **Standalone executables** — Can [spawn subcommands as separate processes](https://github.com/tj/commander.js#stand-alone-executable-subcommands) (e.g., `git`-style where `my-app install` runs a `my-app-install` binary).
+- **Lightweight API** — [String-based option definitions](https://github.com/tj/commander.js#options) (`'-p, --port <number>'`) are concise for simple CLIs where full type inference isn't needed.
 
 ## Side-by-side example
 
@@ -42,3 +42,7 @@ The same CLI — a `greet` command with `hello` and `goodbye` subcommands — im
 
 </div>
 </div>
+
+---
+
+[Back to comparison overview](/docs/guides/comparison) · [View all framework examples](/examples/framework-comparison)

@@ -11,11 +11,11 @@ nav:
 
 The Node.js ecosystem has many CLI building libraries, each with different design goals and tradeoffs. This guide compares CLI Forge with the most popular alternatives to help you choose the right tool for your project.
 
-Comparisons were last verified against official documentation in April 2026. See the [version reference](#version-reference) at the bottom of this page for the specific versions compared.
+Comparisons were last verified against official documentation in April 2026. See the [links and version reference](#links-and-version-reference) at the bottom for the specific versions compared.
 
 ## Feature matrix
 
-A high-level overview of feature support across libraries. See the [detailed comparisons](#detailed-comparisons) below for nuance.
+A high-level overview of feature support across libraries. Click any tool name to see a detailed comparison, or see the [full list](#detailed-comparisons) below.
 
 ### CLI builder libraries
 
@@ -69,6 +69,24 @@ A high-level overview of feature support across libraries. See the [detailed com
 | **Distribution packaging** | No | [`oclif pack`](https://oclif.io/docs/releasing/) | No | No |
 | **Ecosystem buy-in** | Standalone | [oclif conventions](https://oclif.io/docs/configuring_your_cli/) | [Effect ecosystem](https://effect.website/docs/getting-started/introduction/) | [Gluegun toolbox](https://infinitered.github.io/gluegun/#/toolbox-api) |
 
+## Detailed comparisons
+
+Each page below includes a side-by-side code example and a detailed feature breakdown.
+
+| Library | Comparison |
+|---|---|
+| yargs | [CLI Forge vs. yargs](/docs/guides/comparison/yargs) |
+| commander | [CLI Forge vs. commander](/docs/guides/comparison/commander) |
+| oclif | [CLI Forge vs. oclif](/docs/guides/comparison/oclif) |
+| clipanion | [CLI Forge vs. clipanion](/docs/guides/comparison/clipanion) |
+| cac | [CLI Forge vs. cac](/docs/guides/comparison/cac) |
+| meow | [CLI Forge vs. meow](/docs/guides/comparison/meow) |
+| citty | [CLI Forge vs. citty](/docs/guides/comparison/citty) |
+| cleye | [CLI Forge vs. cleye](/docs/guides/comparison/cleye) |
+| @effect/cli | [CLI Forge vs. @effect/cli](/docs/guides/comparison/effect-cli) |
+| gluegun | [CLI Forge vs. gluegun](/docs/guides/comparison/gluegun) |
+| Node.js util.parseArgs | [CLI Forge vs. util.parseArgs](/docs/guides/comparison/util-parseargs) |
+
 ## What "type-safe inference" means
 
 Not all TypeScript support is equal. Most libraries ship type declarations, but the depth of inference varies significantly.
@@ -103,24 +121,6 @@ npx tsx my-app.ts serve --host localhost
 
 **Via plugin** (commander) requires the separate [`@commander-js/extra-typings`](https://github.com/commander-js/extra-typings) package for type-safe `.opts()` return values. Core commander [types `.opts()` as a generic object](https://github.com/tj/commander.js#typescript).
 
-## Detailed comparisons
-
-Each page below includes a side-by-side code example and a detailed feature breakdown.
-
-| Library | Comparison |
-|---|---|
-| yargs | [CLI Forge vs. yargs](/docs/guides/comparison/yargs) |
-| commander | [CLI Forge vs. commander](/docs/guides/comparison/commander) |
-| oclif | [CLI Forge vs. oclif](/docs/guides/comparison/oclif) |
-| clipanion | [CLI Forge vs. clipanion](/docs/guides/comparison/clipanion) |
-| cac | [CLI Forge vs. cac](/docs/guides/comparison/cac) |
-| meow | [CLI Forge vs. meow](/docs/guides/comparison/meow) |
-| citty | [CLI Forge vs. citty](/docs/guides/comparison/citty) |
-| cleye | [CLI Forge vs. cleye](/docs/guides/comparison/cleye) |
-| @effect/cli | [CLI Forge vs. @effect/cli](/docs/guides/comparison/effect-cli) |
-| gluegun | [CLI Forge vs. gluegun](/docs/guides/comparison/gluegun) |
-| Node.js util.parseArgs | [CLI Forge vs. util.parseArgs](/docs/guides/comparison/util-parseargs) |
-
 ## Links and version reference
 
 Comparisons were last verified against official documentation in April 2026. If a tool has released a major update since, some details may have changed.
@@ -129,13 +129,13 @@ Comparisons were last verified against official documentation in April 2026. If 
 |---|---|---|---|---|
 | CLI Forge | 1.8.1 | [craigory.dev](https://craigory.dev/cli-forge/) | [GitHub](https://github.com/AgentEnder/cli-forge) | [npm](https://www.npmjs.com/package/cli-forge) |
 | yargs | 18.x | [yargs.js.org](https://yargs.js.org/) | [GitHub](https://github.com/yargs/yargs) | [npm](https://www.npmjs.com/package/yargs) |
-| commander | 14.x | — | [GitHub](https://github.com/tj/commander.js) | [npm](https://www.npmjs.com/package/commander) |
+| commander | 14.x | [GitHub README](https://github.com/tj/commander.js#readme) | [GitHub](https://github.com/tj/commander.js) | [npm](https://www.npmjs.com/package/commander) |
 | oclif | 4.x | [oclif.io](https://oclif.io/) | [GitHub](https://github.com/oclif/oclif) | [npm](https://www.npmjs.com/package/@oclif/core) |
 | clipanion | 3.x | [mael.dev](https://mael.dev/clipanion/) | [GitHub](https://github.com/arcanis/clipanion) | [npm](https://www.npmjs.com/package/clipanion) |
-| cac | 7.x | — | [GitHub](https://github.com/cacjs/cac) | [npm](https://www.npmjs.com/package/cac) |
-| meow | 14.x | — | [GitHub](https://github.com/sindresorhus/meow) | [npm](https://www.npmjs.com/package/meow) |
-| citty | 0.2.x | — | [GitHub](https://github.com/unjs/citty) | [npm](https://www.npmjs.com/package/citty) |
-| cleye | 2.x | — | [GitHub](https://github.com/privatenumber/cleye) | [npm](https://www.npmjs.com/package/cleye) |
+| cac | 7.x | [GitHub README](https://github.com/cacjs/cac#readme) | [GitHub](https://github.com/cacjs/cac) | [npm](https://www.npmjs.com/package/cac) |
+| meow | 14.x | [GitHub README](https://github.com/sindresorhus/meow#readme) | [GitHub](https://github.com/sindresorhus/meow) | [npm](https://www.npmjs.com/package/meow) |
+| citty | 0.2.x | [GitHub README](https://github.com/unjs/citty#readme) | [GitHub](https://github.com/unjs/citty) | [npm](https://www.npmjs.com/package/citty) |
+| cleye | 2.x | [GitHub README](https://github.com/privatenumber/cleye#readme) | [GitHub](https://github.com/privatenumber/cleye) | [npm](https://www.npmjs.com/package/cleye) |
 | @effect/cli | 0.x | [README](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [GitHub](https://github.com/Effect-TS/effect) | [npm](https://www.npmjs.com/package/@effect/cli) |
 | gluegun | 5.x | [infinitered.github.io](https://infinitered.github.io/gluegun/) | [GitHub](https://github.com/infinitered/gluegun) | [npm](https://www.npmjs.com/package/gluegun) |
 | util.parseArgs | Node.js 20+ | [Node.js docs](https://nodejs.org/api/util.html#utilparseargsconfig) | [proposal](https://github.com/pkgjs/parseargs) | — |
