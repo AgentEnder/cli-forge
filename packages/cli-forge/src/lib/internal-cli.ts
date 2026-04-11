@@ -576,7 +576,8 @@ export class InternalCLI<
     TArgs2 extends void ? TArgs : TArgs & TArgs2,
     THandlerReturn,
     TChildren,
-    TParent
+    TParent,
+    TProviders
   > {
     this.registeredMiddleware.add(callback);
     // If middleware returns void, TArgs doesn't change...

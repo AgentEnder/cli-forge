@@ -36,7 +36,7 @@ export type TestHarnessParseResult<T extends ParsedArgs> = {
 export class TestHarness<T extends ParsedArgs> {
   private cli: InternalCLI<T>;
 
-  constructor(cli: CLI<T>) {
+  constructor(cli: CLI<T, any, any, any, any>) {
     if (InternalCLI.isInternalCLI(cli)) {
       this.cli = cli;
       mockHandler(cli);
