@@ -12,21 +12,26 @@ nav:
 ## CLI Forge strengths
 
 - **Type accumulation** — Each `.option()` call [progressively builds a TypeScript type](/docs/guides/typescript). Yargs relies on external [`@types/yargs`](https://www.npmjs.com/package/@types/yargs) definitions that may lag behind releases.
-- **Object options** — `type: 'object'` with fully typed `properties` and per-property declarations. Yargs supports [dot-notation](https://github.com/yargs/yargs-parser#configuration) (e.g., `--foo.bar=baz`) but without TypeScript inference of the nested structure.
+- **Object options** — `type: 'object'` with fully typed `properties` and per-property declarations ([example](/examples/object-arguments)). Yargs supports [dot-notation](https://github.com/yargs/yargs-parser#configuration) (e.g., `--foo.bar=baz`) but without TypeScript inference of the nested structure.
 - **Documentation generation** — [`cli-forge generate-docs`](/docs/cli/generate-documentation) produces markdown or JSON from your CLI definition. Yargs has no built-in doc generation.
-- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell) for exploring commands interactively.
-- **Test harness** — [`TestHarness`](/docs/guides/testing) tests parsing and command resolution without running handlers.
-- **Config files** — Both support [`extends`-based inheritance](/docs/guides/configuration-files), but CLI Forge adds automatic file discovery, write-back, and per-key provenance tracking.
-- **Zod integration** — [Middleware for Zod schema validation](/docs/guides/middleware). Yargs validation is limited to [`.check()` callbacks](https://yargs.js.org/docs/#api-reference-checkfn-globaltrue).
+- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell) for exploring commands interactively ([example](/examples/interactive-subshell)).
+- **Test harness** — [`TestHarness`](/docs/guides/testing) tests parsing and command resolution without running handlers ([example](/examples/test-harness)).
+- **Config files** — Both support [`extends`-based inheritance](/docs/guides/configuration-files), but CLI Forge adds automatic file discovery, write-back, and per-key provenance tracking ([example](/examples/configuration-files)).
+- **Zod integration** — [Middleware for Zod schema validation](/docs/guides/middleware) ([example](/examples/zod-validation)). Yargs validation is limited to [`.check()` callbacks](https://yargs.js.org/docs/#api-reference-checkfn-globaltrue).
+
+## Shared strengths
+
+- **Shell completions** — Both generate shell completion scripts. Yargs uses [`.completion()`](https://yargs.js.org/docs/#api-reference-completioncmd-description-fn) for bash/zsh. CLI Forge supports bash, zsh, fish, and PowerShell via [`.completion()`](/examples/shell-completion).
+- **Localization** — Yargs has built-in i18n with [`.locale()`](https://yargs.js.org/docs/#api-reference-localelocale) and [`.updateStrings()`](https://yargs.js.org/docs/#api-reference-updatelocaleobj). CLI Forge supports localization through middleware ([example](/examples/localization-example)) and integrates with libraries like [i18next](/examples/i18next-integration).
+- **Middleware** — Both support [middleware](/docs/guides/middleware) ([example](/examples/middleware-composition)). Yargs calls it [middleware](https://yargs.js.org/docs/#api-reference-middlewarecallbacks-applybeforevalidation); CLI Forge's version additionally supports typed argument accumulation across the middleware chain.
+- **Env variable support** — Yargs has [`.env()`](https://yargs.js.org/docs/#api-reference-envprefix). CLI Forge has [declarative env var mapping](/docs/guides/configuration-files#value-precedence) ([example](/examples/env-options)).
 
 ## yargs strengths
 
 - **Ecosystem maturity** — Extensive community documentation, Stack Overflow answers, and third-party integrations.
-- **Internationalization** — Built-in i18n with [`.locale()`](https://yargs.js.org/docs/#api-reference-localelocale) and [`.updateStrings()`](https://yargs.js.org/docs/#api-reference-updatelocaleobj).
-- **Tab completion** — [`.completion()`](https://yargs.js.org/docs/#api-reference-completioncmd-description-fn) generates bash/zsh completion scripts. CLI Forge supports [completions](https://github.com/AgentEnder/cli-forge/blob/main/packages/cli-forge/src/lib/completion-scripts.ts) too (bash, zsh, fish, PowerShell).
 - **Filesystem routing** — [`.commandDir()`](https://yargs.js.org/docs/#api-reference-commanddirdirectory-opts) loads commands from a directory structure.
 - **Usage string parsing** — Define options from [usage strings](https://yargs.js.org/docs/#api-reference-usage-desc-builder-handler) like `'--port <number>'`.
-- **Deno and browser support** — Officially supports [Deno](https://github.com/yargs/yargs#deno-example) and [browsers](https://github.com/yargs/yargs/blob/main/docs/browser.md). CLI Forge supports [browsers](/docs/guides/browser-usage).
+- **Deno support** — Officially supports [Deno](https://github.com/yargs/yargs#deno-example). Both yargs and CLI Forge support [browsers](/docs/guides/browser-usage).
 
 ## Side-by-side example
 

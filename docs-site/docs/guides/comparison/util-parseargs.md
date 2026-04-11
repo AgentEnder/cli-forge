@@ -17,9 +17,9 @@ CLI Forge provides everything that `util.parseArgs` deliberately excludes:
 - **Type inference** — [Fully typed](/docs/guides/typescript) parsed output. `util.parseArgs` returns untyped values.
 - **Subcommands** — Full command tree with nested subcommands, builders, and handlers.
 - **Help generation** — Automatic help text from option definitions.
-- **Validation** — [Required, choices, conflicts, implications](/docs/guides/validation), custom validators. `util.parseArgs` only has [strict mode](https://nodejs.org/api/util.html#utilparseargsconfig) (rejecting unknown flags).
+- **Validation** — [Required, choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), custom validators. `util.parseArgs` only has [strict mode](https://nodejs.org/api/util.html#utilparseargsconfig) (rejecting unknown flags).
 - **Coercion** — Automatic type coercion (strings to numbers, etc.).
-- **[Middleware](/docs/guides/middleware), [config files](/docs/guides/configuration-files), env variables, [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — None of these exist in `util.parseArgs`.
+- **[Middleware](/docs/guides/middleware) ([example](/examples/middleware-composition)), [config files](/docs/guides/configuration-files) ([example](/examples/configuration-files)), [env variables](/docs/guides/configuration-files#value-precedence) ([example](/examples/env-options)), [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell) ([example](/examples/interactive-subshell)), [test harness](/docs/guides/testing) ([example](/examples/test-harness))** — None of these exist in `util.parseArgs`.
 
 ## util.parseArgs strengths
 

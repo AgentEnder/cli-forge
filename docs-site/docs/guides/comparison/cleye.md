@@ -11,12 +11,12 @@ nav:
 
 ## CLI Forge strengths
 
-- **Middleware** — Full [middleware pipeline](/docs/guides/middleware).
-- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files).
-- **Built-in types** — Native `number`, `boolean`, `array`, and `object` types via declarative config. cleye uses JavaScript constructor functions (`String`, `Number`, `Boolean`) or [custom `(string) => T` functions](https://github.com/privatenumber/cleye#custom-flag-types--validation).
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. cleye validates via [custom type functions](https://github.com/privatenumber/cleye#custom-flag-types--validation) (throw to reject).
-- **Env variable support** — Declarative env var mapping.
-- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — None of these exist in cleye.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) ([example](/examples/middleware-composition)).
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files) ([example](/examples/configuration-files)).
+- **Built-in types** — Native `number`, `boolean`, `array`, and `object` types via declarative config ([example](/examples/object-arguments)). cleye uses JavaScript constructor functions (`String`, `Number`, `Boolean`) or [custom `(string) => T` functions](https://github.com/privatenumber/cleye#custom-flag-types--validation).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), and custom validators. cleye validates via [custom type functions](https://github.com/privatenumber/cleye#custom-flag-types--validation) (throw to reject).
+- **Env variable support** — Declarative env var mapping ([example](/examples/env-options)).
+- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell) ([example](/examples/interactive-subshell)), [test harness](/docs/guides/testing) ([example](/examples/test-harness))** — None of these exist in cleye.
 
 ## cleye strengths
 

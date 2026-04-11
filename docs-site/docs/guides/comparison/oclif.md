@@ -13,9 +13,9 @@ nav:
 
 - **Fluent builder API** — Chainable builder pattern. oclif requires [class-based commands](https://oclif.io/docs/commands/) in separate files with static property declarations.
 - **Type accumulation** — Types [flow through the builder chain](/docs/guides/typescript). In oclif, each command types its own [flags](https://oclif.io/docs/flags/)/args via `this.parse()` without accumulation across a command tree.
-- **Object options** — Nested, typed object options. oclif has no equivalent.
-- **Middleware** — General-purpose [middleware pipeline](/docs/guides/middleware). oclif has [lifecycle hooks](https://oclif.io/docs/hooks/) but they're file-based declarations, not inline composition.
-- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files). oclif supports [framework-level configuration](https://oclif.io/docs/configuring_your_cli/) but not end-user option config files.
+- **Object options** — Nested, typed object options ([example](/examples/object-arguments)). oclif has no equivalent.
+- **Middleware** — General-purpose [middleware pipeline](/docs/guides/middleware) ([example](/examples/middleware-composition)). oclif has [lifecycle hooks](https://oclif.io/docs/hooks/) but they're file-based declarations, not inline composition.
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files) ([example](/examples/config-inheritance)). oclif supports [framework-level configuration](https://oclif.io/docs/configuring_your_cli/) but not end-user option config files.
 - **Lightweight setup** — Define a CLI in a single file. oclif is designed around [code generation and scaffolding](https://oclif.io/docs/generating/).
 
 ## oclif strengths

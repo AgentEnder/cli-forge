@@ -12,10 +12,10 @@ nav:
 ## CLI Forge strengths
 
 - **Rich option types** — `number`, `array`, and `object` options. citty supports [`string`, `boolean`, `enum`, and `positional`](https://github.com/unjs/citty#argument-types).
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. citty has `required` and enum constraints.
-- **Middleware** — Full [middleware pipeline](/docs/guides/middleware). citty has [`setup`/`cleanup` hooks](https://github.com/unjs/citty#hooks) and [plugins](https://github.com/unjs/citty#plugins), but no general middleware.
-- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files).
-- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — None of these exist in citty.
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), and custom validators. citty has `required` and enum constraints.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) ([example](/examples/middleware-composition)). citty has [`setup`/`cleanup` hooks](https://github.com/unjs/citty#hooks) and [plugins](https://github.com/unjs/citty#plugins), but no general middleware.
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files) ([example](/examples/configuration-files)).
+- **[Documentation generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell) ([example](/examples/interactive-subshell)), [test harness](/docs/guides/testing) ([example](/examples/test-harness))** — None of these exist in citty.
 
 ## citty strengths
 

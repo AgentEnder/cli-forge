@@ -13,12 +13,12 @@ nav:
 
 - **Type inference** — [Infers types](/docs/guides/typescript) from option definitions. cac returns `{ [k: string]: any }` for parsed options, requiring manual type assertions.
 - **Rich option types** — Native `number`, `boolean`, `array`, and `object` types with compile-time safety. cac infers types from bracket syntax at runtime only.
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), required options, and custom validators. cac validates only required positional arguments and unknown options.
-- **Middleware** — Full [middleware pipeline](/docs/guides/middleware).
-- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), required options, and custom validators. cac validates only required positional arguments and unknown options.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) ([example](/examples/middleware-composition)).
+- **Config files** — Built-in [loading with `extends`](/docs/guides/configuration-files) ([example](/examples/configuration-files)).
 - **Documentation generation** — [Built-in](/docs/cli/generate-documentation).
-- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell).
-- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests.
+- **Interactive shell** — [Opt-in REPL](/docs/guides/quick-start#the-interactive-shell) ([example](/examples/interactive-subshell)).
+- **Test harness** — [`TestHarness`](/docs/guides/testing) for parsing tests ([example](/examples/test-harness)).
 
 ## cac strengths
 

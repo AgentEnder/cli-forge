@@ -15,10 +15,10 @@ nav:
 ## CLI Forge strengths
 
 - **Type-safe inference** — [Infers types](/docs/guides/typescript) from option definitions. Gluegun's [toolbox](https://infinitered.github.io/gluegun/#/toolbox-api) parameters are loosely typed (`{ [key: string]: any }`).
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators.
-- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) for argument transformation. Gluegun has extensions that modify the toolbox, but no argument middleware.
-- **Programmatic registration** — Commands are defined inline with full type safety. Gluegun primarily uses [filesystem-based command files](https://infinitered.github.io/gluegun/#/runtime).
-- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files). Gluegun uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for discovery but without inheritance.
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), and custom validators.
+- **Middleware** — Full [middleware pipeline](/docs/guides/middleware) ([example](/examples/middleware-composition)) for argument transformation. Gluegun has extensions that modify the toolbox, but no argument middleware.
+- **Programmatic registration** — Commands are defined inline with full type safety ([example](/examples/multi-command-cli)). Gluegun primarily uses [filesystem-based command files](https://infinitered.github.io/gluegun/#/runtime).
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files) ([example](/examples/config-inheritance)). Gluegun uses [cosmiconfig](https://github.com/cosmiconfig/cosmiconfig) for discovery but without inheritance.
 - **Documentation generation** — [Built-in](/docs/cli/generate-documentation).
 - **Active maintenance** — CLI Forge is actively developed.
 

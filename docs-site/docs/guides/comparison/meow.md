@@ -13,9 +13,9 @@ nav:
 
 - **Auto-generated help** — Help text is generated from option definitions. meow requires you to [write help text manually](https://github.com/sindresorhus/meow#helptext) as a string.
 - **Subcommands** — Full command tree with nested subcommands and handlers. meow has [basic command detection](https://github.com/sindresorhus/meow#commands) that requires manual delegation.
-- **Rich option types** — Native `object` and `array` types. meow supports [`string`, `number`, and `boolean`](https://github.com/sindresorhus/meow#flags).
-- **Validation** — [Choices, conflicts, implications](/docs/guides/validation), and custom validators. meow has [`choices` and `isRequired`](https://github.com/sindresorhus/meow#flags).
-- **[Middleware](/docs/guides/middleware), [config files](/docs/guides/configuration-files), [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell), [test harness](/docs/guides/testing)** — None of these exist in meow.
+- **Rich option types** — Native `object` and `array` types ([example](/examples/object-arguments)). meow supports [`string`, `number`, and `boolean`](https://github.com/sindresorhus/meow#flags).
+- **Validation** — [Choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), and custom validators. meow has [`choices` and `isRequired`](https://github.com/sindresorhus/meow#flags).
+- **[Middleware](/docs/guides/middleware) ([example](/examples/middleware-composition)), [config files](/docs/guides/configuration-files) ([example](/examples/configuration-files)), [doc generation](/docs/cli/generate-documentation), [interactive shell](/docs/guides/quick-start#the-interactive-shell) ([example](/examples/interactive-subshell)), [test harness](/docs/guides/testing) ([example](/examples/test-harness))** — None of these exist in meow.
 
 ## meow strengths
 

@@ -13,16 +13,19 @@ nav:
 
 - **Standalone** — Self-contained library. @effect/cli requires the Effect runtime (`effect`, `@effect/platform`, `@effect/platform-node` or `-bun`), which is a significant dependency commitment.
 - **Fluent builder API** — Chainable `.option().command()` pattern. @effect/cli uses [separate constructors](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#our-first-command) (`Command.make`, `Options.text`, `Args.text`) composed via `pipe()`.
-- **Object options** — Typed nested objects with dot-notation argument parsing (e.g., `--config.host=X`). @effect/cli options are flat; they can be grouped via [`Options.all()`](https://effect-ts.github.io/effect/effect/cli/Options.ts.html) but without dot-notation parsing.
-- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files), write-back, and per-key provenance. @effect/cli has [`ConfigFile`](https://github.com/Effect-TS/effect/tree/main/packages/cli) and [`ConfigProvider`](https://effect.website/docs/configuration/#configprovider) but neither supports `extends` chains or write-back.
+- **Object options** — Typed nested objects with dot-notation argument parsing (e.g., `--config.host=X`) ([example](/examples/object-arguments)). @effect/cli options are flat; they can be grouped via [`Options.all()`](https://effect-ts.github.io/effect/effect/cli/Options.ts.html) but without dot-notation parsing.
+- **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files) ([example](/examples/config-inheritance)), write-back, and per-key provenance. @effect/cli has [`ConfigFile`](https://github.com/Effect-TS/effect/tree/main/packages/cli) and [`ConfigProvider`](https://effect.website/docs/configuration/#configprovider) but neither supports `extends` chains or write-back.
 - **Documentation generation** — Built-in [`generate-docs`](/docs/cli/generate-documentation) command.
 - **Lower learning curve** — Familiar API for developers coming from yargs or commander.
+
+## Shared strengths
+
+- **Shell completions** — Both generate shell completion scripts. @effect/cli has a built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options). CLI Forge supports bash, zsh, fish, and PowerShell via [`.completion()`](/examples/shell-completion).
 
 ## @effect/cli strengths
 
 - **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. Fits naturally into an [existing Effect application](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#setting-up-the-main-command).
 - **Wizard mode** — Built-in [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) walks users through options interactively.
-- **Shell completions** — Built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options) generates shell-specific completion scripts. CLI Forge supports [completions](https://github.com/AgentEnder/cli-forge/blob/main/packages/cli-forge/src/lib/completion-scripts.ts) too (bash, zsh, fish, PowerShell) via `.completion()`.
 - **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
 - **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt).
 
