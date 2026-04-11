@@ -62,13 +62,21 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
   const groupedOptions = parentCLI.getGroupedOptions();
   const nonpositionalOptions = Object.values(
     command.parser.configuredOptions
-  ).filter((c) => !c.positional && !c.hidden);
+  ).filter((c) => !c.positional && !c.hidden && !c.configOnly);
 
   help.push(...getOptionBlock('Options', nonpositionalOptions, command.parser));
 
   for (const { label, keys } of groupedOptions) {
     help.push(...getOptionBlock(label, keys, command.parser));
   }
+
+  const configOnlyOptions = Object.values(
+    command.parser.configuredOptions
+  ).filter((c) => !c.positional && !c.hidden && c.configOnly);
+
+  help.push(
+    ...getOptionBlock('Configuration Options', configOnlyOptions, command.parser)
+  );
 
   if (command.configuration?.examples?.length) {
     help.push('');
