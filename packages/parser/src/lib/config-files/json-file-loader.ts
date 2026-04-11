@@ -163,11 +163,8 @@ class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
 
 type JsonFileConfigLoaderConstructor = {
   new <T>(
-    options: JsonFileConfigLoaderSingleOptions<T>
-  ): JsonFileConfigLoader<T>;
-  new <T>(
-    options: JsonFileConfigLoaderMultiOptions<T>
-  ): JsonFileConfigLoader<T>[];
+    options: JsonFileConfigLoaderOptions<T>
+  ): JsonFileConfigLoader<T> | readonly JsonFileConfigLoader<T>[];
 };
 
 /**
