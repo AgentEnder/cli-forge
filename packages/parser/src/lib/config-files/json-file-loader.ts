@@ -75,10 +75,7 @@ class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
   }
 
   resolve(configurationRoot: string): string | undefined {
-    const nearestFile = traverseForFile(
-      this.singleFilename,
-      configurationRoot
-    );
+    const nearestFile = traverseForFile(this.singleFilename, configurationRoot);
     if (nearestFile && nearestFile.endsWith('.json')) {
       return nearestFile;
     }
@@ -113,7 +110,9 @@ class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
 
     if (!resolvedPath) {
       throw new Error(
-        `Could not resolve configuration file "${this.singleFilename}" from ${env.cwd()}`
+        `Could not resolve configuration file "${
+          this.singleFilename
+        }" from ${env.cwd()}`
       );
     }
 
@@ -140,7 +139,10 @@ class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
       fs.mkdirSync(fs.dirname(resolvedPath), { recursive: true });
     }
 
-    await fs.writeFile(resolvedPath, JSON.stringify(outputJson, null, 2) + '\n');
+    await fs.writeFile(
+      resolvedPath,
+      JSON.stringify(outputJson, null, 2) + '\n'
+    );
   }
 
   describeConfig(): ConfigurationDocSection {
@@ -163,8 +165,11 @@ class JsonFileConfigLoaderInstance<T> implements JsonFileConfigLoader<T> {
 
 type JsonFileConfigLoaderConstructor = {
   new <T>(
-    options: JsonFileConfigLoaderOptions<T>
-  ): JsonFileConfigLoader<T> | readonly JsonFileConfigLoader<T>[];
+    options: JsonFileConfigLoaderSingleOptions<T>
+  ): JsonFileConfigLoader<T>;
+  new <T>(
+    options: JsonFileConfigLoaderMultiOptions<T>
+  ): readonly JsonFileConfigLoader<T>[];
 };
 
 /**
