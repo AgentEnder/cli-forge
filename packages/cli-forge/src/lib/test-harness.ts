@@ -1,6 +1,9 @@
 import { ParsedArgs } from '@cli-forge/parser';
+import { contextStorage, ForgeContextData } from './async-context';
 import { AnyInternalCLI, InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
+
+const mockedDisposers: Array<() => void> = [];
 
 export type TestHarnessParseResult<T extends ParsedArgs> = {
   /**
@@ -44,6 +47,63 @@ export class TestHarness<T extends ParsedArgs> {
       throw new Error(
         'TestHarness can only be used with CLI instances created by `cli`.'
       );
+    }
+  }
+
+  /**
+   * Mocks the CLI context for testing DI providers and command context outside
+   * of a real `forge()` execution. Returns a cleanup function that removes the
+   * mocked context when called.
+   *
+   * @example
+   * ```ts
+   * afterEach(() => TestHarness.clearMockedContexts());
+   *
+   * it('resolves provider', () => {
+   *   const cleanup = TestHarness.mockContext(myApp, {
+   *     providers: { db: mockDb },
+   *   });
+   *   const ctx = getCommandContext(myApp);
+   *   expect(ctx.inject('db')).toBe(mockDb);
+   *   cleanup();
+   * });
+   * ```
+   */
+  static mockContext<TArgs, TProviders>(
+    _cli: CLI<TArgs, any, any, any, TProviders>,
+    options: {
+      args?: Partial<TArgs>;
+      providers?: Partial<TProviders>;
+      commandChain?: string[];
+    }
+  ): () => void {
+    const contextData: ForgeContextData = {
+      args: (options.args ?? {}) as Record<string, unknown>,
+      commandChain: options.commandChain ?? [],
+      providers: new Map(Object.entries(options.providers ?? {})),
+      providerFactories: new Map(),
+      handlerPhase: true,
+    };
+
+    contextStorage.enterWith(contextData);
+
+    const dispose = () => {
+      contextStorage.enterWith(undefined as any);
+      const idx = mockedDisposers.indexOf(dispose);
+      if (idx !== -1) mockedDisposers.splice(idx, 1);
+    };
+
+    mockedDisposers.push(dispose);
+    return dispose;
+  }
+
+  /**
+   * Removes all mocked contexts registered via {@link mockContext}.
+   * Call this in `afterEach` to ensure a clean state between tests.
+   */
+  static clearMockedContexts(): void {
+    for (const dispose of [...mockedDisposers]) {
+      dispose();
     }
   }
 
