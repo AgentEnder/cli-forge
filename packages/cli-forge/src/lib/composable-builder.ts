@@ -4,14 +4,14 @@ import { CLI } from './public-api';
 /**
  * Extracts the TChildren type parameter from a CLI type.
  */
-export type ExtractChildren<T> = T extends CLI<any, any, infer C, any>
+export type ExtractChildren<T> = T extends CLI<any, any, infer C, any, any>
   ? C
   : never;
 
 /**
  * Extracts the TArgs type parameter from a CLI type.
  */
-export type ExtractArgs<T> = T extends CLI<infer A, any, any, any> ? A : never;
+export type ExtractArgs<T> = T extends CLI<infer A, any, any, any, any> ? A : never;
 
 /**
  * Type for a composable builder function that transforms a CLI.
@@ -19,11 +19,11 @@ export type ExtractArgs<T> = T extends CLI<infer A, any, any, any> ? A : never;
  */
 export type ComposableBuilder<
   TArgs2 extends ParsedArgs,
-   
+
   TAddedChildren = {}
-> = <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(
-  init: CLI<TInit, THandlerReturn, TChildren, TParent>
-) => CLI<Expand<TInit & TArgs2>, THandlerReturn, TChildren & TAddedChildren, TParent>;
+> = <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent, TProviders>(
+  init: CLI<TInit, THandlerReturn, TChildren, TParent, TProviders>
+) => CLI<Expand<TInit & TArgs2>, THandlerReturn, TChildren & TAddedChildren, TParent, TProviders>;
 
 /**
  * Creates a composable builder function that can be used with `chain`.
@@ -61,8 +61,8 @@ export function makeComposableBuilder<
   });
   fn(proxy);
 
-  return <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent>(
-    init: CLI<TInit, THandlerReturn, TChildren, TParent>
+  return <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent, TProviders>(
+    init: CLI<TInit, THandlerReturn, TChildren, TParent, TProviders>
   ) => {
     let current: any = init;
     for (const op of operations) {
@@ -72,7 +72,8 @@ export function makeComposableBuilder<
       Expand<TInit & TArgs2>,
       THandlerReturn,
       TChildren & TChildren2,
-      TParent
+      TParent,
+      TProviders
     >;
   };
 }

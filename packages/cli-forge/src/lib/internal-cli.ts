@@ -41,7 +41,7 @@ import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
 
 /** Type alias for an InternalCLI instance with any type parameters. */
-export type AnyInternalCLI = InternalCLI<any, any, any, any>;
+export type AnyInternalCLI = InternalCLI<any, any, any, any, any>;
 
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
@@ -74,10 +74,11 @@ const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-   
+
   TChildren = {},
-  TParent = undefined
-> implements CLI<TArgs, THandlerReturn, TChildren, TParent>
+  TParent = undefined,
+  TProviders = {}
+> implements CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
 {
   /**
    * Cross-realm brand for identifying InternalCLI instances across
@@ -253,7 +254,7 @@ export class InternalCLI<
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
-  ): InternalCLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): InternalCLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration = configuration;
     this.requiresCommand = configuration.handler ? false : 'IMPLICIT';
     return this;
@@ -273,10 +274,12 @@ export class InternalCLI<
         TCommandArgs,
         TChildHandlerReturn,
         {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent>
+        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        {}
       >;
     },
-    TParent
+    TParent,
+    TProviders
   >;
   command<
     TCommandArgs extends TArgs,
@@ -293,10 +296,12 @@ export class InternalCLI<
         TCommandArgs,
         TChildHandlerReturn,
         {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent>
+        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        {}
       >;
     },
-    TParent
+    TParent,
+    TProviders
   >;
   command<
     TCommandArgs extends TArgs,
@@ -315,7 +320,8 @@ export class InternalCLI<
               TCommandArgs,
               TChildHandlerReturn,
               {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
+              CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+              {}
             >;
           }
         : typeof keyOrCommand extends Command<
@@ -328,12 +334,14 @@ export class InternalCLI<
               TCmdArgs,
               void,
               {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
+              CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+              {}
             >;
           }
-        :  
+        :
           {}),
-    TParent
+    TParent,
+    TProviders
   > {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
@@ -459,43 +467,43 @@ export class InternalCLI<
 
   conflicts(
     ...args: [string, string, ...string[]]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.conflicts(...args);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   implies(
     option: string,
     ...impliedOptions: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.implies(option, ...impliedOptions);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   env(
     a0: string | EnvOptionConfig | undefined = fromCamelOrDashedCaseToConstCase(
       this.name
     )
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (typeof a0 === 'string') {
       this.parser.env(a0);
     } else {
       a0.prefix ??= fromCamelOrDashedCaseToConstCase(this.name);
       this.parser.env(a0);
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   localize(
     dictionaryOrFn: LocalizationDictionary | LocalizationFunction,
     locale?: string
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (typeof dictionaryOrFn === 'function') {
       this.parser.localize(dictionaryOrFn);
     } else {
       this.parser.localize(dictionaryOrFn, locale);
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -507,34 +515,34 @@ export class InternalCLI<
     return this.parser.getDisplayKey(key);
   }
 
-  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.requiresCommand = 'EXPLICIT';
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.options.strict = enable;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration ??= {};
     this.configuration.usage = usageText;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   examples(
     ...examples: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration ??= {};
     this.configuration.examples ??= [];
     this.configuration.examples.push(...examples);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  version(version?: string): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  version(version?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this._versionOverride = version;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -569,7 +577,7 @@ export class InternalCLI<
 
   handler<R>(
     fn: (args: TArgs, context: any) => R
-  ): CLI<TArgs, R, TChildren, TParent> {
+  ): CLI<TArgs, R, TChildren, TParent, TProviders> {
     if (!this._configuration) {
       this._configuration = {};
     }
@@ -580,17 +588,17 @@ export class InternalCLI<
 
   init(
     callback: (
-      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
       args: TArgs
     ) => Promise<void> | void
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.registeredInitHooks.push(callback);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   completion(
     callback?: CompletionCallback<any>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this._completionEnabled = true;
     if (callback) {
       this.completionCallback = callback;
@@ -615,7 +623,7 @@ export class InternalCLI<
       });
     }
 
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -731,14 +739,16 @@ export class InternalCLI<
         TInit extends ParsedArgs,
         TInitHandlerReturn,
         TInitChildren,
-        TInitParent
+        TInitParent,
+        TInitProviders
       >(
-        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
+        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent, TInitProviders>
       ) => CLI<
         TInit & TArgs,
         TInitHandlerReturn,
         TInitChildren & TChildren,
-        TInitParent
+        TInitParent,
+        TInitProviders
       >)
     | undefined {
     const builder = this.configuration?.builder;
@@ -751,7 +761,7 @@ export class InternalCLI<
     | ((args: Omit<TArgs, keyof ParsedArgs>) => THandlerReturn)
     | undefined {
     const context: CLIHandlerContext<TChildren, TParent> = {
-      command: this as unknown as CLI<any, any, TChildren, TParent>,
+      command: this as unknown as CLI<any, any, TChildren, TParent, any>,
     };
     const handler = this._configuration?.handler;
     if (!handler) {
@@ -889,7 +899,7 @@ export class InternalCLI<
     return [...seen];
   }
 
-  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (this.requiresCommand === 'EXPLICIT') {
       throw new Error(
         'Interactive shell is not supported for commands that require a command.'
@@ -897,7 +907,7 @@ export class InternalCLI<
     } else if (typeof process !== 'undefined' && process.stdout?.isTTY) {
       this.requiresCommand = false;
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   private versionHandler() {
@@ -942,21 +952,21 @@ export class InternalCLI<
 
   errorHandler(
     handler: ErrorHandler
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.registeredErrorHandlers.unshift(handler);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   withPromptProvider(
     provider: PromptProvider
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (!provider.prompt && !provider.promptBatch) {
       throw new Error(
         "Prompt provider must implement at least one of 'prompt' or 'promptBatch'"
       );
     }
     this.registeredPromptProviders.push(provider);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   group(
@@ -964,7 +974,7 @@ export class InternalCLI<
       | string
       | { label: string; keys: (keyof TArgs)[]; sortOrder?: number },
     keys?: (keyof TArgs)[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     const config =
       typeof labelOrConfigObject === 'object'
         ? labelOrConfigObject
@@ -982,16 +992,16 @@ export class InternalCLI<
       sortOrder:
         config.sortOrder ?? Object.keys(this.registeredOptionGroups).length,
     });
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   config(
     provider: ConfigurationFiles.AnyConfigProvider<TArgs>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.config(
       provider as ConfigurationFiles.AnyConfigProvider<any>
     );
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   async updateConfig(values: Partial<TArgs>): Promise<void>;
@@ -1280,7 +1290,7 @@ export class InternalCLI<
   }
 
   clone() {
-    const clone = new InternalCLI<TArgs, THandlerReturn, TChildren, TParent>(
+    const clone = new InternalCLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>(
       this.name
     );
     clone.parser = this.parser.clone(clone.parser.options) as any;
