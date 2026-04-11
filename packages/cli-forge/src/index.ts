@@ -18,3 +18,4 @@ export type {
 export { completionHelpers } from './lib/completion-types';
 export { ConfigurationProviders } from './lib/configuration-providers';
 export type { LocalizationDictionary, LocalizationFunction } from '@cli-forge/parser';
+export type { ProviderConfig, GlobalProviderConfig } from './lib/public-api';

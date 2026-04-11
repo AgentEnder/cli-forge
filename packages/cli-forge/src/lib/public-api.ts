@@ -23,6 +23,16 @@ import { InternalCLI } from './internal-cli';
 import type { CompletionCallback, OptionCompletionCallback } from './completion-types';
 import type { PromptOptionConfig, PromptProvider } from './prompt-types';
 
+export interface ProviderConfig<T, TArgs = any> {
+  factory: (args: TArgs) => T;
+  lifetime?: 'executionScope';
+}
+
+export interface GlobalProviderConfig<T> {
+  factory: () => T;
+  lifetime: 'global';
+}
+
 /**
  * Extracts the command name from a Command type.
  * Works with both CLI instances and command config objects.
@@ -882,6 +892,35 @@ export interface CLI<
       context: CLIHandlerContext<TChildren, TParent>
     ) => R
   ): CLI<TArgs, R, TChildren, TParent, TProviders>;
+
+  /**
+   * Registers a dependency injection provider under a unique key.
+   * The value (or factory result) is accessible via `inject()` within command handlers.
+   *
+   * Three forms are supported:
+   * - **Eager value**: `provide('key', value)` — stored as-is.
+   * - **ExecutionScope factory**: `provide('key', { factory: (args) => value })` — called per invocation with parsed args.
+   * - **Global factory**: `provide('key', { factory: () => value, lifetime: 'global' })` — called once and cached.
+   *
+   * Duplicate keys on the same command instance throw an error.
+   */
+  // Global factory (no args, must specify lifetime: 'global')
+  provide<TName extends string, T>(
+    key: TName & (TName extends keyof TProviders ? never : TName),
+    config: GlobalProviderConfig<T>,
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders & { [K in TName]: T }>;
+
+  // ExecutionScope factory (receives args)
+  provide<TName extends string, T>(
+    key: TName & (TName extends keyof TProviders ? never : TName),
+    config: ProviderConfig<T, TArgs>,
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders & { [K in TName]: T }>;
+
+  // Eager value
+  provide<TName extends string, T>(
+    key: TName & (TName extends keyof TProviders ? never : TName),
+    value: T,
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders & { [K in TName]: T }>;
 
   /**
    * Registers an init hook that runs before command resolution.

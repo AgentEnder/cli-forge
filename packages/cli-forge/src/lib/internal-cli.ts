@@ -43,6 +43,10 @@ import { getCallingFile, getParentPackageJson } from './utils';
 /** Type alias for an InternalCLI instance with any type parameters. */
 export type AnyInternalCLI = InternalCLI<any, any, any, any, any>;
 
+type ProviderRegistration =
+  | { type: 'eager'; value: unknown }
+  | { type: 'factory'; factory: Function; lifetime: 'global' | 'executionScope' };
+
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
  *
@@ -104,6 +108,12 @@ export class InternalCLI<
    * For internal use only. Stick to properties available on {@link CLI}.
    */
   registeredCommands: Record<string, AnyInternalCLI> = {};
+
+  /**
+   * Registered DI providers keyed by name.
+   * For internal use only.
+   */
+  registeredProviders: Map<string, ProviderRegistration> = new Map();
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -584,6 +594,28 @@ export class InternalCLI<
     this._configuration.handler = fn as any;
     this.requiresCommand = false;
     return this as any;
+  }
+
+  provide(key: string, valueOrConfig: unknown): any {
+    if (this.registeredProviders.has(key)) {
+      throw new Error(`Provider '${key}' is already registered on this command.`);
+    }
+    if (
+      valueOrConfig !== null &&
+      typeof valueOrConfig === 'object' &&
+      'factory' in valueOrConfig &&
+      typeof (valueOrConfig as any).factory === 'function'
+    ) {
+      const config = valueOrConfig as { factory: Function; lifetime?: string };
+      this.registeredProviders.set(key, {
+        type: 'factory',
+        factory: config.factory,
+        lifetime: (config.lifetime as 'global' | 'executionScope') ?? 'executionScope',
+      });
+    } else {
+      this.registeredProviders.set(key, { type: 'eager', value: valueOrConfig });
+    }
+    return this;
   }
 
   init(
@@ -1301,6 +1333,7 @@ export class InternalCLI<
     for (const command in this.registeredCommands ?? {}) {
       clone.command(this.registeredCommands[command].clone() as any);
     }
+    clone.registeredProviders = new Map(this.registeredProviders);
     clone.commandChain = [...this.commandChain];
     clone.requiresCommand = this.requiresCommand;
     clone.registeredPromptProviders = [...this.registeredPromptProviders];
