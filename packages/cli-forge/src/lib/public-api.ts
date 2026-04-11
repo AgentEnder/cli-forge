@@ -6,9 +6,11 @@ import {
   EnvOptionConfig,
   LocalizationDictionary,
   LocalizationFunction,
+  Expand,
   MakeUndefinedPropertiesOptional,
   NumberOptionConfig,
   ObjectOptionConfig,
+  OneOfOptionConfig,
   OptionConfig,
   OptionConfigToType,
   ParsedArgs,
@@ -19,7 +21,10 @@ import {
 } from '@cli-forge/parser';
 
 import { InternalCLI } from './internal-cli';
-import type { CompletionCallback, OptionCompletionCallback } from './completion-types';
+import type {
+  CompletionCallback,
+  OptionCompletionCallback,
+} from './completion-types';
 import type { PromptOptionConfig, PromptProvider } from './prompt-types';
 
 /**
@@ -101,7 +106,9 @@ export interface HelpContext<TArgs extends ParsedArgs = ParsedArgs> {
  * options, and a function to render the default help text.
  * Returns the custom help text string.
  */
-export type HelpCallback<TArgs extends ParsedArgs = ParsedArgs> = (context: HelpContext<TArgs>) => string;
+export type HelpCallback<TArgs extends ParsedArgs = ParsedArgs> = (
+  context: HelpContext<TArgs>
+) => string;
 
 /**
  * Context object passed to version callbacks.
@@ -126,7 +133,9 @@ export interface VersionContext<TArgs extends ParsedArgs = ParsedArgs> {
  * to render the default version string.
  * Returns the custom version string.
  */
-export type VersionCallback<TArgs extends ParsedArgs = ParsedArgs> = (context: VersionContext<TArgs>) => string;
+export type VersionCallback<TArgs extends ParsedArgs = ParsedArgs> = (
+  context: VersionContext<TArgs>
+) => string;
 
 /**
  * Callback for handling errors during CLI execution, similar to `Promise.catch()`.
@@ -520,9 +529,7 @@ export interface CLI<
    *
    * @param updater Function that receives the current config and mutates it.
    */
-  updateConfig(
-    updater: ConfigurationFiles.ConfigUpdater<TArgs>
-  ): Promise<void>;
+  updateConfig(updater: ConfigurationFiles.ConfigUpdater<TArgs>): Promise<void>;
 
   /**
    * Enables the ability to run CLI commands that contain subcommands as an interactive shell.
@@ -571,15 +578,20 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: WithOptional<
-          unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
-          ObjectOptionConfig<TCoerce, TProps>
-        >;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: WithOptional<
+            unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
+            ObjectOptionConfig<TCoerce, TProps>
+          >;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -590,12 +602,17 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -606,12 +623,17 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -622,12 +644,17 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -638,12 +665,35 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
+    THandlerReturn,
+    TChildren,
+    TParent
+  >;
+  // OneOf option overload
+  option<TOption extends string, const TConfig extends OneOfOptionConfig<any>>(
+    name: TOption,
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
+  ): CLI<
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -654,12 +704,17 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TOptionConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TOptionConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -681,15 +736,20 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: WithOptional<
-          unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
-          ObjectOptionConfig<TCoerce, TProps>
-        >;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: WithOptional<
+            unknown extends TCoerce ? ResolveProperties<TProps> : TCoerce,
+            ObjectOptionConfig<TCoerce, TProps>
+          >;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -700,12 +760,17 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -716,12 +781,17 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -732,12 +802,17 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -748,12 +823,17 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -764,12 +844,17 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TOptionConfig & {
+      prompt?: PromptOptionConfig<TArgs>;
+      completion?: OptionCompletionCallback<TArgs>;
+    }
   ): CLI<
-    TArgs &
-      MakeUndefinedPropertiesOptional<{
-        [key in TOption]: OptionConfigToType<TOptionConfig>;
-      }>,
+    Expand<
+      TArgs &
+        MakeUndefinedPropertiesOptional<{
+          [key in TOption]: OptionConfigToType<TOptionConfig>;
+        }>
+    >,
     THandlerReturn,
     TChildren,
     TParent
@@ -889,8 +974,12 @@ export interface CLI<
    */
   version(override: string): CLI<TArgs, THandlerReturn, TChildren, TParent>;
   version(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent>;
-  version(callback: VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
-  version(overrideOrCallbackOrEnabled?: string | false | VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(
+    callback: VersionCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  version(
+    overrideOrCallbackOrEnabled?: string | false | VersionCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Configures the `--help` flag behavior.
@@ -909,8 +998,12 @@ export interface CLI<
    * @param callbackOrEnabled `false` to disable, or a callback for custom help output.
    */
   help(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent>;
-  help(callback: HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
-  help(callbackOrEnabled?: false | HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  help(
+    callback: HelpCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  help(
+    callbackOrEnabled?: false | HelpCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
    * Prints help text to stdout.
@@ -926,7 +1019,9 @@ export interface CLI<
    *
    * @param handler Called when an error occurs during `forge()`.
    */
-  catch(handler: CatchHandler<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  catch(
+    handler: CatchHandler<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   group({
     label,
@@ -945,7 +1040,7 @@ export interface CLI<
   middleware<TArgs2>(
     callback: MiddlewareFunction<TArgs, TArgs2>
   ): CLI<
-    TArgs2 extends void ? TArgs : TArgs & TArgs2,
+    TArgs2 extends void ? TArgs : Expand<TArgs & TArgs2>,
     THandlerReturn,
     TChildren,
     TParent
@@ -959,6 +1054,28 @@ export interface CLI<
    *
    * @param callback Async function receiving (args, cli). Mutate cli to add commands/options.
    */
+
+  /**
+   * Registers a handler for this command. Fluent alternative to passing
+   * `handler` in the command configuration object.
+   *
+   * @param fn Handler function receiving parsed args and command context.
+   * @returns Updated CLI instance with the handler return type updated.
+   *
+   * @example
+   * ```ts
+   * cli('serve')
+   *   .option('port', { type: 'number', default: 3000 })
+   *   .handler((args) => {
+   *     console.log(`Listening on port ${args.port}`);
+   *   })
+   *   .forge();
+   * ```
+   */
+  handler<R>(
+    fn: (args: TArgs, context: CLIHandlerContext<TChildren, TParent>) => R
+  ): CLI<TArgs, R, TChildren, TParent>;
+
   init(
     callback: (
       cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
