@@ -5,9 +5,9 @@ import {
   isOneOfOptionConfig,
   isObjectOptionConfig,
 } from '@cli-forge/parser';
-import { InternalCLI } from './internal-cli';
+import { AnyInternalCLI } from './internal-cli';
 
-export function formatHelp(parentCLI: InternalCLI<any>): string {
+export function formatHelp(parentCLI: AnyInternalCLI): string {
   const help: string[] = [];
   let command = parentCLI;
   let epilogue = parentCLI.configuration?.epilogue;
@@ -41,7 +41,7 @@ export function formatHelp(parentCLI: InternalCLI<any>): string {
     help.push('Commands:');
   }
   // Track displayed commands by their actual CLI instance to avoid duplicates
-  const displayedCommands = new Set<InternalCLI<any, any, any, any>>();
+  const displayedCommands = new Set<AnyInternalCLI>();
   for (const key in command.registeredCommands) {
     const subcommand = command.registeredCommands[key];
     // Skip if we've already displayed this command instance

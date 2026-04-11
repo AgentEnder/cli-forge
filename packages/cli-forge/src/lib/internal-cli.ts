@@ -24,6 +24,7 @@ async function getInteractiveShellModule(): Promise<InteractiveShellModule> {
   return _shellModule;
 }
 import {
+  AnyCLI,
   CLI,
   CLICommandOptions,
   CLIHandlerContext,
@@ -38,6 +39,9 @@ import type {
 import type { PromptProvider, PromptOptionConfig } from './prompt-types';
 import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
+
+/** Type alias for an InternalCLI instance with any type parameters. */
+export type AnyInternalCLI = InternalCLI<ParsedArgs, any, any, any>;
 
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
@@ -87,7 +91,7 @@ export class InternalCLI<
    */
   static isInternalCLI(
     obj: unknown
-  ): obj is InternalCLI<any, any, any, any> {
+  ): obj is AnyInternalCLI {
     return (
       obj != null &&
       typeof obj === 'object' &&
@@ -98,7 +102,7 @@ export class InternalCLI<
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
-  registeredCommands: Record<string, InternalCLI<any, any, any, any>> = {};
+  registeredCommands: Record<string, AnyInternalCLI> = {};
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -109,7 +113,7 @@ export class InternalCLI<
    * Reference to the parent CLI instance, if this command was registered as a subcommand.
    * For internal use only. Use `getParent()` instead.
    */
-  private _parent?: InternalCLI<any, any, any, any>;
+  private _parent?: AnyInternalCLI;
 
   private requiresCommand: 'IMPLICIT' | 'EXPLICIT' | false = 'IMPLICIT';
 
@@ -203,7 +207,7 @@ export class InternalCLI<
   parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any, any, any> = this;
+      let currentCommand: AnyInternalCLI = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
@@ -374,7 +378,7 @@ export class InternalCLI<
         }
       }
     } else if (InternalCLI.isInternalCLI(keyOrCommand)) {
-      const cmd = keyOrCommand as InternalCLI<any, any, any, any>;
+      const cmd = keyOrCommand as AnyInternalCLI;
       if (cmd.name === '$0') {
         this.withRootCommandConfiguration(cmd.configuration as any);
         // Copy any commands registered on the $0 instance (e.g. subcommands
@@ -626,7 +630,7 @@ export class InternalCLI<
   ): Promise<T> {
     const middlewares = new Set<(args: any) => void>(this.registeredMiddleware);
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let cmd: InternalCLI<any, any, any, any> = this;
+    let cmd: AnyInternalCLI = this;
     for (const command of this.commandChain) {
       cmd = cmd.registeredCommands[command];
       for (const mw of cmd.registeredMiddleware) {
@@ -673,7 +677,7 @@ export class InternalCLI<
             const shellMod = await getInteractiveShellModule();
             if (!shellMod.INTERACTIVE_SHELL) {
               const tui = new shellMod.InteractiveShell(
-                this as unknown as InternalCLI<any>,
+                this as unknown as AnyInternalCLI,
                 {
                   prependArgs: originalArgV,
                 }
@@ -707,8 +711,8 @@ export class InternalCLI<
 
   getChildren(): TChildren {
     // Return a copy of registered commands, excluding aliases (same command registered under different keys)
-    const children: Record<string, InternalCLI<any, any, any, any>> = {};
-    const seen = new Set<InternalCLI<any, any, any, any>>();
+    const children: Record<string, AnyInternalCLI> = {};
+    const seen = new Set<AnyInternalCLI>();
     for (const [key, cmd] of Object.entries(this.registeredCommands)) {
       if (!seen.has(cmd)) {
         seen.add(cmd);
@@ -740,7 +744,7 @@ export class InternalCLI<
     const builder = this.configuration?.builder;
     if (!builder) return undefined;
     // Return a composable builder that preserves input types
-    return ((parser: CLI<any, any, any, any>) => builder(parser)) as any;
+    return ((parser: AnyCLI) => builder(parser)) as any;
   }
 
   getHandler():
@@ -768,7 +772,7 @@ export class InternalCLI<
     >;
   }
 
-  private buildSDKProxy(targetCmd: InternalCLI<any, any, any, any>): unknown {
+  private buildSDKProxy(targetCmd: AnyInternalCLI): unknown {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
 
@@ -828,7 +832,7 @@ export class InternalCLI<
 
       // Execute handler
       const context: CLIHandlerContext<any, any> = {
-        command: cmd as unknown as CLI<any, any, any, any>,
+        command: cmd as unknown as AnyCLI,
       };
       const result = await handler(parsedArgs, context);
 
@@ -868,10 +872,10 @@ export class InternalCLI<
   }
 
   private collectMiddlewareChain(
-    cmd: InternalCLI<any, any, any, any>
+    cmd: AnyInternalCLI
   ): Array<(args: any) => unknown | Promise<unknown>> {
-    const chain: InternalCLI<any, any, any, any>[] = [];
-    let current: InternalCLI<any, any, any, any> | undefined = cmd;
+    const chain: AnyInternalCLI[] = [];
+    let current: AnyInternalCLI | undefined = cmd;
     while (current) {
       chain.unshift(current);
       current = current._parent;
@@ -1059,7 +1063,7 @@ export class InternalCLI<
       // → filter down. Builders stay lazy.
       let currentArgs = [...args];
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCmd: InternalCLI<any, any, any, any> = this;
+      let currentCmd: AnyInternalCLI = this;
       const mergedArgs: any = {};
       const executedMiddleware = new Set<(args: any) => void>();
 
@@ -1111,7 +1115,7 @@ export class InternalCLI<
 
         // Build the next command if one was discovered during parsing
         // (i.e., subcommand token intercepted before positional matching)
-        let nextCmd: InternalCLI<any, any, any, any> | null = null;
+        let nextCmd: AnyInternalCLI | null = null;
         if (discoveredCommand) {
           const cmd = currentCmd.registeredCommands[discoveredCommand];
           cmd.parser = this.parser;
@@ -1203,7 +1207,7 @@ export class InternalCLI<
       const allPromptConfigs = new Map(this.promptConfigs);
       {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
-        let walkCmd: InternalCLI<any, any, any, any> = this;
+        let walkCmd: AnyInternalCLI = this;
         for (const command of this.commandChain) {
           walkCmd = walkCmd.registeredCommands[command];
           for (const p of walkCmd.registeredPromptProviders) {

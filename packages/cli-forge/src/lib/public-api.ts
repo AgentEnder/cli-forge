@@ -1104,7 +1104,11 @@ export type ErrorHandler = (
   }
 ) => void;
 
-export type UnknownCLI = CLI<ParsedArgs, any, any, any>;
+/** Type alias for a CLI instance with any type parameters. */
+export type AnyCLI = CLI<ParsedArgs, any, any, any>;
+
+/** @deprecated Use AnyCLI instead */
+export type UnknownCLI = AnyCLI;
 
 export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
   args: TArgs

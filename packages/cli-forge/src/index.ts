@@ -8,6 +8,7 @@ export type {
   ExtractArgs,
   ExtractChildren,
 } from './lib/composable-builder';
+export type { AnyCLI } from './lib/public-api';
 export type { ArgumentsOf } from './lib/utils';
 export type { PromptConfig, PromptOptionConfig, PromptOption, PromptProvider } from './lib/prompt-types';
 export type {

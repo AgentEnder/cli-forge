@@ -1,4 +1,4 @@
-import type { InternalCLI } from '../lib/internal-cli';
+import type { AnyInternalCLI } from '../lib/internal-cli';
 
 export interface InteractiveShellOptions {
   prompt?: string;
@@ -14,7 +14,7 @@ export interface InteractiveShellOptions {
 export let INTERACTIVE_SHELL: InteractiveShell | undefined;
 
 export class InteractiveShell {
-  constructor(_cli: InternalCLI<any>, _opts?: InteractiveShellOptions) {
+  constructor(_cli: AnyInternalCLI, _opts?: InteractiveShellOptions) {
     throw new Error('Interactive shell is only available in Node.js runtimes');
   }
 }

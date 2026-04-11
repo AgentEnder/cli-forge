@@ -1,5 +1,5 @@
 import { ParsedArgs } from '@cli-forge/parser';
-import { InternalCLI } from './internal-cli';
+import { AnyInternalCLI, InternalCLI } from './internal-cli';
 import { CLI } from './public-api';
 
 export type TestHarnessParseResult<T extends ParsedArgs> = {
@@ -57,7 +57,7 @@ export class TestHarness<T extends ParsedArgs> {
   }
 }
 
-function mockHandler(cli: InternalCLI) {
+function mockHandler(cli: AnyInternalCLI) {
   if (cli.configuration?.handler) {
     cli.configuration.handler = () => {
       // Mocked, should do nothing.
