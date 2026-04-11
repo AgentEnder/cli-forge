@@ -170,6 +170,9 @@ type JsonFileConfigLoaderConstructor = {
   new <T>(
     options: JsonFileConfigLoaderMultiOptions<T>
   ): readonly JsonFileConfigLoader<T>[];
+  new <T>(options: JsonFileConfigLoaderOptions<T>):
+    | JsonFileConfigLoader<T>
+    | readonly JsonFileConfigLoader<T>[];
 };
 
 /**
