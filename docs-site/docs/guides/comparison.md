@@ -121,23 +121,6 @@ Each page below includes a side-by-side code example and a detailed feature brea
 | gluegun | [CLI Forge vs. gluegun](/docs/guides/comparison/gluegun) |
 | Node.js util.parseArgs | [CLI Forge vs. util.parseArgs](/docs/guides/comparison/util-parseargs) |
 
-## Choosing the right tool
-
-| If you need... | Consider |
-|---|---|
-| Full type safety through the entire chain | **CLI Forge** |
-| Maximum ecosystem support and community resources | **yargs** or **commander** |
-| Enterprise plugin system and distribution packaging | **oclif** |
-| Class-based commands with state machine routing | **clipanion** |
-| A minimal, zero-dependency single-file library | **cac** or **meow** |
-| Something lightweight from the UnJS ecosystem | **citty** |
-| Simple script with a few flags | **meow**, **cleye**, or **`util.parseArgs`** |
-| Config file inheritance and doc generation together | **CLI Forge** |
-| Interactive shell for complex command trees | **CLI Forge** |
-| Typed errors and dependency injection (Effect ecosystem) | **@effect/cli** |
-| Scaffolding/code generation with templates and prompts | **gluegun** or **oclif** |
-| No third-party dependencies at all | **`util.parseArgs`** (built into Node.js) |
-
 ## Links and version reference
 
 Comparisons were last verified against official documentation in April 2026. If a tool has released a major update since, some details may have changed.
