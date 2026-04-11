@@ -38,7 +38,7 @@ describe('TestHarness.mockContext()', () => {
   it('cleanup function removes the mocked context', () => {
     const app = cli('test');
 
-    const cleanup = TestHarness.mockContext(app, { args: { name: 'will-be-removed' } });
+    const cleanup = TestHarness.mockContext(app, { args: {} });
 
     // Verify context is set
     expect(() => getCommandContext(app)).not.toThrow();
@@ -54,8 +54,8 @@ describe('TestHarness.mockContext()', () => {
     const app1 = cli('test1');
     const app2 = cli('test2');
 
-    TestHarness.mockContext(app1, { args: { x: 'a' } });
-    TestHarness.mockContext(app2, { args: { x: 'b' } });
+    TestHarness.mockContext(app1, { args: {} });
+    TestHarness.mockContext(app2, { args: {} });
 
     // Last one wins (enterWith is last-write-wins in the same execution context)
     expect(() => getCommandContext(app2)).not.toThrow();

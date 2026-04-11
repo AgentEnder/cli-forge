@@ -69,7 +69,7 @@ export class TestHarness<T extends ParsedArgs> {
    * });
    * ```
    */
-  static mockContext<TArgs, TProviders>(
+  static mockContext<TArgs extends ParsedArgs, TProviders>(
     _cli: CLI<TArgs, any, any, any, TProviders>,
     options: {
       args?: Partial<TArgs>;
