@@ -128,6 +128,9 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
    * It will also be excluded from shell completions.
    *
    * Unlike `hidden`, config-only options are still documented.
+   *
+   * Note: if both `configOnly` and `group` are set, the option appears
+   * under its group rather than the "Configuration Options" section.
    */
   configOnly?: boolean;
 
