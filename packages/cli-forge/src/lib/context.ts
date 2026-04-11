@@ -108,7 +108,7 @@ function resolveProvider(store: ForgeContextData, key: string): unknown {
   }
 }
 
-function createCommandContext(store: ForgeContextData): CommandContext<unknown, unknown, unknown> {
+function createCommandContext(store: ForgeContextData): CommandContext<any, any, any> {
   return {
     get args() {
       return store.args;
@@ -132,7 +132,7 @@ function createCommandContext(store: ForgeContextData): CommandContext<unknown, 
       return resolved;
     },
 
-    getChildContext(command: string): unknown {
+    getChildContext(command: string): any {
       if (!store.commandChain.includes(command)) {
         throw new Error(
           `Command "${command}" is not in the current command chain: [${store.commandChain.join(', ')}]. ` +
