@@ -42,7 +42,8 @@
       "Bash(my-app:*)",
       "Bash(mise install:*)",
       "Bash(mise exec:*)",
-      "Skill(docs-style-check)"
+      "Skill(docs-style-check)",
+      "Skill(write-example)"
     ],
     "deny": [],
     "ask": []

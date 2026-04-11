@@ -229,4 +229,91 @@ describe('Composable Builder Type Inference', () => {
     });
   });
 
+  describe('chain inside command builders', () => {
+    it('should infer handler args when chain is used inside a command builder', () => {
+      const code = `
+        import { cli, chain, makeComposableBuilder } from 'cli-forge';
+
+        const withName = makeComposableBuilder((args) =>
+          args.option('name', { type: 'string', required: true })
+        );
+
+        const withGreeting = makeComposableBuilder((args) =>
+          args.option('greeting', { type: 'string', default: 'Hello' })
+        );
+
+        cli('test').command('greet', {
+          builder: (args) => chain(args, withName, withGreeting),
+          handler: (args) => {
+            console.log(args.name, args.greeting);
+          },
+        });
+      `;
+
+      const result = findHandlerParamType(code);
+      expect(result).not.toBeNull();
+      expect(typeHasProperty(result!.type, 'name')).toBe(true);
+      expect(typeHasProperty(result!.type, 'greeting')).toBe(true);
+    });
+
+    it('should infer handler args when composable builder wraps a command with chain', () => {
+      const code = `
+        import { cli, chain, makeComposableBuilder } from 'cli-forge';
+
+        const withName = makeComposableBuilder((args) =>
+          args.option('name', { type: 'string', required: true })
+        );
+
+        const withGreeting = makeComposableBuilder((args) =>
+          args.option('greeting', { type: 'string', default: 'Hello' })
+        );
+
+        const withGreetCommand = makeComposableBuilder((args) =>
+          args.command('greet', {
+            builder: (args) => chain(args, withName, withGreeting),
+            handler: (args) => {
+              console.log(args.name, args.greeting);
+            },
+          })
+        );
+
+        cli('test', {
+          builder: (args) => chain(args, withGreetCommand),
+        });
+      `;
+
+      const result = findHandlerParamType(code);
+      expect(result).not.toBeNull();
+      expect(typeHasProperty(result!.type, 'name')).toBe(true);
+      expect(typeHasProperty(result!.type, 'greeting')).toBe(true);
+    });
+
+    it('should infer handler args when using manual <T extends UnknownCLI> in chain', () => {
+      const code = `
+        import { cli, chain, makeComposableBuilder, UnknownCLI } from 'cli-forge';
+
+        // Manual generic approach - works because UnknownCLI uses ParsedArgs (not any)
+        function withName<T extends UnknownCLI>(argv: T) {
+          return argv.option('name', { type: 'string', required: true });
+        }
+
+        const withGreeting = makeComposableBuilder((args) =>
+          args.option('greeting', { type: 'string', default: 'Hello' })
+        );
+
+        cli('test').command('greet', {
+          builder: (args) => chain(args, withName, withGreeting),
+          handler: (args) => {
+            console.log(args.name, args.greeting);
+          },
+        });
+      `;
+
+      const result = findHandlerParamType(code);
+      expect(result).not.toBeNull();
+      expect(typeHasProperty(result!.type, 'name')).toBe(true);
+      expect(typeHasProperty(result!.type, 'greeting')).toBe(true);
+    });
+  });
+
 });

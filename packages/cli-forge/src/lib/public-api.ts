@@ -1175,11 +1175,22 @@ export type ErrorHandler = (
   }
 ) => void;
 
-/** Type alias for a CLI instance with any type parameters. */
+/** Type alias for a CLI instance with any type parameters. Use in value positions where you need to accept any CLI. */
 export type AnyCLI = CLI<any, any, any, any, any>;
 
-/** @deprecated Use AnyCLI instead */
-export type UnknownCLI = AnyCLI;
+/**
+ * Base CLI constraint for generic functions. Uses `ParsedArgs` instead of `any`
+ * for `TArgs` so that method return types (like `.option()`) compute correctly
+ * through `chain()`. Use this as the bound in `<T extends UnknownCLI>`.
+ *
+ * @example
+ * ```ts
+ * function withVerbose<T extends UnknownCLI>(cli: T) {
+ *   return cli.option('verbose', { type: 'boolean' });
+ * }
+ * ```
+ */
+export type UnknownCLI = CLI<ParsedArgs, any, any, any, any>;
 
 export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
   args: TArgs

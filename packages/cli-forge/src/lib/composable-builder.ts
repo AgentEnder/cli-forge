@@ -19,11 +19,11 @@ export type ExtractArgs<T> = T extends CLI<infer A, any, any, any, any> ? A : ne
  */
 export type ComposableBuilder<
   TArgs2 extends ParsedArgs,
-
-  TAddedChildren = {}
+  TAddedChildren = {},
+  TAddedProviders = {}
 > = <TInit extends ParsedArgs, THandlerReturn, TChildren, TParent, TProviders>(
   init: CLI<TInit, THandlerReturn, TChildren, TParent, TProviders>
-) => CLI<Expand<TInit & TArgs2>, THandlerReturn, TChildren & TAddedChildren, TParent, TProviders>;
+) => CLI<Expand<TInit & TArgs2>, THandlerReturn, TChildren & TAddedChildren, TParent, TProviders & TAddedProviders>;
 
 /**
  * Creates a composable builder function that can be used with `chain`.
@@ -36,16 +36,16 @@ export type ComposableBuilder<
  *
  * @typeParam TArgs2 - The args type after the builder runs
  * @typeParam TChildren2 - The children type added by the builder
+ * @typeParam TProviders2 - The providers type added by the builder
  */
 export function makeComposableBuilder<
   TArgs2 extends ParsedArgs,
-   
-  TChildren2 = {}
+  TChildren2 = {},
+  TProviders2 = {}
 >(
   fn: (
-     
-    init: CLI<ParsedArgs, any, {}, any>
-  ) => CLI<TArgs2, any, TChildren2, any>
+    init: CLI<ParsedArgs, any, {}, any, {}>
+  ) => CLI<TArgs2, any, TChildren2, any, TProviders2>
 ) {
   // Run builder once against a recording proxy to capture operations.
   // Replaying these ensures inline closures (e.g. middleware) keep stable
@@ -73,7 +73,7 @@ export function makeComposableBuilder<
       THandlerReturn,
       TChildren & TChildren2,
       TParent,
-      TProviders
+      TProviders & TProviders2
     >;
   };
 }

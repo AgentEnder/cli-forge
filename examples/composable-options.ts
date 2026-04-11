@@ -33,7 +33,7 @@ import { UnknownCLI, chain, cli, makeComposableBuilder } from 'cli-forge';
 
 // -- Reusable option definitions --
 
-// Manual generic approach
+// Manual generic approach (uses UnknownCLI as the constraint)
 function withName<T extends UnknownCLI>(argv: T) {
   return argv.option('name', {
     type: 'string',
@@ -42,7 +42,6 @@ function withName<T extends UnknownCLI>(argv: T) {
   });
 }
 
-// Using the helper (types inferred)
 const withGreeting = makeComposableBuilder((args) =>
   args.option('greeting', {
     type: 'string',
