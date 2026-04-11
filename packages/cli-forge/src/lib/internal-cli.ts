@@ -12,6 +12,7 @@ import {
   type ConfigurationFiles,
 } from '@cli-forge/parser';
 import { readOptionGroupsForCLI } from './cli-option-groups';
+import { contextStorage, ForgeContextData } from './async-context';
 import { formatHelp } from './format-help';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
@@ -695,6 +696,11 @@ export class InternalCLI<
             args = middlewareResult as T;
           }
         }
+        // Keep ALS context args in sync after middleware transformations
+        const store = contextStorage.getStore();
+        if (store) {
+          store.args = args as Record<string, unknown>;
+        }
         await cmd.configuration.handler(args, {
           command: cmd as any,
         });
@@ -873,11 +879,41 @@ export class InternalCLI<
         }
       }
 
-      // Execute handler
+      // Build context data for ALS — collect providers from root down to cmd.
+      // Use targetCmd (not the clone) because clone() does not copy _parent.
+      const providerChain: AnyInternalCLI[] = [];
+      let providerWalk: AnyInternalCLI | undefined = targetCmd;
+      while (providerWalk) {
+        providerChain.unshift(providerWalk);
+        providerWalk = providerWalk._parent;
+      }
+      const sdkContextData: ForgeContextData = {
+        args: parsedArgs as Record<string, unknown>,
+        commandChain: [],
+        providers: new Map(),
+        providerFactories: new Map(),
+        handlerPhase: true,
+      };
+      for (const providerNode of providerChain) {
+        for (const [key, reg] of providerNode.registeredProviders) {
+          if (reg.type === 'eager') {
+            sdkContextData.providers.set(key, reg.value);
+          } else {
+            sdkContextData.providerFactories.set(key, {
+              factory: reg.factory,
+              lifetime: reg.lifetime,
+            });
+          }
+        }
+      }
+
+      // Execute handler inside ALS context
       const context: CLIHandlerContext<any, any> = {
         command: cmd as unknown as AnyCLI,
       };
-      const result = await handler(parsedArgs, context);
+      const result = await contextStorage.run(sdkContextData, async () => {
+        return handler(parsedArgs, context);
+      });
 
       // Try to attach $args to the result (fails silently for primitives)
       if (result !== null && typeof result === 'object') {
@@ -1310,7 +1346,32 @@ export class InternalCLI<
         throw validationFailedError;
       }
 
-      const finalArgV = await this.runCommand(argv, args, executedMiddleware);
+      // Collect all providers from the command chain (root → subcommands)
+      const allProviders = this.collectProviders();
+      const contextData: ForgeContextData = {
+        args: argv as Record<string, unknown>,
+        commandChain: [...this.commandChain],
+        providers: new Map(),
+        providerFactories: new Map(),
+        handlerPhase: false,
+      };
+
+      // Register providers into context
+      for (const [key, reg] of allProviders) {
+        if (reg.type === 'eager') {
+          contextData.providers.set(key, reg.value);
+        } else {
+          contextData.providerFactories.set(key, {
+            factory: reg.factory,
+            lifetime: reg.lifetime,
+          });
+        }
+      }
+
+      const finalArgV = await contextStorage.run(contextData, async () => {
+        contextData.handlerPhase = true;
+        return this.runCommand(argv, args, executedMiddleware);
+      });
       return finalArgV as TArgs;
     });
 
@@ -1320,6 +1381,25 @@ export class InternalCLI<
 
   getSubcommands() {
     return this.registeredCommands as Readonly<Record<string, AnyInternalCLI>>;
+  }
+
+  private collectProviders(): Map<string, ProviderRegistration> {
+    const result = new Map<string, ProviderRegistration>();
+    // Start from root (this) and walk down the command chain
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: AnyInternalCLI = this;
+    for (const [key, reg] of cmd.registeredProviders) {
+      result.set(key, reg);
+    }
+    for (const name of this.commandChain) {
+      cmd = cmd.registeredCommands[name];
+      if (cmd) {
+        for (const [key, reg] of cmd.registeredProviders) {
+          result.set(key, reg); // child overrides parent
+        }
+      }
+    }
+    return result;
   }
 
   clone() {
