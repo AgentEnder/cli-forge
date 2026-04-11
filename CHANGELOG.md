@@ -1,3 +1,16 @@
+## 1.9.2 (2026-04-11)
+
+### 🩹 Fixes
+
+- **cli-forge:** display object option property details in --help output ([#74](https://github.com/agentender/cli-forge/pull/74))
+- **docs-site:** add clickable anchor links to headings ([#73](https://github.com/agentender/cli-forge/pull/73))
+- **parser:** support oneOf/coerce for dual-syntax object properties ([#72](https://github.com/agentender/cli-forge/pull/72))
+
+### ❤️ Thank You
+
+- Claude
+- Craigory Coppola @AgentEnder
+
 ## 1.9.1 (2026-04-09)
 
 ### 🩹 Fixes
