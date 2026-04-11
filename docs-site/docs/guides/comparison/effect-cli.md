@@ -20,14 +20,15 @@ nav:
 
 ## Shared strengths
 
-- **Shell completions** — Both generate shell completion scripts. @effect/cli has a built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options). CLI Forge supports bash, zsh, fish, and PowerShell via [`.completion()`](/examples/shell-completion).
+- **Full type-safe inference** — Both provide full type inference for parsed arguments, though using very different type systems.
+- **Shell completions** — Both generate shell completion scripts. @effect/cli has a built-in [`--completions` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#overview-of-built-in-options). CLI Forge supports bash, zsh, fish, and PowerShell ([example](/examples/shell-completion)).
+- **Validation** — Both support validation. CLI Forge uses [choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)) and custom validators. @effect/cli uses Effect's `Schema` module via [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
+- **Interactive prompting** — Both support prompting for missing options. @effect/cli has [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt) and a built-in [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode). CLI Forge uses a pluggable [prompt provider](/examples/prompting) system.
 
 ## @effect/cli strengths
 
 - **Effect integration** — Commands are Effect values with typed errors, dependency injection via layers, and structured concurrency. Fits naturally into an [existing Effect application](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#setting-up-the-main-command).
-- **Wizard mode** — Built-in [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) walks users through options interactively.
-- **Schema validation** — Options can be validated and transformed via Effect's `Schema` module using [`Options.withSchema()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withschema).
-- **Prompt fallbacks** — Options can fall back to interactive prompts when not provided via [`Options.withFallbackPrompt()`](https://effect-ts.github.io/effect/cli/Options.ts.html#withfallbackprompt).
+- **Wizard mode** — The [`--wizard` flag](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#using-the-wizard-mode) is built-in and requires no configuration. CLI Forge's prompting requires registering a provider.
 
 ## Side-by-side example
 

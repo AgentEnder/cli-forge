@@ -18,6 +18,13 @@ nav:
 - **Config file inheritance** — Built-in [config loading with `extends`](/docs/guides/configuration-files) ([example](/examples/config-inheritance)). oclif supports [framework-level configuration](https://oclif.io/docs/configuring_your_cli/) but not end-user option config files.
 - **Lightweight setup** — Define a CLI in a single file. oclif is designed around [code generation and scaffolding](https://oclif.io/docs/generating/).
 
+## Shared strengths
+
+- **Test harness** — CLI Forge has [`TestHarness`](/docs/guides/testing) ([example](/examples/test-harness)). oclif has [`@oclif/test`](https://oclif.io/docs/testing/).
+- **Auto help generation** — Both generate help text from command and flag definitions.
+- **Env variable support** — Both allow options to be populated from environment variables. CLI Forge uses [declarative mapping](/docs/guides/configuration-files#value-precedence) ([example](/examples/env-options)). oclif uses [`env` on flag definitions](https://oclif.io/docs/flags/).
+- **Doc generation** — CLI Forge has [`generate-docs`](/docs/cli/generate-documentation). oclif generates [markdown docs](https://oclif.io/docs/releasing/).
+
 ## oclif strengths
 
 - **Plugin system** — [Mature plugin architecture](https://oclif.io/docs/plugins/) where plugins can add commands and hooks, and users can install plugins at runtime.
@@ -25,7 +32,6 @@ nav:
 - **Enterprise-proven** — Powers production CLIs at Salesforce, Heroku, Twilio, and Shopify.
 - **Filesystem routing** — Commands are [auto-discovered from the directory structure](https://oclif.io/docs/command_discovery_strategies/).
 - **JSON output** — Built-in [`--json` flag support](https://oclif.io/docs/json/) with `enableJsonFlag`.
-- **Built-in testing** — [`@oclif/test`](https://oclif.io/docs/testing/) package with CLI-specific test utilities.
 
 ## Side-by-side example
 
