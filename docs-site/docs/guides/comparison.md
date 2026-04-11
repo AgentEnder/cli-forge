@@ -19,7 +19,7 @@ A high-level overview of feature support across libraries. See the [detailed com
 
 ### CLI builder libraries
 
-| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [yargs](https://yargs.js.org/) | [commander](https://github.com/tj/commander.js) | [oclif](https://oclif.io/) | [clipanion](https://mael.dev/clipanion/) | [cac](https://github.com/cacjs/cac) |
+| Feature | [cli-forge](/docs/guides/quick-start) | [yargs](/docs/guides/comparison/yargs) | [commander](/docs/guides/comparison/commander) | [oclif](/docs/guides/comparison/oclif) | [clipanion](/docs/guides/comparison/clipanion) | [cac](/docs/guides/comparison/cac) |
 |---|---|---|---|---|---|---|
 | **Type-safe inference** | [Full](/docs/guides/typescript) | [Partial](https://github.com/yargs/yargs/blob/main/docs/typescript.md) | [Via plugin](https://github.com/commander-js/extra-typings) | [Per-command](https://oclif.io/docs/flags/) | [Yes](https://mael.dev/clipanion/docs/options) | No |
 | **API style** | [Fluent builder](/docs/guides/quick-start) | [Fluent builder](https://yargs.js.org/docs/) | [Fluent builder](https://github.com/tj/commander.js#options) | [Class-based](https://oclif.io/docs/commands/) | [Class-based](https://mael.dev/clipanion/docs/getting-started) | [Fluent builder](https://github.com/cacjs/cac#example) |
@@ -38,7 +38,7 @@ A high-level overview of feature support across libraries. See the [detailed com
 
 ### Lightweight and minimal parsers
 
-| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [meow](https://github.com/sindresorhus/meow) | [citty](https://github.com/unjs/citty) | [cleye](https://github.com/privatenumber/cleye) | [Node.js `util.parseArgs`](https://nodejs.org/api/util.html#utilparseargsconfig) |
+| Feature | [cli-forge](/docs/guides/quick-start) | [meow](/docs/guides/comparison/meow) | [citty](/docs/guides/comparison/citty) | [cleye](/docs/guides/comparison/cleye) | [util.parseArgs](/docs/guides/comparison/util-parseargs) |
 |---|---|---|---|---|---|
 | **Type-safe inference** | [Full](/docs/guides/typescript) | [Docs](https://github.com/sindresorhus/meow#flags) | [Docs](https://github.com/unjs/citty#argument-types) | [Docs](https://github.com/privatenumber/cleye#defining-flags) | No |
 | **API style** | [Fluent builder](/docs/guides/quick-start) | [Single function](https://github.com/sindresorhus/meow#usage) | [Declarative](https://github.com/unjs/citty#usage) | [Declarative](https://github.com/privatenumber/cleye#usage) | [Single function](https://nodejs.org/api/util.html#utilparseargsconfig) |
@@ -53,7 +53,7 @@ A high-level overview of feature support across libraries. See the [detailed com
 
 ### Frameworks and ecosystems
 
-| Feature | [cli-forge](https://craigory.dev/cli-forge/) | [oclif](https://oclif.io/) | [@effect/cli](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md) | [gluegun](https://infinitered.github.io/gluegun/) |
+| Feature | [cli-forge](/docs/guides/quick-start) | [oclif](/docs/guides/comparison/oclif) | [@effect/cli](/docs/guides/comparison/effect-cli) | [gluegun](/docs/guides/comparison/gluegun) |
 |---|---|---|---|---|
 | **Type-safe inference** | [Full](/docs/guides/typescript) | [Per-command](https://oclif.io/docs/flags/) | [Full (Effect types)](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#adding-options-to-commands) | No |
 | **API style** | [Fluent builder](/docs/guides/quick-start) | [Class-based](https://oclif.io/docs/commands/) | [Functional/declarative](https://github.com/Effect-TS/effect/blob/main/packages/cli/README.md#our-first-command) | [Toolbox + filesystem](https://infinitered.github.io/gluegun/#/runtime) |
