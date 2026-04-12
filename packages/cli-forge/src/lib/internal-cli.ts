@@ -14,7 +14,7 @@ import {
 import { readOptionGroupsForCLI } from './cli-option-groups';
 import { contextStorage, ForgeContextData } from './async-context';
 import { getCommandContext } from './context';
-import type { CommandContext, ProvidersOf } from './context';
+import type { CommandContext, ProvidersFromChain } from './context';
 import { formatHelp } from './format-help';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
@@ -771,7 +771,7 @@ export class InternalCLI<
 
   getContext(): CommandContext<
     TArgs,
-    ProvidersOf<CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+    ProvidersFromChain<TProviders, TParent>,
     TChildren
   > {
     // Delegate to getCommandContext(this) so the runtime chain validation
@@ -780,7 +780,7 @@ export class InternalCLI<
       this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
     ) as CommandContext<
       TArgs,
-      ProvidersOf<CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      ProvidersFromChain<TProviders, TParent>,
       TChildren
     >;
   }

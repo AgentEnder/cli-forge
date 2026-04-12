@@ -22,7 +22,7 @@ import {
 import { InternalCLI } from './internal-cli';
 import type { CompletionCallback, OptionCompletionCallback } from './completion-types';
 import type { PromptOptionConfig, PromptProvider } from './prompt-types';
-import type { CommandContext, ProvidersOf } from './context';
+import type { CommandContext, ProvidersFromChain } from './context';
 
 export interface ProviderConfig<T, TArgs = any> {
   factory: (args: TArgs) => T;
@@ -1035,9 +1035,15 @@ export interface CLI<
    *   });
    * ```
    */
+  // Uses `ProvidersFromChain<TProviders, TParent>` rather than
+  // `ProvidersOf<CLI<TArgs, ..., TParent, TProviders>>` so this signature
+  // doesn't re-wrap `CLI`'s own type parameters in a `CLI<...>` while
+  // the `CLI` interface is still being constructed. The chain-walk
+  // recursion then stays in conditional-type space, where TypeScript
+  // evaluates it lazily at call sites — no self-reference to trip.
   getContext(): CommandContext<
     TArgs,
-    ProvidersOf<CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+    ProvidersFromChain<TProviders, TParent>,
     TChildren
   >;
 

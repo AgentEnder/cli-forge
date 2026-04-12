@@ -19,6 +19,25 @@ export type ProvidersOf<T> = T extends CLI<any, any, any, infer TParent, infer T
   : Record<never, never>;
 
 /**
+ * Same chain-walking semantics as {@link ProvidersOf}, but takes
+ * `TProviders` and `TParent` directly instead of a `CLI<...>` instance type.
+ *
+ * This exists so the `CLI` interface can declare
+ * `getContext(): CommandContext<TArgs, ProvidersFromChain<TProviders, TParent>, TChildren>`
+ * without re-wrapping its own type parameters in a `CLI<...>`. Writing
+ * `ProvidersOf<CLI<TArgs, ..., TParent, TProviders>>` inside `CLI` would
+ * reference `CLI` while the interface is still being constructed, which
+ * has caused TypeScript cycle / constraint-solver headaches in the past.
+ * Passing the raw parameters through a non-CLI helper keeps the
+ * recursion purely in conditional-type space.
+ */
+export type ProvidersFromChain<TProviders, TParent> =
+  TParent extends CLI<any, any, any, infer TGrandParent, infer TParentProviders>
+    ? TProviders &
+        Omit<ProvidersFromChain<TParentProviders, TGrandParent>, keyof TProviders>
+    : TProviders;
+
+/**
  * Infers the full CommandContext type from a CLI type.
  */
 export type InferContextOfCommand<T extends AnyCLI> = T extends CLI<
