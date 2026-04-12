@@ -1097,6 +1097,15 @@ export class InternalCLI<
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
 
+      // `commandChain` is mutated during the discovery loop (subcommand
+      // names are pushed as they are matched). Clear it at the start of
+      // every forge() call so a CLI instance can be invoked multiple
+      // times — e.g. in a long-running server or a test that exercises
+      // several command paths — without walking a stale chain on the
+      // second call. Other per-call state (unmatched tokens, parsed
+      // argv) is already local to this closure.
+      this.commandChain = [];
+
       // Run root builder (may register options, init hooks, commands).
       // If the builder came from a $0 alias, skip it here — we defer
       // running it until the discovery loop confirms no explicit

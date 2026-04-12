@@ -19,19 +19,21 @@ const app = cli('my-tool', {
       }),
   handler: () => undefined,
 }).command('init', {
-  description: 'Create a fresh config file and then update a value in place',
+  description:
+    'Bootstrap a fresh config file and then update a value in place',
   handler: async () => {
-    // First write: no file exists, so the framework falls through to the
-    // `default` path and creates the file.
+    // First write: no file exists on disk, so the framework falls through
+    // to the `default` path and creates the file.
     console.log(`before init: exists=${existsSync(configPath)}`);
     await app.updateConfig({ theme: 'dark', lang: 'fr' });
 
     const afterInit = JSON.parse(readFileSync(configPath, 'utf-8'));
     console.log(`after init: theme=${afterInit.theme} lang=${afterInit.lang}`);
 
-    // Second write: the file now resolves on disk, so the update is merged
-    // into the resolved file rather than going through the default path.
-    // Only `theme` is passed so `lang` is preserved.
+    // Second write: the file now exists at the default path. The JSON
+    // file loader reads the existing content from that path, merges the
+    // partial update in, and writes it back — so `lang` is preserved
+    // without having to pass it through the update.
     await app.updateConfig({ theme: 'system' });
 
     const afterUpdate = JSON.parse(readFileSync(configPath, 'utf-8'));
