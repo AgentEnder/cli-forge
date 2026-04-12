@@ -71,18 +71,18 @@ test:
     assertions:
       stdout:
         contains: 'written theme: dark'
-  - name: 'fresh-updater: updater form writes initial value to default path'
+  - name: 'fresh-updater: first call writes initial value via default path'
     options:
       command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
     assertions:
       stdout:
-        contains: 'after updater form count: 1'
-  - name: 'fresh-updater: partial form merges with on-disk file'
+        contains: 'first call count: 1'
+  - name: 'fresh-updater: second call reads previously persisted value from default path'
     options:
       command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
     assertions:
       stdout:
-        contains: 'after partial form count: 2'
+        contains: 'second call count: 2'
   - name: 'multi-provider-fallback: fallback provider default path is used when nothing resolves'
     options:
       command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'

@@ -1371,6 +1371,35 @@ describe('parser', () => {
         .parse([])
     ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
   });
+
+  it('should accept a pre-built provider with `default` metadata via the (provider, options) overload', async () => {
+    const writes: Array<{ next: any; targetPath?: string | URL }> = [];
+    const provider: ConfigurationProvider<any> = {
+      // Never resolves from cwd — forces the default fallback path.
+      resolve: () => undefined,
+      load: () => ({}),
+      updateConfig: async (updater, options) => {
+        const next =
+          typeof updater === 'function' ? await (updater as any)({}) : updater;
+        writes.push({ next, targetPath: options?.targetPath });
+      },
+    };
+
+    const p = parser()
+      .option('foo', { type: 'string' })
+      .config(provider, { default: '/new/home/config.json' });
+
+    // Still parses successfully (no provider resolved, no values).
+    expect(p.parse([])).toEqual({ unmatched: [] });
+
+    // updateConfig falls through to the default path attached via the
+    // new overload.
+    await p.updateConfig({ foo: 'hello' });
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0].next).toEqual({ foo: 'hello' });
+    expect(writes[0].targetPath).toBe('/new/home/config.json');
+  });
 });
 
 describe('parser.updateConfig', () => {

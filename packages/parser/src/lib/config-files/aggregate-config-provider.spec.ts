@@ -669,6 +669,99 @@ describe('AggregateConfigProvider', () => {
 
       expect(targetPaths).toEqual([defaultUrl]);
     });
+
+    it('updater form reads current state from the default-path file when nothing resolves from cwd', async () => {
+      // Simulates the flow: init writes to default path, later call wants
+      // to read-modify-write. Without the fix, the updater sees {}
+      // because load(cwd) finds nothing.
+      let onDisk: Record<string, unknown> = { count: 5 };
+
+      const provider: ConfigurationProvider<any> = {
+        // Never resolves from cwd — config only lives at the default path.
+        resolve: () => undefined,
+        load: (file) => {
+          if (file === '/tmp/default.json') return onDisk as any;
+          return {};
+        },
+        updateConfig: async (updater) => {
+          const next =
+            typeof updater === 'function'
+              ? await (updater as any)(onDisk)
+              : updater;
+          onDisk = next;
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      // Mock existsSync so the fallback path is considered "on disk"
+      const fs = await import('../environment-provider.js');
+      const original = fs.getFileSystemProvider();
+      fs.setFileSystemProvider({
+        ...original,
+        existsSync: (p: string) =>
+          p === '/tmp/default.json' ? true : original.existsSync(p),
+      });
+
+      try {
+        await aggregate.updateConfig((config) => {
+          // Should see the persisted count (5), not undefined
+          (config as any).count = ((config as any).count ?? 0) + 1;
+        });
+      } finally {
+        fs.setFileSystemProvider(original);
+      }
+
+      expect(onDisk).toEqual({ count: 6 });
+    });
+
+    it('updater form strips `extends` from the default-path file when loading current state', async () => {
+      let onDisk: Record<string, unknown> = {
+        extends: './base.json',
+        theme: 'dark',
+      };
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => onDisk as any,
+        updateConfig: async (updater) => {
+          const next =
+            typeof updater === 'function'
+              ? await (updater as any)(onDisk)
+              : updater;
+          onDisk = next;
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      const fs = await import('../environment-provider.js');
+      const original = fs.getFileSystemProvider();
+      fs.setFileSystemProvider({
+        ...original,
+        existsSync: () => true,
+      });
+
+      let seenExtends: unknown;
+      try {
+        await aggregate.updateConfig((config) => {
+          seenExtends = (config as any).extends;
+          (config as any).theme = 'system';
+        });
+      } finally {
+        fs.setFileSystemProvider(original);
+      }
+
+      // The updater should not see `extends` — it's a loader directive,
+      // not a config value.
+      expect(seenExtends).toBeUndefined();
+    });
   });
 
   describe('integration: multi-provider updateConfig routing', () => {

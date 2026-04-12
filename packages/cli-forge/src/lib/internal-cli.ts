@@ -752,22 +752,13 @@ export class InternalCLI<
         ) {
           args = middlewareResult as T;
         }
-<<<<<<< HEAD
         // Keep ALS context args in sync after middleware transformations
         const store = contextStorage.getStore();
         if (store) {
           store.args = args as Record<string, unknown>;
         }
-=======
       }
-      // Errors thrown from the handler are wrapped in a HandlerExecutionError
-      // so custom error handlers (registered via `.errorHandler()`) can
-      // distinguish them from framework errors. The original error is
-      // preserved on `.cause`. The wrapped error propagates up through
-      // `withErrorHandlers`, which runs the registered handler chain and
-      // then re-throws — matching init hook and parse error behavior.
       try {
->>>>>>> abe2234 (fix(cli-forge): route handler errors through the error-handler chain)
         await cmd.configuration.handler(args, {
           command: cmd as any,
         });
@@ -795,46 +786,12 @@ export class InternalCLI<
         );
         cmd.printHelp();
       } else {
-<<<<<<< HEAD
-        // We can treat a command as a subshell if it has subcommands
-        if (Object.keys(cmd.registeredCommands).length > 0) {
-          if (typeof process === 'undefined' || !process.stdout?.isTTY) {
-            // If we're not in a TTY (or in a browser), we can't run an interactive shell...
-            // Maybe we should warn here?
-          } else if (args.unmatched.length > 0) {
-            // If there are unmatched args, we don't run an interactive shell...
-            // this could represent a user misspelling a subcommand so it gets rather confusing.
-            console.warn(
-              `Warning: Unrecognized command or arguments: ${args.unmatched.join(
-                ' '
-              )}`
-            );
-            cmd.printHelp();
-          } else {
-            const shellMod = await getInteractiveShellModule();
-            if (!shellMod.INTERACTIVE_SHELL) {
-              const tui = new shellMod.InteractiveShell(
-                this as unknown as AnyInternalCLI,
-                {
-                  prependArgs: originalArgV,
-                }
-              );
-              await new Promise<void>((res) => {
-                ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                  process?.on(s, () => {
-                    tui.close();
-                    res();
-                  })
-                );
-              });
-=======
         const shellMod = await getInteractiveShellModule();
         if (!shellMod.INTERACTIVE_SHELL) {
           const tui = new shellMod.InteractiveShell(
-            this as unknown as InternalCLI<any>,
+            this as unknown as AnyInternalCLI,
             {
               prependArgs: originalArgV,
->>>>>>> abe2234 (fix(cli-forge): route handler errors through the error-handler chain)
             }
           );
           await new Promise<void>((res) => {
@@ -1192,6 +1149,10 @@ export class InternalCLI<
 
   config(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config(
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   config<
     C extends new (
