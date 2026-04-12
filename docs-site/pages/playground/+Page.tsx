@@ -1,5 +1,5 @@
 import { useState, useCallback, useEffect, useMemo, useRef } from 'react';
-import type { OnMount } from '@monaco-editor/react';
+import type { Monaco, OnMount } from '@monaco-editor/react';
 import { useData } from 'vike-react/useData';
 import { usePageContext } from 'vike-react/usePageContext';
 import { Link } from '../../components/Link';
@@ -111,6 +111,10 @@ export default function PlaygroundPage() {
   const [running, setRunning] = useState(false);
   const [activeExample, setActiveExample] = useState<PlaygroundExample | null>(loadedExample);
   const [Editor, setEditor] = useState<EditorComponent | null>(null);
+  // Monaco namespace captured during onMount so an effect can sync models
+  // for every code file — without this, relative imports between sibling
+  // files in an example have no type resolution.
+  const [monacoInstance, setMonacoInstance] = useState<Monaco | null>(null);
   const [runTargetOverride, setRunTargetOverride] = useState<string | null>(null);
   const [showRunMenu, setShowRunMenu] = useState(false);
 
@@ -125,6 +129,48 @@ export default function PlaygroundPage() {
     document.addEventListener('click', handler);
     return () => document.removeEventListener('click', handler);
   }, [showRunMenu]);
+
+  // Sync Monaco models for every code / JSON file in the example. Without
+  // this, only the active file has a model, so the TypeScript language
+  // service cannot resolve `import { x } from './commands/build'` and every
+  // sibling reference shows up as a red squiggle.
+  useEffect(() => {
+    if (!monacoInstance) return;
+    const monaco = monacoInstance;
+
+    const trackedFiles = files.filter(
+      (f) => isCodeFile(f.path) || f.path.endsWith('.json')
+    );
+    const desiredUris = new Set<string>();
+
+    for (const file of trackedFiles) {
+      const uri = monaco.Uri.parse(`file:///${file.path}`);
+      desiredUris.add(uri.toString());
+      const existing = monaco.editor.getModel(uri);
+      if (!existing) {
+        monaco.editor.createModel(file.content, detectLanguage(file.path), uri);
+      } else if (
+        file.path !== activeFile &&
+        existing.getValue() !== file.content
+      ) {
+        // Don't overwrite the active file — the Editor component owns its
+        // content via the `value` prop. Non-active models get refreshed here
+        // (mainly when the user loads a different example).
+        existing.setValue(file.content);
+      }
+    }
+
+    // Dispose stale example models — but leave the injected type libs
+    // (/node_modules/*) and globals (playground-globals.d.ts) alone.
+    for (const model of monaco.editor.getModels()) {
+      const uri = model.uri.toString();
+      if (!uri.startsWith('file:///')) continue;
+      if (uri.includes('/node_modules/')) continue;
+      if (uri.endsWith('/playground-globals.d.ts')) continue;
+      if (desiredUris.has(uri)) continue;
+      model.dispose();
+    }
+  }, [files, activeFile, monacoInstance]);
 
   const entryFiles = useMemo(
     () => files.filter((f) => isCodeFile(f.path) && isEntryFile(f.content)),
@@ -414,6 +460,9 @@ export default function PlaygroundPage() {
 
   const handleEditorMount: OnMount = useCallback(
     (_editor, monaco) => {
+      // Expose the monaco namespace so the files-sync effect can create
+      // models for sibling files (needed for relative-import type resolution).
+      setMonacoInstance(monaco);
       // Register package.json files so TypeScript can resolve bare module
       // specifiers like `import { cli } from 'cli-forge'` to the correct
       // types entry point via the exports / typings fields.
@@ -455,6 +504,7 @@ export default function PlaygroundPage() {
         target: monaco.languages.typescript.ScriptTarget.ESNext,
         allowSyntheticDefaultImports: true,
         esModuleInterop: true,
+        resolveJsonModule: true,
       });
       // Register the forge dark theme
       monaco.editor.defineTheme('forge-dark', {
