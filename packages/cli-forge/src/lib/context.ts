@@ -64,8 +64,16 @@ export interface CommandContext<TArgs, TProviders, TChildren = {}> {
 
 // ─── Module-level state ───────────────────────────────────────────────────────
 
-/** Permanent cache for global-lifetime providers. Survives across executions. */
-const globalProviderCache = new Map<string, unknown>();
+/**
+ * Permanent cache for global-lifetime providers. Survives across executions.
+ *
+ * Keyed by the factory function identity rather than the provider name, so
+ * two unrelated CLI apps (or two registrations of the same name with
+ * different factories) cannot collide on a shared cached value. Each
+ * distinct factory function gets its own slot; calling `.provide()` twice
+ * with the same factory reference (e.g. across clones) correctly shares.
+ */
+const globalProviderCache = new Map<Function, unknown>();
 
 /**
  * Clears the module-level cache for `lifetime: 'global'` providers.
@@ -125,14 +133,13 @@ function resolveProvider(store: ForgeContextData, key: string): unknown | typeof
   store.resolving.add(key);
   try {
     if (lifetime === 'global') {
-      // Global: permanent module-level cache
-      if (!globalProviderCache.has(key)) {
-        globalProviderCache.set(
-          key,
-          (factory as GlobalProviderConfig<unknown>['factory'])()
-        );
+      // Global: permanent module-level cache keyed by factory identity
+      // (not by key name) so unrelated registrations can't collide.
+      const globalFactory = factory as GlobalProviderConfig<unknown>['factory'];
+      if (!globalProviderCache.has(globalFactory)) {
+        globalProviderCache.set(globalFactory, globalFactory());
       }
-      const value = globalProviderCache.get(key);
+      const value = globalProviderCache.get(globalFactory);
       // Also cache in the store so subsequent inject() calls skip factory lookup
       store.providers.set(key, value);
       return value;

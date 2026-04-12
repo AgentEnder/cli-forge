@@ -119,6 +119,39 @@ describe('getCommandContext() via forge()', () => {
     expect(typeof first).toBe('number');
   });
 
+  it('isolates global providers across unrelated CLIs that share a key', async () => {
+    // Two independent apps both register `lifetime: 'global'` under the
+    // same provider key but with different factories. The global cache is
+    // keyed by factory function identity, so each app must see the value
+    // produced by its own factory — not the first one to run.
+    let resolvedA: unknown;
+    let resolvedB: unknown;
+
+    const appA = cli('app-a')
+      .provide('svc', {
+        factory: () => ({ from: 'A' }),
+        lifetime: 'global',
+      })
+      .handler(() => {
+        resolvedA = getCommandContext(appA).inject('svc');
+      });
+
+    const appB = cli('app-b')
+      .provide('svc', {
+        factory: () => ({ from: 'B' }),
+        lifetime: 'global',
+      })
+      .handler(() => {
+        resolvedB = getCommandContext(appB).inject('svc');
+      });
+
+    await appA.forge([]);
+    await appB.forge([]);
+
+    expect(resolvedA).toEqual({ from: 'A' });
+    expect(resolvedB).toEqual({ from: 'B' });
+  });
+
   it('throws for unregistered key without default', async () => {
     let thrownError: unknown;
 
