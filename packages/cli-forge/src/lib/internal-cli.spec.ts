@@ -512,6 +512,58 @@ describe('cliForge', () => {
     });
   });
 
+  describe('repeated forge() calls on the same instance', () => {
+    it('resets commandChain between forge() calls so a CLI instance can run multiple commands', async () => {
+      const calls: string[] = [];
+      const app = cli('app')
+        .command('init', {
+          handler: () => {
+            calls.push('init');
+          },
+        })
+        .command('run', {
+          handler: () => {
+            calls.push('run');
+          },
+        });
+
+      await app.forge(['init']);
+      await app.forge(['run']);
+      await app.forge(['init']);
+
+      expect(calls).toEqual(['init', 'run', 'init']);
+    });
+
+    it('resets commandChain even after a prior forge() call threw', async () => {
+      const { restore } = mockConsoleLog();
+      const originalError = console.error;
+      console.error = () => undefined;
+      try {
+        const calls: string[] = [];
+        const app = cli('app')
+          .command('run', {
+            handler: () => {
+              calls.push('run');
+              throw new Error('boom');
+            },
+          })
+          .command('ok', {
+            handler: () => {
+              calls.push('ok');
+            },
+          });
+
+        await expect(app.forge(['run'])).rejects.toThrow();
+        // Second call must not walk a stale chain from the first one.
+        await app.forge(['ok']);
+        expect(calls).toEqual(['run', 'ok']);
+      } finally {
+        console.error = originalError;
+        restore();
+      }
+    });
+  });
+
   it('should support subcommands with positional args', async () => {
     const args = await cli('test')
       .command(
