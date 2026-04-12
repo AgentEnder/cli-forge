@@ -49,6 +49,17 @@ type ProviderRegistration =
   | { type: 'factory'; factory: Function; lifetime: 'global' | 'executionScope' };
 
 /**
+ * Monotonic counter used to stamp every `InternalCLI` instance with a
+ * process-unique `commandId` at construction time. Used by
+ * {@link getCommandContext} to verify at runtime that a CLI instance passed
+ * as a type witness actually belongs to the currently-executing command
+ * chain — which catches the class of bug where the user passes the wrong
+ * CLI (a sibling, an unrelated app) as the type witness and silently gets
+ * incorrect `inject()` types.
+ */
+let _internalCliIdCounter = 0;
+
+/**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
  *
  * {@link cli} is provided as a small helper function to create a new CLI instance.
@@ -109,6 +120,17 @@ export class InternalCLI<
    * For internal use only. Stick to properties available on {@link CLI}.
    */
   registeredCommands: Record<string, AnyInternalCLI> = {};
+
+  /**
+   * Process-unique identifier stamped at construction time. Used to
+   * validate at runtime that a CLI instance passed to `getCommandContext`
+   * actually belongs to the active command chain. Never mutated once set —
+   * builders, handlers, and middleware see the same value for the lifetime
+   * of the instance, even across clones.
+   *
+   * For internal use only.
+   */
+  readonly commandId: string;
 
   /**
    * Registered DI providers keyed by name.
@@ -256,6 +278,11 @@ export class InternalCLI<
       TChildren
     >
   ) {
+    // Stamp a stable, immutable identifier so `getCommandContext(cli)` can
+    // verify at runtime that this instance is part of the active command
+    // chain. The format is `${name}#${counter}` for debuggability — the
+    // counter guarantees uniqueness even when two commands share a name.
+    this.commandId = `${name}#${++_internalCliIdCounter}`;
     if (rootCommandConfiguration) {
       this.withRootCommandConfiguration(rootCommandConfiguration as any);
     } else {
@@ -272,33 +299,36 @@ export class InternalCLI<
   }
 
   command<
-    TCommandArgs extends TArgs,
-    TCmdName extends string,
-    TChildHandlerReturn = void
+    TCommand extends Command<TArgs, any, any, any>
   >(
-    cmd: Command<TArgs, TCommandArgs, TCmdName, TChildHandlerReturn>
+    cmd: TCommand
   ): CLI<
     TArgs,
     THandlerReturn,
-    TChildren & {
-      [key in TCmdName]: CLI<
-        TCommandArgs,
-        TChildHandlerReturn,
-        {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-        {}
-      >;
-    },
+    TChildren & import('./public-api').CommandToChildEntry<
+      TCommand,
+      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
+    >,
     TParent,
     TProviders
   >;
   command<
     TCommandArgs extends TArgs,
     TChildHandlerReturn = void,
-    TCommandName extends string = string
+    TCommandName extends string = string,
+    TChildChildren = {},
+    TChildProviders = {}
   >(
     key: TCommandName,
-    options: CLICommandOptions<TArgs, TCommandArgs, TChildHandlerReturn>
+    options: CLICommandOptions<
+      TArgs,
+      TCommandArgs,
+      TChildHandlerReturn,
+      TChildren,
+      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+      TChildChildren,
+      TChildProviders
+    >
   ): CLI<
     TArgs,
     THandlerReturn,
@@ -306,54 +336,18 @@ export class InternalCLI<
       [key in TCommandName]: CLI<
         TCommandArgs,
         TChildHandlerReturn,
-        {},
+        TChildChildren,
         CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-        {}
+        TChildProviders
       >;
     },
     TParent,
     TProviders
   >;
-  command<
-    TCommandArgs extends TArgs,
-    TChildHandlerReturn = void,
-    TCommandName extends string = string
-  >(
-    keyOrCommand: TCommandName | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs, TChildHandlerReturn>
-  ): CLI<
-    TArgs,
-    THandlerReturn,
-    TChildren &
-      (typeof keyOrCommand extends string
-        ? {
-            [key in typeof keyOrCommand]: CLI<
-              TCommandArgs,
-              TChildHandlerReturn,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-              {}
-            >;
-          }
-        : typeof keyOrCommand extends Command<
-            TArgs,
-            infer TCmdArgs,
-            infer TCmdName
-          >
-        ? {
-            [key in TCmdName]: CLI<
-              TCmdArgs,
-              void,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-              {}
-            >;
-          }
-        :
-          {}),
-    TParent,
-    TProviders
-  > {
+  command(
+    keyOrCommand: string | Command<any, any, any, any>,
+    options?: CLICommandOptions<any, any, any, any, any, any, any>
+  ): any {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -890,9 +884,13 @@ export class InternalCLI<
       const sdkContextData: ForgeContextData = {
         args: parsedArgs as Record<string, unknown>,
         commandChain: [],
+        // providerChain walks root -> ...ancestors -> targetCmd already,
+        // so we reuse it for the id chain that getCommandContext validates.
+        commandIdChain: providerChain.map((c) => c.commandId),
         providers: new Map(),
         providerFactories: new Map(),
         handlerPhase: true,
+        resolving: new Set(),
       };
       for (const providerNode of providerChain) {
         for (const [key, reg] of providerNode.registeredProviders) {
@@ -1351,9 +1349,11 @@ export class InternalCLI<
       const contextData: ForgeContextData = {
         args: argv as Record<string, unknown>,
         commandChain: [...this.commandChain],
+        commandIdChain: this.collectCommandIdChain(),
         providers: new Map(),
         providerFactories: new Map(),
         handlerPhase: false,
+        resolving: new Set(),
       };
 
       // Register providers into context
@@ -1402,10 +1402,35 @@ export class InternalCLI<
     return result;
   }
 
+  /**
+   * Walks the command chain from root (this) down to the running command
+   * and collects each instance's `commandId`. Populates
+   * `ForgeContextData.commandIdChain` so `getCommandContext(cli)` can
+   * validate at runtime that the CLI passed as a type witness is any
+   * command on the active chain.
+   */
+  private collectCommandIdChain(): string[] {
+    const ids: string[] = [this.commandId];
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: AnyInternalCLI = this;
+    for (const name of this.commandChain) {
+      const next = cmd.registeredCommands[name];
+      if (!next) break;
+      cmd = next;
+      ids.push(cmd.commandId);
+    }
+    return ids;
+  }
+
   clone() {
     const clone = new InternalCLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>(
       this.name
     );
+    // Propagate the commandId so the clone still validates against any
+    // original CLI reference the user passes to `getCommandContext()`.
+    // A clone conceptually represents the same command — just a private
+    // mutable copy — so it keeps the original's identity.
+    (clone as { commandId: string }).commandId = this.commandId;
     clone.parser = this.parser.clone(clone.parser.options) as any;
     if (this.configuration) {
       clone.withRootCommandConfiguration(this.configuration);
