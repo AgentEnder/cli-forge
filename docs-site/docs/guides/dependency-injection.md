@@ -82,29 +82,69 @@ Providers added on ancestors are still visible from the child's context — only
 
 ## Reaching a subcommand's typed context
 
-You have two equivalent ways to get a `CommandContext` typed to a subcommand's args and providers.
+You have two ways to get a `CommandContext` typed to a subcommand's args and providers. Pick based on where the subcommand's providers live.
 
-### Option 1 — `getChildContext` from the parent
+### Recommended — pass the subcommand CLI directly
 
-When you already have the parent's context, drill down by name:
+If the subcommand **doesn't need to inherit providers from the root** — i.e. it defines its own, or only uses providers declared on itself — declare it as a standalone CLI, import that reference from the handler's module, and pass it straight to `getCommandContext`:
 
 ```typescript
-const rootCtx = getCommandContext(app);
-const buildCtx = rootCtx.getChildContext('build');
-log.info(`Target: ${buildCtx.args.target}`);
+// build.ts
+import { cli } from 'cli-forge';
+import { getCommandContext } from 'cli-forge/context';
+
+export const build = cli('build')
+  .option('target', { type: 'string', required: true })
+  .provide('logger', { factory: () => makeLogger() })
+  .handler(() => {
+    const ctx = getCommandContext(build);
+    ctx.inject('logger').info(`Target: ${ctx.args.target}`);
+  });
 ```
-
-`getChildContext('build')` returns a `CommandContext<buildArgs, ...>`, so `buildCtx.args.target` is typed as the option you defined inside `build`'s builder.
-
-### Option 2 — pass a composed subcommand directly
-
-If the subcommand is declared inline inside `.command('name', { builder, handler })`, you can fetch the tracked instance via `app.getChildren()` and pass it to `getCommandContext` — skipping the `getChildContext` hop entirely:
 
 ```typescript
 // cli.ts
 import { cli } from 'cli-forge';
-import { runBuild } from './build';
+import { build } from './build';
 
+export const app = cli('app').command(build);
+```
+
+This is the most ergonomic form:
+
+- No `getChildContext` hop and no `app.getChildren().build` lookup.
+- The handler module owns the subcommand reference, so there's no circular `typeof app` inference to work around.
+- `ctx.args` and `ctx.inject()` are fully typed by `build`'s own declarations.
+- Runtime validation still fires because `build.commandId` is on the active `commandIdChain` whenever `build` is the running command.
+
+Reach for this pattern by default when you're designing a subcommand that manages its own services.
+
+### When the subcommand inherits providers from the root
+
+The standalone form has one type-level limitation: a standalone `cli('build', ...)` has `TParent = undefined`, so its tracked type doesn't include providers declared on whichever parent eventually composes it. If `build`'s handler needs to `inject()` a provider that lives on `app`, the standalone reference won't carry that type.
+
+Two ways to handle that case:
+
+**(a)** Access the root's providers via the root context and narrow to the child with `getChildContext`:
+
+```typescript
+// build.ts
+import { getCommandContext } from 'cli-forge/context';
+import { app } from './cli';
+
+export function runBuild() {
+  const rootCtx = getCommandContext(app);
+  const buildCtx = rootCtx.getChildContext('build');
+  rootCtx.inject('logger').info(`Target: ${buildCtx.args.target}`);
+}
+```
+
+`getChildContext('build')` returns a `CommandContext<buildArgs, ...>` so `buildCtx.args.target` is typed. `rootCtx.inject('logger')` goes through the root's declared providers.
+
+**(b)** Declare the subcommand inline inside `.command('name', { builder, handler })` and fetch the tracked instance via `app.getChildren()`. The inline form threads the parent's `TProviders` into the builder's `cmd` parameter, so the tracked child type *does* carry inherited providers:
+
+```typescript
+// cli.ts
 export const app = cli('app')
   .provide('logger', makeLogger)
   .command('build', {
@@ -119,13 +159,20 @@ import { getCommandContext } from 'cli-forge/context';
 import { app } from './cli';
 
 export function runBuild() {
-  const build = app.getChildren().build;      // typed subcommand reference
-  const ctx = getCommandContext(build);       // runtime-safe + fully typed
+  const build = app.getChildren().build;   // tracked instance carries parent providers
+  const ctx = getCommandContext(build);
   ctx.inject('logger').info(`Target: ${ctx.args.target}`);
 }
 ```
 
-The inline `.command('build', { ... })` form threads the parent's `TProviders` into the builder's `cmd` parameter, so `build`'s tracked type includes inherited providers. The handler references the child via `app.getChildren()` to keep the type clean and avoid the circular `typeof self` inference you'd hit by closing over the child inline.
+Both (a) and (b) are runtime-safe — the `commandIdChain` accepts the root, any ancestor, and the running command. The choice is purely about which type surface is more ergonomic for your handler.
+
+### Quick decision guide
+
+| Subcommand shape | Preferred handler pattern |
+|---|---|
+| Defines its own providers, doesn't need root's | Standalone `cli('sub')`, `getCommandContext(sub)` — **most ergonomic** |
+| Needs root-inherited providers | `getCommandContext(app).getChildContext('sub')` or inline `.command('sub', { ... })` + `app.getChildren().sub` |
 
 ### Runtime validation
 
@@ -133,18 +180,9 @@ Both forms use the CLI instance as a **runtime** check, not just a type witness.
 
 Any command on the active chain is a valid reference: the root app, the running subcommand itself, and any ancestor in between. A sibling that wasn't reached, or a CLI from a different app entirely, will throw.
 
-### When Option 2 is typed and when it isn't
-
-Option 2 (`getCommandContext(build)`) gives you the child's own `args` and `providers` directly, but whether the child's type carries inherited providers depends on how it was declared:
-
-- **Inline inside `.command('name', { builder, handler })`** — the builder's `cmd` parameter is typed with the parent's `TProviders`, so `cmd.provide(...)` and inherited providers both flow through. Fetching the instance via `app.getChildren().build` gives you a reference with the full type.
-- **Standalone `cli('build', { ... })` composed via `.command(build)`** — the standalone reference has `TParent = undefined`, so the imported `build` variable doesn't see providers defined on `app`. Use Option 1 (`getCommandContext(app).getChildContext('build')`) for that shape.
-
-Both still work at runtime — the `commandIdChain` validation passes for either — it's only the `inject()` types that differ.
-
 ### The root context's `args` type is a subset
 
-The root `CommandContext.args` type reflects only options defined at the root level. When reached via a subcommand, the underlying args object at runtime also contains the subcommand's options, but they're not visible through `rootCtx.args`. Use either option above to read subcommand-level options with the correct types — `rootCtx.getChildContext('sub').args` or `getCommandContext(subCli).args`.
+The root `CommandContext.args` type reflects only options defined at the root level. When reached via a subcommand, the underlying args object at runtime also contains the subcommand's options, but they're not visible through `rootCtx.args`. Use either pattern above to read subcommand-level options with the correct types — `rootCtx.getChildContext('sub').args` or `getCommandContext(subCli).args`.
 
 ### The no-instance overload is not runtime-safe
 
