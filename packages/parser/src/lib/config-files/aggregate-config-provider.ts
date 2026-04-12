@@ -7,6 +7,19 @@ import {
 import { toFilePath } from './utils.js';
 
 /**
+ * Returns true when an object has no own enumerable properties. Used to
+ * detect "nothing resolved from cwd" in {@link AggregateConfigProvider.updateConfig}
+ * so the updater form can fall back to reading the default-path file.
+ */
+function isEmptyObject(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.keys(value as object).length === 0
+  );
+}
+
+/**
  * A leaf ConfigurationProvider with any location type.
  */
 type AnyProvider<T> = ConfigurationProvider<T, any>;
@@ -224,7 +237,7 @@ export class AggregateConfigProvider<T> {
   ): Promise<void> {
     let values: Partial<T>;
     if (typeof valuesOrUpdater === 'function') {
-      values = this.trackUpdates(valuesOrUpdater);
+      values = await this.trackUpdates(valuesOrUpdater);
     } else {
       values = valuesOrUpdater;
     }
@@ -294,15 +307,57 @@ export class AggregateConfigProvider<T> {
   /**
    * Runs an updater function against a proxy of the merged config,
    * returning only the properties that were set during the callback.
+   *
+   * The proxy target is computed from:
+   *
+   * 1. The merged result of {@link load} against the current configuration
+   *    root. This sees any provider whose `resolve()` finds a file.
+   * 2. As a fallback, the default-path file of the first provider with a
+   *    `default` option, if that file exists on disk. This allows
+   *    read-modify-write updaters to see the most recently persisted
+   *    state even when the file lives outside the configuration root
+   *    (e.g. a user-level config in `~/.config/my-tool/config.json`).
+   *
+   * Without (2), a sequence like `init` → write via default path →
+   * later `app.updateConfig(config => config.count + 1)` would always
+   * see `count === undefined` because `load(cwd)` never touches the
+   * default-path file.
    */
-  private trackUpdates(updater: ConfigUpdater<T>): Partial<T> {
+  private async trackUpdates(
+    updater: ConfigUpdater<T>
+  ): Promise<Partial<T>> {
     if (!this.lastConfigurationRoot) {
       throw new Error(
         'Cannot use updater function: config has not been loaded yet. Call load() first.'
       );
     }
     // Re-load to get the current merged config
-    const current = this.load(this.lastConfigurationRoot);
+    let current = this.load(this.lastConfigurationRoot);
+
+    // Nothing resolved from cwd — try the default-path file as a fallback.
+    // This keeps updater-form reads consistent with updateConfig writes
+    // when the only on-disk config lives at a framework-managed default.
+    if (isEmptyObject(current) && this.provenance.size === 0) {
+      const defaultResult = await this.resolveDefaultProvider();
+      if (defaultResult) {
+        const fs = getFileSystemProvider();
+        const path = toFilePath(defaultResult.targetPath);
+        if (fs.existsSync(path)) {
+          try {
+            const loaded = defaultResult.provider.load(path);
+            const { extends: _extendsIgnored, ...rest } = (loaded ?? {}) as {
+              extends?: string;
+            } & T;
+            current = rest as T;
+          } catch {
+            // Failed to read the default-path file — leave `current` as the
+            // empty object that load() returned. The updater will see {}
+            // and can fall back to its own defaults.
+          }
+        }
+      }
+    }
+
     const changes: Partial<T> = {} as Partial<T>;
     const proxy = new Proxy(current as object, {
       set(_target, prop, value) {

@@ -410,6 +410,30 @@ export interface CLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
 
   /**
+   * Registers a pre-built configuration provider with framework-level
+   * metadata such as `default`. Useful with convenience factories like
+   * {@link ConfigurationProviders.JsonFile} that already return a
+   * fully-constructed provider but still need to carry a `default` path
+   * so `updateConfig` can create a config file when none exists.
+   *
+   * @example
+   * ```ts
+   * cli('my-tool')
+   *   .option('theme', { type: 'string' })
+   *   .config(ConfigurationProviders.JsonFile('my-tool.config.json'), {
+   *     default: () => join(process.cwd(), 'my-tool.config.json'),
+   *   });
+   * ```
+   *
+   * @param provider The configuration provider to register.
+   * @param options Framework-level options (e.g. `default`).
+   */
+  config(
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
    * Registers a configuration provider by class and options.
    * Framework options like `default` are extracted and stored as metadata.
    *

@@ -529,6 +529,19 @@ export class ArgvParser<
    */
   config(provider: ConfigProviderRegistration<TArgs>): this;
   /**
+   * Registers a pre-built configuration provider with framework-level
+   * metadata such as `default`. Use this overload with convenience
+   * factories like {@link ConfigurationProviders.JsonFile} that return a
+   * fully-constructed provider but still need to carry a `default` path.
+   *
+   * @param provider The configuration provider to register.
+   * @param options Framework-level options (e.g. `default`).
+   */
+  config<R extends ConfigProviderRegistration<TArgs>>(
+    provider: R,
+    options: { default?: DefaultConfig<RegistrationLocation<R>> }
+  ): this;
+  /**
    * Registers a configuration provider by class and options.
    * Framework options like `default` are extracted and stored as metadata.
    *
@@ -547,9 +560,11 @@ export class ArgvParser<
     C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
   >(
     providerOrCtor: ConfigProviderRegistration<TArgs> | C,
-    options?: ConstructorParameters<C>[0] & {
-      default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
-    }
+    options?:
+      | { default?: DefaultConfig<any> }
+      | (ConstructorParameters<C>[0] & {
+          default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
+        })
   ): this {
     if (typeof providerOrCtor === 'function') {
       if (options === undefined) {
@@ -559,10 +574,15 @@ export class ArgvParser<
       }
 
       // Constructor-based overload: extract framework opts, construct provider
-      const { default: defaultConfig, ...providerOpts } = options;
+      const { default: defaultConfig, ...providerOpts } = options as any;
       const provider = new providerOrCtor(providerOpts);
       this.registerConfigurationProviders(provider, {
         default: defaultConfig,
+      });
+    } else if (options !== undefined) {
+      // Pre-built provider with framework metadata
+      this.registerConfigurationProviders(providerOrCtor, {
+        default: (options as { default?: DefaultConfig<any> }).default,
       });
     } else {
       this.registerConfigurationProviders(providerOrCtor);

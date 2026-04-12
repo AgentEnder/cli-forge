@@ -1022,6 +1022,10 @@ export class InternalCLI<
   config(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
   ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+  config(
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
   config<
     C extends new (
       opts: any
