@@ -131,13 +131,15 @@ export class TestHarness<T extends ParsedArgs> {
    * `{ factory, lifetime }` configs that `.provide()` takes — factory mocks
    * run lazily via `inject()` and receive the mocked `args`.
    *
-   * Nested mocks compose: calling `mockContext` again inside an active mock
-   * stacks on top, and `dispose()` restores the previous context rather than
-   * blanking it.
+   * This helper is best suited for simple synchronous tests. It does not
+   * maintain a stack of prior contexts: calling `mockContext()` while
+   * another mock is active overwrites the current store, and the returned
+   * cleanup function blanks the store rather than restoring whatever was
+   * there before.
    *
-   * For tests that use `await` across the mocked block, prefer
-   * {@link runWithMockedContext}, which uses `AsyncLocalStorage.run()` for
-   * proper scoping across async boundaries.
+   * For tests that use `await` across the mocked block or need nested
+   * mocked contexts that unwind properly, prefer {@link runWithMockedContext},
+   * which uses `AsyncLocalStorage.run()` for proper scoping.
    *
    * @example
    * ```ts

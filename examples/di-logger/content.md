@@ -24,8 +24,12 @@ providers and args types from `typeof app`. If the handler were defined inline
 inside the `.command()` call, `typeof app` would be circular and TypeScript
 would fall back to `unknown`. Splitting the handler sidesteps that.
 
-At runtime the `app` argument to `getCommandContext` is ignored; the live
-context is read from AsyncLocalStorage set up by `forge()`.
+The live context is read from `AsyncLocalStorage` set up by `forge()`, but
+the `app` argument is not purely compile-time. It's also used as a
+**runtime identity check**: every `InternalCLI` is stamped with a unique
+`commandId`, and `getCommandContext(cli)` throws if `cli.commandId` isn't on
+the active chain (root → running command). Passing the wrong CLI as the
+witness fails loudly instead of silently returning the wrong providers.
 
 <%= file('build.ts') %>
 
