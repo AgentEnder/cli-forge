@@ -342,6 +342,98 @@ describe('getCommandContext() via forge()', () => {
   });
 });
 
+describe('cli.getContext() instance method', () => {
+  it('returns the same args as getCommandContext(cli)', async () => {
+    let viaMethod: unknown;
+    let viaFunction: unknown;
+
+    const app = cli('test', {
+      builder: (cmd) => cmd.option('name', { type: 'string', default: 'world' }),
+      handler: () => {
+        viaMethod = app.getContext().args;
+        viaFunction = getCommandContext(app).args;
+      },
+    });
+
+    await app.forge(['--name', 'alice']);
+
+    expect(viaMethod).toEqual(viaFunction);
+    expect((viaMethod as { name: string }).name).toBe('alice');
+  });
+
+  it('resolves providers via inject() on the returned context', async () => {
+    let injected: unknown;
+
+    const app = cli('test')
+      .provide('greeting', 'hello from method')
+      .command('run', {
+        handler: () => {
+          injected = app.getContext().inject('greeting');
+        },
+      });
+
+    await app.forge(['run']);
+
+    expect(injected).toBe('hello from method');
+  });
+
+  it('walks the provider chain from a subcommand reference', async () => {
+    let injected: unknown;
+
+    const app = cli('app')
+      .provide('logger', 'parent-logger')
+      .command('build', {
+        handler: () => {
+          // The root app is reachable, so calling getContext() on it from
+          // inside a subcommand handler should succeed and expose the
+          // parent provider.
+          injected = app.getContext().inject('logger');
+        },
+      });
+
+    await app.forge(['build']);
+
+    expect(injected).toBe('parent-logger');
+  });
+
+  it('throws when called from a CLI that is not in the active command chain', async () => {
+    const unrelated = cli('unrelated');
+    let caught: unknown;
+
+    await cli('app', {
+      handler: () => {
+        try {
+          unrelated.getContext();
+        } catch (e) {
+          caught = e;
+        }
+      },
+    }).forge([]);
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toMatch(/not part of the active command chain/);
+  });
+
+  it('throws when called outside a handler', () => {
+    const app = cli('test');
+    expect(() => app.getContext()).toThrow(/No CLI context found/);
+  });
+
+  it('exposes commandChain via the returned context', async () => {
+    let chain: string[] | undefined;
+
+    const app = cli('my-app').command('serve', {
+      handler: () => {
+        chain = app.getContext().commandChain;
+      },
+    });
+
+    await app.forge(['serve']);
+
+    expect(chain).toEqual(['serve']);
+  });
+});
+
 describe('getCommandContext() via sdk()', () => {
   it('provides args during handler execution in SDK mode', async () => {
     let capturedArgs: any;

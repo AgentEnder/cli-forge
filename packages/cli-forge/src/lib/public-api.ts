@@ -22,6 +22,7 @@ import {
 import { InternalCLI } from './internal-cli';
 import type { CompletionCallback, OptionCompletionCallback } from './completion-types';
 import type { PromptOptionConfig, PromptProvider } from './prompt-types';
+import type { CommandContext, ProvidersOf } from './context';
 
 export interface ProviderConfig<T, TArgs = any> {
   factory: (args: TArgs) => T;
@@ -1007,6 +1008,38 @@ export interface CLI<
    * ```
    */
   getParent(): TParent;
+
+  /**
+   * Returns the {@link CommandContext} for the currently executing command,
+   * inferred from this CLI instance.
+   *
+   * This is a shorthand for `getCommandContext(this)` — it avoids the
+   * separate `import { getCommandContext } from 'cli-forge'` when you
+   * already have a reference to the CLI. Both forms are equivalent in
+   * type inference and runtime safety: the CLI instance is validated
+   * against the active command chain, so passing a CLI that isn't
+   * running (a sibling, an unrelated app) throws.
+   *
+   * Must be called from within a command handler — not during builders
+   * or middleware.
+   *
+   * @example
+   * ```ts
+   * const app = cli('app')
+   *   .provide('db', { factory: () => connectDb() })
+   *   .command('migrate', {
+   *     handler: () => {
+   *       const db = app.getContext().inject('db');
+   *       return db.runMigrations();
+   *     },
+   *   });
+   * ```
+   */
+  getContext(): CommandContext<
+    TArgs,
+    ProvidersOf<CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+    TChildren
+  >;
 
   /**
    * Returns a programmatic SDK for invoking this CLI and its subcommands.
