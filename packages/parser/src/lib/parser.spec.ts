@@ -1373,6 +1373,200 @@ describe('parser', () => {
   });
 });
 
+describe('parser.updateConfig', () => {
+  function makeUpdatableProvider() {
+    const writes: any[] = [];
+    let current: Record<string, any> = {};
+    const provider: ConfigurationProvider<any> = {
+      resolve: () => '/root/.config.json',
+      load: () => current,
+      updateConfig: async (updater, options) => {
+        const next =
+          typeof updater === 'function'
+            ? await (updater as any)(current)
+            : updater;
+        writes.push({ next, targetPath: options?.targetPath });
+        current = next;
+      },
+    };
+    return { provider, writes, getCurrent: () => current };
+  }
+
+  it('should route partial updates to the owning provider before parse runs', async () => {
+    const { provider, writes } = makeUpdatableProvider();
+    const p = parser()
+      .option('foo', { type: 'string' })
+      .option('bar', { type: 'number' })
+      .config(provider);
+
+    await p.updateConfig({ foo: 'hello', bar: 7 });
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0].next).toEqual({ foo: 'hello', bar: 7 });
+  });
+
+  it('should reflect updated values when parsing after updateConfig', async () => {
+    const { provider } = makeUpdatableProvider();
+    const p = parser()
+      .option('foo', { type: 'string' })
+      .option('bar', { type: 'number' })
+      .config(provider);
+
+    await p.updateConfig({ foo: 'hello', bar: 7 });
+
+    expect(p.parse([])).toEqual({ foo: 'hello', bar: 7, unmatched: [] });
+  });
+
+  it('should fall through to the default target path when no provider resolves', async () => {
+    const writes: any[] = [];
+    const provider: ConfigurationProvider<any> = {
+      resolve: () => undefined,
+      load: () => ({}),
+      updateConfig: async (updater, options) => {
+        const next =
+          typeof updater === 'function' ? await (updater as any)({}) : updater;
+        writes.push({ next, targetPath: options?.targetPath });
+      },
+    };
+
+    class JsonLoader {
+      constructor(_opts: { filename: string }) {
+        return provider;
+      }
+    }
+
+    const p = parser()
+      .option('theme', { type: 'string' })
+      .option('lang', { type: 'string' })
+      .config(JsonLoader as any, {
+        filename: 'my-tool.config.json',
+        default: '/new/home/my-tool.config.json',
+      });
+
+    await p.updateConfig({ theme: 'dark', lang: 'fr' });
+
+    expect(writes).toHaveLength(1);
+    expect(writes[0].next).toEqual({ theme: 'dark', lang: 'fr' });
+    expect(writes[0].targetPath).toBe('/new/home/my-tool.config.json');
+  });
+
+  it('should support lazy default functions returning a target path', async () => {
+    const writes: any[] = [];
+    const provider: ConfigurationProvider<any> = {
+      resolve: () => undefined,
+      load: () => ({}),
+      updateConfig: async (_updater, options) => {
+        writes.push(options?.targetPath);
+      },
+    };
+
+    class JsonLoader {
+      constructor(_opts: { filename: string }) {
+        return provider;
+      }
+    }
+
+    let callCount = 0;
+    const p = parser()
+      .option('key', { type: 'string' })
+      .config(JsonLoader as any, {
+        filename: 'my.json',
+        default: () => {
+          callCount++;
+          return '/fresh/my.json';
+        },
+      });
+
+    await p.updateConfig({ key: 'value' });
+
+    expect(callCount).toBe(1);
+    expect(writes).toEqual(['/fresh/my.json']);
+  });
+
+  it('should throw a descriptive error when no provider resolves and no default is configured', async () => {
+    const provider: ConfigurationProvider<any> = {
+      resolve: () => undefined,
+      load: () => ({}),
+      updateConfig: async () => {},
+    };
+
+    const p = parser()
+      .option('foo', { type: 'string' })
+      .config(provider);
+
+    await expect(p.updateConfig({ foo: 'bar' })).rejects.toThrow(
+      /no provider resolved/
+    );
+  });
+
+  it('should route each key to its owning provider across multiple providers', async () => {
+    const writesA: any[] = [];
+    const writesB: any[] = [];
+    const providerA: ConfigurationProvider<any> = {
+      resolve: () => '/root/.a',
+      load: () => ({ alpha: 'a-value' }),
+      updateConfig: async (updater) => {
+        const next =
+          typeof updater === 'function'
+            ? await (updater as any)({ alpha: 'a-value' })
+            : updater;
+        writesA.push(next);
+      },
+    };
+    const providerB: ConfigurationProvider<any> = {
+      resolve: () => '/root/.b',
+      load: () => ({ beta: 'b-value' }),
+      updateConfig: async (updater) => {
+        const next =
+          typeof updater === 'function'
+            ? await (updater as any)({ beta: 'b-value' })
+            : updater;
+        writesB.push(next);
+      },
+    };
+
+    const p = parser()
+      .option('alpha', { type: 'string' })
+      .option('beta', { type: 'string' })
+      .config([providerA, providerB]);
+
+    await p.updateConfig({ alpha: 'A2', beta: 'B2' });
+
+    expect(writesA).toEqual([{ alpha: 'A2' }]);
+    expect(writesB).toEqual([{ beta: 'B2' }]);
+  });
+
+  it('should support updater function via proxy tracking', async () => {
+    const writes: any[] = [];
+    let current: Record<string, any> = { alpha: 'orig', count: 5 };
+    const provider: ConfigurationProvider<any> = {
+      resolve: () => '/root/.config',
+      load: () => current,
+      updateConfig: async (updater) => {
+        const next =
+          typeof updater === 'function'
+            ? await (updater as any)(current)
+            : updater;
+        writes.push(next);
+        current = next;
+      },
+    };
+
+    const p = parser()
+      .option('alpha', { type: 'string' })
+      .option('count', { type: 'number' })
+      .config(provider);
+
+    await p.updateConfig((config) => {
+      config.count = (config as any).count + 1;
+    });
+
+    expect(writes).toHaveLength(1);
+    // Only `count` was set, `alpha` should be untouched from the original
+    expect(writes[0]).toEqual({ alpha: 'orig', count: 6 });
+  });
+});
+
 
 describe('oneOf options', () => {
   it('should parse string value for oneOf [string, boolean]', () => {
