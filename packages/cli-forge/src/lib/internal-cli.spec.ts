@@ -1,4 +1,13 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  ConfigurationFiles,
+  MemoryEnvironmentProvider,
+  MemoryFileSystemProvider,
+  getEnvironmentProvider,
+  getFileSystemProvider,
+  setEnvironmentProvider,
+  setFileSystemProvider,
+} from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
 import { cli } from './public-api';
 import type { PromptProvider } from './prompt-types';
@@ -1722,6 +1731,184 @@ describe('cliForge', () => {
       expect(handlerArgs.name).toBe('prompted-name');
       expect(handlerArgs.port).toBe(42);
       expect(handlerArgs.verbose).toBe(false); // default, not prompted
+    });
+  });
+
+  describe('updateConfig', () => {
+    let originalEnv: ReturnType<typeof getEnvironmentProvider>;
+    let originalFs: ReturnType<typeof getFileSystemProvider>;
+    let fs: MemoryFileSystemProvider;
+
+    beforeEach(() => {
+      originalEnv = getEnvironmentProvider();
+      originalFs = getFileSystemProvider();
+      fs = new MemoryFileSystemProvider();
+      setEnvironmentProvider(
+        new MemoryEnvironmentProvider({ cwd: '/root' })
+      );
+      setFileSystemProvider(fs);
+    });
+
+    afterEach(() => {
+      setEnvironmentProvider(originalEnv);
+      setFileSystemProvider(originalFs);
+    });
+
+    // These tests exercise the `app.updateConfig()` flow the way real users
+    // call it: from inside a command handler, after `forge()` has run the
+    // root builder (which is where config providers get registered).
+
+    it('updates an existing config file resolved from cwd', async () => {
+      fs.writeFileSync(
+        '/root/app.config.json',
+        JSON.stringify({ theme: 'light', lang: 'en' })
+      );
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+        },
+      });
+
+      await app.forge([]);
+
+      const written = JSON.parse(fs.readFileSync('/root/app.config.json'));
+      expect(written).toEqual({ theme: 'dark', lang: 'fr' });
+    });
+
+    it('writes to the default path when no config file exists on disk', async () => {
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(fs.existsSync('/root/app.config.json')).toBe(true);
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        theme: 'dark',
+        lang: 'fr',
+      });
+    });
+
+    it('supports `default` as a lazy function', async () => {
+      let invocations = 0;
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: () => {
+                invocations++;
+                return '/home/user/.config/app/config.json';
+              },
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(invocations).toBe(1);
+      expect(
+        fs.existsSync('/home/user/.config/app/config.json')
+      ).toBe(true);
+    });
+
+    it('falls back to default on first write, then writes back to the resolved file on subsequent updates', async () => {
+      // Two updateConfig calls from the same handler. The first creates the
+      // file at the `default` path; the second should go to the freshly
+      // resolved path rather than re-using targetPath, and must merge with
+      // the existing file contents instead of overwriting them.
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+          await app.updateConfig({ theme: 'system' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        theme: 'system',
+        lang: 'fr',
+      });
+    });
+
+    it('supports updater functions with proxy tracking on a fresh default path', async () => {
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('count', { type: 'number', default: 0 })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig((config) => {
+            const prev = (config as { count?: number }).count ?? 0;
+            config.count = prev + 5;
+          });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        count: 5,
+      });
+    });
+
+    it('errors clearly when no provider resolves and no default is configured', async () => {
+      // `runCommand` catches handler errors and logs via console.error to
+      // surface them nicely to end users, so we capture the rejection from
+      // inside the handler instead of asserting on `forge()`'s return.
+      let captured: unknown;
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+            }),
+        handler: async () => {
+          try {
+            await app.updateConfig({ theme: 'dark' });
+          } catch (e) {
+            captured = e;
+          }
+        },
+      });
+
+      await app.forge([]);
+
+      expect(captured).toBeInstanceOf(Error);
+      expect((captured as Error).message).toMatch(/no provider resolved/);
     });
   });
 });

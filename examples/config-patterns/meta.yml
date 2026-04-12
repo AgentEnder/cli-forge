@@ -35,3 +35,69 @@ test:
     assertions:
       stdout:
         contains: 'howdy, partner!'
+  - name: 'init flow: first write creates file at default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'before init: exists=false'
+  - name: 'init flow: first write writes dark/fr'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'after init: theme=dark lang=fr'
+  - name: 'init flow: second write preserves lang and updates theme'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'after update: theme=system lang=fr'
+  - name: 'nested-default: default path file does not exist before write'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'before: exists=false'
+  - name: 'nested-default: framework creates intermediate directories and writes file'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'after: exists=true'
+  - name: 'nested-default: written file contains the updated value'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'written theme: dark'
+  - name: 'fresh-updater: updater form writes initial value to default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
+    assertions:
+      stdout:
+        contains: 'after updater form count: 1'
+  - name: 'fresh-updater: partial form merges with on-disk file'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
+    assertions:
+      stdout:
+        contains: 'after partial form count: 2'
+  - name: 'multi-provider-fallback: fallback provider default path is used when nothing resolves'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'before: user exists=false'
+  - name: 'multi-provider-fallback: fallback provider writes to its default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'after: user exists=true'
+  - name: 'multi-provider-fallback: written file has the updated theme'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'user config theme: dark'
