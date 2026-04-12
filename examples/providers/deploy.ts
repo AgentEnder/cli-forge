@@ -2,8 +2,9 @@ import { getCommandContext } from 'cli-forge/context';
 import { app } from './cli';
 
 export async function runDeploy() {
-  // getCommandContext() reads from AsyncLocalStorage — no need to pass app around.
-  // The `app` reference is only used as a type witness for inference.
+  // Passing `app` as both the type witness and the runtime identity check.
+  // The stored commandIdChain walks root -> deploy, so both the root and
+  // any ancestor are valid references.
   const ctx = getCommandContext(app);
   const deployCtx = ctx.getChildContext('deploy');
 

@@ -2,9 +2,10 @@ import { getCommandContext } from 'cli-forge/context';
 import { app } from './cli';
 
 // The handler lives in its own file so that `typeof app` is fully resolved
-// by the time this module is type-checked. `getCommandContext(app)` uses the
-// imported CLI as a type witness — at runtime the instance is ignored and
-// the live context is read from AsyncLocalStorage.
+// by the time this module is type-checked. `getCommandContext(app)` uses
+// the imported CLI as both a type witness (for inject/args typing) and a
+// runtime identity check — at runtime the stored commandIdChain is walked
+// to confirm `app` is part of the active execution.
 export function runBuild() {
   const ctx = getCommandContext(app);
   const build = ctx.getChildContext('build');
