@@ -29,6 +29,7 @@ import {
   CLIHandlerContext,
   Command,
   ErrorHandler,
+  HandlerExecutionError,
   SDKCommand,
 } from './public-api';
 import type {
@@ -117,15 +118,32 @@ export class InternalCLI<
 
   private _versionOverride?: string;
 
+  // Default error handler chain. User-registered handlers are prepended via
+  // `errorHandler()` and run first, so these act as fallbacks. Handlers that
+  // don't match the error type should re-throw to pass the error to the next
+  // handler in the chain.
   private registeredErrorHandlers: Array<ErrorHandler> = [
+    // Specific: print parse/validation failures using the familiar format.
     (e: unknown, actions) => {
-      if (e instanceof ValidationFailedError) {
-        this.printHelp();
-        console.log();
-        console.log(e.message);
-        console.log(e.errors.map((e) => `  - ${e.message}`).join('\n'));
-        actions.exit(1);
-      }
+      if (!(e instanceof ValidationFailedError)) throw e;
+      this.printHelp();
+      console.log();
+      console.log(e.message);
+      console.log(e.errors.map((err) => `  - ${err.message}`).join('\n'));
+      actions.exit(1);
+    },
+    // Catch-all: prints the error and help, sets exitCode, and exits. This
+    // preserves the UX previously implemented via a local try/catch in
+    // runCommand, while routing the error through the handler chain so
+    // custom error handlers get a chance to react first.
+    (e: unknown, actions) => {
+      if (typeof process !== 'undefined') process.exitCode = 1;
+      // HandlerExecutionError's toString() already includes the cause chain
+      // on modern Node versions; logging the wrapper gives users the full
+      // context without losing the underlying stack.
+      console.error(e);
+      this.printHelp();
+      actions.exit(1);
     },
   ];
 
@@ -633,75 +651,95 @@ export class InternalCLI<
         middlewares.add(mw);
       }
     }
-    try {
-      if (cmd.requiresCommand) {
-        throw new Error(
+    // "Missing command" is a user-facing prompt (the CLI was invoked
+    // without a command to run), not a programmer error. Print help and
+    // set exitCode rather than propagating through the error-handler
+    // chain, so interactive use and `demandCommand()` stay ergonomic.
+    if (cmd.requiresCommand) {
+      if (typeof process !== 'undefined') process.exitCode = 1;
+      console.error(
+        new Error(
           `${[this.name, ...this.commandChain].join(' ')} requires a command`
-        );
-      }
-      if (cmd.configuration?.handler) {
-        for (const middleware of middlewares) {
-          if (executedMiddleware?.has(middleware)) continue;
-          const middlewareResult = await middleware(args as any);
-          if (
-            middlewareResult !== void 0 &&
-            typeof middlewareResult === 'object'
-          ) {
-            args = middlewareResult as T;
-          }
+        )
+      );
+      this.printHelp();
+      return args;
+    }
+    if (cmd.configuration?.handler) {
+      for (const middleware of middlewares) {
+        if (executedMiddleware?.has(middleware)) continue;
+        const middlewareResult = await middleware(args as any);
+        if (
+          middlewareResult !== void 0 &&
+          typeof middlewareResult === 'object'
+        ) {
+          args = middlewareResult as T;
         }
+      }
+      // Errors thrown from the handler are wrapped in a HandlerExecutionError
+      // so custom error handlers (registered via `.errorHandler()`) can
+      // distinguish them from framework errors. The original error is
+      // preserved on `.cause`. The wrapped error propagates up through
+      // `withErrorHandlers`, which runs the registered handler chain and
+      // then re-throws — matching init hook and parse error behavior.
+      try {
         await cmd.configuration.handler(args, {
           command: cmd as any,
         });
-        return args;
+      } catch (cause) {
+        throw new HandlerExecutionError(
+          [this.name, ...this.commandChain].join(' '),
+          { cause }
+        );
+      }
+      return args;
+    }
+
+    // We can treat a command as a subshell if it has subcommands
+    if (Object.keys(cmd.registeredCommands).length > 0) {
+      if (typeof process === 'undefined' || !process.stdout?.isTTY) {
+        // If we're not in a TTY (or in a browser), we can't run an interactive shell...
+        // Maybe we should warn here?
+      } else if (args.unmatched.length > 0) {
+        // If there are unmatched args, we don't run an interactive shell...
+        // this could represent a user misspelling a subcommand so it gets rather confusing.
+        console.warn(
+          `Warning: Unrecognized command or arguments: ${args.unmatched.join(
+            ' '
+          )}`
+        );
+        cmd.printHelp();
       } else {
-        // We can treat a command as a subshell if it has subcommands
-        if (Object.keys(cmd.registeredCommands).length > 0) {
-          if (typeof process === 'undefined' || !process.stdout?.isTTY) {
-            // If we're not in a TTY (or in a browser), we can't run an interactive shell...
-            // Maybe we should warn here?
-          } else if (args.unmatched.length > 0) {
-            // If there are unmatched args, we don't run an interactive shell...
-            // this could represent a user misspelling a subcommand so it gets rather confusing.
-            console.warn(
-              `Warning: Unrecognized command or arguments: ${args.unmatched.join(
-                ' '
-              )}`
-            );
-            cmd.printHelp();
-          } else {
-            const shellMod = await getInteractiveShellModule();
-            if (!shellMod.INTERACTIVE_SHELL) {
-              const tui = new shellMod.InteractiveShell(
-                this as unknown as InternalCLI<any>,
-                {
-                  prependArgs: originalArgV,
-                }
-              );
-              await new Promise<void>((res) => {
-                ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                  process?.on(s, () => {
-                    tui.close();
-                    res();
-                  })
-                );
-              });
+        const shellMod = await getInteractiveShellModule();
+        if (!shellMod.INTERACTIVE_SHELL) {
+          const tui = new shellMod.InteractiveShell(
+            this as unknown as InternalCLI<any>,
+            {
+              prependArgs: originalArgV,
             }
-          }
-        }
-        // No subcommands so subshell doesn't make sense
-        // No handler, so nothing to run
-        else {
-          throw new Error(
-            `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
           );
+          await new Promise<void>((res) => {
+            ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
+              process?.on(s, () => {
+                tui.close();
+                res();
+              })
+            );
+          });
         }
       }
-    } catch (e) {
-      if (typeof process !== 'undefined') process.exitCode = 1;
-      console.error(e);
-      this.printHelp();
+      return args;
     }
+
+    // No handler, no subcommands. Treated as a framework diagnostic, like
+    // `requiresCommand` — print help and set exitCode rather than throwing.
+    if (typeof process !== 'undefined') process.exitCode = 1;
+    console.error(
+      new Error(
+        `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
+      )
+    );
+    this.printHelp();
     return args;
   }
 

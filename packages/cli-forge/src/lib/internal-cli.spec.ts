@@ -9,7 +9,7 @@ import {
   setFileSystemProvider,
 } from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
-import { cli } from './public-api';
+import { cli, HandlerExecutionError } from './public-api';
 import type { PromptProvider } from './prompt-types';
 
 const ORIGINAL_CONSOLE_LOG = console.log;
@@ -286,14 +286,20 @@ describe('cliForge', () => {
 
   it('should print help if command throws', async () => {
     const { getOutput } = mockConsoleLog();
-    await cli('test')
-      .command('foo', {
-        builder: (argv) => argv.option('bar', { type: 'string' }),
-        handler: () => {
-          throw new Error('test');
-        },
-      })
-      .forge(['foo']);
+    // Handler errors now propagate through the registered error handler
+    // chain (matching init hook / parse error behavior) and re-throw after
+    // all handlers run, so callers can observe the failure. The default
+    // catch-all handler still prints the help text and sets exitCode=1.
+    await expect(
+      cli('test')
+        .command('foo', {
+          builder: (argv) => argv.option('bar', { type: 'string' }),
+          handler: () => {
+            throw new Error('test');
+          },
+        })
+        .forge(['foo'])
+    ).rejects.toThrow(/Error executing handler for "test foo"/);
     expect(getOutput()).toMatchInlineSnapshot(`
       "Usage: test foo
 
@@ -303,6 +309,132 @@ describe('cliForge', () => {
         --bar    "
     `);
     expect(process.exitCode).toBe(1);
+  });
+
+  describe('handler error propagation', () => {
+    const swallowStderr = () => {
+      const original = console.error;
+      console.error = () => undefined;
+      return () => {
+        console.error = original;
+      };
+    };
+
+    it('wraps handler errors in HandlerExecutionError with the original as cause', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      const original = new Error('underlying failure');
+      try {
+        await cli('app')
+          .command('run', {
+            handler: () => {
+              throw original;
+            },
+          })
+          .forge(['run']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect(e).toBeInstanceOf(HandlerExecutionError);
+        expect((e as HandlerExecutionError).command).toBe('app run');
+        expect((e as HandlerExecutionError).cause).toBe(original);
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('routes handler errors through custom errorHandler before re-throwing', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      let seen: unknown;
+      try {
+        await cli('app')
+          .errorHandler((e) => {
+            seen = e;
+          })
+          .command('run', {
+            handler: () => {
+              throw new Error('kaboom');
+            },
+          })
+          .forge(['run']);
+      } catch {
+        // withErrorHandlers re-throws after handlers run
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+      expect(seen).toBeInstanceOf(HandlerExecutionError);
+      expect(((seen as HandlerExecutionError).cause as Error).message).toBe(
+        'kaboom'
+      );
+    });
+
+    it('preserves async handler rejections', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('run', {
+            handler: async () => {
+              await Promise.resolve();
+              throw new Error('async kaboom');
+            },
+          })
+          .forge(['run']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect(e).toBeInstanceOf(HandlerExecutionError);
+        expect(((e as HandlerExecutionError).cause as Error).message).toBe(
+          'async kaboom'
+        );
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('reports the full subcommand path on nested handler failures', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('build', {
+            builder: (cmd) =>
+              cmd.command('release', {
+                handler: () => {
+                  throw new Error('release failed');
+                },
+              }),
+            handler: () => undefined,
+          })
+          .forge(['build', 'release']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect((e as HandlerExecutionError).command).toBe('app build release');
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('does not wrap framework "missing command" diagnostics', async () => {
+      // demandCommand is a user-facing prompt ("you forgot to specify a
+      // command"), not a handler failure. It should still resolve
+      // gracefully (print help + exitCode) rather than rejecting.
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('run', { handler: () => undefined })
+          .demandCommand()
+          .forge([]);
+        expect(process.exitCode).toBe(1);
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
   });
 
   it('should support subcommands with positional args', async () => {
