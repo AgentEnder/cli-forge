@@ -5,9 +5,17 @@ import { contextStorage, ForgeContextData } from './async-context';
 
 /**
  * Recursively gathers all providers from a CLI and its ancestors.
+ *
+ * When a child command re-provides a key that its parent also provides, the
+ * child's type shadows the parent's — matching the runtime override semantics
+ * in `collectProviders()`. This is why the parent's providers are wrapped in
+ * `Omit<..., keyof TProviders>` before being intersected with the child's.
  */
 export type ProvidersOf<T> = T extends CLI<any, any, any, infer TParent, infer TProviders>
-  ? TProviders & (TParent extends AnyCLI ? ProvidersOf<TParent> : Record<never, never>)
+  ? TProviders &
+      (TParent extends AnyCLI
+        ? Omit<ProvidersOf<TParent>, keyof TProviders>
+        : Record<never, never>)
   : Record<never, never>;
 
 /**
@@ -59,6 +67,19 @@ export interface CommandContext<TArgs, TProviders, TChildren = {}> {
 /** Permanent cache for global-lifetime providers. Survives across executions. */
 const globalProviderCache = new Map<string, unknown>();
 
+/**
+ * Clears the module-level cache for `lifetime: 'global'` providers.
+ *
+ * Global provider factories normally run once per Node process and their
+ * result is memoized forever. That's the desired behavior in production —
+ * it's also what makes them leak between tests. Call this from test setup
+ * (or automatically via `TestHarness.clearMockedContexts()`) to get a clean
+ * slate between specs that exercise global-lifetime providers.
+ */
+export function resetGlobalProviders(): void {
+  globalProviderCache.clear();
+}
+
 // ─── Internal helpers ─────────────────────────────────────────────────────────
 
 function readStore(): ForgeContextData {
@@ -91,22 +112,38 @@ function resolveProvider(store: ForgeContextData, key: string): unknown | typeof
     return NOT_FOUND;
   }
 
-  const { factory, lifetime } = registration;
+  // 3. Cycle detection — a factory that inject()s a provider whose own
+  //    factory inject()s back into this key would otherwise blow the stack.
+  if (store.resolving.has(key)) {
+    const cycle = [...store.resolving, key].join(' -> ');
+    throw new Error(
+      `Circular provider dependency detected while resolving "${key}": ${cycle}`
+    );
+  }
 
-  if (lifetime === 'global') {
-    // Global: permanent module-level cache
-    if (!globalProviderCache.has(key)) {
-      globalProviderCache.set(key, (factory as GlobalProviderConfig<unknown>['factory'])());
+  const { factory, lifetime } = registration;
+  store.resolving.add(key);
+  try {
+    if (lifetime === 'global') {
+      // Global: permanent module-level cache
+      if (!globalProviderCache.has(key)) {
+        globalProviderCache.set(
+          key,
+          (factory as GlobalProviderConfig<unknown>['factory'])()
+        );
+      }
+      const value = globalProviderCache.get(key);
+      // Also cache in the store so subsequent inject() calls skip factory lookup
+      store.providers.set(key, value);
+      return value;
+    } else {
+      // executionScope: scoped to this execution, keyed by args identity
+      const value = (factory as ProviderConfig<unknown>['factory'])(store.args);
+      store.providers.set(key, value);
+      return value;
     }
-    const value = globalProviderCache.get(key);
-    // Also cache in the store so subsequent inject() calls skip factory lookup
-    store.providers.set(key, value);
-    return value;
-  } else {
-    // executionScope: scoped to this execution, keyed by args identity
-    const value = (factory as ProviderConfig<unknown>['factory'])(store.args);
-    store.providers.set(key, value);
-    return value;
+  } finally {
+    store.resolving.delete(key);
   }
 }
 
@@ -153,21 +190,82 @@ function createCommandContext(store: ForgeContextData): CommandContext<any, any,
  *
  * Must be called from within a command handler (not during builders or middleware).
  *
- * @param cli Optional CLI instance used as a type witness for inference.
- *            At runtime the instance is ignored — the context is read from
- *            AsyncLocalStorage set by {@link forge}.
+ * ## Runtime safety
+ *
+ * When called with a CLI instance, `getCommandContext` validates at runtime
+ * that the instance is part of the active command chain — the root app,
+ * any ancestor on the chain, or the currently-running subcommand. If you
+ * pass a CLI that isn't in the chain (a sibling command, an unrelated app,
+ * a descendant that didn't run), it throws with a descriptive error. This
+ * catches the common bug where the wrong instance is passed as a type
+ * witness and `inject()` silently returns the wrong providers.
+ *
+ * ## Two ways to reach subcommand-typed access
+ *
+ * **Option 1** — from the root, walk by name:
+ * ```ts
+ * const ctx = getCommandContext(app);
+ * const buildCtx = ctx.getChildContext('build');
+ * console.log(buildCtx.args.target);
+ * ```
+ *
+ * **Option 2** — pass a composed subcommand reference directly, skipping
+ * the `getChildContext` hop:
+ * ```ts
+ * import { build } from './build'; // standalone CLI composed into app
+ * const ctx = getCommandContext(build);
+ * console.log(ctx.args.target);
+ * ```
+ *
+ * Both forms are runtime-safe. Option 2 is only typed if the subcommand
+ * reference carries the full `TProviders` — i.e. the subcommand is declared
+ * inside the parent's `.command('name', { builder, handler })` call, where
+ * TypeScript can thread parent providers into the builder's `cmd`. A
+ * standalone `cli('build', ...)` reference doesn't see inherited providers
+ * in its type; use Option 1 for that shape.
+ *
+ * ## Type witness (no instance)
+ *
+ * The parameterless overload returns a context typed by an explicit generic
+ * — useful when you can't get a live reference to the CLI from where the
+ * handler is written. **This form has no runtime safety**: the `T` type
+ * parameter is trusted as-is, so a mismatched generic silently returns a
+ * context typed for a CLI that isn't running. Prefer passing the CLI
+ * instance whenever feasible.
+ *
+ * @param cli CLI instance used as both a type witness for inference and
+ *            a runtime identity check. Required for runtime-safe usage.
  *
  * @example
  * ```ts
  * import { getCommandContext } from 'cli-forge/context';
+ * import { app } from './cli';
  *
- * const ctx = getCommandContext(myCommand);
+ * const ctx = getCommandContext(app);
  * const db = ctx.inject('db');
  * ```
  */
 export function getCommandContext<T extends AnyCLI>(cli: T): InferContextOfCommand<T>;
+/**
+ * Type-only overload: trusts `T` without runtime validation. Prefer the
+ * instance-based overload whenever you can import the CLI that owns the
+ * handler — this form exists as an escape hatch for cases where no live
+ * CLI reference is reachable from the handler's module.
+ */
 export function getCommandContext<T extends AnyCLI>(): InferContextOfCommand<T>;
-export function getCommandContext<T extends AnyCLI>(_cli?: T): InferContextOfCommand<T> {
+export function getCommandContext<T extends AnyCLI>(cli?: T): InferContextOfCommand<T> {
   const store = readStore();
+  if (cli && typeof (cli as { commandId?: unknown }).commandId === 'string') {
+    const { commandId } = cli as unknown as { commandId: string; name?: string };
+    if (!store.commandIdChain.includes(commandId)) {
+      const name = (cli as unknown as { name?: string }).name ?? commandId;
+      throw new Error(
+        `getCommandContext() was called with a CLI instance ("${name}", id=${commandId}) ` +
+          `that is not part of the active command chain. ` +
+          `Active chain ids: [${store.commandIdChain.join(', ')}]. ` +
+          `Pass the root app, an ancestor on the chain, or the currently-running subcommand.`
+      );
+    }
+  }
   return createCommandContext(store) as InferContextOfCommand<T>;
 }

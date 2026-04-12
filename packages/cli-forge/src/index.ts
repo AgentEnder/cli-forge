@@ -24,4 +24,4 @@ export type {
   InferContextOfCommand,
   ProvidersOf,
 } from './lib/context';
-export { getCommandContext } from './lib/context';
+export { getCommandContext, resetGlobalProviders } from './lib/context';

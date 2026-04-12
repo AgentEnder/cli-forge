@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it } from 'vitest';
-import { cli } from './public-api';
-import { getCommandContext } from './context';
+import type { ParsedArgs } from '@cli-forge/parser';
+import { cli, CLI } from './public-api';
+import { getCommandContext, resetGlobalProviders } from './context';
 
 afterEach(() => {
   // Reset exit code set by handlers that error
   process.exitCode = undefined;
+  // Wipe any global-lifetime provider state between specs
+  resetGlobalProviders();
 });
 
 describe('getCommandContext() via forge()', () => {
@@ -137,14 +140,21 @@ describe('getCommandContext() via forge()', () => {
   it('returns default for unregistered key when default is provided', async () => {
     let result: unknown;
 
+    // The no-arg generic overload lets us use a type witness for a CLI
+    // that claims a `missing` provider — even though the actual running
+    // CLI doesn't register it. `inject('missing', fallback)` is typed
+    // via the phantom witness, and the runtime falls through to the
+    // default because `missing` isn't in the active providerFactories.
+    // This is the intended purpose of the default-value overload:
+    // a graceful fallback when the type witness and the real CLI drift.
+    type PhantomCli = CLI<ParsedArgs, void, {}, undefined, { missing: string }>;
+
     await cli('test')
       .provide('db', { factory: () => 'real-db', lifetime: 'executionScope' })
       .command('run', {
         handler: () => {
-          const ctx = getCommandContext();
-          // 'db' is registered so inject works; we test an unregistered key
-          // by using a CLI without the provider but passing a default
-          result = (ctx as any).inject('nonexistent', 'fallback');
+          const ctx = getCommandContext<PhantomCli>();
+          result = ctx.inject('missing', 'fallback');
         },
       })
       .forge(['run']);
@@ -189,6 +199,113 @@ describe('getCommandContext() via forge()', () => {
     await app.forge(['build']);
 
     expect(injected).toBe('child-db');
+  });
+
+  it('throws a cycle error when two factories inject each other', async () => {
+    let caught: unknown;
+
+    await cli('test')
+      .provide('a', {
+        factory: () => getCommandContext().inject('b' as never),
+      })
+      .provide('b', {
+        factory: () => getCommandContext().inject('a' as never),
+      })
+      .handler(() => {
+        try {
+          getCommandContext().inject('a' as never);
+        } catch (e) {
+          caught = e;
+        }
+      })
+      .forge([]);
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toMatch(/Circular provider dependency/);
+    expect((caught as Error).message).toContain('a -> b -> a');
+  });
+
+  it('throws when getCommandContext is passed a CLI not in the active chain', async () => {
+    const unrelated = cli('unrelated');
+    let caught: unknown;
+
+    await cli('app', {
+      handler: () => {
+        try {
+          getCommandContext(unrelated);
+        } catch (e) {
+          caught = e;
+        }
+      },
+    }).forge([]);
+
+    expect(caught).toBeInstanceOf(Error);
+    expect((caught as Error).message).toMatch(/not part of the active command chain/);
+  });
+
+  it('accepts the root CLI from within a subcommand handler', async () => {
+    let didRun = false;
+
+    const app = cli('app')
+      .provide('svc', 'root-svc')
+      .command('build', {
+        handler: () => {
+          // Passing the root from inside a subcommand handler is valid —
+          // the chain includes every command from root down to the running
+          // command.
+          const ctx = getCommandContext(app);
+          expect(ctx.inject('svc')).toBe('root-svc');
+          didRun = true;
+        },
+      });
+
+    await app.forge(['build']);
+
+    expect(didRun).toBe(true);
+  });
+
+  it('accepts the currently-running subcommand when it is reachable by reference', async () => {
+    let didRun = false;
+
+    // Build the subcommand inline so its handler has access to `this`
+    // through TChildren, then fetch the tracked instance via
+    // `app.getChildren()` to pass it as the witness.
+    const app = cli('app').command('build', {
+      builder: (cmd) => cmd.option('target', { type: 'string', required: true }),
+      handler: () => {
+        const build = app.getChildren().build;
+        const ctx = getCommandContext(build);
+        expect(ctx.args.target).toBe('web');
+        didRun = true;
+      },
+    });
+
+    await app.forge(['build', '--target', 'web']);
+
+    expect(didRun).toBe(true);
+  });
+
+  it('resetGlobalProviders() re-invokes global factories on next execution', async () => {
+    let callCount = 0;
+
+    const app = cli('test')
+      .provide('counter', {
+        factory: () => ++callCount,
+        lifetime: 'global',
+      })
+      .handler(() => {
+        void getCommandContext().inject('counter');
+      });
+
+    await app.forge([]);
+    expect(callCount).toBe(1);
+
+    await app.forge([]);
+    expect(callCount).toBe(1); // still cached
+
+    resetGlobalProviders();
+    await app.forge([]);
+    expect(callCount).toBe(2); // re-invoked after reset
   });
 });
 

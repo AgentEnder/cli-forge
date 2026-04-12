@@ -67,6 +67,17 @@ export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any, an
   : void;
 
 /**
+ * Extracts the registered providers from a Command.
+ * Works with both CLI instances (uses the 5th generic directly) and command
+ * config objects (infers the builder's return type's provider map).
+ */
+export type ExtractCommandProviders<T> = T extends CLI<any, any, any, any, infer P>
+  ? P
+  : T extends CLICommandOptions<any, any, any, any, any, any, infer P>
+  ? P
+  : {};
+
+/**
  * Converts a Command to its child CLI entry for TChildren tracking.
  * TParentCLI is the parent CLI type that will be set as the child's TParent.
  */
@@ -76,7 +87,7 @@ export type CommandToChildEntry<T, TParentCLI = undefined> = {
     ExtractCommandHandlerReturn<T>,
     {},
     TParentCLI,
-    {}
+    ExtractCommandProviders<T>
   >;
 };
 
@@ -108,11 +119,14 @@ export interface CLI<
   TProviders = {}
 > {
   command<
-    TCommandArgs extends TArgs,
-    TCmdName extends string,
-    TChildHandlerReturn = void
+    TCommand extends Command<TArgs, any, any, any>,
+    TCommandArgs extends TArgs = ExtractCommandArgs<TCommand> extends TArgs
+      ? ExtractCommandArgs<TCommand>
+      : TArgs,
+    TCmdName extends string = ExtractCommandName<TCommand>,
+    TChildHandlerReturn = ExtractCommandHandlerReturn<TCommand>
   >(
-    cmd: Command<TArgs, TCommandArgs, TCmdName, TChildHandlerReturn>
+    cmd: TCommand
   ): CLI<
     TArgs,
     THandlerReturn,
@@ -122,7 +136,7 @@ export interface CLI<
         TChildHandlerReturn,
         {},
         CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-        {}
+        ExtractCommandProviders<TCommand>
       >;
     },
     TParent,
@@ -140,7 +154,8 @@ export interface CLI<
     TChildHandlerReturn,
     TKey extends string,
 
-    TChildChildren = {}
+    TChildChildren = {},
+    TChildProviders = {}
   >(
     key: TKey,
     options: CLICommandOptions<
@@ -149,7 +164,8 @@ export interface CLI<
       TChildHandlerReturn,
       TChildren,
       CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-      TChildChildren
+      TChildChildren,
+      TChildProviders
     >
   ): CLI<
     TArgs,
@@ -160,7 +176,7 @@ export interface CLI<
         TChildHandlerReturn,
         TChildChildren,
         CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
-        {}
+        TChildProviders
       >;
     },
     TParent,
@@ -1085,14 +1101,20 @@ export interface CLICommandOptions<
   /**
    * The children commands that exist before the builder runs.
    */
-   
+
   TInitialChildren = {},
   TParent = any,
   /**
    * The children commands after the builder runs (includes TInitialChildren plus any added by builder).
    */
-   
-  TChildren = {}
+
+  TChildren = {},
+  /**
+   * The providers registered inside the builder via `.provide()`. Inferred
+   * from the builder's return type so that child-overrides-parent semantics
+   * are visible in `getCommandContext(child).inject()`.
+   */
+  TChildProviders = {}
 > {
   /**
    * If set the command will be registered under the provided name and any aliases.
@@ -1114,7 +1136,7 @@ export interface CLICommandOptions<
   // The handler's return type is inferred independently from the handler function itself.
   builder?: (
     parser: CLI<TInitial, any, TInitialChildren, TParent, {}>
-  ) => CLI<TArgs, any, TChildren, any, any>;
+  ) => CLI<TArgs, any, TChildren, any, TChildProviders>;
 
   /**
    * The command handler. This function is called when the command is executed.
