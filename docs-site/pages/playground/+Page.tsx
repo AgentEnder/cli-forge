@@ -178,92 +178,23 @@ export default function PlaygroundPage() {
         }
       }
 
-      // Get the entry point based on the run target
-      const entryFile = files.find((f) => f.path === runTarget);
-      const code = entryFile?.content ?? DEFAULT_CODE;
-
-      // Capture import bindings BEFORE stripping so we can re-inject them as
-      // var declarations. This prevents two bugs:
-      //   1. Default import alias (e.g. `cliForge`) becomes undefined after stripping.
-      //   2. Named parameter `cli` clashes with user's `const cli = cliForge(...)`.
-      const parseImports = (
-        src: string,
-        pkg: string
-      ): { defaultAlias: string | null; named: [string, string][] } => {
-        const defaultAlias =
-          src.match(new RegExp(`import\\s+(\\w+)\\s+from\\s+['"]${pkg}['"]`))?.[1] ?? null;
-        const namedStr =
-          src.match(new RegExp(`import\\s+\\{([^}]+)\\}\\s+from\\s+['"]${pkg}['"]`))?.[1] ?? '';
-        const named: [string, string][] = namedStr
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
-          .map((s) => {
-            const [orig, alias] = s.split(/\s+as\s+/).map((x) => x.trim());
-            return [orig, alias || orig] as [string, string];
-          });
-        // Also handle CJS: const { cli } = require('cli-forge')
-        const cjsNamed =
-          src.match(
-            new RegExp(
-              `(?:const|let|var)\\s+\\{([^}]*)\\}\\s*=\\s*require\\s*\\(\\s*['"]${pkg}['"]\\s*\\)`
-            )
-          )?.[1] ?? '';
-        if (cjsNamed) {
-          cjsNamed
-            .split(',')
-            .map((s) => s.trim())
-            .filter(Boolean)
-            .forEach((s) => {
-              const [orig, alias] = s.split(/\s+as\s+/).map((x) => x.trim());
-              if (!named.find(([, a]) => a === (alias || orig))) {
-                named.push([orig, alias || orig]);
-              }
-            });
+      // Code and JSON files that participate in the module graph.
+      // Keyed by absolute path so relative resolution stays simple.
+      const codeFileMap = new Map<string, string>();
+      for (const { path, content } of files) {
+        if (isCodeFile(path) || path.endsWith('.json')) {
+          const abs = path.startsWith('/') ? path : '/' + path;
+          codeFileMap.set(abs, content);
         }
-        return { defaultAlias, named };
-      };
+      }
 
-      const cliForgeImports = parseImports(code, 'cli-forge');
-      const parserImports = parseImports(code, '@cli-forge/parser');
-
-      // Strip cli-forge/parser imports (we re-inject them as runtime vars),
-      // then use TypeScript's transpiler to handle all TS syntax (generics,
-      // type aliases, annotations, etc.) instead of fragile regex stripping.
-      const withoutPkgImports = code
-        // Strip cli-forge and parser imports (ESM and CJS)
-        .replace(
-          /import\s+(?:\{[^}]*\}|\w+)\s+from\s+['"](?:cli-forge|@cli-forge\/parser)['"];?\s*/g,
-          ''
-        )
-        .replace(
-          /(?:const|let|var)\s+\{[^}]*\}\s*=\s*require\s*\(\s*['"](?:cli-forge|@cli-forge\/parser)['"]\s*\)\s*;?\s*/g,
-          ''
-        )
-        .replace(/\.forge\(\s*\)/g, '.forge(__argv__)');
+      const entryPath = runTarget.startsWith('/') ? runTarget : '/' + runTarget;
+      if (!codeFileMap.has(entryPath)) {
+        codeFileMap.set(entryPath, DEFAULT_CODE);
+      }
 
       const ts = await import('typescript');
-      const { outputText: transpiled } = ts.transpileModule(withoutPkgImports, {
-        compilerOptions: {
-          target: ts.ScriptTarget.ESNext,
-          module: ts.ModuleKind.ESNext,
-          esModuleInterop: true,
-          allowSyntheticDefaultImports: true,
-        },
-      });
-
-      // Post-transpile cleanup: strip remaining imports/exports that
-      // can't run inside AsyncFunction (value imports from other packages,
-      // export keywords on declarations, re-exports).
-      const stripped = transpiled
-        .replace(/^\s*import\s+.*?from\s+['"][^'"]*['"];?\s*$/gm, '')
-        .replace(/^\s*export\s+default\s+(?!function\b|class\b|async\b)\S[^\n]*;?\s*$/gm, '')
-        .replace(/export\s+default\s+(?=(?:async\s+)?(?:function|class)\b)/g, '')
-        .replace(/export\s*\{[^}]*\}\s*(?:from\s*['"][^'"]*['"])?\s*;?/g, '')
-        .replace(/export\s+\*\s+(?:as\s+\w+\s+)?from\s+['"][^'"]*['"];\s*/g, '')
-        .replace(/\bexport\s+(?=(?:async\s+)?(?:const|let|var|function|class)\b)/g, '');
-
-      const cliForge = await import('cli-forge');
+      const cliForgeModule = await import('cli-forge');
       const parserPkg = await import('@cli-forge/parser');
 
       parserPkg.setEnvironmentProvider(
@@ -271,34 +202,164 @@ export default function PlaygroundPage() {
       );
       parserPkg.setFileSystemProvider(new parserPkg.MemoryFileSystemProvider(filesRecord));
 
-      // Build preamble: shim + re-inject import bindings as var declarations.
-      // Using `var` (not const/let) so they can be legally shadowed by the
-      // user's own declarations without causing "already declared" errors.
-      const preamble = [
-        'var module = {}; var require = { main: module };',
-        // cli-forge default import (e.g. `import cliForge from 'cli-forge'`)
-        ...(cliForgeImports.defaultAlias
-          ? [
-              `var ${cliForgeImports.defaultAlias} = __cliForge__.default || __cliForge__.cli;`,
-            ]
-          : []),
-        // cli-forge named imports (e.g. `import { cli, ConfigurationProviders } from 'cli-forge'`)
-        ...cliForgeImports.named.map(
-          ([orig, alias]) => `var ${alias} = __cliForge__[${JSON.stringify(orig)}];`
-        ),
-        // @cli-forge/parser default import
-        ...(parserImports.defaultAlias
-          ? [`var ${parserImports.defaultAlias} = __parser__;`]
-          : []),
-        // @cli-forge/parser named imports
-        ...parserImports.named.map(
-          ([orig, alias]) => `var ${alias} = __parser__[${JSON.stringify(orig)}];`
-        ),
-      ].join('\n');
+      // Wrap the host modules so TS's `__importDefault` helper (generated
+      // when examples use `import cli from 'cli-forge'`) returns a usable
+      // default. cli-forge's primary export is the `cli` factory; parser's
+      // is the `parser` factory.
+      const cliForge: Record<string, unknown> = {
+        ...(cliForgeModule as Record<string, unknown>),
+        default:
+          (cliForgeModule as Record<string, unknown>).default ??
+          (cliForgeModule as Record<string, unknown>).cli,
+        __esModule: true,
+      };
+      const parser: Record<string, unknown> = {
+        ...(parserPkg as Record<string, unknown>),
+        default:
+          (parserPkg as Record<string, unknown>).default ??
+          (parserPkg as Record<string, unknown>).parser,
+        __esModule: true,
+      };
 
+      // Transpile one file to CommonJS. The entry gets a tiny rewrite so
+      // `.forge()` picks up the playground's argv instead of falling back
+      // to a missing `process.argv`.
+      const transpileOne = (absPath: string): string => {
+        const raw = codeFileMap.get(absPath);
+        if (raw === undefined) {
+          throw new Error(`Cannot find module: ${absPath}`);
+        }
+        if (absPath.endsWith('.json')) {
+          return `module.exports = ${raw.trim() || '{}'};`;
+        }
+        const source =
+          absPath === entryPath
+            ? raw.replace(/\.forge\(\s*\)/g, '.forge(__argv__)')
+            : raw;
+        const { outputText } = ts.transpileModule(source, {
+          compilerOptions: {
+            target: ts.ScriptTarget.ES2020,
+            module: ts.ModuleKind.CommonJS,
+            esModuleInterop: true,
+            allowSyntheticDefaultImports: true,
+          },
+        });
+        return outputText;
+      };
+
+      // Pre-transpile every file reachable from the entry. Walking the
+      // require graph up-front lets `require(...)` stay synchronous during
+      // execution, which matches Node's CJS semantics and lets sub-modules
+      // run in a plain Function (no top-level await needed).
+      const transpiled = new Map<string, string>();
+      const transpileRec = (absPath: string) => {
+        if (transpiled.has(absPath)) return;
+        const code = transpileOne(absPath);
+        transpiled.set(absPath, code);
+        const re = /\brequire\s*\(\s*(['"])([^'"]+)\1\s*\)/g;
+        let m: RegExpExecArray | null;
+        while ((m = re.exec(code)) !== null) {
+          const spec = m[2];
+          if (spec.startsWith('./') || spec.startsWith('../') || spec.startsWith('/')) {
+            const resolved = resolveRelative(absPath, spec, codeFileMap);
+            if (!resolved) {
+              throw new Error(
+                `Cannot resolve '${spec}' from '${absPath}'. ` +
+                  `Add the referenced file to the playground.`
+              );
+            }
+            transpileRec(resolved);
+          }
+        }
+      };
+      transpileRec(entryPath);
+
+      // ── Module system ──────────────────────────────────────────────
+      type ModuleRecord = { exports: Record<string, unknown>; loaded: boolean };
+      const moduleCache = new Map<string, ModuleRecord>();
+      const entryRecord: ModuleRecord = { exports: {}, loaded: false };
+      moduleCache.set(entryPath, entryRecord);
+
+      const loadSubModule = (absPath: string): unknown => {
+        const existing = moduleCache.get(absPath);
+        if (existing) {
+          // Either fully loaded or mid-load (circular) — return what we have.
+          return existing.exports;
+        }
+        const record: ModuleRecord = { exports: {}, loaded: false };
+        moduleCache.set(absPath, record);
+
+        const code = transpiled.get(absPath);
+        if (code === undefined) {
+          throw new Error(`Module not transpiled: ${absPath}`);
+        }
+        const req = createRequire(absPath);
+        const dirName = dirname(absPath);
+        const factory = new Function(
+          'module',
+          'exports',
+          'require',
+          '__filename',
+          '__dirname',
+          code
+        );
+        factory(record, record.exports, req, absPath, dirName);
+        record.loaded = true;
+        return record.exports;
+      };
+
+      function createRequire(fromPath: string) {
+        const req: ((spec: string) => unknown) & { main: ModuleRecord } = Object.assign(
+          (spec: string): unknown => {
+            if (spec === 'cli-forge') return cliForge;
+            if (spec === '@cli-forge/parser') return parser;
+            if (
+              spec.startsWith('./') ||
+              spec.startsWith('../') ||
+              spec.startsWith('/')
+            ) {
+              const resolved = resolveRelative(fromPath, spec, codeFileMap);
+              if (!resolved) {
+                throw new Error(`Cannot find module '${spec}' from '${fromPath}'`);
+              }
+              return loadSubModule(resolved);
+            }
+            throw new Error(
+              `Cannot find module '${spec}'. The playground only supports ` +
+                `'cli-forge', '@cli-forge/parser', and relative imports between example files.`
+            );
+          },
+          { main: entryRecord }
+        );
+        return req;
+      }
+
+      // ── Execute the entry ──────────────────────────────────────────
+      const entryCode = transpiled.get(entryPath);
+      if (entryCode === undefined) {
+        throw new Error(`Entry not transpiled: ${entryPath}`);
+      }
+      const entryReq = createRequire(entryPath);
+      const entryDir = dirname(entryPath);
       const AsyncFunction = Object.getPrototypeOf(async function () {}).constructor;
-      const fn = new AsyncFunction('__cliForge__', '__parser__', '__argv__', preamble + '\n' + stripped);
-      await fn(cliForge, parserPkg, argv);
+      const entryFactory = new AsyncFunction(
+        'module',
+        'exports',
+        'require',
+        '__filename',
+        '__dirname',
+        '__argv__',
+        entryCode
+      );
+      await entryFactory(
+        entryRecord,
+        entryRecord.exports,
+        entryReq,
+        entryPath,
+        entryDir,
+        argv
+      );
+      entryRecord.loaded = true;
     } catch (e: unknown) {
       const msg = e instanceof Error ? e.message : String(e);
       if (!msg.includes('process.exit')) setError(msg);
@@ -758,6 +819,48 @@ export default function PlaygroundPage() {
 }
 
 // ── Utilities ────────────────────────────────────────────────────────
+
+function dirname(absPath: string): string {
+  const idx = absPath.lastIndexOf('/');
+  if (idx <= 0) return '/';
+  return absPath.slice(0, idx);
+}
+
+function normalizePath(absPath: string): string {
+  const parts = absPath.split('/');
+  const stack: string[] = [];
+  for (const part of parts) {
+    if (part === '' || part === '.') continue;
+    if (part === '..') {
+      if (stack.length > 0) stack.pop();
+      continue;
+    }
+    stack.push(part);
+  }
+  return '/' + stack.join('/');
+}
+
+function resolveRelative(
+  fromPath: string,
+  spec: string,
+  fileMap: Map<string, string>
+): string | null {
+  const fromDir = dirname(fromPath);
+  const joined = spec.startsWith('/') ? spec : fromDir + '/' + spec;
+  const base = normalizePath(joined);
+
+  // Try the specifier as-is first, then common extensions and index files.
+  // Matches the resolution Node uses for CJS when no explicit extension is
+  // given.
+  const exts = ['', '.ts', '.tsx', '.js', '.jsx', '.mjs', '.cjs', '.json'];
+  for (const ext of exts) {
+    if (fileMap.has(base + ext)) return base + ext;
+  }
+  for (const ext of exts.slice(1)) {
+    if (fileMap.has(base + '/index' + ext)) return base + '/index' + ext;
+  }
+  return null;
+}
 
 function parseArgs(input: string): string[] {
   const args: string[] = [];
