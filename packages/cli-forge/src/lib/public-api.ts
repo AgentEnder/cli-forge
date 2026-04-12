@@ -1270,6 +1270,47 @@ export type ErrorHandler = (
 export type AnyCLI = CLI<any, any, any, any, any>;
 
 /**
+ * Error thrown when a command handler (or middleware running as part of the
+ * same execution phase) throws during `forge()`. The original error is
+ * preserved on the {@link cause} property so custom error handlers can
+ * inspect it, while still being able to distinguish framework-reported
+ * handler failures from other errors via `instanceof HandlerExecutionError`.
+ *
+ * @example
+ * ```ts
+ * cli('app', {
+ *   handler: async () => {
+ *     throw new Error('bad thing');
+ *   },
+ * })
+ *   .errorHandler((e) => {
+ *     if (e instanceof HandlerExecutionError) {
+ *       console.error('command:', e.command);
+ *       console.error('cause:', e.cause);
+ *     }
+ *   })
+ *   .forge();
+ * ```
+ */
+export class HandlerExecutionError extends Error {
+  override name = 'HandlerExecutionError';
+  /** The command path (e.g. `"my-tool build release"`) whose handler threw. */
+  readonly command: string;
+
+  constructor(command: string, options: { cause: unknown }) {
+    const causeMessage =
+      options.cause instanceof Error
+        ? options.cause.message
+        : String(options.cause);
+    super(
+      `Error executing handler for "${command}": ${causeMessage}`,
+      options as ErrorOptions
+    );
+    this.command = command;
+  }
+}
+
+/**
  * Base CLI constraint for generic functions. Uses `ParsedArgs` instead of `any`
  * for `TArgs` so that method return types (like `.option()`) compute correctly
  * through `chain()`. Use this as the bound in `<T extends UnknownCLI>`.
