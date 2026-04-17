@@ -353,14 +353,37 @@ export class ArgvParser<
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     const thisAsNewType = this as any as ArgvParser<any>;
 
-    const autoAliases: string[] = [];
-    const addAutoAlias = (alias: string) => {
-      config.alias ??= [];
-      if (!config.alias.includes(alias)) {
-        config.alias.push(alias);
+    // Normalize the user-provided alias array (which may contain strings or
+    // `{ name, hidden }` objects) into a flat list of alias names plus a
+    // parallel list of aliases that should be omitted from help/docs.
+    const aliasNames: string[] = [];
+    const hiddenAliases: string[] = [];
+    const userAliases = config.alias as
+      | Array<string | { name: string; hidden?: boolean }>
+      | undefined;
+    if (userAliases) {
+      for (const entry of userAliases) {
+        if (typeof entry === 'string') {
+          if (!aliasNames.includes(entry)) {
+            aliasNames.push(entry);
+          }
+        } else if (entry && typeof entry.name === 'string') {
+          if (!aliasNames.includes(entry.name)) {
+            aliasNames.push(entry.name);
+          }
+          if (entry.hidden && !hiddenAliases.includes(entry.name)) {
+            hiddenAliases.push(entry.name);
+          }
+        }
       }
-      if (!autoAliases.includes(alias)) {
-        autoAliases.push(alias);
+    }
+
+    const addAutoAlias = (alias: string) => {
+      if (!aliasNames.includes(alias)) {
+        aliasNames.push(alias);
+      }
+      if (!hiddenAliases.includes(alias)) {
+        hiddenAliases.push(alias);
       }
     };
 
@@ -385,8 +408,12 @@ export class ArgvParser<
     const entry = {
       key: name,
       ...config,
-      ...(autoAliases.length > 0 ? { autoAliases } : {}),
+      ...(aliasNames.length > 0 ? { alias: aliasNames } : { alias: undefined }),
+      ...(hiddenAliases.length > 0 ? { hiddenAliases } : {}),
     } as InternalOptionConfig;
+    if (!aliasNames.length) {
+      delete (entry as { alias?: unknown }).alias;
+    }
 
     thisAsNewType.configuredOptions[name] = entry;
     if (entry.positional) {

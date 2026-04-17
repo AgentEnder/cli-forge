@@ -236,13 +236,14 @@ function formatFlag(name: string): string {
 }
 
 function getDisplayAliases(
-  option: UnknownOptionConfig,
+  option: InternalOptionConfig,
   displayKey: string
 ): string[] {
-  if (!option.alias || option.alias.length === 0) return [];
-  const autoAliases = (option as InternalOptionConfig).autoAliases ?? [];
-  return option.alias.filter(
-    (alias) => alias !== displayKey && !autoAliases.includes(alias)
+  const aliases = option.alias ?? [];
+  if (aliases.length === 0) return [];
+  const hiddenAliases = option.hiddenAliases ?? [];
+  return aliases.filter(
+    (alias) => alias !== displayKey && !hiddenAliases.includes(alias)
   );
 }
 

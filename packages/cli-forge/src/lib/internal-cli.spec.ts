@@ -450,6 +450,37 @@ describe('cliForge', () => {
     expect(output).not.toContain('--myFlag');
   });
 
+  it('should hide aliases marked with { hidden: true } in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('verbose', {
+        type: 'boolean',
+        alias: ['v', { name: 'loud', hidden: true }],
+        description: 'Enable verbose output',
+      })
+      .forge(['--help']);
+    const output = getOutput();
+    expect(output).toContain('--verbose');
+    expect(output).toContain('-v');
+    expect(output).not.toContain('--loud');
+  });
+
+  it('should still accept a hidden alias at the argument level', async () => {
+    let verbose: boolean | undefined;
+    await cli('test')
+      .option('verbose', {
+        type: 'boolean',
+        alias: [{ name: 'loud', hidden: true }],
+      })
+      .command('$0', {
+        handler: (args) => {
+          verbose = args.verbose;
+        },
+      })
+      .forge(['--loud']);
+    expect(verbose).toBe(true);
+  });
+
   it('should display object option property details in help', async () => {
     const { getOutput } = mockConsoleLog();
     await cli('test')

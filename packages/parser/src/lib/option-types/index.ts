@@ -14,13 +14,20 @@ export * from './string';
 export type { OptionConfig, UnknownOptionConfig };
 
 export type Internal<T extends UnknownOptionConfig> = T & InternalOptionConfig;
-export type InternalOptionConfig = UnknownOptionConfig & {
+export type InternalOptionConfig = Omit<UnknownOptionConfig, 'alias'> & {
   key: string;
   position?: number;
   /**
-   * Aliases that were added automatically by the parser (strip-dashed
-   * conversions, localized keys) rather than provided by the user. These are
-   * tracked separately so help output can omit them.
+   * Internally we flatten the user-provided alias array (which may contain
+   * strings or `AliasConfig` objects) into a plain list of names. Hidden
+   * aliases are tracked separately in {@link hiddenAliases}.
    */
-  autoAliases?: string[];
+  alias?: string[];
+  /**
+   * Aliases that should be omitted from help output and generated
+   * documentation. This covers both aliases the user explicitly marked
+   * `hidden: true` and aliases that were added automatically by the parser
+   * (strip-dashed conversions, localized keys).
+   */
+  hiddenAliases?: string[];
 };

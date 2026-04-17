@@ -386,6 +386,20 @@ describe('parser', () => {
     ).toEqual({ foo: 'hello', bar: 42, baz: true, unmatched: [] });
   });
 
+  it('should accept aliases declared as { name, hidden } objects', () => {
+    const p = parser().option('foo', {
+      type: 'string',
+      alias: [{ name: 'f' }, { name: 'legacy', hidden: true }],
+    });
+    expect(p.parse(['--legacy', 'x'])).toEqual({ foo: 'x', unmatched: [] });
+    expect(p.parse(['-f', 'y'])).toEqual({ foo: 'y', unmatched: [] });
+    // Internal config flattens aliases to strings; hidden aliases are tracked
+    // separately so help/docs can omit them.
+    expect(p.configuredOptions.foo.alias).toEqual(['f', 'legacy']);
+    expect(p.configuredOptions.foo.hiddenAliases).toContain('legacy');
+    expect(p.configuredOptions.foo.hiddenAliases).not.toContain('f');
+  });
+
   it('should accept short flag groups', () => {
     expect(
       parser()
