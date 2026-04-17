@@ -66,10 +66,6 @@ Module system for the generated project.
 
 **Valid values:** `esm`, `cjs`
 
-#### Aliases
-
-- module-type
-
 ### initialVersion
 
 **Type:** string
@@ -77,7 +73,3 @@ Module system for the generated project.
 Initial version used when creating the package.json for the new CLI.
 
 **Default:** `"0.0.1"`
-
-#### Aliases
-
-- initial-version

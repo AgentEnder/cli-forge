@@ -14,15 +14,9 @@ export * from './string';
 export type { OptionConfig, UnknownOptionConfig };
 
 export type Internal<T extends UnknownOptionConfig> = T & InternalOptionConfig;
-export type InternalOptionConfig = Omit<UnknownOptionConfig, 'alias'> & {
+export type InternalOptionConfig = UnknownOptionConfig & {
   key: string;
   position?: number;
-  /**
-   * Internally we flatten the user-provided alias array (which may contain
-   * strings or `AliasConfig` objects) into a plain list of names. Hidden
-   * aliases are tracked separately in {@link hiddenAliases}.
-   */
-  alias?: string[];
   /**
    * Aliases that should be omitted from help output and generated
    * documentation. This covers both aliases the user explicitly marked
