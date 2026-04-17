@@ -353,38 +353,39 @@ export class ArgvParser<
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     const thisAsNewType = this as any as ArgvParser<any>;
 
+    const autoAliases: string[] = [];
+    const addAutoAlias = (alias: string) => {
+      config.alias ??= [];
+      if (!config.alias.includes(alias)) {
+        config.alias.push(alias);
+      }
+      if (!autoAliases.includes(alias)) {
+        autoAliases.push(alias);
+      }
+    };
+
     // Support strip-dashed: add camelCase alias for dashed names
     if (this.options.stripDashed && name.includes('-')) {
-      config.alias ??= [];
-      const camelCaseName = fromDashedToCamelCase(name);
-      if (!config.alias.includes(camelCaseName)) {
-        config.alias.push(camelCaseName);
-      }
+      addAutoAlias(fromDashedToCamelCase(name));
     }
 
     // Support strip-dashed: add dashed alias for camelCase names
     // Check if the name has uppercase letters (camelCase)
     if (this.options.stripDashed && /[A-Z]/.test(name)) {
-      config.alias ??= [];
-      const dashedName = fromCamelCaseToDashed(name);
-      if (!config.alias.includes(dashedName)) {
-        config.alias.push(dashedName);
-      }
+      addAutoAlias(fromCamelCaseToDashed(name));
     }
 
     // If localization is configured and the key has a localized version,
     // add it as an alias so both the default and localized names work
     const localizedName = this.localizedText(name);
     if (localizedName !== name) {
-      config.alias ??= [];
-      if (!config.alias.includes(localizedName)) {
-        config.alias.push(localizedName);
-      }
+      addAutoAlias(localizedName);
     }
 
     const entry = {
       key: name,
       ...config,
+      ...(autoAliases.length > 0 ? { autoAliases } : {}),
     } as InternalOptionConfig;
 
     thisAsNewType.configuredOptions[name] = entry;

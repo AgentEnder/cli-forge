@@ -234,11 +234,11 @@ describe('cliForge', () => {
         format
 
       Options:
-        --help    - Show help for the current command  
-        --version - Show the version number for the CLI
-        --baz     - (a, b)                             
-        --qux     - [required]                         
-        --quux    - [default: a]                       
+        --help, -h - Show help for the current command  
+        --version  - Show the version number for the CLI
+        --baz      - (a, b)                             
+        --qux      - [required]                         
+        --quux     - [default: a]                       
        
       Run \`test [command] --help\` for more information on a command"
     `);
@@ -267,11 +267,11 @@ describe('cliForge', () => {
       "Usage: test format check
 
       Options:
-        --help    - Show help for the current command  
-        --version - Show the version number for the CLI
-        --baz    
-        --bar    
-        --foo    "
+        --help, -h - Show help for the current command  
+        --version  - Show the version number for the CLI
+        --baz     
+        --bar     
+        --foo     "
     `);
   });
 
@@ -289,9 +289,9 @@ describe('cliForge', () => {
       "Usage: test foo
 
       Options:
-        --help    - Show help for the current command  
-        --version - Show the version number for the CLI
-        --bar    "
+        --help, -h - Show help for the current command  
+        --version  - Show the version number for the CLI
+        --bar     "
     `);
     expect(process.exitCode).toBe(1);
   });
@@ -397,9 +397,9 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help    - Show help for the current command  
-        --version - Show the version number for the CLI
-        --quux   
+        --help, -h - Show help for the current command  
+        --version  - Show the version number for the CLI
+        --quux    
 
       Advanced:
         --baz
@@ -408,6 +408,46 @@ describe('cliForge', () => {
       Basic:
         --foo"
     `);
+  });
+
+  it('should display option aliases in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('verbose', {
+        type: 'boolean',
+        alias: ['v'],
+        description: 'Enable verbose output',
+      })
+      .option('output', {
+        type: 'string',
+        alias: ['o', 'out'],
+        description: 'Output path',
+      })
+      .option('silent', { type: 'boolean' })
+      .forge(['--help']);
+    expect(getOutput()).toMatchInlineSnapshot(`
+      "Usage: test
+
+      Options:
+        --help, -h          - Show help for the current command  
+        --version           - Show the version number for the CLI
+        --verbose, -v       - Enable verbose output              
+        --output, -o, --out - Output path                        
+        --silent           "
+    `);
+  });
+
+  it('should not show strip-dashed auto aliases in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .option('my-flag', {
+        type: 'boolean',
+        description: 'A flag',
+      })
+      .forge(['--help']);
+    const output = getOutput();
+    expect(output).toContain('--my-flag');
+    expect(output).not.toContain('--myFlag');
   });
 
   it('should display object option property details in help', async () => {
@@ -434,7 +474,7 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help          - Show help for the current command  
+        --help, -h      - Show help for the current command  
         --version       - Show the version number for the CLI
         --config        - App configuration                  
           --config.host - Server hostname                     [default: localhost]
@@ -475,7 +515,7 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help                 - Show help for the current command  
+        --help, -h             - Show help for the current command  
         --version              - Show the version number for the CLI
         --config               - App configuration                  
           --config.server      - Server settings                    
@@ -513,7 +553,7 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help             - Show help for the current command  
+        --help, -h         - Show help for the current command  
         --version          - Show the version number for the CLI
         --filter           - Filter criteria                    
           --filter.prs     - PR count filter                     [object|string]
@@ -544,7 +584,7 @@ describe('cliForge', () => {
       "Usage: test
 
       Options:
-        --help         - Show help for the current command  
+        --help, -h     - Show help for the current command  
         --version      - Show the version number for the CLI
         --value        - A flexible value                    [object|string]
           --value.host - Hostname                           

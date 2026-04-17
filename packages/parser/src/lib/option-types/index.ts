@@ -17,4 +17,10 @@ export type Internal<T extends UnknownOptionConfig> = T & InternalOptionConfig;
 export type InternalOptionConfig = UnknownOptionConfig & {
   key: string;
   position?: number;
+  /**
+   * Aliases that were added automatically by the parser (strip-dashed
+   * conversions, localized keys) rather than provided by the user. These are
+   * tracked separately so help output can omit them.
+   */
+  autoAliases?: string[];
 };
