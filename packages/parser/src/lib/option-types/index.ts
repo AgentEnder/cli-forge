@@ -17,4 +17,11 @@ export type Internal<T extends UnknownOptionConfig> = T & InternalOptionConfig;
 export type InternalOptionConfig = UnknownOptionConfig & {
   key: string;
   position?: number;
+  /**
+   * Aliases that should be omitted from help output and generated
+   * documentation. This covers both aliases the user explicitly marked
+   * `hidden: true` and aliases that were added automatically by the parser
+   * (strip-dashed conversions, localized keys).
+   */
+  hiddenAliases?: string[];
 };

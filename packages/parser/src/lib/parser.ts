@@ -353,39 +353,67 @@ export class ArgvParser<
   option(name: string, config: UnknownOptionConfig): ArgvParser<any> {
     const thisAsNewType = this as any as ArgvParser<any>;
 
+    // Normalize the user-provided alias array (which may contain strings or
+    // `{ name, hidden }` objects) into a flat list of alias names plus a
+    // parallel list of aliases that should be omitted from help/docs.
+    const aliasNames: string[] = [];
+    const hiddenAliases: string[] = [];
+    const userAliases = config.alias as
+      | Array<string | { name: string; hidden?: boolean }>
+      | undefined;
+    if (userAliases) {
+      for (const entry of userAliases) {
+        if (typeof entry === 'string') {
+          if (!aliasNames.includes(entry)) {
+            aliasNames.push(entry);
+          }
+        } else if (entry && typeof entry.name === 'string') {
+          if (!aliasNames.includes(entry.name)) {
+            aliasNames.push(entry.name);
+          }
+          if (entry.hidden && !hiddenAliases.includes(entry.name)) {
+            hiddenAliases.push(entry.name);
+          }
+        }
+      }
+    }
+
+    const addAutoAlias = (alias: string) => {
+      if (!aliasNames.includes(alias)) {
+        aliasNames.push(alias);
+      }
+      if (!hiddenAliases.includes(alias)) {
+        hiddenAliases.push(alias);
+      }
+    };
+
     // Support strip-dashed: add camelCase alias for dashed names
     if (this.options.stripDashed && name.includes('-')) {
-      config.alias ??= [];
-      const camelCaseName = fromDashedToCamelCase(name);
-      if (!config.alias.includes(camelCaseName)) {
-        config.alias.push(camelCaseName);
-      }
+      addAutoAlias(fromDashedToCamelCase(name));
     }
 
     // Support strip-dashed: add dashed alias for camelCase names
     // Check if the name has uppercase letters (camelCase)
     if (this.options.stripDashed && /[A-Z]/.test(name)) {
-      config.alias ??= [];
-      const dashedName = fromCamelCaseToDashed(name);
-      if (!config.alias.includes(dashedName)) {
-        config.alias.push(dashedName);
-      }
+      addAutoAlias(fromCamelCaseToDashed(name));
     }
 
     // If localization is configured and the key has a localized version,
     // add it as an alias so both the default and localized names work
     const localizedName = this.localizedText(name);
     if (localizedName !== name) {
-      config.alias ??= [];
-      if (!config.alias.includes(localizedName)) {
-        config.alias.push(localizedName);
-      }
+      addAutoAlias(localizedName);
     }
 
     const entry = {
       key: name,
       ...config,
+      ...(aliasNames.length > 0 ? { alias: aliasNames } : { alias: undefined }),
+      ...(hiddenAliases.length > 0 ? { hiddenAliases } : {}),
     } as InternalOptionConfig;
+    if (!aliasNames.length) {
+      delete (entry as { alias?: unknown }).alias;
+    }
 
     thisAsNewType.configuredOptions[name] = entry;
     if (entry.positional) {

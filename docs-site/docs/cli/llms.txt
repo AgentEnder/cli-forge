@@ -70,10 +70,10 @@ Subcommands:
       What format should the CLI be in?
       Default: "ts"
       Valid values: js, ts
-    --moduleType (aliases: --module-type) <string>
+    --moduleType <string>
       Module system for the generated project.
       Default: "esm"
       Valid values: esm, cjs
-    --initialVersion (aliases: --initial-version) <string>
+    --initialVersion <string>
       Initial version used when creating the package.json for the new CLI.
       Default: "0.0.1"

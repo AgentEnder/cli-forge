@@ -1,3 +1,15 @@
+export type AliasConfig = {
+  /**
+   * The alias name (without any leading dashes).
+   */
+  name: string;
+  /**
+   * When true, this alias is functional when parsing but is omitted from help
+   * output and generated documentation. Defaults to false.
+   */
+  hidden?: boolean;
+};
+
 export type PlainDefaultValue<T> = T;
 export type DefaultValueWithDescription<T> = {
   value: PlainDefaultValue<T>;
@@ -21,8 +33,12 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
 
   /**
    * Provide an array of aliases for the option.
+   *
+   * Each entry may be a string, or an object with `{ name, hidden }`. When
+   * `hidden: true` is set, the alias still works when parsing arguments but
+   * will not be displayed in help output or generated documentation.
    */
-  alias?: string[];
+  alias?: Array<string | AliasConfig>;
 
   /**
    * Provide an array of choices for the option. Values not in the array will throw an error.

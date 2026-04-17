@@ -231,6 +231,26 @@ function getPropertyEntries(
   );
 }
 
+function formatFlag(name: string): string {
+  return name.length === 1 ? `-${name}` : `--${name}`;
+}
+
+function getDisplayAliases(
+  option: InternalOptionConfig,
+  displayKey: string
+): string[] {
+  const aliases = option.alias ?? [];
+  if (aliases.length === 0) return [];
+  const hiddenAliases = option.hiddenAliases ?? [];
+  return aliases.filter(
+    (alias) => alias !== displayKey && !hiddenAliases.includes(alias)
+  );
+}
+
+function buildFlagColumn(displayKey: string, aliases: string[]): string {
+  return [formatFlag(displayKey), ...aliases.map(formatFlag)].join(', ');
+}
+
 function getOptionBlock(
   label: string,
   options: InternalOptionConfig[],
@@ -245,23 +265,35 @@ function getOptionBlock(
 
   // Collect all entries (options + their property sub-entries) into a flat list
   const entries: Array<{
-    key: string;
+    flagColumn: string;
     parts: string[];
     indent: number;
   }> = [];
 
   for (const option of options) {
     const displayKey = parser.getDisplayKey(option.key);
-    entries.push({ key: displayKey, parts: getOptionParts(option), indent: 0 });
+    const aliases = getDisplayAliases(option, displayKey);
+    entries.push({
+      flagColumn: buildFlagColumn(displayKey, aliases),
+      parts: getOptionParts(option),
+      indent: 0,
+    });
     for (const { key, config } of getPropertyEntries(option)) {
-      entries.push({ key, parts: getOptionParts(config), indent: 2 });
+      entries.push({
+        flagColumn: `--${key}`,
+        parts: getOptionParts(config),
+        indent: 2,
+      });
     }
   }
 
-  // Compute key column width accounting for indent so all `-` separators align
-  let keyColumnWidth = 0;
+  // Compute flag column width accounting for indent so all `-` separators align
+  let flagColumnWidth = 0;
   for (const entry of entries) {
-    keyColumnWidth = Math.max(keyColumnWidth, entry.indent + entry.key.length);
+    flagColumnWidth = Math.max(
+      flagColumnWidth,
+      entry.indent + entry.flagColumn.length
+    );
   }
 
   // Compute padding for each part column across all entries
@@ -275,10 +307,10 @@ function getOptionBlock(
     }
   }
 
-  for (const { key, parts, indent } of entries) {
-    const paddedKey = key.padEnd(keyColumnWidth - indent);
+  for (const { flagColumn, parts, indent } of entries) {
+    const paddedFlagColumn = flagColumn.padEnd(flagColumnWidth - indent);
     lines.push(
-      `${' '.repeat(2 + indent)}--${paddedKey}${
+      `${' '.repeat(2 + indent)}${paddedFlagColumn}${
         parts.length ? ' - ' : ''
       }${parts.map((part, i) => part.padEnd(partPadding[i])).join(' ')}`
     );
