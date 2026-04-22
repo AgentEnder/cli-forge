@@ -244,6 +244,43 @@ describe('cliForge', () => {
     `);
   });
 
+  it('should not show hidden subcommands in help', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .command('visible', {
+        handler: () => {
+          // Not invoked.
+        },
+      })
+      .command('secret', {
+        hidden: true,
+        handler: () => {
+          // Not invoked.
+        },
+      })
+      .forge(['--help']);
+
+    const output = getOutput();
+    expect(output).toContain('Commands:\n  visible');
+    expect(output).not.toContain('secret');
+  });
+
+  it('should omit command help section when all subcommands are hidden', async () => {
+    const { getOutput } = mockConsoleLog();
+    await cli('test')
+      .command('secret', {
+        hidden: true,
+        handler: () => {
+          // Not invoked.
+        },
+      })
+      .forge(['--help']);
+
+    const output = getOutput();
+    expect(output).not.toContain('\nCommands:\n');
+    expect(output).not.toContain('[command] --help');
+  });
+
   it('should generate help text for subcommands', async () => {
     const { getOutput } = mockConsoleLog();
     await cli('test')
