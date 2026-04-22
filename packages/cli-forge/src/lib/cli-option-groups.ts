@@ -1,8 +1,8 @@
 import { InternalOptionConfig } from '@cli-forge/parser';
-import { InternalCLI } from './internal-cli';
+import { AnyInternalCLI } from './internal-cli';
 
-export function readOptionGroupsForCLI(parentCLI: InternalCLI<any>) {
-  function registerGroupsFromCLI(cli: InternalCLI) {
+export function readOptionGroupsForCLI(parentCLI: AnyInternalCLI) {
+  function registerGroupsFromCLI(cli: AnyInternalCLI) {
     for (const { label, keys, sortOrder } of cli.registeredOptionGroups) {
       groups[label] ??= {
         keys: new Set(),
@@ -19,7 +19,7 @@ export function readOptionGroupsForCLI(parentCLI: InternalCLI<any>) {
 
   const groups: Record<string, { keys: Set<string>; sortOrder: number }> = {};
    
-  let command: InternalCLI<any> = parentCLI;
+  let command: AnyInternalCLI = parentCLI;
   registerGroupsFromCLI(command);
   for (const subcommand of parentCLI.commandChain) {
     command = command?.registeredCommands[subcommand];

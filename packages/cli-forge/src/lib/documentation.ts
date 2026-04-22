@@ -6,7 +6,7 @@ import {
   ConfigurationFiles,
   getEnvKey,
 } from '@cli-forge/parser';
-import { InternalCLI } from './internal-cli';
+import { AnyInternalCLI } from './internal-cli';
 import { CLI } from './public-api';
 
 export type Documentation = {
@@ -162,7 +162,7 @@ export function generateDocumentation(
     }
     
     // Also include command names - track unique commands by instance to avoid duplicates
-    const seenCommands = new Set<InternalCLI<any, any, any, any>>();
+    const seenCommands = new Set<AnyInternalCLI>();
     for (const cmdKey in cli.getSubcommands()) {
       const cmdInstance = cli.getSubcommands()[cmdKey];
       if (!seenCommands.has(cmdInstance)) {

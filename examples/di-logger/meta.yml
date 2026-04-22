@@ -1,0 +1,31 @@
+id: di-logger
+title: Dependency Injection - Logger with Log Level
+description: |
+  Registers a `logger` provider whose factory inspects `args.logLevel`.
+  Any command handler can `inject('logger')` via `getCommandContext()` — no
+  prop drilling, and the logger's level filtering automatically follows
+  whatever the user passed on the command line.
+
+  The handler lives in its own module and imports the CLI instance. That
+  way `typeof app` is fully resolved where `getCommandContext(app)` is
+  called, so `inject('logger')` is properly typed as `Logger` instead of
+  `unknown`.
+test:
+  - name: 'default info level suppresses debug messages'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts build --target web'
+    assertions:
+      stdout:
+        matches: '\[INFO\] Building target: web.*\[WARN\] No cache configured.*DONE \(suppressed=2\)'
+  - name: 'debug level emits every message'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts --log-level debug build --target web'
+    assertions:
+      stdout:
+        matches: '\[DEBUG\] Resolving toolchain.*\[DEBUG\] Loading config.*\[INFO\] Building target: web.*\[WARN\] No cache configured.*DONE \(suppressed=0\)'
+  - name: 'warn level only shows warnings'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts --log-level warn build --target web'
+    assertions:
+      stdout:
+        matches: '\[WARN\] No cache configured.*DONE \(suppressed=3\)'

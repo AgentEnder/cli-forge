@@ -1,10 +1,10 @@
 import type { InternalOptionConfig } from '@cli-forge/parser';
-import type { InternalCLI } from './internal-cli';
+import type { AnyInternalCLI } from './internal-cli';
 import type { CompletionContext, OptionCompletionCallback } from './completion-types';
 
 export interface ResolveCompletionsOptions {
   /** The root CLI instance */
-  rootCLI: InternalCLI<any, any, any, any>;
+  rootCLI: AnyInternalCLI;
   /** The raw argv (without --get-completions) */
   argv: string[];
 }
@@ -13,12 +13,12 @@ export interface ResolveCompletionsOptions {
  * Compute default completions from a command's registered subcommands and options.
  */
 function getDefaultCompletions(
-  cmd: InternalCLI<any, any, any, any>
+  cmd: AnyInternalCLI
 ): string[] {
   const completions: string[] = [];
 
   // Subcommand names (deduplicated, excluding hidden)
-  const seenCommands = new Set<InternalCLI<any, any, any, any>>();
+  const seenCommands = new Set<AnyInternalCLI>();
   for (const [key, subcmd] of Object.entries(cmd.registeredCommands)) {
     if (seenCommands.has(subcmd)) continue;
     seenCommands.add(subcmd);
@@ -90,17 +90,17 @@ function getOptionExpectingValue(
  * Search for an option completion callback in the command chain (deepest first).
  */
 function findOptionCompletionCallback(
-  cmd: InternalCLI<any, any, any, any>,
-  rootCLI: InternalCLI<any, any, any, any>,
+  cmd: AnyInternalCLI,
+  rootCLI: AnyInternalCLI,
   optionKey: string
 ): OptionCompletionCallback | undefined {
   // Walk from the deepest command upward
-  let current: InternalCLI<any, any, any, any> | undefined = cmd;
+  let current: AnyInternalCLI | undefined = cmd;
   while (current) {
     const cb = current.completionConfigs.get(optionKey);
     if (cb) return cb;
     current = current.getParent() as
-      | InternalCLI<any, any, any, any>
+      | AnyInternalCLI
       | undefined;
   }
   // Also check root explicitly (may not be reachable via getParent chain)
@@ -117,8 +117,8 @@ export async function resolveCompletions(
 
   // Walk argv to find the deepest resolved subcommand.
   // Track built commands to avoid re-running builders on live objects.
-  let currentCmd: InternalCLI<any, any, any, any> = rootCLI;
-  const builtCommands = new Set<InternalCLI<any, any, any, any>>();
+  let currentCmd: AnyInternalCLI = rootCLI;
+  const builtCommands = new Set<AnyInternalCLI>();
 
   for (const token of argv) {
     if (token.startsWith('-')) continue;
@@ -188,13 +188,13 @@ export async function resolveCompletions(
   }
 
   // Command-level completion callback (walk up to find one)
-  let cmdForCallback: InternalCLI<any, any, any, any> | undefined = currentCmd;
+  let cmdForCallback: AnyInternalCLI | undefined = currentCmd;
   while (cmdForCallback) {
     if (cmdForCallback.completionCallback) {
       return cmdForCallback.completionCallback(context);
     }
     cmdForCallback = cmdForCallback.getParent() as
-      | InternalCLI<any, any, any, any>
+      | AnyInternalCLI
       | undefined;
   }
 

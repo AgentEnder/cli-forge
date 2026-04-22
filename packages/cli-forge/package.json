@@ -72,6 +72,13 @@
       "import": "./dist/prompt-providers/clack.mjs",
       "require": "./dist/prompt-providers/clack.cjs"
     },
+    "./context": {
+      "browser": "./dist/browser/lib/context.mjs",
+      "types": "./dist/lib/context.d.mts",
+      "import": "./dist/lib/context.mjs",
+      "require": "./dist/lib/context.cjs",
+      "default": "./dist/lib/context.cjs"
+    },
     "./package.json": "./package.json"
   },
   "publishConfig": {

@@ -8,6 +8,7 @@ export default defineConfig(
     browserAlias: {
       'node-shell-deps': 'src/browser/shell-deps.ts',
       'interactive-shell': 'src/browser/interactive-shell.ts',
+      'async-context': 'src/browser/async-context.ts',
     },
   })
 );

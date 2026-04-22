@@ -12,6 +12,9 @@ import {
   type ConfigurationFiles,
 } from '@cli-forge/parser';
 import { readOptionGroupsForCLI } from './cli-option-groups';
+import { contextStorage, ForgeContextData } from './async-context';
+import { getCommandContext } from './context';
+import type { CommandContext, ProvidersFromChain } from './context';
 import { formatHelp } from './format-help';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
@@ -24,6 +27,7 @@ async function getInteractiveShellModule(): Promise<InteractiveShellModule> {
   return _shellModule;
 }
 import {
+  AnyCLI,
   CLI,
   CLICommandOptions,
   CLIHandlerContext,
@@ -38,6 +42,24 @@ import type {
 import type { PromptProvider, PromptOptionConfig } from './prompt-types';
 import { resolvePrompts } from './resolve-prompts';
 import { getCallingFile, getParentPackageJson } from './utils';
+
+/** Type alias for an InternalCLI instance with any type parameters. */
+export type AnyInternalCLI = InternalCLI<any, any, any, any, any>;
+
+type ProviderRegistration =
+  | { type: 'eager'; value: unknown }
+  | { type: 'factory'; factory: Function; lifetime: 'global' | 'executionScope' };
+
+/**
+ * Monotonic counter used to stamp every `InternalCLI` instance with a
+ * process-unique `commandId` at construction time. Used by
+ * {@link getCommandContext} to verify at runtime that a CLI instance passed
+ * as a type witness actually belongs to the currently-executing command
+ * chain — which catches the class of bug where the user passes the wrong
+ * CLI (a sibling, an unrelated app) as the type witness and silently gets
+ * incorrect `inject()` types.
+ */
+let _internalCliIdCounter = 0;
 
 /**
  * The base class for a CLI application. This class is used to define the structure of the CLI.
@@ -70,10 +92,11 @@ const CLI_FORGE_BRAND = Symbol.for('cli-forge:InternalCLI');
 export class InternalCLI<
   TArgs extends ParsedArgs = ParsedArgs,
   THandlerReturn = void,
-   
+
   TChildren = {},
-  TParent = undefined
-> implements CLI<TArgs, THandlerReturn, TChildren, TParent>
+  TParent = undefined,
+  TProviders = {}
+> implements CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
 {
   /**
    * Cross-realm brand for identifying InternalCLI instances across
@@ -87,7 +110,7 @@ export class InternalCLI<
    */
   static isInternalCLI(
     obj: unknown
-  ): obj is InternalCLI<any, any, any, any> {
+  ): obj is AnyInternalCLI {
     return (
       obj != null &&
       typeof obj === 'object' &&
@@ -98,7 +121,24 @@ export class InternalCLI<
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
    */
-  registeredCommands: Record<string, InternalCLI<any, any, any, any>> = {};
+  registeredCommands: Record<string, AnyInternalCLI> = {};
+
+  /**
+   * Process-unique identifier stamped at construction time. Used to
+   * validate at runtime that a CLI instance passed to `getCommandContext`
+   * actually belongs to the active command chain. Never mutated once set —
+   * builders, handlers, and middleware see the same value for the lifetime
+   * of the instance, even across clones.
+   *
+   * For internal use only.
+   */
+  readonly commandId: string;
+
+  /**
+   * Registered DI providers keyed by name.
+   * For internal use only.
+   */
+  registeredProviders: Map<string, ProviderRegistration> = new Map();
 
   /**
    * For internal use only. Stick to properties available on {@link CLI}.
@@ -109,7 +149,7 @@ export class InternalCLI<
    * Reference to the parent CLI instance, if this command was registered as a subcommand.
    * For internal use only. Use `getParent()` instead.
    */
-  private _parent?: InternalCLI<any, any, any, any>;
+  private _parent?: AnyInternalCLI;
 
   private requiresCommand: 'IMPLICIT' | 'EXPLICIT' | false = 'IMPLICIT';
 
@@ -203,7 +243,7 @@ export class InternalCLI<
   parser = new ArgvParser<TArgs>({
     unmatchedParser: (arg) => {
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCommand: InternalCLI<any, any, any, any> = this;
+      let currentCommand: AnyInternalCLI = this;
       for (const command of this.commandChain) {
         currentCommand = currentCommand.registeredCommands[command];
       }
@@ -240,6 +280,11 @@ export class InternalCLI<
       TChildren
     >
   ) {
+    // Stamp a stable, immutable identifier so `getCommandContext(cli)` can
+    // verify at runtime that this instance is part of the active command
+    // chain. The format is `${name}#${counter}` for debuggability — the
+    // counter guarantees uniqueness even when two commands share a name.
+    this.commandId = `${name}#${++_internalCliIdCounter}`;
     if (rootCommandConfiguration) {
       this.withRootCommandConfiguration(rootCommandConfiguration as any);
     } else {
@@ -249,38 +294,43 @@ export class InternalCLI<
 
   withRootCommandConfiguration<TRootCommandArgs extends TArgs>(
     configuration: CLICommandOptions<TArgs, TRootCommandArgs>
-  ): InternalCLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): InternalCLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration = configuration;
     this.requiresCommand = configuration.handler ? false : 'IMPLICIT';
     return this;
   }
 
   command<
-    TCommandArgs extends TArgs,
-    TCmdName extends string,
-    TChildHandlerReturn = void
+    TCommand extends Command<TArgs, any, any, any>
   >(
-    cmd: Command<TArgs, TCommandArgs, TCmdName, TChildHandlerReturn>
+    cmd: TCommand
   ): CLI<
     TArgs,
     THandlerReturn,
-    TChildren & {
-      [key in TCmdName]: CLI<
-        TCommandArgs,
-        TChildHandlerReturn,
-        {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent>
-      >;
-    },
-    TParent
+    TChildren & import('./public-api').CommandToChildEntry<
+      TCommand,
+      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
+    >,
+    TParent,
+    TProviders
   >;
   command<
     TCommandArgs extends TArgs,
     TChildHandlerReturn = void,
-    TCommandName extends string = string
+    TCommandName extends string = string,
+    TChildChildren = {},
+    TChildProviders = {}
   >(
     key: TCommandName,
-    options: CLICommandOptions<TArgs, TCommandArgs, TChildHandlerReturn>
+    options: CLICommandOptions<
+      TArgs,
+      TCommandArgs,
+      TChildHandlerReturn,
+      TChildren,
+      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+      TChildChildren,
+      TChildProviders
+    >
   ): CLI<
     TArgs,
     THandlerReturn,
@@ -288,49 +338,18 @@ export class InternalCLI<
       [key in TCommandName]: CLI<
         TCommandArgs,
         TChildHandlerReturn,
-        {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent>
+        TChildChildren,
+        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        TChildProviders
       >;
     },
-    TParent
+    TParent,
+    TProviders
   >;
-  command<
-    TCommandArgs extends TArgs,
-    TChildHandlerReturn = void,
-    TCommandName extends string = string
-  >(
-    keyOrCommand: TCommandName | Command<TArgs, TCommandArgs>,
-    options?: CLICommandOptions<TArgs, TCommandArgs, TChildHandlerReturn>
-  ): CLI<
-    TArgs,
-    THandlerReturn,
-    TChildren &
-      (typeof keyOrCommand extends string
-        ? {
-            [key in typeof keyOrCommand]: CLI<
-              TCommandArgs,
-              TChildHandlerReturn,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
-            >;
-          }
-        : typeof keyOrCommand extends Command<
-            TArgs,
-            infer TCmdArgs,
-            infer TCmdName
-          >
-        ? {
-            [key in TCmdName]: CLI<
-              TCmdArgs,
-              void,
-              {},
-              CLI<TArgs, THandlerReturn, TChildren, TParent>
-            >;
-          }
-        :  
-          {}),
-    TParent
-  > {
+  command(
+    keyOrCommand: string | Command<any, any, any, any>,
+    options?: CLICommandOptions<any, any, any, any, any, any, any>
+  ): any {
     if (typeof keyOrCommand === 'string') {
       const key = keyOrCommand;
       if (!options) {
@@ -374,7 +393,7 @@ export class InternalCLI<
         }
       }
     } else if (InternalCLI.isInternalCLI(keyOrCommand)) {
-      const cmd = keyOrCommand as InternalCLI<any, any, any, any>;
+      const cmd = keyOrCommand as AnyInternalCLI;
       if (cmd.name === '$0') {
         this.withRootCommandConfiguration(cmd.configuration as any);
         // Copy any commands registered on the $0 instance (e.g. subcommands
@@ -455,43 +474,43 @@ export class InternalCLI<
 
   conflicts(
     ...args: [string, string, ...string[]]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.conflicts(...args);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   implies(
     option: string,
     ...impliedOptions: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.implies(option, ...impliedOptions);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   env(
     a0: string | EnvOptionConfig | undefined = fromCamelOrDashedCaseToConstCase(
       this.name
     )
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (typeof a0 === 'string') {
       this.parser.env(a0);
     } else {
       a0.prefix ??= fromCamelOrDashedCaseToConstCase(this.name);
       this.parser.env(a0);
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   localize(
     dictionaryOrFn: LocalizationDictionary | LocalizationFunction,
     locale?: string
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (typeof dictionaryOrFn === 'function') {
       this.parser.localize(dictionaryOrFn);
     } else {
       this.parser.localize(dictionaryOrFn, locale);
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -503,34 +522,34 @@ export class InternalCLI<
     return this.parser.getDisplayKey(key);
   }
 
-  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.requiresCommand = 'EXPLICIT';
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.options.strict = enable;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration ??= {};
     this.configuration.usage = usageText;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   examples(
     ...examples: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.configuration ??= {};
     this.configuration.examples ??= [];
     this.configuration.examples.push(...examples);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  version(version?: string): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  version(version?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this._versionOverride = version;
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -554,7 +573,8 @@ export class InternalCLI<
     TArgs2 extends void ? TArgs : TArgs & TArgs2,
     THandlerReturn,
     TChildren,
-    TParent
+    TParent,
+    TProviders
   > {
     this.registeredMiddleware.add(callback);
     // If middleware returns void, TArgs doesn't change...
@@ -565,7 +585,7 @@ export class InternalCLI<
 
   handler<R>(
     fn: (args: TArgs, context: any) => R
-  ): CLI<TArgs, R, TChildren, TParent> {
+  ): CLI<TArgs, R, TChildren, TParent, TProviders> {
     if (!this._configuration) {
       this._configuration = {};
     }
@@ -574,19 +594,41 @@ export class InternalCLI<
     return this as any;
   }
 
+  provide(key: string, valueOrConfig: unknown): any {
+    if (this.registeredProviders.has(key)) {
+      throw new Error(`Provider '${key}' is already registered on this command.`);
+    }
+    if (
+      valueOrConfig !== null &&
+      typeof valueOrConfig === 'object' &&
+      'factory' in valueOrConfig &&
+      typeof (valueOrConfig as any).factory === 'function'
+    ) {
+      const config = valueOrConfig as { factory: Function; lifetime?: string };
+      this.registeredProviders.set(key, {
+        type: 'factory',
+        factory: config.factory,
+        lifetime: (config.lifetime as 'global' | 'executionScope') ?? 'executionScope',
+      });
+    } else {
+      this.registeredProviders.set(key, { type: 'eager', value: valueOrConfig });
+    }
+    return this;
+  }
+
   init(
     callback: (
-      cli: CLI<TArgs, THandlerReturn, TChildren, TParent>,
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
       args: TArgs
     ) => Promise<void> | void
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.registeredInitHooks.push(callback);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   completion(
     callback?: CompletionCallback<any>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this._completionEnabled = true;
     if (callback) {
       this.completionCallback = callback;
@@ -611,7 +653,7 @@ export class InternalCLI<
       });
     }
 
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
@@ -626,7 +668,7 @@ export class InternalCLI<
   ): Promise<T> {
     const middlewares = new Set<(args: any) => void>(this.registeredMiddleware);
     // eslint-disable-next-line @typescript-eslint/no-this-alias
-    let cmd: InternalCLI<any, any, any, any> = this;
+    let cmd: AnyInternalCLI = this;
     for (const command of this.commandChain) {
       cmd = cmd.registeredCommands[command];
       for (const mw of cmd.registeredMiddleware) {
@@ -649,6 +691,11 @@ export class InternalCLI<
           ) {
             args = middlewareResult as T;
           }
+        }
+        // Keep ALS context args in sync after middleware transformations
+        const store = contextStorage.getStore();
+        if (store) {
+          store.args = args as Record<string, unknown>;
         }
         await cmd.configuration.handler(args, {
           command: cmd as any,
@@ -673,7 +720,7 @@ export class InternalCLI<
             const shellMod = await getInteractiveShellModule();
             if (!shellMod.INTERACTIVE_SHELL) {
               const tui = new shellMod.InteractiveShell(
-                this as unknown as InternalCLI<any>,
+                this as unknown as AnyInternalCLI,
                 {
                   prependArgs: originalArgV,
                 }
@@ -707,8 +754,8 @@ export class InternalCLI<
 
   getChildren(): TChildren {
     // Return a copy of registered commands, excluding aliases (same command registered under different keys)
-    const children: Record<string, InternalCLI<any, any, any, any>> = {};
-    const seen = new Set<InternalCLI<any, any, any, any>>();
+    const children: Record<string, AnyInternalCLI> = {};
+    const seen = new Set<AnyInternalCLI>();
     for (const [key, cmd] of Object.entries(this.registeredCommands)) {
       if (!seen.has(cmd)) {
         seen.add(cmd);
@@ -722,32 +769,50 @@ export class InternalCLI<
     return this._parent as TParent;
   }
 
+  getContext(): CommandContext<
+    TArgs,
+    ProvidersFromChain<TProviders, TParent>,
+    TChildren
+  > {
+    // Delegate to getCommandContext(this) so the runtime chain validation
+    // and error messaging stay in a single place.
+    return getCommandContext(
+      this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>
+    ) as CommandContext<
+      TArgs,
+      ProvidersFromChain<TProviders, TParent>,
+      TChildren
+    >;
+  }
+
   getBuilder():
     | (<
         TInit extends ParsedArgs,
         TInitHandlerReturn,
         TInitChildren,
-        TInitParent
+        TInitParent,
+        TInitProviders
       >(
-        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent>
+        parser: CLI<TInit, TInitHandlerReturn, TInitChildren, TInitParent, TInitProviders>
       ) => CLI<
         TInit & TArgs,
         TInitHandlerReturn,
         TInitChildren & TChildren,
-        TInitParent
+        TInitParent,
+        TInitProviders
       >)
     | undefined {
     const builder = this.configuration?.builder;
     if (!builder) return undefined;
     // Return a composable builder that preserves input types
-    return ((parser: CLI<any, any, any, any>) => builder(parser)) as any;
+    return ((parser: AnyCLI) => builder(parser)) as any;
   }
 
   getHandler():
     | ((args: Omit<TArgs, keyof ParsedArgs>) => THandlerReturn)
     | undefined {
     const context: CLIHandlerContext<TChildren, TParent> = {
-      command: this as unknown as CLI<any, any, TChildren, TParent>,
+      command: this as unknown as CLI<any, any, TChildren, TParent, any>,
     };
     const handler = this._configuration?.handler;
     if (!handler) {
@@ -768,7 +833,7 @@ export class InternalCLI<
     >;
   }
 
-  private buildSDKProxy(targetCmd: InternalCLI<any, any, any, any>): unknown {
+  private buildSDKProxy(targetCmd: AnyInternalCLI): unknown {
     // eslint-disable-next-line @typescript-eslint/no-this-alias
     const self = this;
 
@@ -826,11 +891,45 @@ export class InternalCLI<
         }
       }
 
-      // Execute handler
-      const context: CLIHandlerContext<any, any> = {
-        command: cmd as unknown as CLI<any, any, any, any>,
+      // Build context data for ALS — collect providers from root down to cmd.
+      // Use targetCmd (not the clone) because clone() does not copy _parent.
+      const providerChain: AnyInternalCLI[] = [];
+      let providerWalk: AnyInternalCLI | undefined = targetCmd;
+      while (providerWalk) {
+        providerChain.unshift(providerWalk);
+        providerWalk = providerWalk._parent;
+      }
+      const sdkContextData: ForgeContextData = {
+        args: parsedArgs as Record<string, unknown>,
+        commandChain: [],
+        // providerChain walks root -> ...ancestors -> targetCmd already,
+        // so we reuse it for the id chain that getCommandContext validates.
+        commandIdChain: providerChain.map((c) => c.commandId),
+        providers: new Map(),
+        providerFactories: new Map(),
+        handlerPhase: true,
+        resolving: new Set(),
       };
-      const result = await handler(parsedArgs, context);
+      for (const providerNode of providerChain) {
+        for (const [key, reg] of providerNode.registeredProviders) {
+          if (reg.type === 'eager') {
+            sdkContextData.providers.set(key, reg.value);
+          } else {
+            sdkContextData.providerFactories.set(key, {
+              factory: reg.factory,
+              lifetime: reg.lifetime,
+            });
+          }
+        }
+      }
+
+      // Execute handler inside ALS context
+      const context: CLIHandlerContext<any, any> = {
+        command: cmd as unknown as AnyCLI,
+      };
+      const result = await contextStorage.run(sdkContextData, async () => {
+        return handler(parsedArgs, context);
+      });
 
       // Try to attach $args to the result (fails silently for primitives)
       if (result !== null && typeof result === 'object') {
@@ -868,10 +967,10 @@ export class InternalCLI<
   }
 
   private collectMiddlewareChain(
-    cmd: InternalCLI<any, any, any, any>
+    cmd: AnyInternalCLI
   ): Array<(args: any) => unknown | Promise<unknown>> {
-    const chain: InternalCLI<any, any, any, any>[] = [];
-    let current: InternalCLI<any, any, any, any> | undefined = cmd;
+    const chain: AnyInternalCLI[] = [];
+    let current: AnyInternalCLI | undefined = cmd;
     while (current) {
       chain.unshift(current);
       current = current._parent;
@@ -885,7 +984,7 @@ export class InternalCLI<
     return [...seen];
   }
 
-  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (this.requiresCommand === 'EXPLICIT') {
       throw new Error(
         'Interactive shell is not supported for commands that require a command.'
@@ -893,7 +992,7 @@ export class InternalCLI<
     } else if (typeof process !== 'undefined' && process.stdout?.isTTY) {
       this.requiresCommand = false;
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   private versionHandler() {
@@ -938,21 +1037,21 @@ export class InternalCLI<
 
   errorHandler(
     handler: ErrorHandler
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.registeredErrorHandlers.unshift(handler);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   withPromptProvider(
     provider: PromptProvider
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     if (!provider.prompt && !provider.promptBatch) {
       throw new Error(
         "Prompt provider must implement at least one of 'prompt' or 'promptBatch'"
       );
     }
     this.registeredPromptProviders.push(provider);
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   group(
@@ -960,7 +1059,7 @@ export class InternalCLI<
       | string
       | { label: string; keys: (keyof TArgs)[]; sortOrder?: number },
     keys?: (keyof TArgs)[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     const config =
       typeof labelOrConfigObject === 'object'
         ? labelOrConfigObject
@@ -978,16 +1077,16 @@ export class InternalCLI<
       sortOrder:
         config.sortOrder ?? Object.keys(this.registeredOptionGroups).length,
     });
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   config(
     provider: ConfigurationFiles.AnyConfigProvider<TArgs>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent> {
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.config(
       provider as ConfigurationFiles.AnyConfigProvider<any>
     );
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   async updateConfig(values: Partial<TArgs>): Promise<void>;
@@ -1059,7 +1158,7 @@ export class InternalCLI<
       // → filter down. Builders stay lazy.
       let currentArgs = [...args];
       // eslint-disable-next-line @typescript-eslint/no-this-alias
-      let currentCmd: InternalCLI<any, any, any, any> = this;
+      let currentCmd: AnyInternalCLI = this;
       const mergedArgs: any = {};
       const executedMiddleware = new Set<(args: any) => void>();
 
@@ -1111,7 +1210,7 @@ export class InternalCLI<
 
         // Build the next command if one was discovered during parsing
         // (i.e., subcommand token intercepted before positional matching)
-        let nextCmd: InternalCLI<any, any, any, any> | null = null;
+        let nextCmd: AnyInternalCLI | null = null;
         if (discoveredCommand) {
           const cmd = currentCmd.registeredCommands[discoveredCommand];
           cmd.parser = this.parser;
@@ -1203,7 +1302,7 @@ export class InternalCLI<
       const allPromptConfigs = new Map(this.promptConfigs);
       {
         // eslint-disable-next-line @typescript-eslint/no-this-alias
-        let walkCmd: InternalCLI<any, any, any, any> = this;
+        let walkCmd: AnyInternalCLI = this;
         for (const command of this.commandChain) {
           walkCmd = walkCmd.registeredCommands[command];
           for (const p of walkCmd.registeredPromptProviders) {
@@ -1263,7 +1362,34 @@ export class InternalCLI<
         throw validationFailedError;
       }
 
-      const finalArgV = await this.runCommand(argv, args, executedMiddleware);
+      // Collect all providers from the command chain (root → subcommands)
+      const allProviders = this.collectProviders();
+      const contextData: ForgeContextData = {
+        args: argv as Record<string, unknown>,
+        commandChain: [...this.commandChain],
+        commandIdChain: this.collectCommandIdChain(),
+        providers: new Map(),
+        providerFactories: new Map(),
+        handlerPhase: false,
+        resolving: new Set(),
+      };
+
+      // Register providers into context
+      for (const [key, reg] of allProviders) {
+        if (reg.type === 'eager') {
+          contextData.providers.set(key, reg.value);
+        } else {
+          contextData.providerFactories.set(key, {
+            factory: reg.factory,
+            lifetime: reg.lifetime,
+          });
+        }
+      }
+
+      const finalArgV = await contextStorage.run(contextData, async () => {
+        contextData.handlerPhase = true;
+        return this.runCommand(argv, args, executedMiddleware);
+      });
       return finalArgV as TArgs;
     });
 
@@ -1272,13 +1398,57 @@ export class InternalCLI<
   }
 
   getSubcommands() {
-    return this.registeredCommands as Readonly<Record<string, InternalCLI>>;
+    return this.registeredCommands as Readonly<Record<string, AnyInternalCLI>>;
+  }
+
+  private collectProviders(): Map<string, ProviderRegistration> {
+    const result = new Map<string, ProviderRegistration>();
+    // Start from root (this) and walk down the command chain
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: AnyInternalCLI = this;
+    for (const [key, reg] of cmd.registeredProviders) {
+      result.set(key, reg);
+    }
+    for (const name of this.commandChain) {
+      cmd = cmd.registeredCommands[name];
+      if (cmd) {
+        for (const [key, reg] of cmd.registeredProviders) {
+          result.set(key, reg); // child overrides parent
+        }
+      }
+    }
+    return result;
+  }
+
+  /**
+   * Walks the command chain from root (this) down to the running command
+   * and collects each instance's `commandId`. Populates
+   * `ForgeContextData.commandIdChain` so `getCommandContext(cli)` can
+   * validate at runtime that the CLI passed as a type witness is any
+   * command on the active chain.
+   */
+  private collectCommandIdChain(): string[] {
+    const ids: string[] = [this.commandId];
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: AnyInternalCLI = this;
+    for (const name of this.commandChain) {
+      const next = cmd.registeredCommands[name];
+      if (!next) break;
+      cmd = next;
+      ids.push(cmd.commandId);
+    }
+    return ids;
   }
 
   clone() {
-    const clone = new InternalCLI<TArgs, THandlerReturn, TChildren, TParent>(
+    const clone = new InternalCLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>(
       this.name
     );
+    // Propagate the commandId so the clone still validates against any
+    // original CLI reference the user passes to `getCommandContext()`.
+    // A clone conceptually represents the same command — just a private
+    // mutable copy — so it keeps the original's identity.
+    (clone as { commandId: string }).commandId = this.commandId;
     clone.parser = this.parser.clone(clone.parser.options) as any;
     if (this.configuration) {
       clone.withRootCommandConfiguration(this.configuration);
@@ -1287,6 +1457,7 @@ export class InternalCLI<
     for (const command in this.registeredCommands ?? {}) {
       clone.command(this.registeredCommands[command].clone() as any);
     }
+    clone.registeredProviders = new Map(this.registeredProviders);
     clone.commandChain = [...this.commandChain];
     clone.requiresCommand = this.requiresCommand;
     clone.registeredPromptProviders = [...this.registeredPromptProviders];
