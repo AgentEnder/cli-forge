@@ -843,6 +843,14 @@ export interface CLI<
   usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
+   * Marks this command as hidden so it is omitted from help output, generated documentation,
+   * and shell completion suggestions. Useful when composing reusable builders that need to
+   * register internal or experimental commands without exposing them to end users.
+   * @param hidden Whether the command should be hidden. Defaults to `true`.
+   */
+  hidden(hidden?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+
+  /**
    * Sets the description for the CLI. This text will be displayed in the help text and generated docs.
    * @param examples Examples to display in the help text and generated docs.
    */

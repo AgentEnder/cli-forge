@@ -538,6 +538,12 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
+  hidden(hidden = true): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+    this.configuration ??= {};
+    this.configuration.hidden = hidden;
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  }
+
   examples(
     ...examples: string[]
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {

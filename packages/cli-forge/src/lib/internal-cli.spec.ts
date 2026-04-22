@@ -281,6 +281,44 @@ describe('cliForge', () => {
     expect(output).not.toContain('[command] --help');
   });
 
+  it('should support fluent .hidden() when composing a sub-CLI before registering it', async () => {
+    const { getOutput } = mockConsoleLog();
+    const secretCommand = cli('secret')
+      .hidden()
+      .command('$0', {
+        handler: () => {
+          // Not invoked.
+        },
+      });
+    await cli('test')
+      .command('visible', {
+        handler: () => {
+          // Not invoked.
+        },
+      })
+      .command(secretCommand as any)
+      .forge(['--help']);
+
+    const output = getOutput();
+    expect(output).toContain('Commands:\n  visible');
+    expect(output).not.toContain('secret');
+  });
+
+  it('should allow .hidden(false) to unhide a previously hidden command', async () => {
+    const { getOutput } = mockConsoleLog();
+    const exposed = cli('exposed')
+      .hidden()
+      .hidden(false)
+      .command('$0', {
+        handler: () => {
+          // Not invoked.
+        },
+      });
+    await cli('test').command(exposed as any).forge(['--help']);
+
+    expect(getOutput()).toContain('Commands:\n  exposed');
+  });
+
   it('should generate help text for subcommands', async () => {
     const { getOutput } = mockConsoleLog();
     await cli('test')
