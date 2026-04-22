@@ -36,12 +36,9 @@ export function formatHelp(parentCLI: AnyInternalCLI): string {
   if (command.configuration?.description) {
     help.push(command.configuration.description);
   }
-  if (Object.keys(command.registeredCommands).length > 0) {
-    help.push('');
-    help.push('Commands:');
-  }
   // Track displayed commands by their actual CLI instance to avoid duplicates
   const displayedCommands = new Set<AnyInternalCLI>();
+  const visibleSubcommands: AnyInternalCLI[] = [];
   for (const key in command.registeredCommands) {
     const subcommand = command.registeredCommands[key];
     // Skip if we've already displayed this command instance
@@ -49,6 +46,16 @@ export function formatHelp(parentCLI: AnyInternalCLI): string {
       continue;
     }
     displayedCommands.add(subcommand);
+    if (subcommand.configuration?.hidden) {
+      continue;
+    }
+    visibleSubcommands.push(subcommand);
+  }
+  if (visibleSubcommands.length > 0) {
+    help.push('');
+    help.push('Commands:');
+  }
+  for (const subcommand of visibleSubcommands) {
     // Use the localized command name for display based on the command's default name
     const displayKey = command.getLocalizedCommandName(subcommand.name);
     help.push(
@@ -88,7 +95,7 @@ export function formatHelp(parentCLI: AnyInternalCLI): string {
     }
   }
 
-  if (Object.keys(command.registeredCommands).length > 0) {
+  if (visibleSubcommands.length > 0) {
     help.push(' ');
     help.push(
       `Run \`${[parentCLI.name, ...parentCLI.commandChain].join(
