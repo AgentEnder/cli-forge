@@ -1,3 +1,22 @@
+## 1.10.0 (2026-04-23)
+
+### 🚀 Features
+
+- display option aliases in help output and hide auto-generated ones ([#90](https://github.com/agentender/cli-forge/pull/90))
+- **cli-forge:** lightweight DI via .provide() and getCommandContext() ([#79](https://github.com/agentender/cli-forge/pull/79))
+
+### 🩹 Fixes
+
+- **cli-forge:** honor `hidden: true` for subcommands in generated help ([#93](https://github.com/agentender/cli-forge/pull/93), [#43](https://github.com/agentender/cli-forge/issues/43))
+- **docs-site:** refactor playground module system to support multi-file examples ([#84](https://github.com/agentender/cli-forge/pull/84))
+
+### ❤️ Thank You
+
+- AgentEnder @AgentEnder
+- Claude
+- Copilot @Copilot
+- Craigory Coppola @AgentEnder
+
 ## 1.9.2 (2026-04-11)
 
 ### 🩹 Fixes
