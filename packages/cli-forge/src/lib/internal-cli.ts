@@ -16,6 +16,7 @@ import { contextStorage, ForgeContextData } from './async-context';
 import { getCommandContext } from './context';
 import type { CommandContext, ProvidersFromChain } from './context';
 import { formatHelp } from './format-help';
+import { findClosestCommand } from './suggest-command';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
 type InteractiveShellModule = typeof import('./interactive-shell.js');
@@ -163,7 +164,30 @@ export class InternalCLI<
         this.printHelp();
         console.log();
         console.log(e.message);
-        console.log(e.errors.map((e) => `  - ${e.message}`).join('\n'));
+
+        let currentCommand: InternalCLI<any, any, any, any> = this;
+        for (const cmd of this.commandChain) {
+          const next = currentCommand.registeredCommands[cmd];
+          if (!next) break;
+          currentCommand = next;
+        }
+        const subcommandNames = Object.keys(
+          currentCommand.registeredCommands
+        ).filter((name) => name !== '$0');
+
+        for (const err of e.errors) {
+          console.log(`  - ${err.message}`);
+          const match = /^Unknown argument: (.+)$/.exec(err.message);
+          if (match && subcommandNames.length > 0) {
+            const unknown = match[1];
+            if (!unknown.startsWith('-')) {
+              const suggestion = findClosestCommand(unknown, subcommandNames);
+              if (suggestion) {
+                console.log(`    (did you mean '${suggestion}'?)`);
+              }
+            }
+          }
+        }
         actions.exit(1);
       }
     },
