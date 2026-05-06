@@ -1326,10 +1326,16 @@ function getSuggestedOptionsForUnknownInput(
 ): string[] {
   const flagInput = input.split('=')[0];
   const validOptions = new Set<string>();
+
   const aliases = (config: InternalOptionConfig): string[] =>
-    (config.alias ?? []).flatMap((alias) =>
-      typeof alias === 'string' ? [alias] : []
-    );
+    (config.alias ?? []).map((alias) => {
+      if (typeof alias !== 'string') {
+        throw new TypeError(
+          `Expected alias for option "${config.key}" to be a string`
+        );
+      }
+      return alias;
+    });
 
   for (const key in configuredOptions) {
     const config = configuredOptions[key];
