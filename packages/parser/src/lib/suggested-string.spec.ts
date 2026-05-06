@@ -1,5 +1,8 @@
-import { describe, it, expect } from 'vitest';
-import { damerauLevenshteinDistance, findClosestCommand } from './suggest-command';
+import { describe, expect, it } from 'vitest';
+import {
+  calculateSuggestedString,
+  damerauLevenshteinDistance,
+} from './suggested-string';
 
 describe('damerauLevenshteinDistance', () => {
   it('returns 0 for identical strings', () => {
@@ -32,41 +35,49 @@ describe('damerauLevenshteinDistance', () => {
   });
 });
 
-describe('findClosestCommand', () => {
+describe('calculateSuggestedString', () => {
   it('returns undefined when there are no candidates', () => {
-    expect(findClosestCommand('serve', [])).toBeUndefined();
+    expect(calculateSuggestedString('serve', [])).toBeUndefined();
   });
 
   it('returns an exact match', () => {
-    expect(findClosestCommand('serve', ['serve', 'build'])).toBe('serve');
+    expect(calculateSuggestedString('serve', ['serve', 'build'])).toBe(
+      'serve'
+    );
   });
 
   it('returns the closest candidate for a single-edit typo', () => {
-    expect(findClosestCommand('sevre', ['serve', 'build', 'test'])).toBe('serve');
+    expect(calculateSuggestedString('sevre', ['serve', 'build', 'test'])).toBe(
+      'serve'
+    );
   });
 
   it('matches case-insensitively', () => {
-    expect(findClosestCommand('SERVE', ['serve', 'build'])).toBe('serve');
-    expect(findClosestCommand('Sevre', ['Serve', 'Build'])).toBe('Serve');
+    expect(calculateSuggestedString('SERVE', ['serve', 'build'])).toBe(
+      'serve'
+    );
+    expect(calculateSuggestedString('Sevre', ['Serve', 'Build'])).toBe(
+      'Serve'
+    );
   });
 
   it('returns undefined when no candidate is within the length-scaled threshold', () => {
-    // input length 5 → threshold = floor(5/3) = 1; "build" → "serve" is 4 edits
-    expect(findClosestCommand('xyzab', ['serve', 'build'])).toBeUndefined();
+    expect(calculateSuggestedString('xyzab', ['serve', 'build'])).toBeUndefined();
   });
 
   it('uses a minimum threshold of 1 even for short inputs', () => {
-    // input length 2 → floor(2/3) = 0, but the floor of 1 still allows a 1-edit match
-    expect(findClosestCommand('ls', ['lt'])).toBe('lt');
+    expect(calculateSuggestedString('ls', ['lt'])).toBe('lt');
   });
 
   it('allows more edits as the input grows longer', () => {
-    // input length 9 → threshold = 3; 'migration' → 'migrate' is 3 edits
-    expect(findClosestCommand('migration', ['migrate', 'seed'])).toBe('migrate');
+    expect(calculateSuggestedString('migration', ['migrate', 'seed'])).toBe(
+      'migrate'
+    );
   });
 
   it('picks the candidate with the smallest distance when several are within threshold', () => {
-    // 'serv' is 1 edit from 'serve', 2 from 'serves' → prefer 'serve'
-    expect(findClosestCommand('serv', ['serves', 'serve'])).toBe('serve');
+    expect(calculateSuggestedString('serv', ['serves', 'serve'])).toBe(
+      'serve'
+    );
   });
 });

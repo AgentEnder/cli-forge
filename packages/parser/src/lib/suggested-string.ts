@@ -34,25 +34,22 @@ export function damerauLevenshteinDistance(a: string, b: string): number {
   return dp[a.length][b.length];
 }
 
-export function findClosestCommand(
+export function calculateSuggestedString(
   input: string,
-  candidates: string[]
+  validValues: string[]
 ): string | undefined {
-  if (candidates.length === 0) return undefined;
+  if (validValues.length === 0) return undefined;
 
   const threshold = Math.max(1, Math.floor(input.length / 3));
   const lowered = input.toLowerCase();
 
-  let best: { name: string; distance: number } | undefined;
-  for (const candidate of candidates) {
-    const distance = damerauLevenshteinDistance(
-      lowered,
-      candidate.toLowerCase()
-    );
+  let best: { value: string; distance: number } | undefined;
+  for (const value of validValues) {
+    const distance = damerauLevenshteinDistance(lowered, value.toLowerCase());
     if (distance <= threshold && (!best || distance < best.distance)) {
-      best = { name: candidate, distance };
+      best = { value, distance };
     }
   }
 
-  return best?.name;
+  return best?.value;
 }

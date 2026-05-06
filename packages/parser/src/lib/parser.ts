@@ -25,6 +25,7 @@ import {
   StringOptionConfig,
   UnknownOptionConfig,
   isObjectOptionConfig,
+  supportsNegation,
 } from './option-types';
 import { CommonOptionConfig } from './option-types/common';
 import {
@@ -49,6 +50,7 @@ import {
 import { isFlag, isNextFlag, readArgKeys } from './utils/flags';
 import { getConfiguredOptionKey } from './utils/get-configured-key';
 import { readDefaultValue } from './utils/read-default-value';
+import { calculateSuggestedString } from './suggested-string';
 
 /**
  * Defines the option configuration passed to {@link ArgvParser.env}.
@@ -890,8 +892,15 @@ export class ArgvParser<
     // Validate strict mode - check for unmatched arguments
     if (this.options.strict && result.unmatched?.length) {
       for (const unmatchedArg of result.unmatched) {
-        const error = new Error(`Unknown argument: ${unmatchedArg}`);
-        delete error.stack;
+        const error = unmatchedArg.startsWith('-')
+          ? new UnknownOptionError(
+              unmatchedArg,
+              getSuggestedOptionsForUnknownInput(
+                unmatchedArg,
+                this.configuredOptions as Record<string, InternalOptionConfig>
+              )
+            )
+          : new UnknownArgumentError(unmatchedArg);
         errors.push(error);
       }
     }
@@ -1252,6 +1261,27 @@ export class ValidationFailedError<T> extends AggregateError {
   }
 }
 
+export class UnknownArgumentError extends Error {
+  constructor(
+    public input: string,
+    public suggestions: string[] = []
+  ) {
+    super(`Unknown argument: ${input}`);
+    this.name = 'UnknownArgumentError';
+    delete this.stack;
+  }
+}
+
+export class UnknownOptionError extends UnknownArgumentError {
+  constructor(
+    input: string,
+    public suggestedOptions: string[] = []
+  ) {
+    super(input, suggestedOptions);
+    this.name = 'UnknownOptionError';
+  }
+}
+
 /**
  * Applies default values to nested properties of an object option recursively.
  * This is called during normalization, before coerce is applied.
@@ -1288,6 +1318,39 @@ function applyNestedObjectDefaults(
   }
 
   return normalized;
+}
+
+function getSuggestedOptionsForUnknownInput(
+  input: string,
+  configuredOptions: Record<string, InternalOptionConfig>
+): string[] {
+  const flagInput = input.split('=')[0];
+  const validOptions = new Set<string>();
+  const aliases = (config: InternalOptionConfig): string[] =>
+    (config.alias ?? []).flatMap((alias) =>
+      typeof alias === 'string' ? [alias] : []
+    );
+
+  for (const key in configuredOptions) {
+    const config = configuredOptions[key];
+    validOptions.add(`--${config.key}`);
+
+    for (const alias of aliases(config)) {
+      validOptions.add(alias.length === 1 ? `-${alias}` : `--${alias}`);
+    }
+
+    if (supportsNegation(config)) {
+      validOptions.add(`--no-${config.key}`);
+      for (const alias of aliases(config)) {
+        if (alias.length > 1) {
+          validOptions.add(`--no-${alias}`);
+        }
+      }
+    }
+  }
+
+  const suggestion = calculateSuggestedString(flagInput, [...validOptions]);
+  return suggestion ? [suggestion] : [];
 }
 
 /**

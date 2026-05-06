@@ -21,12 +21,12 @@
 //       stdout:
 //         matches: "Unknown argument: migrat.*did you mean 'migrate'"
 //       exitCode: 1
-//   - name: "Does not suggest subcommands for unknown flags"
+//   - name: "Suggests closest option for an unknown flag"
 //     options:
-//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json subcommand-suggestions.ts --sevre'
+//       command: 'npx tsx --no-cache --tsconfig ./tsconfig.json subcommand-suggestions.ts serve --prt'
 //     assertions:
 //       stdout:
-//         contains: 'Unknown argument: --sevre'
+//         matches: "Unknown argument: --prt.*did you mean '--port'"
 //       exitCode: 1
 // ---
 import cliForge from 'cli-forge';

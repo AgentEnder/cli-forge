@@ -1,11 +1,14 @@
  
 import {
   ArgvParser,
+  calculateSuggestedString,
   EnvOptionConfig,
   LocalizationDictionary,
   LocalizationFunction,
   OptionConfig,
   ParsedArgs,
+  UnknownArgumentError,
+  UnknownOptionError,
   ValidationFailedError,
   fromCamelOrDashedCaseToConstCase,
   hideBin,
@@ -16,7 +19,6 @@ import { contextStorage, ForgeContextData } from './async-context';
 import { getCommandContext } from './context';
 import type { CommandContext, ProvidersFromChain } from './context';
 import { formatHelp } from './format-help';
-import { findClosestCommand } from './suggest-command';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
 type InteractiveShellModule = typeof import('./interactive-shell.js');
@@ -177,14 +179,24 @@ export class InternalCLI<
 
         for (const err of e.errors) {
           console.log(`  - ${err.message}`);
-          const match = /^Unknown argument: (.+)$/.exec(err.message);
-          if (match && subcommandNames.length > 0) {
-            const unknown = match[1];
-            if (!unknown.startsWith('-')) {
-              const suggestion = findClosestCommand(unknown, subcommandNames);
-              if (suggestion) {
-                console.log(`    (did you mean '${suggestion}'?)`);
-              }
+          if (err instanceof UnknownOptionError) {
+            const suggestion = err.suggestedOptions[0];
+            if (suggestion) {
+              console.log(`    (did you mean '${suggestion}'?)`);
+            }
+            continue;
+          }
+          if (
+            err instanceof UnknownArgumentError &&
+            subcommandNames.length > 0 &&
+            !err.input.startsWith('-')
+          ) {
+            const suggestion = calculateSuggestedString(
+              err.input,
+              subcommandNames
+            );
+            if (suggestion) {
+              console.log(`    (did you mean '${suggestion}'?)`);
             }
           }
         }

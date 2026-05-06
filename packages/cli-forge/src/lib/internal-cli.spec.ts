@@ -858,26 +858,26 @@ describe('cliForge', () => {
     mock.restore();
   });
 
-  it('should not suggest subcommands for unknown flags', async () => {
+  it('should suggest the closest option for an unknown flag', async () => {
     const mock = mockConsoleLog();
 
     try {
       await cli('test')
         .strict()
         .command('serve', {
-          builder: (argv) => argv,
+          builder: (argv) => argv.option('port', { type: 'number' }),
           handler: () => {
             // noop
           },
         })
-        .forge(['--sevre']);
+        .forge(['serve', '--prt']);
     } catch {
       // Expected to throw
     }
 
     const output = mock.getOutput();
-    expect(output).toContain('Unknown argument: --sevre');
-    expect(output).not.toContain('did you mean');
+    expect(output).toContain('Unknown argument: --prt');
+    expect(output).toContain("did you mean '--port'");
     mock.restore();
   });
 
