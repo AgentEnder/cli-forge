@@ -1,4 +1,4 @@
-import{getEnvironmentProvider as f,getFileSystemProvider as m}from"./chunk-DzHJB_az.js";function u(o){return o.replace(/[^a-zA-Z0-9_]/g,"_")}function d(o){const n=`_${u(o)}_completions`;return`${n}() {
+import{getEnvironmentProvider as f,getFileSystemProvider as m}from"./chunk-OkmEJUY9.js";function u(o){return o.replace(/[^a-zA-Z0-9_]/g,"_")}function d(o){const n=`_${u(o)}_completions`;return`${n}() {
   local cur_word args
   cur_word="\${COMP_WORDS[COMP_CWORD]}"
   args=("\${COMP_WORDS[@]:1:$COMP_CWORD}")
