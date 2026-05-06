@@ -20,7 +20,7 @@ nav:
 ## Shared strengths
 
 - **Validation** — Both support validation. CLI Forge has [choices, conflicts, implications](/docs/guides/validation) ([example](/examples/conflicts-and-implications)), and custom validators. cleye validates via [custom type functions](https://github.com/privatenumber/cleye#custom-flag-types--validation) that combine parsing and validation in one step.
-- **Strict mode** — Both reject unknown flags. cleye adds [edit-distance suggestions](https://github.com/privatenumber/cleye#strict-flags) for misspelled flags, which CLI Forge does not.
+- **Strict mode** — Both reject unknown flags and suggest close matches for misspellings. CLI Forge also suggests close subcommands in strict mode.
 
 ## cleye strengths
 

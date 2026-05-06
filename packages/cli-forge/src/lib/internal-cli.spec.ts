@@ -793,6 +793,94 @@ describe('cliForge', () => {
     mock.restore();
   });
 
+  it('should suggest the closest subcommand for a typoed positional in strict mode', async () => {
+    const mock = mockConsoleLog();
+
+    try {
+      await cli('test')
+        .strict()
+        .command('serve', {
+          builder: (argv) => argv,
+          handler: () => {
+            // noop
+          },
+        })
+        .command('build', {
+          builder: (argv) => argv,
+          handler: () => {
+            // noop
+          },
+        })
+        .forge(['sevre']);
+    } catch {
+      // Expected to throw
+    }
+
+    const output = mock.getOutput();
+    expect(output).toContain('Unknown argument: sevre');
+    expect(output).toContain("did you mean 'serve'");
+    mock.restore();
+  });
+
+  it('should suggest closest subcommand at nested command level', async () => {
+    const mock = mockConsoleLog();
+
+    try {
+      await cli('test')
+        .strict()
+        .command('db', {
+          builder: (argv) =>
+            argv
+              .command('migrate', {
+                builder: (a) => a,
+                handler: () => {
+                  // noop
+                },
+              })
+              .command('seed', {
+                builder: (a) => a,
+                handler: () => {
+                  // noop
+                },
+              }),
+          handler: () => {
+            // noop
+          },
+        })
+        .forge(['db', 'migrat']);
+    } catch {
+      // Expected to throw
+    }
+
+    const output = mock.getOutput();
+    expect(output).toContain('Unknown argument: migrat');
+    expect(output).toContain("did you mean 'migrate'");
+    mock.restore();
+  });
+
+  it('should suggest the closest option for an unknown flag', async () => {
+    const mock = mockConsoleLog();
+
+    try {
+      await cli('test')
+        .strict()
+        .command('serve', {
+          builder: (argv) => argv.option('port', { type: 'number' }),
+          handler: () => {
+            // noop
+          },
+        })
+        .forge(['serve', '--prt']);
+    } catch {
+      // Expected to throw
+    }
+
+    const output = mock.getOutput();
+    expect(output).toContain('Unknown argument: --prt');
+    expect(output).toContain("did you mean '--port'");
+    mock.restore();
+  });
+
   it('should allow disabling strict mode via .strict(false)', async () => {
     let captured: any;
 

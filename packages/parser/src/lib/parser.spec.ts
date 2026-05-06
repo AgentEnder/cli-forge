@@ -1,5 +1,10 @@
 import { join } from 'path';
-import { parser } from './parser';
+import {
+  parser,
+  UnknownArgumentError,
+  UnknownOptionError,
+  ValidationFailedError,
+} from './parser';
 
 import 'vitest';
 import { expect, describe, it } from 'vitest';
@@ -298,6 +303,40 @@ describe('parser', () => {
         .option('foo', { type: 'string' })
         .parse(['--foo', 'hello', '--bar', '42'])
     ).toThrowAggregateErrorContaining('Unknown argument: --bar', 'Unknown argument: 42');
+  });
+
+  it('should attach suggested options to unknown flags in strict mode', () => {
+    try {
+      parser({ strict: true })
+        .option('port', { type: 'number', alias: ['p'] })
+        .parse(['--prt']);
+      expect.unreachable('expected parse to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ValidationFailedError);
+      const typed = error as ValidationFailedError<any>;
+      expect(typed.errors[0]).toBeInstanceOf(UnknownOptionError);
+      expect(typed.errors[0]).toMatchObject({
+        input: '--prt',
+        suggestedOptions: ['--port'],
+      });
+    }
+  });
+
+  it('should throw typed unknown argument errors for unmatched positionals in strict mode', () => {
+    try {
+      parser({ strict: true })
+        .option('foo', { type: 'string' })
+        .parse(['--foo', 'hello', 'world']);
+      expect.unreachable('expected parse to throw');
+    } catch (error) {
+      expect(error).toBeInstanceOf(ValidationFailedError);
+      const typed = error as ValidationFailedError<any>;
+      expect(typed.errors[0]).toBeInstanceOf(UnknownArgumentError);
+      expect(typed.errors[0]).toMatchObject({
+        input: 'world',
+        suggestions: [],
+      });
+    }
   });
 
   it('should not throw error in strict mode when all arguments are matched', () => {

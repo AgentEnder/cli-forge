@@ -1,11 +1,14 @@
  
 import {
   ArgvParser,
+  calculateSuggestedString,
   EnvOptionConfig,
   LocalizationDictionary,
   LocalizationFunction,
   OptionConfig,
   ParsedArgs,
+  UnknownArgumentError,
+  UnknownOptionError,
   ValidationFailedError,
   fromCamelOrDashedCaseToConstCase,
   hideBin,
@@ -163,7 +166,40 @@ export class InternalCLI<
         this.printHelp();
         console.log();
         console.log(e.message);
-        console.log(e.errors.map((e) => `  - ${e.message}`).join('\n'));
+
+        let currentCommand: InternalCLI<any, any, any, any> = this;
+        for (const cmd of this.commandChain) {
+          const next = currentCommand.registeredCommands[cmd];
+          if (!next) break;
+          currentCommand = next;
+        }
+        const subcommandNames = Object.keys(
+          currentCommand.registeredCommands
+        ).filter((name) => name !== '$0');
+
+        for (const err of e.errors) {
+          console.log(`  - ${err.message}`);
+          if (err instanceof UnknownOptionError) {
+            const suggestion = err.suggestedOptions[0];
+            if (suggestion) {
+              console.log(`    (did you mean '${suggestion}'?)`);
+            }
+            continue;
+          }
+          if (
+            err instanceof UnknownArgumentError &&
+            subcommandNames.length > 0 &&
+            !err.input.startsWith('-')
+          ) {
+            const suggestion = calculateSuggestedString(
+              err.input,
+              subcommandNames
+            );
+            if (suggestion) {
+              console.log(`    (did you mean '${suggestion}'?)`);
+            }
+          }
+        }
         actions.exit(1);
       }
     },
