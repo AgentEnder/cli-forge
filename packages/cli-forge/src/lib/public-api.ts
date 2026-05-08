@@ -16,6 +16,7 @@ import {
   ParsedArgs,
   ResolveProperties,
   StringOptionConfig,
+  UnknownOptionConfig,
   WithOptional,
 } from '@cli-forge/parser';
 
@@ -77,6 +78,100 @@ export type ExtractCommandProviders<T> = T extends CLI<any, any, any, any, infer
   : T extends CLICommandOptions<any, any, any, any, any, any, infer P>
   ? P
   : {};
+
+/**
+ * Public-facing representation of a configured option with a method to render
+ * its help text line (respecting any per-option `formatHelpText` override).
+ */
+export interface OptionInfo {
+  /** The option key (storage name). */
+  key: string;
+  /** The option's full configuration. */
+  config: UnknownOptionConfig;
+  /**
+   * Renders the help text line for this option, applying any per-option
+   * `formatHelpText` override. Returns the default formatted line if no
+   * override is set.
+   */
+  renderHelpText: () => string;
+}
+
+/**
+ * Context object passed to help callbacks.
+ *
+ * @typeParam TArgs - The accumulated argument types. Typed as `Partial`
+ *   because help may be invoked before a successful parse.
+ */
+export interface HelpContext<TArgs extends ParsedArgs = ParsedArgs> {
+  /** The CLI instance for the command being helped. */
+  cli: CLI<TArgs, any, any, any>;
+  /** The parsed arguments at the time --help was invoked (partial — parse may not have succeeded). */
+  args: Partial<TArgs>;
+  /**
+   * Renders the full default help text that would be shown without customization.
+   * Call this to get the standard help output and augment it.
+   */
+  renderDefaultHelp: () => string;
+  /**
+   * All visible (non-hidden, non-positional) options with their configs and
+   * a `renderHelpText()` method that respects per-option overrides.
+   */
+  options: OptionInfo[];
+}
+
+/**
+ * Callback for customizing help text generation.
+ */
+export type HelpCallback<TArgs extends ParsedArgs = ParsedArgs> = (
+  context: HelpContext<TArgs>
+) => string;
+
+/**
+ * Context object passed to version callbacks.
+ */
+export interface VersionContext<TArgs extends ParsedArgs = ParsedArgs> {
+  /** The CLI instance. */
+  cli: CLI<TArgs, any, any, any>;
+  /** The parsed arguments at the time --version was invoked (partial — parse may not have succeeded). */
+  args: Partial<TArgs>;
+  /**
+   * Renders the default version string that would be shown without customization.
+   */
+  renderDefaultVersion: () => string;
+}
+
+/**
+ * Callback for customizing version output.
+ */
+export type VersionCallback<TArgs extends ParsedArgs = ParsedArgs> = (
+  context: VersionContext<TArgs>
+) => string;
+
+/**
+ * Callback for handling errors during CLI execution, similar to `Promise.catch()`.
+ *
+ * - If the handler returns normally, the error is **suppressed** and `forge()` returns.
+ * - If the handler rethrows (or throws a new error), the error **propagates** to the caller.
+ *
+ * When registered, this replaces the default validation-error handler entirely.
+ */
+export type CatchHandler<TArgs extends ParsedArgs = ParsedArgs> = (
+  error: unknown,
+  context: {
+    /** The CLI instance. */
+    cli: CLI<TArgs, any, any, any>;
+    /**
+     * Exit the process with the given code. Prefer using this helper over
+     * calling `process.exit` directly so the CLI can manage process
+     * termination consistently across environments.
+     */
+    exit: (code?: number) => void;
+    /**
+     * Render the default help text. Useful for printing help alongside error messages.
+     */
+    renderDefaultHelp: () => string;
+  }
+) => void;
 
 /**
  * Converts a Command to its child CLI entry for TChildren tracking.
@@ -861,14 +956,48 @@ export interface CLI<
   /**
    * Allows overriding the version displayed when passing `--version`. Defaults to crawling
    * the file system to get the package.json of the currently executing command.
-   * @param override
+   *
+   * Can also be used to disable the `--version` flag by passing `false`
+   * (works at any command level), or to provide a custom version handler
+   * callback. Calling `.version(string|callback)` after `.version(false)`
+   * re-enables it.
    */
-  version(override?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  version(override: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  version(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  version(callback: VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  version(overrideOrCallbackOrEnabled?: string | false | VersionCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+
+  /**
+   * Configures the `--help` flag behavior.
+   *
+   * - Pass `false` to disable `--help` for this command. The flag is still
+   *   parsed but won't trigger help output and won't appear in help text.
+   *   Works at any command level (root or subcommand).
+   *   Calling `.help(callback)` after `.help(false)` re-enables it.
+   * - Pass a callback to customize help text generation for this command.
+   *   The callback receives a {@link HelpContext} with the CLI instance, parsed args,
+   *   configured options (each with a `renderHelpText()` method), and a
+   *   `renderDefaultHelp()` function for the full default help text.
+   *   If a subcommand does not have its own help callback, it will inherit from its closest
+   *   ancestor that has one.
+   */
+  help(enabled: false): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  help(callback: HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  help(callbackOrEnabled?: false | HelpCallback<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
    * Prints help text to stdout.
+   * @param args Optional parsed args to pass to a custom help callback.
    */
-  printHelp(): void;
+  printHelp(args?: Partial<TArgs>): void;
+
+  /**
+   * Registers an error handler that replaces the default validation-error behavior
+   * (which prints help + error messages and exits). Works like `Promise.catch()`:
+   * if the handler returns normally, the error is suppressed and `forge()` returns.
+   * If the handler rethrows (or throws a new error), the error propagates.
+   */
+  catch(handler: CatchHandler<TArgs>): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   group({
     label,

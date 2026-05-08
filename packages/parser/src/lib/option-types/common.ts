@@ -125,4 +125,14 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
    * Can be set to group options in help output and generated docs.
    */
   group?: string;
+
+  /**
+   * Custom function to format this option's help text. When set, the return value
+   * replaces the default help line for this option.
+   *
+   * @param option The option's configuration.
+   * @param defaultText The default help text that would be generated for this option.
+   * @returns The custom help text to display for this option.
+   */
+  formatHelpText?: (option: CommonOptionConfig<T, TCoerce, TChoices>, defaultText: string) => string;
 };
