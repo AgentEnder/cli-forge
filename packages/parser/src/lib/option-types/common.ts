@@ -125,4 +125,18 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
    * Can be set to group options in help output and generated docs.
    */
   group?: string;
+
+  /**
+   * Routes writes for this option to the given named configuration location
+   * declared via `.config(..., { locations: { ... } })`. This is a write-only
+   * override: it only takes effect when the option has no provenance (the
+   * value isn't already in any loaded file). When provenance exists, writes
+   * still go back to the file the value originally came from.
+   *
+   * Type-safety on the location name is provided by the CLI interface
+   * (`TConfigLocations` generic). At the parser level, the field is a plain
+   * string — runtime resolution and typo-checking happen against the
+   * registered locations.
+   */
+  defaultConfigLocation?: string;
 };

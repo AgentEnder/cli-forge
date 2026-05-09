@@ -1,8 +1,8 @@
 import {
   ConfigurationDocSection,
   ConfigurationProvider,
-  DefaultConfig,
   ExtractLocation,
+  NamedConfigLocations,
 } from './config-files/configuration-loader';
 import {
   AggregateConfigProvider,
@@ -560,41 +560,47 @@ export class ArgvParser<
   config(provider: ConfigProviderRegistration<TArgs>): this;
   /**
    * Registers a pre-built configuration provider with framework-level
-   * metadata such as `default`. Use this overload with convenience
-   * factories like {@link ConfigurationProviders.JsonFile} that return a
-   * fully-constructed provider but still need to carry a `default` path.
+   * metadata. Use this overload with convenience factories that return
+   * a fully-constructed provider but still need to carry named locations
+   * for write routing.
    *
    * @param provider The configuration provider to register.
-   * @param options Framework-level options (e.g. `default`).
+   * @param options Framework-level options (`locations`, `defaultLocation`).
    */
-  config<R extends ConfigProviderRegistration<TArgs>>(
+  config<
+    R extends ConfigProviderRegistration<TArgs>,
+    L extends NamedConfigLocations<RegistrationLocation<R>> = Record<string, never>,
+    D extends keyof L & string = never
+  >(
     provider: R,
-    options: { default?: DefaultConfig<RegistrationLocation<R>> }
+    options: { locations?: L; defaultLocation?: D }
   ): this;
   /**
-   * Registers a configuration provider by class and options.
-   * Framework options like `default` are extracted and stored as metadata.
+   * Registers a configuration provider by class and options. Framework
+   * options like `locations` and `defaultLocation` are extracted from
+   * the options object and stored as metadata; the rest is passed to
+   * the constructor.
    *
    * @param ctor The provider class constructor.
-   * @param options Constructor options merged with framework options (e.g., `default`).
+   * @param options Constructor options merged with framework options.
    */
   config<
     C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
+    L extends NamedConfigLocations<RegistrationLocation<InstanceType<C>>> = Record<string, never>,
+    D extends keyof L & string = never
   >(
     ctor: C,
     options: ConstructorParameters<C>[0] & {
-      default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
+      locations?: L;
+      defaultLocation?: D;
     }
   ): this;
-  config<
-    C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
-  >(
-    providerOrCtor: ConfigProviderRegistration<TArgs> | C,
-    options?:
-      | { default?: DefaultConfig<any> }
-      | (ConstructorParameters<C>[0] & {
-          default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
-        })
+  config(
+    providerOrCtor: ConfigProviderRegistration<TArgs> | (new (opts: any) => any),
+    options?: {
+      locations?: NamedConfigLocations<any>;
+      defaultLocation?: string;
+    } & Record<string, unknown>
   ): this {
     if (typeof providerOrCtor === 'function') {
       if (options === undefined) {
@@ -604,15 +610,26 @@ export class ArgvParser<
       }
 
       // Constructor-based overload: extract framework opts, construct provider
-      const { default: defaultConfig, ...providerOpts } = options as any;
-      const provider = new providerOrCtor(providerOpts);
+      const {
+        locations: ctorLocations,
+        defaultLocation: ctorDefaultLocation,
+        ...providerOpts
+      } = options as {
+        locations?: NamedConfigLocations<any>;
+        defaultLocation?: string;
+      } & Record<string, unknown>;
+      const provider = new (providerOrCtor as new (opts: any) => any)(
+        providerOpts
+      );
       this.registerConfigurationProviders(provider, {
-        default: defaultConfig,
+        locations: ctorLocations,
+        defaultLocation: ctorDefaultLocation,
       });
     } else if (options !== undefined) {
       // Pre-built provider with framework metadata
       this.registerConfigurationProviders(providerOrCtor, {
-        default: (options as { default?: DefaultConfig<any> }).default,
+        locations: options.locations,
+        defaultLocation: options.defaultLocation,
       });
     } else {
       this.registerConfigurationProviders(providerOrCtor);
@@ -622,8 +639,21 @@ export class ArgvParser<
 
   private registerConfigurationProviders(
     providers: ConfigProviderRegistration<TArgs>,
-    metadata?: { default?: DefaultConfig<any> }
+    metadata?: { locations?: NamedConfigLocations<any>; defaultLocation?: string }
   ) {
+    if (
+      metadata?.locations &&
+      metadata.defaultLocation !== undefined &&
+      !(metadata.defaultLocation in metadata.locations)
+    ) {
+      throw new Error(
+        `defaultLocation "${metadata.defaultLocation}" is not declared in this .config() call's locations map.`
+      );
+    }
+    // Type-level uniqueness across .config() calls is enforced by the
+    // TConfigLocations generic on the public CLI/parser interface; runtime
+    // collision detection is intentionally skipped here so re-running
+    // forge() (which re-invokes builders) works without retriggering.
     const registrations = Array.isArray(providers) ? providers : [providers];
     for (let i = 0; i < registrations.length; i++) {
       this.configuredConfigurationProviders.push(
@@ -636,6 +666,9 @@ export class ArgvParser<
 
   /**
    * Updates configuration values by routing each key to the provider that owns it.
+   * Per-option `defaultConfigLocation` overrides are derived from the
+   * registered option configs and forwarded to the aggregate.
+   *
    * @param values Partial configuration to write.
    */
   async updateConfig(values: Partial<TArgs>): Promise<void>;
@@ -654,10 +687,32 @@ export class ArgvParser<
       );
       this.cachedAggregate.load(getEnvironmentProvider().cwd());
     }
+    const optionLocationOverrides = this.collectOptionLocationOverrides();
     if (typeof valuesOrUpdater === 'function') {
-      return this.cachedAggregate.updateConfig(valuesOrUpdater);
+      return this.cachedAggregate.updateConfig(valuesOrUpdater, {
+        optionLocationOverrides,
+      });
     }
-    return this.cachedAggregate.updateConfig(valuesOrUpdater);
+    return this.cachedAggregate.updateConfig(valuesOrUpdater, {
+      optionLocationOverrides,
+    });
+  }
+
+  /**
+   * Builds the `{ [optionKey]: locationName }` map fed to the aggregate's
+   * write-routing logic from the registered option configs.
+   */
+  private collectOptionLocationOverrides(): Record<string, string> {
+    const overrides: Record<string, string> = {};
+    for (const key in this.configuredOptions) {
+      const config = this.configuredOptions[key] as InternalOptionConfig & {
+        defaultConfigLocation?: string;
+      };
+      if (typeof config.defaultConfigLocation === 'string') {
+        overrides[config.key] = config.defaultConfigLocation;
+      }
+    }
+    return overrides;
   }
 
   /**

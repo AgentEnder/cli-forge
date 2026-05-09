@@ -2,11 +2,12 @@ id: default-config
 title: Default Config Path
 hidden: true
 description: |
-  Demonstrates the `default` option on configuration providers. When no config
-  file exists on disk, `updateConfig` uses the default path to create one.
-  This enables `init` commands that bootstrap configuration from scratch.
+  Demonstrates named locations + `defaultLocation` on configuration providers.
+  When no config file exists on disk, `updateConfig` writes to the
+  `defaultLocation` to create one. This enables `init` commands that bootstrap
+  configuration from scratch.
 test:
-  - name: 'Creates config file at default path when none exists'
+  - name: 'Creates config file at defaultLocation when none exists'
     options:
       command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-test.ts'
     assertions:

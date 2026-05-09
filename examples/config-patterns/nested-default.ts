@@ -3,14 +3,14 @@ import { tmpdir } from 'os';
 import { join } from 'path';
 import { ConfigurationProviders, cli } from 'cli-forge';
 
-// A "user-level" default that lives several directories deep — the framework
+// A USER named location that lives several directories deep — the framework
 // must create the intermediate folders (like `mkdir -p`) before writing.
 //
-// This example uses the `.config(provider, { default })` overload with the
-// convenience `ConfigurationProviders.JsonFile` factory. The class-based
-// `.config(ConfigurationFiles.JsonFileConfigLoader, { filename, default })`
-// form also works, but the factory style is shorter when you don't need a
-// custom transform.
+// This example uses the `.config(provider, { locations, defaultLocation })`
+// overload with the convenience `ConfigurationProviders.JsonFile` factory.
+// The class-based `.config(ConfigurationFiles.JsonFileConfigLoader, ...)` form
+// also works, but the factory style is shorter when you don't need a custom
+// transform.
 const baseDir = mkdtempSync(join(tmpdir(), 'nested-default-'));
 const configPath = join(baseDir, '.config', 'my-tool', 'settings.json');
 
@@ -19,7 +19,8 @@ const app = cli('my-tool', {
     args
       .option('theme', { type: 'string', default: 'light' })
       .config(ConfigurationProviders.JsonFile('settings.json'), {
-        default: () => configPath,
+        locations: { USER: () => configPath },
+        defaultLocation: 'USER',
       }),
   handler: async () => {
     console.log(`before: exists=${existsSync(configPath)}`);

@@ -11,10 +11,13 @@ const app = cli('my-tool', {
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
       })
-      // User config — fallback, with a default for init
+      // User config — fallback, with a named USER location for init
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.json',
-        default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+        locations: {
+          USER: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+        },
+        defaultLocation: 'USER',
       }),
   handler: (args) => {
     console.log(`theme: ${args.theme}`);

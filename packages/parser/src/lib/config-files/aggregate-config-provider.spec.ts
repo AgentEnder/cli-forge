@@ -75,8 +75,14 @@ describe('AggregateConfigProvider', () => {
       const aggregate = new AggregateConfigProvider([providerA, providerB]);
       aggregate.load('/root');
 
-      expect(aggregate.provenance.get('foo')).toBe(providerA);
-      expect(aggregate.provenance.get('bar')).toBe(providerB);
+      expect(aggregate.provenance.get('foo')?.provider).toBe(providerA);
+      expect(aggregate.provenance.get('foo')?.resolvedPath).toBe(
+        '/root/.configA'
+      );
+      expect(aggregate.provenance.get('bar')?.provider).toBe(providerB);
+      expect(aggregate.provenance.get('bar')?.resolvedPath).toBe(
+        '/root/.configB'
+      );
     });
 
     it('should record provenance to first provider on key conflict', () => {
@@ -90,7 +96,7 @@ describe('AggregateConfigProvider', () => {
       const aggregate = new AggregateConfigProvider([providerA, providerB]);
       aggregate.load('/root');
 
-      expect(aggregate.provenance.get('foo')).toBe(providerA);
+      expect(aggregate.provenance.get('foo')?.provider).toBe(providerA);
     });
 
     it('should skip providers that do not resolve', () => {
@@ -256,8 +262,8 @@ describe('AggregateConfigProvider', () => {
       const result = outerAggregate.load('/root');
 
       expect(result).toEqual({ foo: 'fromA', bar: 2 });
-      expect(outerAggregate.provenance.get('foo')).toBe(providerA);
-      expect(outerAggregate.provenance.get('bar')).toBe(providerB);
+      expect(outerAggregate.provenance.get('foo')?.provider).toBe(providerA);
+      expect(outerAggregate.provenance.get('bar')?.provider).toBe(providerB);
     });
   });
 
@@ -294,25 +300,35 @@ describe('AggregateConfigProvider', () => {
       expect(updatedB).toEqual([{ bar: 99 }]);
     });
 
-    it('should route unknown keys to the first resolving provider', async () => {
-      const updatedA: any[] = [];
+    it('should route unknown keys to the entry defaultLocation when set', async () => {
+      const updates: { partial: any; targetPath: any }[] = [];
 
       const providerA: ConfigurationProvider<any> = {
         resolve: (dir) => (dir === '/root' ? '/root/.configA' : undefined),
         load: () => ({ foo: 'fromA' }),
-        updateConfig: async (updater) => {
+        updateConfig: async (updater, options) => {
           const result =
             typeof updater === 'function' ? await updater({ foo: 'fromA' }) : updater;
-          updatedA.push(result);
+          updates.push({ partial: result, targetPath: options?.targetPath });
         },
       };
 
-      const aggregate = new AggregateConfigProvider([providerA]);
+      const aggregate = new AggregateConfigProvider([
+        {
+          provider: providerA,
+          locations: { LOCAL: '/root/.configA' },
+          defaultLocation: 'LOCAL',
+        },
+      ]);
       aggregate.load('/root');
 
       await aggregate.updateConfig({ newKey: 'newValue' } as any);
 
-      expect(updatedA).toEqual([{ foo: 'fromA', newKey: 'newValue' }]);
+      // foo had provenance from walk-upward; newKey routes via defaultLocation.
+      // Both target the same file so writes are merged.
+      expect(updates).toEqual([
+        { partial: { foo: 'fromA', newKey: 'newValue' }, targetPath: '/root/.configA' },
+      ]);
     });
 
     it('should throw if the target provider does not support updateConfig', async () => {
@@ -501,7 +517,11 @@ describe('AggregateConfigProvider', () => {
       };
 
       const aggregate = new AggregateConfigProvider([
-        { provider, default: '/tmp/default.json' },
+        {
+          provider,
+          locations: { DEFAULT: '/tmp/default.json' },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
@@ -511,7 +531,7 @@ describe('AggregateConfigProvider', () => {
       expect(targetPaths).toEqual(['/tmp/default.json']);
     });
 
-    it('should support default as a function', async () => {
+    it('should support defaultLocation pointing at a callback location', async () => {
       const updates: any[] = [];
       const targetPaths: any[] = [];
 
@@ -527,7 +547,11 @@ describe('AggregateConfigProvider', () => {
       };
 
       const aggregate = new AggregateConfigProvider([
-        { provider, default: () => '/tmp/from-function.json' },
+        {
+          provider,
+          locations: { DEFAULT: () => '/tmp/from-function.json' },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
@@ -536,7 +560,7 @@ describe('AggregateConfigProvider', () => {
       expect(targetPaths).toEqual(['/tmp/from-function.json']);
     });
 
-    it('should support async default function', async () => {
+    it('should support async location callback', async () => {
       const targetPaths: any[] = [];
 
       const provider: ConfigurationProvider<any> = {
@@ -550,7 +574,8 @@ describe('AggregateConfigProvider', () => {
       const aggregate = new AggregateConfigProvider([
         {
           provider,
-          default: async () => '/tmp/async-default.json',
+          locations: { DEFAULT: async () => '/tmp/async-default.json' },
+          defaultLocation: 'DEFAULT',
         },
       ]);
       aggregate.load('/root');
@@ -560,7 +585,7 @@ describe('AggregateConfigProvider', () => {
       expect(targetPaths).toEqual(['/tmp/async-default.json']);
     });
 
-    it('should fall through when default function returns null', async () => {
+    it('should fall through when location callback returns null', async () => {
       const targetPaths: any[] = [];
 
       const providerA: ConfigurationProvider<any> = {
@@ -580,8 +605,16 @@ describe('AggregateConfigProvider', () => {
       };
 
       const aggregate = new AggregateConfigProvider([
-        { provider: providerA, default: () => null },
-        { provider: providerB, default: '/tmp/fallback.json' },
+        {
+          provider: providerA,
+          locations: { A: () => null },
+          defaultLocation: 'A',
+        },
+        {
+          provider: providerB,
+          locations: { B: '/tmp/fallback.json' },
+          defaultLocation: 'B',
+        },
       ]);
       aggregate.load('/root');
 
@@ -591,49 +624,60 @@ describe('AggregateConfigProvider', () => {
       expect(targetPaths).toEqual(['/tmp/fallback.json']);
     });
 
-    it('should prefer resolving provider over default provider', async () => {
-      const resolvedUpdates: any[] = [];
-      const defaultUpdates: any[] = [];
+    it('should preserve provenance writes when also writing new keys via defaultLocation', async () => {
+      const resolvedUpdates: { partial: any; targetPath: any }[] = [];
+      const defaultUpdates: { partial: any; targetPath: any }[] = [];
 
       const resolvingProvider: ConfigurationProvider<any> = {
         resolve: (dir) =>
           dir === '/root' ? '/root/.config.json' : undefined,
         load: () => ({ existing: true }),
-        updateConfig: async (updater) => {
+        updateConfig: async (updater, options) => {
           const result =
             typeof updater === 'function'
               ? await updater({ existing: true })
               : updater;
-          resolvedUpdates.push(result);
+          resolvedUpdates.push({ partial: result, targetPath: options?.targetPath });
         },
       };
 
       const defaultProvider: ConfigurationProvider<any> = {
         resolve: () => undefined,
         load: () => ({}),
-        updateConfig: async (updater) => {
+        updateConfig: async (updater, options) => {
           const result =
             typeof updater === 'function' ? await updater({}) : updater;
-          defaultUpdates.push(result);
+          defaultUpdates.push({ partial: result, targetPath: options?.targetPath });
         },
       };
 
       const aggregate = new AggregateConfigProvider([
         resolvingProvider,
-        { provider: defaultProvider, default: '/tmp/default.json' },
+        {
+          provider: defaultProvider,
+          locations: { DEFAULT: '/tmp/default.json' },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
-      await aggregate.updateConfig({ newKey: 'value' } as any);
+      await aggregate.updateConfig({
+        existing: false,
+        newKey: 'value',
+      } as any);
 
-      // Should route to resolving provider, not the default one
+      // `existing` has provenance from resolvingProvider — write goes there.
+      // `newKey` has no provenance — falls through to defaultLocation on the
+      // second entry (the resolving provider declares no defaultLocation).
       expect(resolvedUpdates).toEqual([
-        { existing: true, newKey: 'value' },
+        { partial: { existing: false }, targetPath: '/root/.config.json' },
       ]);
-      expect(defaultUpdates).toEqual([]);
+      expect(defaultUpdates).toEqual([
+        { partial: { newKey: 'value' }, targetPath: '/tmp/default.json' },
+      ]);
     });
 
-    it('should throw when no provider resolves and no default is configured', async () => {
+    it('should throw when no provider resolves and no defaultLocation is configured', async () => {
       const provider: ConfigurationProvider<any> = {
         resolve: () => undefined,
         load: () => ({}),
@@ -645,10 +689,10 @@ describe('AggregateConfigProvider', () => {
 
       await expect(
         aggregate.updateConfig({ foo: 'bar' })
-      ).rejects.toThrow(/no provider resolved/);
+      ).rejects.toThrow(/no provenance/);
     });
 
-    it('should support URL as default', async () => {
+    it('should support URL as named location value', async () => {
       const targetPaths: any[] = [];
 
       const provider: ConfigurationProvider<any> = {
@@ -661,7 +705,11 @@ describe('AggregateConfigProvider', () => {
 
       const defaultUrl = new URL('file:///tmp/url-default.json');
       const aggregate = new AggregateConfigProvider([
-        { provider, default: defaultUrl },
+        {
+          provider,
+          locations: { DEFAULT: defaultUrl },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
@@ -670,7 +718,7 @@ describe('AggregateConfigProvider', () => {
       expect(targetPaths).toEqual([defaultUrl]);
     });
 
-    it('updater form reads current state from the default-path file when nothing resolves from cwd', async () => {
+    it('updater form reads current state from the defaultLocation file when nothing resolves from cwd', async () => {
       // Simulates the flow: init writes to default path, later call wants
       // to read-modify-write. Without the fix, the updater sees {}
       // because load(cwd) finds nothing.
@@ -693,7 +741,11 @@ describe('AggregateConfigProvider', () => {
       };
 
       const aggregate = new AggregateConfigProvider([
-        { provider, default: '/tmp/default.json' },
+        {
+          provider,
+          locations: { DEFAULT: '/tmp/default.json' },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
@@ -718,7 +770,7 @@ describe('AggregateConfigProvider', () => {
       expect(onDisk).toEqual({ count: 6 });
     });
 
-    it('updater form strips `extends` from the default-path file when loading current state', async () => {
+    it('updater form strips `extends` from the defaultLocation file when loading current state', async () => {
       let onDisk: Record<string, unknown> = {
         extends: './base.json',
         theme: 'dark',
@@ -737,16 +789,29 @@ describe('AggregateConfigProvider', () => {
       };
 
       const aggregate = new AggregateConfigProvider([
-        { provider, default: '/tmp/default.json' },
+        {
+          provider,
+          locations: { DEFAULT: '/tmp/default.json' },
+          defaultLocation: 'DEFAULT',
+        },
       ]);
       aggregate.load('/root');
 
       const fs = await import('../environment-provider.js');
       const original = fs.getFileSystemProvider();
-      fs.setFileSystemProvider({
-        ...original,
-        existsSync: () => true,
-      });
+      // Use a Proxy so class methods on the prototype are still callable.
+      // A plain `{ ...original, ... }` would lose `join`, `dirname`, etc.
+      fs.setFileSystemProvider(
+        new Proxy(original, {
+          get(target, prop) {
+            if (prop === 'existsSync') {
+              return (p: string) => p === '/tmp/default.json';
+            }
+            const value = (target as any)[prop];
+            return typeof value === 'function' ? value.bind(target) : value;
+          },
+        })
+      );
 
       let seenExtends: unknown;
       try {

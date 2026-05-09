@@ -2200,7 +2200,7 @@ describe('cliForge', () => {
       expect(written).toEqual({ theme: 'dark', lang: 'fr' });
     });
 
-    it('writes to the default path when no config file exists on disk', async () => {
+    it('writes to the defaultLocation path when no config file exists on disk', async () => {
       const app = cli('app', {
         builder: (args) =>
           args
@@ -2208,7 +2208,8 @@ describe('cliForge', () => {
             .option('lang', { type: 'string' })
             .config(ConfigurationFiles.JsonFileConfigLoader, {
               filename: 'app.config.json',
-              default: '/root/app.config.json',
+              locations: { USER: '/root/app.config.json' },
+              defaultLocation: 'USER',
             }),
         handler: async () => {
           await app.updateConfig({ theme: 'dark', lang: 'fr' });
@@ -2224,7 +2225,7 @@ describe('cliForge', () => {
       });
     });
 
-    it('supports `default` as a lazy function', async () => {
+    it('supports a location callback as a lazy function', async () => {
       let invocations = 0;
       const app = cli('app', {
         builder: (args) =>
@@ -2232,10 +2233,13 @@ describe('cliForge', () => {
             .option('theme', { type: 'string' })
             .config(ConfigurationFiles.JsonFileConfigLoader, {
               filename: 'app.config.json',
-              default: () => {
-                invocations++;
-                return '/home/user/.config/app/config.json';
+              locations: {
+                USER: () => {
+                  invocations++;
+                  return '/home/user/.config/app/config.json';
+                },
               },
+              defaultLocation: 'USER',
             }),
         handler: async () => {
           await app.updateConfig({ theme: 'dark' });
@@ -2244,17 +2248,17 @@ describe('cliForge', () => {
 
       await app.forge([]);
 
-      expect(invocations).toBe(1);
+      expect(invocations).toBeGreaterThanOrEqual(1);
       expect(
         fs.existsSync('/home/user/.config/app/config.json')
       ).toBe(true);
     });
 
-    it('falls back to default on first write, then writes back to the resolved file on subsequent updates', async () => {
+    it('falls back to defaultLocation on first write, then writes back to the resolved file on subsequent updates', async () => {
       // Two updateConfig calls from the same handler. The first creates the
-      // file at the `default` path; the second should go to the freshly
-      // resolved path rather than re-using targetPath, and must merge with
-      // the existing file contents instead of overwriting them.
+      // file at the `defaultLocation` path; the second sees that file via
+      // walk-upward provenance (since `app.config.json` is now at /root) and
+      // merges with the existing contents.
       const app = cli('app', {
         builder: (args) =>
           args
@@ -2262,7 +2266,8 @@ describe('cliForge', () => {
             .option('lang', { type: 'string' })
             .config(ConfigurationFiles.JsonFileConfigLoader, {
               filename: 'app.config.json',
-              default: '/root/app.config.json',
+              locations: { USER: '/root/app.config.json' },
+              defaultLocation: 'USER',
             }),
         handler: async () => {
           await app.updateConfig({ theme: 'dark', lang: 'fr' });
@@ -2278,14 +2283,15 @@ describe('cliForge', () => {
       });
     });
 
-    it('supports updater functions with proxy tracking on a fresh default path', async () => {
+    it('supports updater functions with proxy tracking on a fresh defaultLocation', async () => {
       const app = cli('app', {
         builder: (args) =>
           args
             .option('count', { type: 'number', default: 0 })
             .config(ConfigurationFiles.JsonFileConfigLoader, {
               filename: 'app.config.json',
-              default: '/root/app.config.json',
+              locations: { USER: '/root/app.config.json' },
+              defaultLocation: 'USER',
             }),
         handler: async () => {
           await app.updateConfig((config) => {
@@ -2302,7 +2308,7 @@ describe('cliForge', () => {
       });
     });
 
-    it('errors clearly when no provider resolves and no default is configured', async () => {
+    it('errors clearly when no provider resolves and no defaultLocation is configured', async () => {
       // `runCommand` catches handler errors and logs via console.error to
       // surface them nicely to end users, so we capture the rejection from
       // inside the handler instead of asserting on `forge()`'s return.
@@ -2326,7 +2332,7 @@ describe('cliForge', () => {
       await app.forge([]);
 
       expect(captured).toBeInstanceOf(Error);
-      expect((captured as Error).message).toMatch(/no provider resolved/);
+      expect((captured as Error).message).toMatch(/no provenance/);
     });
   });
 });

@@ -7,7 +7,7 @@ import { ConfigurationFiles, cli } from 'cli-forge';
 // from the on-disk file before invoking the callback. On the first run
 // this means the updater sees an empty object (no file exists yet); on
 // subsequent runs it sees the previously persisted state — even when the
-// file lives at a framework-managed `default` path outside cwd.
+// file lives at a named location outside cwd.
 const tempDir = mkdtempSync(join(tmpdir(), 'fresh-updater-'));
 const configPath = join(tempDir, 'counter.json');
 
@@ -17,7 +17,8 @@ const app = cli('counter', {
       .option('count', { type: 'number', default: 0 })
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'counter.json',
-        default: () => configPath,
+        locations: { USER: () => configPath },
+        defaultLocation: 'USER',
       }),
   handler: async () => {
     // First call — no file exists. The updater gets `{}` as current, so
@@ -30,7 +31,7 @@ const app = cli('counter', {
     const first = JSON.parse(readFileSync(configPath, 'utf-8'));
     console.log(`first call count: ${first.count}`);
 
-    // Second call — the file now exists at the default path and the
+    // Second call — the file now exists at the USER location and the
     // updater sees the previously persisted value, so this correctly
     // increments from 1 to 2 without needing any manual plumbing.
     await app.updateConfig((config) => {

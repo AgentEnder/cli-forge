@@ -15,7 +15,8 @@ const app = cli('my-tool', {
       .option('lang', { type: 'string', default: 'en' })
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
-        default: () => configPath,
+        locations: { PROJECT: () => configPath },
+        defaultLocation: 'PROJECT',
       }),
   handler: () => undefined,
 }).command('init', {
@@ -23,14 +24,14 @@ const app = cli('my-tool', {
     'Bootstrap a fresh config file and then update a value in place',
   handler: async () => {
     // First write: no file exists on disk, so the framework falls through
-    // to the `default` path and creates the file.
+    // to the PROJECT named location and creates the file.
     console.log(`before init: exists=${existsSync(configPath)}`);
     await app.updateConfig({ theme: 'dark', lang: 'fr' });
 
     const afterInit = JSON.parse(readFileSync(configPath, 'utf-8'));
     console.log(`after init: theme=${afterInit.theme} lang=${afterInit.lang}`);
 
-    // Second write: the file now exists at the default path. The JSON
+    // Second write: the file now exists at the PROJECT location. The JSON
     // file loader reads the existing content from that path, merges the
     // partial update in, and writes it back — so `lang` is preserved
     // without having to pass it through the update.

@@ -76,3 +76,20 @@ export type ExtractLocation<P> = P extends ConfigurationProvider<any, infer TLoc
 export type DefaultConfig<TLocation = string | URL> =
   | TLocation
   | (() => TLocation | null | Promise<TLocation | null>);
+
+/**
+ * A map of named configuration locations registered for a single `.config()` call.
+ *
+ * Each entry's value is a {@link DefaultConfig} — a static path/URL or a callback
+ * that resolves the path lazily (sync or async). Callbacks returning `null` are
+ * skipped during reads and fall through during writes.
+ *
+ * Named locations are scanned during read in declaration order *after* the
+ * provider's walk-upward result. Per-option `defaultConfigLocation` and the
+ * provider's `defaultLocation` reference these names by key for write routing.
+ *
+ * @typeParam TLocation The location type (usually `string | URL`).
+ */
+export type NamedConfigLocations<TLocation = string | URL> = {
+  readonly [name: string]: DefaultConfig<TLocation>;
+};

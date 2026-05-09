@@ -10,7 +10,10 @@ const app = cli('my-tool', {
       .option('lang', { type: 'string', default: 'en' })
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.json',
-        default: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+        locations: {
+          USER: () => join(homedir(), '.config', 'my-tool', 'config.json'),
+        },
+        defaultLocation: 'USER',
       }),
   handler: (args) => {
     console.log(`theme: ${args.theme}`);

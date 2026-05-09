@@ -12,7 +12,10 @@ const app = cli('my-tool', {
       .option('lang', { type: 'string', default: 'en' })
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
-        default: () => join(tempDir, 'my-tool.config.json'),
+        locations: {
+          PROJECT: () => join(tempDir, 'my-tool.config.json'),
+        },
+        defaultLocation: 'PROJECT',
       }),
   // #region update-config
   handler: async (args) => {

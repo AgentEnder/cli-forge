@@ -1,0 +1,50 @@
+id: config-named-locations
+title: Named Configuration Locations
+hidden: true
+description: |
+  Demonstrates named configuration locations — multiple paths registered
+  alongside a provider so per-option `defaultConfigLocation` can route
+  writes to USER vs PROJECT files, while reads merge values from both.
+test:
+  - name: 'Both location files are created on first write'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'USER exists: true'
+  - name: 'PROJECT file exists alongside USER'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'PROJECT exists: true'
+  - name: 'Per-option defaultConfigLocation routes theme to USER'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'USER theme: dark'
+  - name: 'Global defaultLocation routes projectName to PROJECT'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'PROJECT projectName: cli-forge'
+  - name: 'theme is NOT written to PROJECT'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'PROJECT has theme: false'
+  - name: 'projectName is NOT written to USER'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'USER has projectName: false'
+  - name: 'Reads merge across both locations'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json cli.ts'
+    assertions:
+      stdout:
+        contains: 'merged theme: dark'

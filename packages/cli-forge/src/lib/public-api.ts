@@ -38,8 +38,8 @@ export interface GlobalProviderConfig<T> {
  * Extracts the command name from a Command type.
  * Works with both CLI instances and command config objects.
  */
-export type ExtractCommandName<T> = T extends CLI<any, any, any, any, any>
-  ? T extends InternalCLI<any, any, any, any, any>
+export type ExtractCommandName<T> = T extends CLI<any, any, any, any, any, any>
+  ? T extends InternalCLI<any, any, any, any, any, any>
     ? string
     : string
   : T extends { name: infer N }
@@ -52,7 +52,7 @@ export type ExtractCommandName<T> = T extends CLI<any, any, any, any, any>
  * Extracts the args type from a Command.
  * Works with both CLI instances and command config objects.
  */
-export type ExtractCommandArgs<T> = T extends CLI<infer A, any, any, any, any>
+export type ExtractCommandArgs<T> = T extends CLI<infer A, any, any, any, any, any>
   ? A
   : T extends CLICommandOptions<any, infer A, any, any>
   ? A
@@ -61,7 +61,7 @@ export type ExtractCommandArgs<T> = T extends CLI<infer A, any, any, any, any>
 /**
  * Extracts the handler return type from a Command.
  */
-export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any, any, any>
+export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any, any, any, any>
   ? R
   : T extends CLICommandOptions<any, any, infer R, any>
   ? R
@@ -72,7 +72,7 @@ export type ExtractCommandHandlerReturn<T> = T extends CLI<any, infer R, any, an
  * Works with both CLI instances (uses the 5th generic directly) and command
  * config objects (infers the builder's return type's provider map).
  */
-export type ExtractCommandProviders<T> = T extends CLI<any, any, any, any, infer P>
+export type ExtractCommandProviders<T> = T extends CLI<any, any, any, any, infer P, any>
   ? P
   : T extends CLICommandOptions<any, any, any, any, any, any, infer P>
   ? P
@@ -117,7 +117,8 @@ export interface CLI<
 
   TChildren = {},
   TParent = undefined,
-  TProviders = {}
+  TProviders = {},
+  TConfigLocations extends string = never
 > {
   command<
     TCommand extends Command<TArgs, any, any, any>,
@@ -136,12 +137,13 @@ export interface CLI<
         TCommandArgs,
         TChildHandlerReturn,
         {},
-        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>,
         ExtractCommandProviders<TCommand>
       >;
     },
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
 
   /**
@@ -164,7 +166,7 @@ export interface CLI<
       TCommandArgs,
       TChildHandlerReturn,
       TChildren,
-      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+      CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>,
       TChildChildren,
       TChildProviders
     >
@@ -176,12 +178,13 @@ export interface CLI<
         TCommandArgs,
         TChildHandlerReturn,
         TChildChildren,
-        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>,
         TChildProviders
       >;
     },
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
 
   /**
@@ -197,9 +200,10 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<C1 extends Command, C2 extends Command>(
     c1: C1,
@@ -208,10 +212,11 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<C1 extends Command, C2 extends Command, C3 extends Command>(
     c1: C1,
@@ -221,11 +226,12 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -241,12 +247,13 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -264,13 +271,14 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -290,14 +298,15 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -319,15 +328,16 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -351,16 +361,17 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -386,17 +397,18 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   commands<
     C1 extends Command,
@@ -424,24 +436,25 @@ export interface CLI<
     TArgs,
     THandlerReturn,
     TChildren &
-      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>> &
-      CommandToChildEntry<C10, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>>,
+      CommandToChildEntry<C1, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C2, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C3, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C4, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C5, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C6, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C7, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C8, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C9, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>> &
+      CommandToChildEntry<C10, CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>>,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Fallback for arrays or more than 10 commands (loses individual type tracking)
-  commands(commands: Command[]): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  commands(commands: Command[]): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
   commands(
     ...commands: Command[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Registers a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
@@ -450,53 +463,80 @@ export interface CLI<
    */
   config(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Registers a pre-built configuration provider with framework-level
-   * metadata such as `default`. Useful with convenience factories like
-   * {@link ConfigurationProviders.JsonFile} that already return a
-   * fully-constructed provider but still need to carry a `default` path
-   * so `updateConfig` can create a config file when none exists.
+   * metadata. Use named locations to declare where this provider can write
+   * (e.g. USER, PROJECT) and `defaultLocation` to choose the catch-all
+   * write target. Each location is also scanned during reads.
    *
    * @example
    * ```ts
    * cli('my-tool')
-   *   .option('theme', { type: 'string' })
+   *   .option('theme', { type: 'string', defaultConfigLocation: 'USER' })
    *   .config(ConfigurationProviders.JsonFile('my-tool.config.json'), {
-   *     default: () => join(process.cwd(), 'my-tool.config.json'),
+   *     locations: {
+   *       USER: () => join(homedir(), '.my-tool.json'),
+   *       PROJECT: () => join(process.cwd(), '.my-tool.json'),
+   *     },
+   *     defaultLocation: 'PROJECT',
    *   });
    * ```
    *
    * @param provider The configuration provider to register.
-   * @param options Framework-level options (e.g. `default`).
+   * @param options Framework-level options (`locations`, `defaultLocation`).
    */
-  config(
+  config<
+    L extends ConfigurationFiles.NamedConfigLocations<string | URL> = Record<
+      string,
+      never
+    >,
+    D extends keyof L & string = never
+  >(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
-    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+    options: { locations?: L; defaultLocation?: D }
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren,
+    TParent,
+    TProviders,
+    TConfigLocations | (keyof L & string)
+  >;
 
   /**
-   * Registers a configuration provider by class and options.
-   * Framework options like `default` are extracted and stored as metadata.
+   * Registers a configuration provider by class and options. Framework
+   * options like `locations` and `defaultLocation` are extracted and
+   * stored as metadata; the rest is forwarded to the constructor.
    *
    * @param ctor The provider class constructor.
-   * @param options Constructor options merged with framework options (e.g., `default`).
+   * @param options Constructor options merged with framework options.
    */
   config<
     C extends new (
       opts: any
     ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    L extends ConfigurationFiles.NamedConfigLocations<
+      InstanceType<C> extends readonly (infer P)[]
+        ? ConfigurationFiles.ExtractLocation<P>
+        : ConfigurationFiles.ExtractLocation<InstanceType<C>>
+    > = Record<string, never>,
+    D extends keyof L & string = never
   >(
     ctor: C,
     options: ConstructorParameters<C>[0] & {
-      default?: ConfigurationFiles.DefaultConfig<
-        InstanceType<C> extends readonly (infer P)[]
-          ? ConfigurationFiles.ExtractLocation<P>
-          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
-      >;
+      locations?: L;
+      defaultLocation?: D;
     }
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren,
+    TParent,
+    TProviders,
+    TConfigLocations | (keyof L & string)
+  >;
 
   /**
    * Updates configuration by routing each key to its owning provider.
@@ -520,7 +560,7 @@ export interface CLI<
    * This presents as a small shell that only knows the current command and its subcommands.
    * Any flags already consumed by the command will be passed to every subcommand invocation.
    */
-  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  enableInteractiveShell(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Registers a custom global error handler for the CLI. This handler will be called when an error is thrown
@@ -532,7 +572,7 @@ export interface CLI<
    */
   errorHandler(
     handler: ErrorHandler
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Registers a prompt provider for interactive option fulfillment.
@@ -543,7 +583,7 @@ export interface CLI<
    */
   withPromptProvider(
     provider: PromptProvider
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Registers a new option for the CLI command. This option will be accessible
@@ -562,7 +602,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -574,7 +614,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // String option overload
   option<
@@ -582,7 +623,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -591,7 +632,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Number option overload
   option<
@@ -599,7 +641,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -608,7 +650,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Boolean option overload
   option<
@@ -616,7 +659,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -625,7 +668,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Array option overload
   option<
@@ -633,7 +677,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -642,7 +686,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // OneOf option overload
   option<
@@ -650,7 +695,7 @@ export interface CLI<
     const TConfig extends OneOfOptionConfig<any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -659,7 +704,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Generic fallback overload
   option<
@@ -667,7 +713,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -676,7 +722,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
 
   /**
@@ -695,7 +742,7 @@ export interface CLI<
     const TProps extends Record<string, { type: string }>
   >(
     name: TOption,
-    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: ObjectOptionConfig<TCoerce, TProps> & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -707,7 +754,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // String option overload
   positional<
@@ -715,7 +763,7 @@ export interface CLI<
     const TConfig extends StringOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -724,7 +772,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Number option overload
   positional<
@@ -732,7 +781,7 @@ export interface CLI<
     const TConfig extends NumberOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -741,7 +790,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Boolean option overload
   positional<
@@ -749,7 +799,7 @@ export interface CLI<
     const TConfig extends BooleanOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -758,7 +808,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Array option overload
   positional<
@@ -766,7 +817,7 @@ export interface CLI<
     const TConfig extends ArrayOptionConfig<any, any>
   >(
     name: TOption,
-    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -775,7 +826,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
   // Generic fallback overload
   positional<
@@ -783,7 +835,7 @@ export interface CLI<
     const TOptionConfig extends OptionConfig<any, any, any>
   >(
     name: TOption,
-    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs> }
+    config: TOptionConfig & { prompt?: PromptOptionConfig<TArgs>; completion?: OptionCompletionCallback<TArgs>; defaultConfigLocation?: TConfigLocations }
   ): CLI<
     Expand<TArgs &
       MakeUndefinedPropertiesOptional<{
@@ -792,16 +844,17 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
 
   /**
    * Adds support for reading CLI options from environment variables.
    * @param prefix The prefix to use when looking up environment variables. Defaults to the command name.
    */
-  env(prefix?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  env(prefix?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
-  env(options: EnvOptionConfig): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  env(options: EnvOptionConfig): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Sets up localization for option keys and other text.
@@ -826,7 +879,7 @@ export interface CLI<
   localize(
     dictionary: LocalizationDictionary,
     locale?: string
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
   /**
    * Sets up localization using a custom function for translating keys.
    * This allows integration with existing localization libraries like i18next.
@@ -846,7 +899,7 @@ export interface CLI<
    */
   localize(
     fn: LocalizationFunction
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Sets a group of options as mutually exclusive. If more than one option is provided, there will be a validation error.
@@ -854,7 +907,7 @@ export interface CLI<
    */
   conflicts(
     ...options: [string, string, ...string[]]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Sets a group of options as mutually inclusive. If one option is provided, all other options must also be provided.
@@ -864,14 +917,14 @@ export interface CLI<
   implies(
     option: string,
     ...impliedOptions: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Requires a command to be provided when executing the CLI. Useful if your parent command
    * cannot be executed on its own.
    * @returns Updated CLI instance.
    */
-  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  demandCommand(): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
@@ -880,13 +933,13 @@ export interface CLI<
    * @param enable Whether to enable strict mode. Defaults to true.
    * @returns Updated CLI instance.
    */
-  strict(enable?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  strict(enable?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Sets the usage text for the CLI. This text will be displayed in place of the default usage text
    * @param usageText Text displayed in place of the default usage text for `--help` and in generated docs.
    */
-  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  usage(usageText: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Marks this command as hidden so it is omitted from help output, generated documentation,
@@ -894,7 +947,7 @@ export interface CLI<
    * register internal or experimental commands without exposing them to end users.
    * @param hidden Whether the command should be hidden. Defaults to `true`.
    */
-  hidden(hidden?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  hidden(hidden?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Sets the description for the CLI. This text will be displayed in the help text and generated docs.
@@ -902,14 +955,14 @@ export interface CLI<
    */
   examples(
     ...examples: string[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Allows overriding the version displayed when passing `--version`. Defaults to crawling
    * the file system to get the package.json of the currently executing command.
    * @param override
    */
-  version(override?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  version(override?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Prints help text to stdout.
@@ -924,11 +977,11 @@ export interface CLI<
     label: string;
     keys: (keyof TArgs)[];
     sortOrder?: number;
-  }): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  }): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
   group(
     label: string,
     keys: (keyof TArgs)[]
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   middleware<TArgs2>(
     callback: MiddlewareFunction<TArgs, TArgs2>
@@ -937,7 +990,8 @@ export interface CLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    TConfigLocations
   >;
 
   /**
@@ -1003,10 +1057,10 @@ export interface CLI<
    */
   init(
     callback: (
-      cli: CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+      cli: CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>,
       args: TArgs
     ) => Promise<void> | void
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Enables shell completion for this CLI.
@@ -1020,7 +1074,7 @@ export interface CLI<
    */
   completion(
     callback?: CompletionCallback<TArgs>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, TConfigLocations>;
 
   /**
    * Parses argv and executes the CLI
@@ -1174,7 +1228,7 @@ export interface CLIHandlerContext<TChildren = {}, TParent = any> {
 /**
  * Extracts the TChildren type parameter from a CLI type.
  */
-export type ExtractCLIChildren<T> = T extends CLI<any, any, infer C, any, any>
+export type ExtractCLIChildren<T> = T extends CLI<any, any, infer C, any, any, any>
   ? C
   : {};
 
@@ -1291,7 +1345,7 @@ export type ErrorHandler = (
 ) => void;
 
 /** Type alias for a CLI instance with any type parameters. Use in value positions where you need to accept any CLI. */
-export type AnyCLI = CLI<any, any, any, any, any>;
+export type AnyCLI = CLI<any, any, any, any, any, any>;
 
 /**
  * Error thrown when a command handler (or middleware running as part of the
@@ -1346,7 +1400,7 @@ export class HandlerExecutionError extends Error {
  * }
  * ```
  */
-export type UnknownCLI = CLI<ParsedArgs, any, any, any, any>;
+export type UnknownCLI = CLI<ParsedArgs, any, any, any, any, any>;
 
 export type MiddlewareFunction<TArgs extends ParsedArgs, TArgs2> = (
   args: TArgs
@@ -1398,7 +1452,8 @@ export type SDKChildren<TChildren> = {
     infer C,
 
     infer _P,
-    infer _Providers
+    infer _Providers,
+    infer _ConfigLocations
   >
     ? SDKCommand<A, R, C>
     : never;
@@ -1442,7 +1497,8 @@ export function cli<
     THandlerReturn,
     TChildren,
     undefined,
-    {}
+    {},
+    never
   >;
 }
 

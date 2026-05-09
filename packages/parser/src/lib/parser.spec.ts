@@ -1372,10 +1372,10 @@ describe('parser', () => {
     ).toEqual({ foo: 'hello', bar: 42, unmatched: [] });
   });
 
-  it('should accept a pre-built provider with `default` metadata via the (provider, options) overload', async () => {
+  it('should accept a pre-built provider with named locations + defaultLocation via the (provider, options) overload', async () => {
     const writes: Array<{ next: any; targetPath?: string | URL }> = [];
     const provider: ConfigurationProvider<any> = {
-      // Never resolves from cwd — forces the default fallback path.
+      // Never resolves from cwd — forces the defaultLocation fallback.
       resolve: () => undefined,
       load: () => ({}),
       updateConfig: async (updater, options) => {
@@ -1387,12 +1387,15 @@ describe('parser', () => {
 
     const p = parser()
       .option('foo', { type: 'string' })
-      .config(provider, { default: '/new/home/config.json' });
+      .config(provider, {
+        locations: { USER: '/new/home/config.json' },
+        defaultLocation: 'USER',
+      });
 
     // Still parses successfully (no provider resolved, no values).
     expect(p.parse([])).toEqual({ unmatched: [] });
 
-    // updateConfig falls through to the default path attached via the
+    // updateConfig falls through to the defaultLocation attached via the
     // new overload.
     await p.updateConfig({ foo: 'hello' });
 
@@ -1426,7 +1429,10 @@ describe('parser.updateConfig', () => {
     const p = parser()
       .option('foo', { type: 'string' })
       .option('bar', { type: 'number' })
-      .config(provider);
+      .config(provider, {
+        locations: { LOCAL: '/root/.config.json' },
+        defaultLocation: 'LOCAL',
+      });
 
     await p.updateConfig({ foo: 'hello', bar: 7 });
 
@@ -1439,14 +1445,17 @@ describe('parser.updateConfig', () => {
     const p = parser()
       .option('foo', { type: 'string' })
       .option('bar', { type: 'number' })
-      .config(provider);
+      .config(provider, {
+        locations: { LOCAL: '/root/.config.json' },
+        defaultLocation: 'LOCAL',
+      });
 
     await p.updateConfig({ foo: 'hello', bar: 7 });
 
     expect(p.parse([])).toEqual({ foo: 'hello', bar: 7, unmatched: [] });
   });
 
-  it('should fall through to the default target path when no provider resolves', async () => {
+  it('should fall through to the defaultLocation target when no provider resolves', async () => {
     const writes: any[] = [];
     const provider: ConfigurationProvider<any> = {
       resolve: () => undefined,
@@ -1469,7 +1478,8 @@ describe('parser.updateConfig', () => {
       .option('lang', { type: 'string' })
       .config(JsonLoader as any, {
         filename: 'my-tool.config.json',
-        default: '/new/home/my-tool.config.json',
+        locations: { USER: '/new/home/my-tool.config.json' },
+        defaultLocation: 'USER',
       });
 
     await p.updateConfig({ theme: 'dark', lang: 'fr' });
@@ -1479,7 +1489,7 @@ describe('parser.updateConfig', () => {
     expect(writes[0].targetPath).toBe('/new/home/my-tool.config.json');
   });
 
-  it('should support lazy default functions returning a target path', async () => {
+  it('should support lazy location callbacks returning a target path', async () => {
     const writes: any[] = [];
     const provider: ConfigurationProvider<any> = {
       resolve: () => undefined,
@@ -1500,19 +1510,25 @@ describe('parser.updateConfig', () => {
       .option('key', { type: 'string' })
       .config(JsonLoader as any, {
         filename: 'my.json',
-        default: () => {
-          callCount++;
-          return '/fresh/my.json';
+        locations: {
+          USER: () => {
+            callCount++;
+            return '/fresh/my.json';
+          },
         },
+        defaultLocation: 'USER',
       });
 
     await p.updateConfig({ key: 'value' });
 
-    expect(callCount).toBe(1);
+    // The callback may be invoked multiple times — once during read scanning
+    // (load) and once during write resolution. Devs are responsible for
+    // making the callback idempotent.
+    expect(callCount).toBeGreaterThanOrEqual(1);
     expect(writes).toEqual(['/fresh/my.json']);
   });
 
-  it('should throw a descriptive error when no provider resolves and no default is configured', async () => {
+  it('should throw a descriptive error when no provider resolves and no defaultLocation is configured', async () => {
     const provider: ConfigurationProvider<any> = {
       resolve: () => undefined,
       load: () => ({}),
@@ -1524,7 +1540,7 @@ describe('parser.updateConfig', () => {
       .config(provider);
 
     await expect(p.updateConfig({ foo: 'bar' })).rejects.toThrow(
-      /no provider resolved/
+      /no provenance/
     );
   });
 

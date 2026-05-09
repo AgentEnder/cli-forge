@@ -120,13 +120,13 @@ $ my-tool set --key theme --value light
 Set theme = light
 ```
 
-**How to build it:** Use the constructor-based `.config()` overload with a `default` option. The `default` tells the framework where to create the config file when none exists on disk.
+**How to build it:** Use the constructor-based `.config()` overload with a `locations` map and a `defaultLocation`. Each named location declares a path the framework can read from and write to; `defaultLocation` is the catch-all for fresh writes when no file exists yet.
 
 <%= example('default-config').region('init-command') %>
 
-Without `default`, `updateConfig` would fail because there's no file to write to.
+Without `defaultLocation`, `updateConfig` would fail because there's no file to write to.
 
-### Choosing the right default path
+### Choosing the right named locations
 
 Where the config file gets created depends on what kind of tool you're building:
 
@@ -145,15 +145,29 @@ $ my-tool init
 Config written to ~/.config/my-tool/config.json
 ```
 
-**Hybrid tools** — some tools support both project-level and user-level config, with project config taking precedence. Register two providers — the project-level one resolves first, and the user-level one acts as a fallback:
+**Hybrid tools** — some tools support both project-level and user-level config, with project config taking precedence. Register two providers — the project-level one resolves via walk-upward first, and the user-level one acts as a fallback via its USER named location:
 
 <%= example('config-patterns').region('hybrid') %>
 
-The `default` option accepts a string path, a `URL`, or a function returning either (sync or async). The provider classes are available from the `ConfigurationFiles` namespace:
+Each location accepts a string path, a `URL`, or a function returning either (sync or async). The provider classes are available from the `ConfigurationFiles` namespace:
 
 ```typescript
 import { ConfigurationFiles } from 'cli-forge';
 ```
+
+### Routing per-option writes to specific locations
+
+When a single CLI has both user-level preferences (theme, telemetry, API tokens) and project-level settings (project name, build options), declare both on a single provider as named locations and pin each option with `defaultConfigLocation`:
+
+<%= example('config-named-locations').region('named-locations') %>
+
+Reads merge values from every named location (in declaration order). Writes follow this routing per key:
+
+1. **Provenance** — if the value was loaded from a specific file, writes go back to that file.
+2. **Per-option `defaultConfigLocation`** — pins fresh writes for that option to the named location.
+3. **Global `defaultLocation`** — fresh-write fallback for options without a per-option override.
+
+The location name is type-safe: `defaultConfigLocation` is constrained to the keys you declared in `locations`, so typos fail at compile time.
 
 ## Updating config from code
 
@@ -198,7 +212,8 @@ The interface requires `resolve` and `load`. The `updateConfig` and `describeCon
 | Settings in `package.json` without extra files | package.json key | `ConfigurationProviders.PackageJson(key)` |
 | Multiple places to put config | Multiple sources | Register several providers |
 | A team base config with project overrides | Inheritable configs | Add `"extends"` to any JSON config |
-| A `my-tool init` command | Init/bootstrap | Use `default` + `updateConfig` |
+| A `my-tool init` command | Init/bootstrap | Use `locations` + `defaultLocation` + `updateConfig` |
+| Per-option write routing (USER vs PROJECT) | Named locations | Add `defaultConfigLocation` to options |
 | YAML, TOML, or another format | Custom provider | Implement `ConfigurationProvider` |
 
 For complete working examples with test assertions, see:

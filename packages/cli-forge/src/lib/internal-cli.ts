@@ -627,7 +627,8 @@ export class InternalCLI<
     THandlerReturn,
     TChildren,
     TParent,
-    TProviders
+    TProviders,
+    never
   > {
     this.registeredMiddleware.add(callback);
     // If middleware returns void, TArgs doesn't change...
@@ -1149,47 +1150,72 @@ export class InternalCLI<
 
   config(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
-  config(
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, never>;
+  config<
+    L extends ConfigurationFiles.NamedConfigLocations<string | URL> = Record<
+      string,
+      never
+    >,
+    D extends keyof L & string = never
+  >(
     provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
-    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+    options: { locations?: L; defaultLocation?: D }
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren,
+    TParent,
+    TProviders,
+    keyof L & string
+  >;
   config<
     C extends new (
       opts: any
     ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    L extends ConfigurationFiles.NamedConfigLocations<
+      InstanceType<C> extends readonly (infer P)[]
+        ? ConfigurationFiles.ExtractLocation<P>
+        : ConfigurationFiles.ExtractLocation<InstanceType<C>>
+    > = Record<string, never>,
+    D extends keyof L & string = never
   >(
     ctor: C,
     options: ConstructorParameters<C>[0] & {
-      default?: ConfigurationFiles.DefaultConfig<
-        InstanceType<C> extends readonly (infer P)[]
-          ? ConfigurationFiles.ExtractLocation<P>
-          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
-      >;
+      locations?: L;
+      defaultLocation?: D;
     }
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
-  config<
-    C extends new (
-      opts: any
-    ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
-  >(
-    providerOrCtor: ConfigurationFiles.ConfigProviderRegistration<TArgs> | C,
-    options?: ConstructorParameters<C>[0] & {
-      default?: ConfigurationFiles.DefaultConfig<
-        InstanceType<C> extends readonly (infer P)[]
-          ? ConfigurationFiles.ExtractLocation<P>
-          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
-      >;
-    }
-  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+  ): CLI<
+    TArgs,
+    THandlerReturn,
+    TChildren,
+    TParent,
+    TProviders,
+    keyof L & string
+  >;
+  config(
+    providerOrCtor:
+      | ConfigurationFiles.ConfigProviderRegistration<TArgs>
+      | (new (opts: any) => any),
+    options?: {
+      locations?: ConfigurationFiles.NamedConfigLocations<any>;
+      defaultLocation?: string;
+    } & Record<string, unknown>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders, any> {
     if (options !== undefined) {
-      this.parser.config(providerOrCtor as any, options);
+      this.parser.config(providerOrCtor as any, options as any);
     } else {
       this.parser.config(
         providerOrCtor as ConfigurationFiles.ConfigProviderRegistration<any>
       );
     }
-    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+    return this as unknown as CLI<
+      TArgs,
+      THandlerReturn,
+      TChildren,
+      TParent,
+      TProviders,
+      any
+    >;
   }
 
   async updateConfig(values: Partial<TArgs>): Promise<void>;

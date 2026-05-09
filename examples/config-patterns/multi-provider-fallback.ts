@@ -5,7 +5,7 @@ import { ConfigurationFiles, cli } from 'cli-forge';
 
 // Demonstrates multi-provider fallback: a project config provider is
 // preferred but has no file on disk, so the user-level fallback provider's
-// `default` path is used for writes instead.
+// USER named location is used for writes instead.
 const tempDir = mkdtempSync(join(tmpdir(), 'multi-provider-fallback-'));
 const userConfigPath = join(tempDir, '.config', 'my-tool', 'config.json');
 
@@ -17,10 +17,11 @@ const app = cli('my-tool', {
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
       })
-      // User-level fallback — has a default path so init-style writes work.
+      // User-level fallback — declares a USER named location for init-style writes.
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.json',
-        default: () => userConfigPath,
+        locations: { USER: () => userConfigPath },
+        defaultLocation: 'USER',
       }),
   handler: async () => {
     console.log(`before: user exists=${existsSync(userConfigPath)}`);

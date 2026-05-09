@@ -25,7 +25,10 @@ const app = cli('my-tool', {
       .option('port', { type: 'number', default: 3000 })
       .config(ConfigurationFiles.JsonFileConfigLoader, {
         filename: 'my-tool.config.json',
-        default: () => join(findProjectRoot(), 'my-tool.config.json'),
+        locations: {
+          PROJECT: () => join(findProjectRoot(), 'my-tool.config.json'),
+        },
+        defaultLocation: 'PROJECT',
       }),
   handler: (args) => {
     console.log(`host: ${args.host}`);
