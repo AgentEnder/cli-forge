@@ -7,19 +7,17 @@ import { watchDocs, watchExamples } from './plugins';
 export default defineConfig({
   plugins: [vike(), react(), tailwindcss(), watchDocs(), watchExamples()],
   build: {
-    rollupOptions: {
+    rolldownOptions: {
       external: ['/pagefind/pagefind.js'],
     },
   },
   ssr: {
-    external: [
-      'functional-examples',
-      'gray-matter',
-      'shiki',
-    ],
+    external: ['functional-examples', 'gray-matter', 'shiki'],
   },
   base: process.env.BASE_URL || '/cli-forge',
   define: {
-    'import.meta.env.PREVIEW_PATH': JSON.stringify(process.env.PREVIEW_PATH || ''),
+    'import.meta.env.PREVIEW_PATH': JSON.stringify(
+      process.env.PREVIEW_PATH || ''
+    ),
   },
 });
