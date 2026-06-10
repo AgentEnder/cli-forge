@@ -12,27 +12,31 @@
     "sharedGlobals": ["{workspaceRoot}/.github/workflows/ci.yml"]
   },
   "nxCloudAccessToken": "MDEwZTk4MGMtMGRiZC00YzhiLWEzYzktNjVkOTYxNDRhOTNjfHJlYWQtd3JpdGU=",
-  "targetDefaults": {
-    "build": {
+  "targetDefaults": [
+    {
+      "target": "build",
       "cache": true,
       "dependsOn": ["^build"],
       "inputs": ["production", "^production"],
       "outputs": ["{projectRoot}/dist"]
     },
-    "typecheck": {
+    {
+      "target": "typecheck",
       "cache": true,
       "inputs": ["default", "^production"],
       "dependsOn": ["^build"]
     },
-    "test": {
+    {
+      "target": "test",
       "cache": true,
       "inputs": ["default", "^production"],
       "dependsOn": ["^build"]
     },
-    "extract-docs:*": {
+    {
+      "target": "extract-docs:*",
       "cache": true
     }
-  },
+  ],
   "release": {
     "projects": ["packages/*"],
     "version": {
