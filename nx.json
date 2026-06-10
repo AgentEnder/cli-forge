@@ -71,5 +71,8 @@
       "plugin": "@nx/vitest"
     }
   ],
-  "analytics": true
+  "analytics": true,
+  "migrate": {
+    "agentic": "claude-code"
+  }
 }
