@@ -122,6 +122,19 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
   hidden?: boolean;
 
   /**
+   * If true, this option is presented as a configuration-only field.
+   * It will be shown in a dedicated "Configuration Options" section
+   * in help text and documentation, rather than in the main options list.
+   * It will also be excluded from shell completions.
+   *
+   * Unlike `hidden`, config-only options are still documented.
+   *
+   * Note: if both `configOnly` and `group` are set, the option appears
+   * under its group rather than the "Configuration Options" section.
+   */
+  configOnly?: boolean;
+
+  /**
    * Can be set to group options in help output and generated docs.
    */
   group?: string;
