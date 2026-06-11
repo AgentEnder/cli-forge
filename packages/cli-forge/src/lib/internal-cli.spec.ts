@@ -1958,4 +1958,270 @@ describe('cliForge', () => {
       expect(handlerArgs.verbose).toBe(false); // default, not prompted
     });
   });
+
+  describe('help customization', () => {
+    it('should support disabling --help', async () => {
+      const { getOutput } = mockConsoleLog();
+      let handlerRan = false;
+      await cli('test')
+        .help(false)
+        .command('$0', {
+          handler: () => {
+            handlerRan = true;
+          },
+        })
+        .forge(['--help']);
+      // When --help is disabled, the handler should run and --help should not produce help text
+      expect(handlerRan).toBe(true);
+      expect(getOutput()).toBe('');
+    });
+
+    it('should support custom help callback with object context', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('foo', { type: 'string' })
+        .help(({ renderDefaultHelp }) => {
+          return `CUSTOM HELP\n${renderDefaultHelp()}`;
+        })
+        .forge(['--help']);
+      const output = getOutput();
+      expect(output).toContain('CUSTOM HELP');
+      expect(output).toContain('Usage: test');
+    });
+
+    it('should pass parsed args to help callback', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('verbose', { type: 'boolean', alias: ['v'] })
+        .help(({ args, renderDefaultHelp }) => {
+          if (args.verbose) {
+            return `VERBOSE MODE\n${renderDefaultHelp()}`;
+          }
+          return renderDefaultHelp();
+        })
+        .forge(['--verbose', '--help']);
+      const output = getOutput();
+      expect(output).toContain('VERBOSE MODE');
+    });
+
+    it('should inherit help callback from parent command', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .help(({ renderDefaultHelp }) => {
+          return `INHERITED HELP\n${renderDefaultHelp()}`;
+        })
+        .command('sub', {
+          builder: (argv) => argv.option('bar', { type: 'string' }),
+          handler: () => {
+            // No side effect needed.
+          },
+        })
+        .forge(['sub', '--help']);
+      const output = getOutput();
+      expect(output).toContain('INHERITED HELP');
+    });
+
+    it('should allow subcommand to override parent help callback', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .help(() => 'PARENT HELP')
+        .command('sub', {
+          builder: (argv) =>
+            argv
+              .help(() => 'CHILD HELP')
+              .option('bar', { type: 'string' }),
+          handler: () => {
+            // No side effect needed.
+          },
+        })
+        .forge(['sub', '--help']);
+      expect(getOutput()).toBe('CHILD HELP');
+    });
+
+    it('should hide --help from help text when disabled', async () => {
+      const app = cli('test')
+        .help(false)
+        .option('foo', { type: 'string' });
+      const helpText = (app as any).formatHelp();
+      expect(helpText).not.toContain('--help');
+      expect(helpText).toContain('--version');
+      expect(helpText).toContain('--foo');
+    });
+
+    it('should re-enable --help after .help(false) when callback is provided', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .help(false)
+        .help(({ renderDefaultHelp }) => `RE-ENABLED\n${renderDefaultHelp()}`)
+        .forge(['--help']);
+      expect(getOutput()).toContain('RE-ENABLED');
+      expect(getOutput()).toContain('--help');
+    });
+
+    it('should disable help on a subcommand while keeping it on root', async () => {
+      const { getOutput } = mockConsoleLog();
+      let handlerRan = false;
+      await cli('test')
+        .command('secret', {
+          builder: (argv) =>
+            argv
+              .help(false)
+              .option('key', { type: 'string' }),
+          handler: () => {
+            handlerRan = true;
+          },
+        })
+        .forge(['secret', '--help']);
+      // Help is disabled on the subcommand, so handler runs instead
+      expect(handlerRan).toBe(true);
+      expect(getOutput()).toBe('');
+    });
+  });
+
+  describe('version customization', () => {
+    it('should support disabling --version', async () => {
+      const { getOutput } = mockConsoleLog();
+      let handlerRan = false;
+      await cli('test')
+        .version(false)
+        .command('$0', {
+          handler: () => {
+            handlerRan = true;
+          },
+        })
+        .forge(['--version']);
+      expect(handlerRan).toBe(true);
+      expect(getOutput()).toBe('');
+    });
+
+    it('should support custom version callback with object context', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .version(({ renderDefaultVersion }) => {
+          return `custom-app v${renderDefaultVersion()}`;
+        })
+        .forge(['--version']);
+      const output = getOutput();
+      expect(output).toContain('custom-app v');
+    });
+
+    it('should still support version string override', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test').version('1.2.3').forge(['--version']);
+      expect(getOutput()).toBe('1.2.3');
+    });
+  });
+
+  describe('per-option formatHelpText', () => {
+    it('should use custom formatHelpText for an option', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('foo', {
+          type: 'string',
+          description: 'A foo option',
+          formatHelpText: (_option, defaultText) => {
+            return `${defaultText} [CUSTOM]`;
+          },
+        })
+        .forge(['--help']);
+      const output = getOutput();
+      expect(output).toContain('[CUSTOM]');
+      expect(output).toContain('A foo option');
+    });
+  });
+
+  describe('help context options', () => {
+    it('should provide options with renderHelpText in help callback', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('port', { type: 'number', description: 'Port number' })
+        .option('host', { type: 'string', description: 'Hostname' })
+        .help(({ options, renderDefaultHelp }) => {
+          const optLines = options
+            .filter((o) => o.key !== 'help' && o.key !== 'version')
+            .map((o) => o.renderHelpText());
+          return `Custom:\n${optLines.join('\n')}\n---\n${renderDefaultHelp()}`;
+        })
+        .forge(['--help']);
+      const output = getOutput();
+      expect(output).toContain('Custom:');
+      expect(output).toContain('Port number');
+      expect(output).toContain('Hostname');
+      expect(output).toContain('---');
+    });
+
+    it('should respect per-option formatHelpText in renderHelpText', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('port', {
+          type: 'number',
+          description: 'Port',
+          formatHelpText: (_opt, defaultText) => `${defaultText} [CUSTOM PORT]`,
+        })
+        .help(({ options }) => {
+          return options.map((o) => o.renderHelpText()).join('\n');
+        })
+        .forge(['--help']);
+      const output = getOutput();
+      expect(output).toContain('[CUSTOM PORT]');
+    });
+  });
+
+  describe('.catch() error handler', () => {
+    it('should suppress error when handler returns normally', async () => {
+      const { getOutput } = mockConsoleLog();
+      let caughtError: unknown;
+      // No try/catch — forge() should NOT throw since the handler suppresses.
+      await cli('test')
+        .option('name', { type: 'string', required: true })
+        .catch((error) => {
+          caughtError = error;
+          console.log('CAUGHT');
+        })
+        .command('$0', {
+          handler: () => {
+            // should not run
+          },
+        })
+        .forge([]);
+      expect(caughtError).toBeDefined();
+      expect(getOutput()).toBe('CAUGHT');
+    });
+
+    it('should propagate error when handler rethrows', async () => {
+      let threw = false;
+      try {
+        await cli('test')
+          .option('name', { type: 'string', required: true })
+          .catch((error) => {
+            throw error;
+          })
+          .command('$0', {
+            handler: () => {
+              // should not run
+            },
+          })
+          .forge([]);
+      } catch {
+        threw = true;
+      }
+      expect(threw).toBe(true);
+    });
+
+    it('should provide renderDefaultHelp in catch context', async () => {
+      const { getOutput } = mockConsoleLog();
+      await cli('test')
+        .option('name', { type: 'string', required: true })
+        .catch((_error, { renderDefaultHelp }) => {
+          console.log(`Error! ${renderDefaultHelp().split('\n')[0]}`);
+        })
+        .command('$0', {
+          handler: () => {
+            // should not run
+          },
+        })
+        .forge([]);
+      expect(getOutput()).toContain('Error! Usage: test');
+    });
+  });
 });

@@ -18,7 +18,7 @@ import { readOptionGroupsForCLI } from './cli-option-groups';
 import { contextStorage, ForgeContextData } from './async-context';
 import { getCommandContext } from './context';
 import type { CommandContext, ProvidersFromChain } from './context';
-import { formatHelp } from './format-help';
+import { formatHelp, renderOptionHelpText } from './format-help';
 // Lazy-imported to avoid pulling Node-only modules (readline, child_process)
 // into the module graph when bundled for the browser.
 type InteractiveShellModule = typeof import('./interactive-shell.js');
@@ -31,12 +31,18 @@ async function getInteractiveShellModule(): Promise<InteractiveShellModule> {
 }
 import {
   AnyCLI,
+  CatchHandler,
   CLI,
   CLICommandOptions,
   CLIHandlerContext,
   Command,
   ErrorHandler,
+  HelpCallback,
+  HelpContext,
+  OptionInfo,
   SDKCommand,
+  VersionCallback,
+  VersionContext,
 } from './public-api';
 import type {
   CompletionCallback,
@@ -159,6 +165,16 @@ export class InternalCLI<
   private _configuration?: CLICommandOptions<any, any>;
 
   private _versionOverride?: string;
+
+  private _versionDisabled = false;
+
+  private _versionCallback?: VersionCallback<TArgs>;
+
+  private _helpDisabled = false;
+
+  private _helpCallback?: HelpCallback<TArgs>;
+
+  private _catchHandler?: CatchHandler<TArgs>;
 
   private registeredErrorHandlers: Array<ErrorHandler> = [
     (e: unknown, actions) => {
@@ -334,6 +350,19 @@ export class InternalCLI<
     this.configuration = configuration;
     this.requiresCommand = configuration.handler ? false : 'IMPLICIT';
     return this;
+  }
+
+  /**
+   * Resolves the target command at the end of the command chain.
+   * Returns `this` if the command chain is empty.
+   */
+  private resolveTargetCommand(): InternalCLI<any, any, any, any> {
+    // eslint-disable-next-line @typescript-eslint/no-this-alias
+    let cmd: InternalCLI<any, any, any, any> = this;
+    for (const key of this.commandChain) {
+      cmd = cmd.registeredCommands[key];
+    }
+    return cmd;
   }
 
   command<
@@ -589,24 +618,118 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  version(version?: string): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
-    this._versionOverride = version;
+  version(
+    overrideOrCallbackOrEnabled?: string | false | VersionCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+    if (overrideOrCallbackOrEnabled === false) {
+      this._versionDisabled = true;
+      this._versionCallback = undefined;
+      this._versionOverride = undefined;
+    } else if (typeof overrideOrCallbackOrEnabled === 'function') {
+      this._versionDisabled = false;
+      this._versionCallback = overrideOrCallbackOrEnabled;
+    } else {
+      this._versionDisabled = false;
+      this._versionOverride = overrideOrCallbackOrEnabled;
+    }
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  }
+
+  help(
+    callbackOrEnabled?: false | HelpCallback<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+    if (callbackOrEnabled === false) {
+      this._helpDisabled = true;
+      this._helpCallback = undefined;
+    } else if (typeof callbackOrEnabled === 'function') {
+      this._helpDisabled = false;
+      this._helpCallback = callbackOrEnabled;
+    }
+    return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  }
+
+  catch(
+    handler: CatchHandler<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+    this._catchHandler = handler;
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
   /**
+   * Builds the array of {@link OptionInfo} for visible options, each with
+   * a `renderHelpText()` that respects per-option `formatHelpText` overrides.
+   */
+  private buildOptionInfos(): OptionInfo[] {
+    const hiddenKeys = this.getDisabledBuiltinKeys();
+    const opts = Object.values(this.parser.configuredOptions).filter(
+      (c) =>
+        !c.positional && !c.hidden && !(hiddenKeys && hiddenKeys.has(c.key))
+    );
+    return opts.map((opt) => ({
+      key: opt.key,
+      config: opt,
+      renderHelpText: () =>
+        renderOptionHelpText(opt, this.parser.getDisplayKey(opt.key)),
+    }));
+  }
+
+  /**
    * Gets help text for the current command as a string.
+   * If a custom help callback is set on this command or an ancestor, it is used.
+   * @param args Optional parsed args to pass to a custom help callback.
    * @returns Help text for the current command.
    */
-  formatHelp() {
-    return formatHelp(this);
+  formatHelp(args?: Partial<TArgs>) {
+    const hiddenKeys = this.getDisabledBuiltinKeys();
+    const helpCallback = this.resolveHelpCallback();
+    if (helpCallback) {
+      const resolvedCmd = this.resolveTargetCommand();
+      const context: HelpContext<TArgs> = {
+        cli: resolvedCmd as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        args: args ?? ({} as Partial<TArgs>),
+        renderDefaultHelp: () =>
+          formatHelp(this as AnyInternalCLI, hiddenKeys),
+        options: this.buildOptionInfos(),
+      };
+      return helpCallback(context);
+    }
+    return formatHelp(this, hiddenKeys);
+  }
+
+  /**
+   * Returns built-in option keys disabled on the resolved command,
+   * so they can be filtered from help output.
+   */
+  private getDisabledBuiltinKeys(): Set<string> | undefined {
+    const cmd = this.resolveTargetCommand();
+    const keys = new Set<string>();
+    if (cmd._helpDisabled) keys.add('help');
+    if (cmd._versionDisabled) keys.add('version');
+    return keys.size > 0 ? keys : undefined;
+  }
+
+  /**
+   * Walks the resolved command chain and then parent chain to find a custom
+   * help callback. Returns undefined if none is found.
+   */
+  private resolveHelpCallback(): HelpCallback<TArgs> | undefined {
+    const cmd = this.resolveTargetCommand();
+    let current: InternalCLI<any, any, any, any> | undefined = cmd;
+    while (current) {
+      if (current._helpCallback) {
+        return current._helpCallback;
+      }
+      current = current._parent;
+    }
+    return undefined;
   }
 
   /**
    * Prints help text for the current command to the console.
+   * @param args Optional parsed args to pass to a custom help callback.
    */
-  printHelp() {
-    console.log(this.formatHelp());
+  printHelp(args?: Partial<TArgs>) {
+    console.log(this.formatHelp(args));
   }
 
   middleware<TArgs2>(
@@ -704,9 +827,10 @@ export class InternalCLI<
    * @param args The arguments to pass to the command.
    */
   async runCommand<T extends ParsedArgs>(
-    args: T,
+    args: T & { help?: boolean; version?: boolean },
     originalArgV: string[],
-    executedMiddleware?: Set<(args: any) => void>
+    executedMiddleware?: Set<(args: any) => void>,
+    validationFailedError?: ValidationFailedError<any>
   ): Promise<T> {
     const middlewares = new Set<(args: any) => void>(this.registeredMiddleware);
     // eslint-disable-next-line @typescript-eslint/no-this-alias
@@ -717,6 +841,28 @@ export class InternalCLI<
         middlewares.add(mw);
       }
     }
+
+    // Pre-handler: --version and --help.
+    // These run with the resolved command so per-command disabling and
+    // custom callbacks are naturally in scope.  They take priority over
+    // validation errors so that `my-app --required-opt --help` still works.
+    // We call version/help on `this` (root) so the full command chain is
+    // available for rendering, but check the resolved `cmd`'s disabled state.
+    if (args.version && !cmd._versionDisabled) {
+      this.versionHandler(args as any);
+      return args;
+    }
+    if (args.help && !cmd._helpDisabled) {
+      this.printHelp(args as any);
+      return args;
+    }
+
+    // If help/version didn't fire but we captured a validation error
+    // during the final parse, throw it now.
+    if (validationFailedError) {
+      throw validationFailedError;
+    }
+
     try {
       if (cmd.requiresCommand) {
         throw new Error(
@@ -1037,29 +1183,55 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  private versionHandler() {
+  private defaultVersionString(): string {
     if (this._versionOverride) {
-      console.log(this._versionOverride);
-      return;
+      return this._versionOverride;
     }
     let mainFile = typeof require !== 'undefined' ? require?.main?.filename : undefined;
     mainFile ??= getCallingFile();
     if (!mainFile) {
-      console.log('unknown');
-      return;
+      return 'unknown';
     }
     try {
       const packageJson = getParentPackageJson(mainFile);
-      console.log(packageJson.version ?? 'unknown');
+      return packageJson.version ?? 'unknown';
     } catch {
-      console.log('unknown');
+      return 'unknown';
     }
+  }
+
+  private versionHandler(args?: Partial<TArgs>) {
+    if (this._versionCallback) {
+      const context: VersionContext<TArgs> = {
+        cli: this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+        args: args ?? ({} as Partial<TArgs>),
+        renderDefaultVersion: () => this.defaultVersionString(),
+      };
+      console.log(this._versionCallback(context));
+      return;
+    }
+    console.log(this.defaultVersionString());
   }
 
   private async withErrorHandlers<T>(cb: () => T): Promise<Awaited<T>> {
     try {
       return await cb();
     } catch (e) {
+      // If a .catch() handler is registered, use it instead of the default
+      // error handler chain. Follows Promise.catch semantics: if the handler
+      // returns normally the error is suppressed; if it rethrows, it propagates.
+      if (this._catchHandler) {
+        this._catchHandler(e, {
+          cli: this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>,
+          exit: (c) => {
+            if (typeof process !== 'undefined') process.exit(c);
+          },
+          renderDefaultHelp: () => formatHelp(this as AnyInternalCLI),
+        });
+        // Handler returned normally — suppress the error.
+        return undefined as Awaited<T>;
+      }
+
       for (const handler of this.registeredErrorHandlers) {
         try {
           handler(e, {
@@ -1392,18 +1564,6 @@ export class InternalCLI<
         }
       }
 
-      if (argv.version) {
-        this.versionHandler();
-        return argv;
-      }
-
-      if (argv.help) {
-        this.printHelp();
-        return argv;
-      } else if (validationFailedError) {
-        throw validationFailedError;
-      }
-
       // Collect all providers from the command chain (root → subcommands)
       const allProviders = this.collectProviders();
       const contextData: ForgeContextData = {
@@ -1430,7 +1590,12 @@ export class InternalCLI<
 
       const finalArgV = await contextStorage.run(contextData, async () => {
         contextData.handlerPhase = true;
-        return this.runCommand(argv, args, executedMiddleware);
+        return this.runCommand(
+          argv,
+          args,
+          executedMiddleware,
+          validationFailedError
+        );
       });
       return finalArgV as TArgs;
     });
@@ -1507,6 +1672,12 @@ export class InternalCLI<
     clone.completionCallback = this.completionCallback;
     clone.completionConfigs = new Map(this.completionConfigs);
     clone._completionEnabled = this._completionEnabled;
+    clone._helpDisabled = this._helpDisabled;
+    clone._helpCallback = this._helpCallback;
+    clone._versionDisabled = this._versionDisabled;
+    clone._versionCallback = this._versionCallback;
+    clone._versionOverride = this._versionOverride;
+    clone._catchHandler = this._catchHandler;
     return clone;
   }
 }
