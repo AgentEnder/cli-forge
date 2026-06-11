@@ -1,88 +1,208 @@
 ---
 title: Configuration Files
-description: Load CLI arguments from JSON files and package.json
+description: Let your CLI users store settings in config files instead of passing flags on every invocation
 nav:
   order: 5
 ---
 
 # Configuration files
 
-CLI Forge can load argument values from configuration files, letting users set defaults in a file instead of passing every flag on every invocation. This is the same pattern used by tools like ESLint, Prettier, and TypeScript.
+Adding config file support to your CLI means users can store their preferred settings once and skip repeating flags on every invocation. Instead of:
 
-## Registering configuration providers
+```bash
+my-tool --host localhost --port 8080 --debug --log-level verbose
+```
 
-Use `.config()` with a built-in provider to register a configuration source:
+They create a config file and run:
 
-<%= example('configuration-files').region('providers') %>
+```bash
+my-tool
+```
 
-CLI Forge ships two built-in providers:
+CLI Forge supports several configuration styles. Each one gives your users a different experience — pick the ones that match how your tool will be used.
 
-- **`ConfigurationProviders.JsonFile(filename, key?)`** — loads values from a JSON file. If `key` is provided, reads from that property instead of the root object.
-- **`ConfigurationProviders.PackageJson(key)`** — loads values from a `key` inside the project's `package.json`.
+## Dedicated config file
 
-You can register multiple providers. They are checked in registration order, and the first provider that supplies a value for a given option wins.
+**What your users see:** A JSON file named after your tool, checked into the project root. Similar to `tsconfig.json`, `.prettierrc.json`, or `eslint.config.json`.
+
+```
+my-project/
+├── my-tool.config.json    ← config lives here
+├── package.json
+└── src/
+```
+
+<%= example('configuration-files').file('configured-cli.config.json') %>
+
+Running `my-tool` from anywhere inside the project picks up these values. The file is found by walking up the directory tree from the working directory, so `cd my-project/src && my-tool` still works.
+
+**How to build it:**
+
+<%= example('configuration-files').region('json-file-config') %>
+
+If the config should live under a key instead of at the root of the JSON file, pass the key name as the second argument:
+
+<%= example('configuration-files').region('nested-key-config') %>
+
+## `package.json` key
+
+**What your users see:** Configuration lives inside `package.json` under a key. No extra file needed. Similar to how Jest uses `"jest"` and Babel uses `"babel"` in `package.json`.
+
+<%= example('configuration-files').file('package.json') %>
+
+This works well for tools with a small number of options where adding a separate file feels heavy.
+
+**How to build it:**
+
+<%= example('configuration-files').region('package-json-config') %>
+
+## Multiple config sources
+
+**What your users see:** The tool checks several places for configuration. Users put settings wherever makes sense for their project — a dedicated config file, `package.json`, or both.
+
+```
+my-project/
+├── my-tool.config.json    ← tool-specific settings
+├── package.json           ← also has a "my-tool" key
+└── src/
+```
+
+When the same key appears in multiple sources, the first registered provider wins. Non-conflicting keys merge from all sources.
+
+**How to build it:**
+
+<%= example('multi-provider-precedence').file('cli.ts') %>
+
+Given these config files:
+
+<%= example('multi-provider-precedence').file('package.json') %>
+
+<%= example('multi-provider-precedence').file('app.config.json') %>
+
+The resolved values are:
+- `name`: `"from-package"` — PackageJson was registered first, so it wins
+- `greeting`: `"json-greeting"` — only in the JSON file
+- `farewell`: `"pkg-farewell"` — only in package.json
+
+## Shareable and inheritable configs
+
+**What your users see:** A base config that other configs extend, just like `tsconfig.json` with `"extends"`. Teams publish a shared config package or keep a base config in the repo root, and individual projects override specific values.
+
+<%= example('config-inheritance').file('base/app.config.json') %>
+
+<%= example('config-inheritance').file('app.config.json') %>
+
+The project config inherits values from the base and overrides specific keys. Extends chains can go arbitrarily deep (A extends B extends C). CLI Forge detects circular references and throws a clear error.
+
+**How to build it:** No extra code needed — `extends` works automatically with any configuration provider. The framework handles inheritance at the aggregate level, so custom providers get it for free.
+
+<%= example('config-inheritance').file('cli.ts') %>
+
+## Init commands and config bootstrapping
+
+**What your users see:** An `init` command that creates a config file with sensible defaults, so users don't have to write JSON by hand.
+
+```bash
+$ my-tool init --theme dark --lang fr
+Config written to my-tool.config.json
+
+$ cat my-tool.config.json
+{
+  "theme": "dark",
+  "lang": "fr"
+}
+```
+
+After that, running `my-tool` picks up the config automatically. Users can also update individual values:
+
+```bash
+$ my-tool set --key theme --value light
+Set theme = light
+```
+
+**How to build it:** Use the constructor-based `.config()` overload with a `default` option. The `default` tells the framework where to create the config file when none exists on disk.
+
+<%= example('default-config').region('init-command') %>
+
+Without `default`, `updateConfig` would fail because there's no file to write to.
+
+### Choosing the right default path
+
+Where the config file gets created depends on what kind of tool you're building:
+
+**Project tools** (linters, bundlers, test runners) — config lives at the project root, similar to `tsconfig.json` or `.prettierrc.json`. Users expect to find it next to `package.json` or `.git`. Since users may run the CLI from a subdirectory, walk up the tree to find the root:
+
+<%= example('config-patterns').region('find-project-root') %>
+
+**User-level tools** (CLIs installed globally, developer utilities, personal tools) — config lives in the user's home directory. Following the [XDG Base Directory](https://specifications.freedesktop.org/basedir-spec/latest/) convention, use `~/.config/`:
+
+<%= example('config-patterns').region('user-level') %>
+
+Your users would then see:
+
+```bash
+$ my-tool init
+Config written to ~/.config/my-tool/config.json
+```
+
+**Hybrid tools** — some tools support both project-level and user-level config, with project config taking precedence. Register two providers — the project-level one resolves first, and the user-level one acts as a fallback:
+
+<%= example('config-patterns').region('hybrid') %>
+
+The `default` option accepts a string path, a `URL`, or a function returning either (sync or async). The provider classes are available from the `ConfigurationFiles` namespace:
+
+```typescript
+import { ConfigurationFiles } from 'cli-forge';
+```
+
+## Updating config from code
+
+**What your users see:** Commands that persist settings to the config file. Changes survive between invocations.
+
+**How to build it:** Call `app.updateConfig()` from any command handler:
+
+<%= example('config-patterns').region('update-config') %>
+
+When multiple providers are registered, updates route to the correct file. Each key is written to whichever provider originally supplied it:
+
+<%= example('multi-provider-precedence').file('update-test.ts') %>
+
+When a config file uses `extends`, updates are written to the child file (not the parent), and the `extends` reference is preserved:
+
+<%= example('config-inheritance').file('update-test.ts') %>
 
 ## Value precedence
 
-When the same option has values from multiple sources, CLI Forge applies this precedence (highest wins):
+Across all configuration styles, CLI Forge applies a consistent precedence (highest wins):
 
 1. **CLI arguments** — explicit flags always take priority
-2. **Environment variables** — if env is configured
+2. **Environment variables** — if env is configured for the option
 3. **Configuration files** — in registration order
 4. **Default values** — from option definitions
 
-This means a user can set baseline values in a config file and override specific ones on the command line.
+Your users can set baseline values in a config file and override any of them from the command line on a per-invocation basis. The precedence follows specificity: CLI arguments are the most intentional, defaults are the least.
 
-## Configuration inheritance with `extends`
+## Custom configuration providers
 
-Config files support an `extends` field to inherit values from another file:
+If JSON and `package.json` don't fit your needs, implement the `ConfigurationProvider` interface. Here's a working key-value config loader that reads `key=value` files:
 
-```json
-{
-  "extends": "./base-config.json",
-  "port": 8080
-}
-```
+<%= example('config-patterns').region('custom-provider') %>
 
-```json
-{
-  "host": "localhost",
-  "port": 3000,
-  "debug": false
-}
-```
+The interface requires `resolve` and `load`. The `updateConfig` and `describeConfig` methods are optional.
 
-The child config inherits all values from `base-config.json` and overrides `port`. This enables shared team configurations with per-developer or per-environment overrides.
+## Choosing a configuration style
 
-CLI Forge detects circular `extends` references and throws a clear error instead of looping forever.
+| Your users need | Configuration style | Provider |
+|---|---|---|
+| A dedicated config file like `tsconfig.json` | Dedicated config file | `ConfigurationProviders.JsonFile(filename)` |
+| Settings in `package.json` without extra files | package.json key | `ConfigurationProviders.PackageJson(key)` |
+| Multiple places to put config | Multiple sources | Register several providers |
+| A team base config with project overrides | Inheritable configs | Add `"extends"` to any JSON config |
+| A `my-tool init` command | Init/bootstrap | Use `default` + `updateConfig` |
+| YAML, TOML, or another format | Custom provider | Implement `ConfigurationProvider` |
 
-## Writing configuration back
+For complete working examples with test assertions, see:
 
-Use `.updateConfig()` to persist values back to a configuration file. This is useful for `init` commands or setup wizards:
-
-```typescript
-const app = cli('my-tool')
-  .option('theme', { type: 'string', default: 'light' })
-  .config(ConfigurationProviders.JsonFile('my-tool.config.json'))
-  .command('set-theme', {
-    builder: (cmd) =>
-      cmd.option('value', { type: 'string', required: true }),
-    handler: async (args) => {
-      await args.updateConfig({ theme: args.value });
-      console.log(`Theme set to ${args.value}`);
-    },
-  });
-```
-
-The update is written to the first provider that supports writing (JSON file providers do, package.json does not).
-
-## When to use configuration files
-
-| Scenario | Recommendation |
-|---|---|
-| Many options with stable defaults | Use a JSON config file |
-| Project-level settings shared in source control | Use package.json key |
-| Team base config with personal overrides | Use `extends` inheritance |
-| One-off flags | Stick with CLI arguments |
-
-For the complete working example with test assertions, see the [configuration files example](/examples/configuration-files).
+- [Configuration files](/examples/configuration-files) — basic provider setup
+- [Config inheritance](/examples/config-inheritance) — extends and updateConfig
+- [Multi-provider precedence](/examples/multi-provider-precedence) — merging across providers

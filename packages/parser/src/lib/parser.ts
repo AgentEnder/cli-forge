@@ -1,10 +1,15 @@
 import {
   ConfigurationDocSection,
+  ConfigurationProvider,
+  DefaultConfig,
+  ExtractLocation,
 } from './config-files/configuration-loader';
 import {
   AggregateConfigProvider,
   AnyConfigProvider,
+  ConfigProviderRegistration,
   ConfigUpdater,
+  ProviderEntry,
   isAggregateConfigProvider,
 } from './config-files/aggregate-config-provider';
 import { hideBin } from './helpers';
@@ -60,6 +65,10 @@ export type EnvOptionConfig = {
   reflect?: boolean;
   populate?: boolean;
 };
+
+type RegistrationLocation<R> = R extends readonly (infer P)[]
+  ? ExtractLocation<P>
+  : ExtractLocation<R>;
 
 /**
  * Base type for parsed arguments.
@@ -207,7 +216,7 @@ export class ArgvParser<
    */
   parserMap: Record<string, Parser<any>>;
 
-  private configuredConfigurationProviders: AnyConfigProvider<TArgs>[] = [];
+  private configuredConfigurationProviders: ProviderEntry<TArgs>[] = [];
 
   /**
    * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
@@ -548,9 +557,81 @@ export class ArgvParser<
    * Registers a configuration provider to read configuration from.
    * @param provider The configuration provider to register.
    */
-  config(provider: AnyConfigProvider<TArgs>) {
-    this.configuredConfigurationProviders.push(provider);
+  config(provider: ConfigProviderRegistration<TArgs>): this;
+  /**
+   * Registers a pre-built configuration provider with framework-level
+   * metadata such as `default`. Use this overload with convenience
+   * factories like {@link ConfigurationProviders.JsonFile} that return a
+   * fully-constructed provider but still need to carry a `default` path.
+   *
+   * @param provider The configuration provider to register.
+   * @param options Framework-level options (e.g. `default`).
+   */
+  config<R extends ConfigProviderRegistration<TArgs>>(
+    provider: R,
+    options: { default?: DefaultConfig<RegistrationLocation<R>> }
+  ): this;
+  /**
+   * Registers a configuration provider by class and options.
+   * Framework options like `default` are extracted and stored as metadata.
+   *
+   * @param ctor The provider class constructor.
+   * @param options Constructor options merged with framework options (e.g., `default`).
+   */
+  config<
+    C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
+    }
+  ): this;
+  config<
+    C extends new (opts: any) => ConfigProviderRegistration<TArgs>,
+  >(
+    providerOrCtor: ConfigProviderRegistration<TArgs> | C,
+    options?:
+      | { default?: DefaultConfig<any> }
+      | (ConstructorParameters<C>[0] & {
+          default?: DefaultConfig<RegistrationLocation<InstanceType<C>>>;
+        })
+  ): this {
+    if (typeof providerOrCtor === 'function') {
+      if (options === undefined) {
+        throw new TypeError(
+          'ArgvParser.config() requires `options` when registering a configuration provider by constructor.'
+        );
+      }
+
+      // Constructor-based overload: extract framework opts, construct provider
+      const { default: defaultConfig, ...providerOpts } = options as any;
+      const provider = new providerOrCtor(providerOpts);
+      this.registerConfigurationProviders(provider, {
+        default: defaultConfig,
+      });
+    } else if (options !== undefined) {
+      // Pre-built provider with framework metadata
+      this.registerConfigurationProviders(providerOrCtor, {
+        default: (options as { default?: DefaultConfig<any> }).default,
+      });
+    } else {
+      this.registerConfigurationProviders(providerOrCtor);
+    }
     return this;
+  }
+
+  private registerConfigurationProviders(
+    providers: ConfigProviderRegistration<TArgs>,
+    metadata?: { default?: DefaultConfig<any> }
+  ) {
+    const registrations = Array.isArray(providers) ? providers : [providers];
+    for (let i = 0; i < registrations.length; i++) {
+      this.configuredConfigurationProviders.push(
+        i === 0 && metadata
+          ? { provider: registrations[i], ...metadata }
+          : { provider: registrations[i] }
+      );
+    }
   }
 
   /**
@@ -1099,7 +1180,8 @@ export class ArgvParser<
    */
   getConfigurationDocs(): ConfigurationDocSection[] {
     const sections: ConfigurationDocSection[] = [];
-    for (const provider of this.configuredConfigurationProviders) {
+    for (const entry of this.configuredConfigurationProviders) {
+      const provider = entry.provider;
       if (isAggregateConfigProvider(provider)) {
         sections.push(...provider.describeConfig());
       } else if (provider.describeConfig) {

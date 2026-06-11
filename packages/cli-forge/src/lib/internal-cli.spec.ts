@@ -1,6 +1,15 @@
-import { afterEach, describe, expect, it } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import {
+  ConfigurationFiles,
+  MemoryEnvironmentProvider,
+  MemoryFileSystemProvider,
+  getEnvironmentProvider,
+  getFileSystemProvider,
+  setEnvironmentProvider,
+  setFileSystemProvider,
+} from '@cli-forge/parser';
 import { InternalCLI } from './internal-cli';
-import { cli } from './public-api';
+import { cli, HandlerExecutionError } from './public-api';
 import type { PromptProvider } from './prompt-types';
 
 const ORIGINAL_CONSOLE_LOG = console.log;
@@ -352,14 +361,20 @@ describe('cliForge', () => {
 
   it('should print help if command throws', async () => {
     const { getOutput } = mockConsoleLog();
-    await cli('test')
-      .command('foo', {
-        builder: (argv) => argv.option('bar', { type: 'string' }),
-        handler: () => {
-          throw new Error('test');
-        },
-      })
-      .forge(['foo']);
+    // Handler errors now propagate through the registered error handler
+    // chain (matching init hook / parse error behavior) and re-throw after
+    // all handlers run, so callers can observe the failure. The default
+    // catch-all handler still prints the help text and sets exitCode=1.
+    await expect(
+      cli('test')
+        .command('foo', {
+          builder: (argv) => argv.option('bar', { type: 'string' }),
+          handler: () => {
+            throw new Error('test');
+          },
+        })
+        .forge(['foo'])
+    ).rejects.toThrow(/Error executing handler for "test foo"/);
     expect(getOutput()).toMatchInlineSnapshot(`
       "Usage: test foo
 
@@ -369,6 +384,184 @@ describe('cliForge', () => {
         --bar     "
     `);
     expect(process.exitCode).toBe(1);
+  });
+
+  describe('handler error propagation', () => {
+    const swallowStderr = () => {
+      const original = console.error;
+      console.error = () => undefined;
+      return () => {
+        console.error = original;
+      };
+    };
+
+    it('wraps handler errors in HandlerExecutionError with the original as cause', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      const original = new Error('underlying failure');
+      try {
+        await cli('app')
+          .command('run', {
+            handler: () => {
+              throw original;
+            },
+          })
+          .forge(['run']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect(e).toBeInstanceOf(HandlerExecutionError);
+        expect((e as HandlerExecutionError).command).toBe('app run');
+        expect((e as HandlerExecutionError).cause).toBe(original);
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('routes handler errors through custom errorHandler before re-throwing', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      let seen: unknown;
+      try {
+        await cli('app')
+          .errorHandler((e) => {
+            seen = e;
+          })
+          .command('run', {
+            handler: () => {
+              throw new Error('kaboom');
+            },
+          })
+          .forge(['run']);
+      } catch {
+        // withErrorHandlers re-throws after handlers run
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+      expect(seen).toBeInstanceOf(HandlerExecutionError);
+      expect(((seen as HandlerExecutionError).cause as Error).message).toBe(
+        'kaboom'
+      );
+    });
+
+    it('preserves async handler rejections', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('run', {
+            handler: async () => {
+              await Promise.resolve();
+              throw new Error('async kaboom');
+            },
+          })
+          .forge(['run']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect(e).toBeInstanceOf(HandlerExecutionError);
+        expect(((e as HandlerExecutionError).cause as Error).message).toBe(
+          'async kaboom'
+        );
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('reports the full subcommand path on nested handler failures', async () => {
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('build', {
+            builder: (cmd) =>
+              cmd.command('release', {
+                handler: () => {
+                  throw new Error('release failed');
+                },
+              }),
+            handler: () => undefined,
+          })
+          .forge(['build', 'release']);
+        expect.fail('forge() should have rejected');
+      } catch (e) {
+        expect((e as HandlerExecutionError).command).toBe('app build release');
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+
+    it('does not wrap framework "missing command" diagnostics', async () => {
+      // demandCommand is a user-facing prompt ("you forgot to specify a
+      // command"), not a handler failure. It should still resolve
+      // gracefully (print help + exitCode) rather than rejecting.
+      const { restore: restoreLog } = mockConsoleLog();
+      const restoreErr = swallowStderr();
+      try {
+        await cli('app')
+          .command('run', { handler: () => undefined })
+          .demandCommand()
+          .forge([]);
+        expect(process.exitCode).toBe(1);
+      } finally {
+        restoreErr();
+        restoreLog();
+      }
+    });
+  });
+
+  describe('repeated forge() calls on the same instance', () => {
+    it('resets commandChain between forge() calls so a CLI instance can run multiple commands', async () => {
+      const calls: string[] = [];
+      const app = cli('app')
+        .command('init', {
+          handler: () => {
+            calls.push('init');
+          },
+        })
+        .command('run', {
+          handler: () => {
+            calls.push('run');
+          },
+        });
+
+      await app.forge(['init']);
+      await app.forge(['run']);
+      await app.forge(['init']);
+
+      expect(calls).toEqual(['init', 'run', 'init']);
+    });
+
+    it('resets commandChain even after a prior forge() call threw', async () => {
+      const { restore } = mockConsoleLog();
+      const originalError = console.error;
+      console.error = () => undefined;
+      try {
+        const calls: string[] = [];
+        const app = cli('app')
+          .command('run', {
+            handler: () => {
+              calls.push('run');
+              throw new Error('boom');
+            },
+          })
+          .command('ok', {
+            handler: () => {
+              calls.push('ok');
+            },
+          });
+
+        await expect(app.forge(['run'])).rejects.toThrow();
+        // Second call must not walk a stale chain from the first one.
+        await app.forge(['ok']);
+        expect(calls).toEqual(['run', 'ok']);
+      } finally {
+        console.error = originalError;
+        restore();
+      }
+    });
   });
 
   it('should support subcommands with positional args', async () => {
@@ -1956,6 +2149,184 @@ describe('cliForge', () => {
       expect(handlerArgs.name).toBe('prompted-name');
       expect(handlerArgs.port).toBe(42);
       expect(handlerArgs.verbose).toBe(false); // default, not prompted
+    });
+  });
+
+  describe('updateConfig', () => {
+    let originalEnv: ReturnType<typeof getEnvironmentProvider>;
+    let originalFs: ReturnType<typeof getFileSystemProvider>;
+    let fs: MemoryFileSystemProvider;
+
+    beforeEach(() => {
+      originalEnv = getEnvironmentProvider();
+      originalFs = getFileSystemProvider();
+      fs = new MemoryFileSystemProvider();
+      setEnvironmentProvider(
+        new MemoryEnvironmentProvider({ cwd: '/root' })
+      );
+      setFileSystemProvider(fs);
+    });
+
+    afterEach(() => {
+      setEnvironmentProvider(originalEnv);
+      setFileSystemProvider(originalFs);
+    });
+
+    // These tests exercise the `app.updateConfig()` flow the way real users
+    // call it: from inside a command handler, after `forge()` has run the
+    // root builder (which is where config providers get registered).
+
+    it('updates an existing config file resolved from cwd', async () => {
+      fs.writeFileSync(
+        '/root/app.config.json',
+        JSON.stringify({ theme: 'light', lang: 'en' })
+      );
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+        },
+      });
+
+      await app.forge([]);
+
+      const written = JSON.parse(fs.readFileSync('/root/app.config.json'));
+      expect(written).toEqual({ theme: 'dark', lang: 'fr' });
+    });
+
+    it('writes to the default path when no config file exists on disk', async () => {
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(fs.existsSync('/root/app.config.json')).toBe(true);
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        theme: 'dark',
+        lang: 'fr',
+      });
+    });
+
+    it('supports `default` as a lazy function', async () => {
+      let invocations = 0;
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: () => {
+                invocations++;
+                return '/home/user/.config/app/config.json';
+              },
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(invocations).toBe(1);
+      expect(
+        fs.existsSync('/home/user/.config/app/config.json')
+      ).toBe(true);
+    });
+
+    it('falls back to default on first write, then writes back to the resolved file on subsequent updates', async () => {
+      // Two updateConfig calls from the same handler. The first creates the
+      // file at the `default` path; the second should go to the freshly
+      // resolved path rather than re-using targetPath, and must merge with
+      // the existing file contents instead of overwriting them.
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .option('lang', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig({ theme: 'dark', lang: 'fr' });
+          await app.updateConfig({ theme: 'system' });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        theme: 'system',
+        lang: 'fr',
+      });
+    });
+
+    it('supports updater functions with proxy tracking on a fresh default path', async () => {
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('count', { type: 'number', default: 0 })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+              default: '/root/app.config.json',
+            }),
+        handler: async () => {
+          await app.updateConfig((config) => {
+            const prev = (config as { count?: number }).count ?? 0;
+            config.count = prev + 5;
+          });
+        },
+      });
+
+      await app.forge([]);
+
+      expect(JSON.parse(fs.readFileSync('/root/app.config.json'))).toEqual({
+        count: 5,
+      });
+    });
+
+    it('errors clearly when no provider resolves and no default is configured', async () => {
+      // `runCommand` catches handler errors and logs via console.error to
+      // surface them nicely to end users, so we capture the rejection from
+      // inside the handler instead of asserting on `forge()`'s return.
+      let captured: unknown;
+      const app = cli('app', {
+        builder: (args) =>
+          args
+            .option('theme', { type: 'string' })
+            .config(ConfigurationFiles.JsonFileConfigLoader, {
+              filename: 'app.config.json',
+            }),
+        handler: async () => {
+          try {
+            await app.updateConfig({ theme: 'dark' });
+          } catch (e) {
+            captured = e;
+          }
+        },
+      });
+
+      await app.forge([]);
+
+      expect(captured).toBeInstanceOf(Error);
+      expect((captured as Error).message).toMatch(/no provider resolved/);
     });
   });
 });

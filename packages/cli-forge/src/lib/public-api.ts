@@ -444,12 +444,58 @@ export interface CLI<
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
-   * Register's a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
+   * Registers a configuration provider for the CLI. See {@link ConfigurationProviders} for built-in providers.
    *
    * @param provider Provider to register.
    */
   config(
-    provider: ConfigurationFiles.AnyConfigProvider<TArgs>
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+
+  /**
+   * Registers a pre-built configuration provider with framework-level
+   * metadata such as `default`. Useful with convenience factories like
+   * {@link ConfigurationProviders.JsonFile} that already return a
+   * fully-constructed provider but still need to carry a `default` path
+   * so `updateConfig` can create a config file when none exists.
+   *
+   * @example
+   * ```ts
+   * cli('my-tool')
+   *   .option('theme', { type: 'string' })
+   *   .config(ConfigurationProviders.JsonFile('my-tool.config.json'), {
+   *     default: () => join(process.cwd(), 'my-tool.config.json'),
+   *   });
+   * ```
+   *
+   * @param provider The configuration provider to register.
+   * @param options Framework-level options (e.g. `default`).
+   */
+  config(
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent>;
+
+  /**
+   * Registers a configuration provider by class and options.
+   * Framework options like `default` are extracted and stored as metadata.
+   *
+   * @param ctor The provider class constructor.
+   * @param options Constructor options merged with framework options (e.g., `default`).
+   */
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        InstanceType<C> extends readonly (infer P)[]
+          ? ConfigurationFiles.ExtractLocation<P>
+          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
@@ -1246,6 +1292,47 @@ export type ErrorHandler = (
 
 /** Type alias for a CLI instance with any type parameters. Use in value positions where you need to accept any CLI. */
 export type AnyCLI = CLI<any, any, any, any, any>;
+
+/**
+ * Error thrown when a command handler (or middleware running as part of the
+ * same execution phase) throws during `forge()`. The original error is
+ * preserved on the {@link cause} property so custom error handlers can
+ * inspect it, while still being able to distinguish framework-reported
+ * handler failures from other errors via `instanceof HandlerExecutionError`.
+ *
+ * @example
+ * ```ts
+ * cli('app', {
+ *   handler: async () => {
+ *     throw new Error('bad thing');
+ *   },
+ * })
+ *   .errorHandler((e) => {
+ *     if (e instanceof HandlerExecutionError) {
+ *       console.error('command:', e.command);
+ *       console.error('cause:', e.cause);
+ *     }
+ *   })
+ *   .forge();
+ * ```
+ */
+export class HandlerExecutionError extends Error {
+  override name = 'HandlerExecutionError';
+  /** The command path (e.g. `"my-tool build release"`) whose handler threw. */
+  readonly command: string;
+
+  constructor(command: string, options: { cause: unknown }) {
+    const causeMessage =
+      options.cause instanceof Error
+        ? options.cause.message
+        : String(options.cause);
+    super(
+      `Error executing handler for "${command}": ${causeMessage}`,
+      options as ErrorOptions
+    );
+    this.command = command;
+  }
+}
 
 /**
  * Base CLI constraint for generic functions. Uses `ParsedArgs` instead of `any`

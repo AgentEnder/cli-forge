@@ -36,6 +36,7 @@ import {
   CLIHandlerContext,
   Command,
   ErrorHandler,
+  HandlerExecutionError,
   SDKCommand,
 } from './public-api';
 import type {
@@ -160,48 +161,58 @@ export class InternalCLI<
 
   private _versionOverride?: string;
 
+  // Default error handler chain. User-registered handlers are prepended via
+  // `errorHandler()` and run first, so these act as fallbacks. Handlers that
+  // don't match the error type should re-throw to pass the error to the next
+  // handler in the chain.
   private registeredErrorHandlers: Array<ErrorHandler> = [
+    // Specific: print parse/validation failures using the familiar format.
     (e: unknown, actions) => {
-      if (e instanceof ValidationFailedError) {
-        this.printHelp();
-        console.log();
-        console.log(e.message);
+      if (!(e instanceof ValidationFailedError)) throw e;
+      this.printHelp();
+      console.log();
+      console.log(e.message);
 
-        let currentCommand: InternalCLI<any, any, any, any> = this;
-        for (const cmd of this.commandChain) {
-          const next = currentCommand.registeredCommands[cmd];
-          if (!next) break;
-          currentCommand = next;
-        }
-        const subcommandNames = Object.keys(
-          currentCommand.registeredCommands
-        ).filter((name) => name !== '$0');
-
-        for (const err of e.errors) {
-          console.log(`  - ${err.message}`);
-          if (err instanceof UnknownOptionError) {
-            const suggestion = err.suggestedOptions[0];
-            if (suggestion) {
-              console.log(`    (did you mean '${suggestion}'?)`);
-            }
-            continue;
-          }
-          if (
-            err instanceof UnknownArgumentError &&
-            subcommandNames.length > 0 &&
-            !err.input.startsWith('-')
-          ) {
-            const suggestion = calculateSuggestedString(
-              err.input,
-              subcommandNames
-            );
-            if (suggestion) {
-              console.log(`    (did you mean '${suggestion}'?)`);
-            }
-          }
-        }
-        actions.exit(1);
+      let currentCommand: InternalCLI<any, any, any, any> = this;
+      for (const cmd of this.commandChain) {
+        const next = currentCommand.registeredCommands[cmd];
+        if (!next) break;
+        currentCommand = next;
       }
+      const subcommandNames = Object.keys(
+        currentCommand.registeredCommands
+      ).filter((name) => name !== '$0');
+
+      for (const err of e.errors) {
+        console.log(`  - ${err.message}`);
+        if (err instanceof UnknownOptionError) {
+          const suggestion = err.suggestedOptions[0];
+          if (suggestion) {
+            console.log(`    (did you mean '${suggestion}'?)`);
+          }
+          continue;
+        }
+        if (
+          err instanceof UnknownArgumentError &&
+          subcommandNames.length > 0 &&
+          !err.input.startsWith('-')
+        ) {
+          const suggestion = calculateSuggestedString(
+            err.input,
+            subcommandNames
+          );
+          if (suggestion) {
+            console.log(`    (did you mean '${suggestion}'?)`);
+          }
+        }
+      }
+      actions.exit(1);
+    },
+    (e: unknown, actions) => {
+      if (typeof process !== 'undefined') process.exitCode = 1;
+      console.error(e);
+      this.printHelp();
+      actions.exit(1);
     },
   ];
 
@@ -717,80 +728,94 @@ export class InternalCLI<
         middlewares.add(mw);
       }
     }
-    try {
-      if (cmd.requiresCommand) {
-        throw new Error(
+    // "Missing command" is a user-facing prompt (the CLI was invoked
+    // without a command to run), not a programmer error. Print help and
+    // set exitCode rather than propagating through the error-handler
+    // chain, so interactive use and `demandCommand()` stay ergonomic.
+    if (cmd.requiresCommand) {
+      if (typeof process !== 'undefined') process.exitCode = 1;
+      console.error(
+        new Error(
           `${[this.name, ...this.commandChain].join(' ')} requires a command`
-        );
-      }
-      if (cmd.configuration?.handler) {
-        for (const middleware of middlewares) {
-          if (executedMiddleware?.has(middleware)) continue;
-          const middlewareResult = await middleware(args as any);
-          if (
-            middlewareResult !== void 0 &&
-            typeof middlewareResult === 'object'
-          ) {
-            args = middlewareResult as T;
-          }
+        )
+      );
+      this.printHelp();
+      return args;
+    }
+    if (cmd.configuration?.handler) {
+      for (const middleware of middlewares) {
+        if (executedMiddleware?.has(middleware)) continue;
+        const middlewareResult = await middleware(args as any);
+        if (
+          middlewareResult !== void 0 &&
+          typeof middlewareResult === 'object'
+        ) {
+          args = middlewareResult as T;
         }
         // Keep ALS context args in sync after middleware transformations
         const store = contextStorage.getStore();
         if (store) {
           store.args = args as Record<string, unknown>;
         }
+      }
+      try {
         await cmd.configuration.handler(args, {
           command: cmd as any,
         });
-        return args;
+      } catch (cause) {
+        throw new HandlerExecutionError(
+          [this.name, ...this.commandChain].join(' '),
+          { cause }
+        );
+      }
+      return args;
+    }
+
+    // We can treat a command as a subshell if it has subcommands
+    if (Object.keys(cmd.registeredCommands).length > 0) {
+      if (typeof process === 'undefined' || !process.stdout?.isTTY) {
+        // If we're not in a TTY (or in a browser), we can't run an interactive shell...
+        // Maybe we should warn here?
+      } else if (args.unmatched.length > 0) {
+        // If there are unmatched args, we don't run an interactive shell...
+        // this could represent a user misspelling a subcommand so it gets rather confusing.
+        console.warn(
+          `Warning: Unrecognized command or arguments: ${args.unmatched.join(
+            ' '
+          )}`
+        );
+        cmd.printHelp();
       } else {
-        // We can treat a command as a subshell if it has subcommands
-        if (Object.keys(cmd.registeredCommands).length > 0) {
-          if (typeof process === 'undefined' || !process.stdout?.isTTY) {
-            // If we're not in a TTY (or in a browser), we can't run an interactive shell...
-            // Maybe we should warn here?
-          } else if (args.unmatched.length > 0) {
-            // If there are unmatched args, we don't run an interactive shell...
-            // this could represent a user misspelling a subcommand so it gets rather confusing.
-            console.warn(
-              `Warning: Unrecognized command or arguments: ${args.unmatched.join(
-                ' '
-              )}`
-            );
-            cmd.printHelp();
-          } else {
-            const shellMod = await getInteractiveShellModule();
-            if (!shellMod.INTERACTIVE_SHELL) {
-              const tui = new shellMod.InteractiveShell(
-                this as unknown as AnyInternalCLI,
-                {
-                  prependArgs: originalArgV,
-                }
-              );
-              await new Promise<void>((res) => {
-                ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
-                  process?.on(s, () => {
-                    tui.close();
-                    res();
-                  })
-                );
-              });
+        const shellMod = await getInteractiveShellModule();
+        if (!shellMod.INTERACTIVE_SHELL) {
+          const tui = new shellMod.InteractiveShell(
+            this as unknown as AnyInternalCLI,
+            {
+              prependArgs: originalArgV,
             }
-          }
-        }
-        // No subcommands so subshell doesn't make sense
-        // No handler, so nothing to run
-        else {
-          throw new Error(
-            `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
           );
+          await new Promise<void>((res) => {
+            ['SIGINT', 'SIGTERM', 'SIGQUIT'].forEach((s) =>
+              process?.on(s, () => {
+                tui.close();
+                res();
+              })
+            );
+          });
         }
       }
-    } catch (e) {
-      if (typeof process !== 'undefined') process.exitCode = 1;
-      console.error(e);
-      this.printHelp();
+      return args;
     }
+
+    // No handler, no subcommands. Treated as a framework diagnostic, like
+    // `requiresCommand` — print help and set exitCode rather than throwing.
+    if (typeof process !== 'undefined') process.exitCode = 1;
+    console.error(
+      new Error(
+        `${[this.name, ...this.commandChain].join(' ')} is not implemented.`
+      )
+    );
+    this.printHelp();
     return args;
   }
 
@@ -1123,11 +1148,47 @@ export class InternalCLI<
   }
 
   config(
-    provider: ConfigurationFiles.AnyConfigProvider<TArgs>
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config(
+    provider: ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+    options: { default?: ConfigurationFiles.DefaultConfig<string | URL> }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+  >(
+    ctor: C,
+    options: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        InstanceType<C> extends readonly (infer P)[]
+          ? ConfigurationFiles.ExtractLocation<P>
+          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  config<
+    C extends new (
+      opts: any
+    ) => ConfigurationFiles.ConfigProviderRegistration<TArgs>,
+  >(
+    providerOrCtor: ConfigurationFiles.ConfigProviderRegistration<TArgs> | C,
+    options?: ConstructorParameters<C>[0] & {
+      default?: ConfigurationFiles.DefaultConfig<
+        InstanceType<C> extends readonly (infer P)[]
+          ? ConfigurationFiles.ExtractLocation<P>
+          : ConfigurationFiles.ExtractLocation<InstanceType<C>>
+      >;
+    }
   ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
-    this.parser.config(
-      provider as ConfigurationFiles.AnyConfigProvider<any>
-    );
+    if (options !== undefined) {
+      this.parser.config(providerOrCtor as any, options);
+    } else {
+      this.parser.config(
+        providerOrCtor as ConfigurationFiles.ConfigProviderRegistration<any>
+      );
+    }
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
@@ -1163,6 +1224,15 @@ export class InternalCLI<
     this.withErrorHandlers(async () => {
       let argv: TArgs & { help?: boolean; version?: boolean };
       let validationFailedError: ValidationFailedError<TArgs> | undefined;
+
+      // `commandChain` is mutated during the discovery loop (subcommand
+      // names are pushed as they are matched). Clear it at the start of
+      // every forge() call so a CLI instance can be invoked multiple
+      // times — e.g. in a long-running server or a test that exercises
+      // several command paths — without walking a stale chain on the
+      // second call. Other per-call state (unmatched tokens, parsed
+      // argv) is already local to this closure.
+      this.commandChain = [];
 
       // Run root builder (may register options, init hooks, commands).
       // If the builder came from a $0 alias, skip it here — we defer
