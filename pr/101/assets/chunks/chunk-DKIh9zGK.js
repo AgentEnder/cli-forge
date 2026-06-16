@@ -1,0 +1,1 @@
+import{t as e}from"./chunk-CO5K4drp.js";var t=`$$VIKE_PLUGIN_TYPEDOC$$`;function n(){let n=e()[t];if(!n)throw Error(`No API package data found in page data. Ensure your +data.ts returns withApiPackage().`);return n}function r(){let n=e()[t];if(!n)throw Error(`No API export data found in page data. Ensure your +data.ts returns withApiExport().`);return n}export{n,r as t};
