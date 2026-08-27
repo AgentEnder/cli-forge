@@ -106,6 +106,61 @@ Positional arguments are values without a leading `--flag`. Register them with `
 
 With this declaration, `argument-types deploy production` binds `target` to `"production"`. Positionals can be `required: true`, accept defaults, or use any of the other option types — the same `type` system applies.
 
+## Aliases and short flags
+
+Every option can carry extra names through `alias`. Aliases and short flags are one mechanism — a single-character alias *is* the short flag:
+
+```typescript
+cli('deploy')
+  .option('force', { type: 'boolean', alias: ['f'] })
+  .option('verbose', { type: 'boolean', alias: ['v'] })
+  .option('name', { type: 'string', alias: ['n', 'app-name'] })
+  .forge();
+```
+
+The length of an alias decides how you can type it:
+
+- **One character** — usable with a single dash (`-f`) and groupable.
+- **Two or more characters** — long-form only (`--app-name`). A single dash is read as a group of one-character aliases, so `-app-name` is not the alias, it's the characters `a`, `p`, `p`, and so on. Help output follows the same convention: any alias longer than one character renders with two dashes.
+
+### Grouping
+
+Single-character aliases combine behind one dash. `-fv` means `-f -v`:
+
+```
+deploy -fv          # force: true, verbose: true
+deploy -fn release  # force: true, name: 'release'
+```
+
+**The first option in a group that takes a value ends the group.** The rest of that token is its value, which is how GNU tools read short flags. So the attached, `=` and separate forms all agree:
+
+```
+deploy -fnrelease   # force: true, name: 'release'
+deploy -fn=release  # force: true, name: 'release'
+deploy -fn release  # force: true, name: 'release'
+```
+
+Nothing after that option is read as a flag, whatever the characters happen to alias elsewhere. Put value-taking options last:
+
+```
+deploy -nf release  # name: 'f' — 'release' is left over, and force is unset
+```
+
+Array options end a group the same way. `-fl a b` fills `list` with `a` and `b`; `-lf a b` fills it with `f`, `a` and `b`.
+
+### Unrecognized characters
+
+A character that resolves to nothing is reported on its own. With only `force` declared, `-fx` sets `force` and leaves `-x` in `unmatched`:
+
+```
+deploy -fx    # force: true, unmatched: ['-x']
+deploy -x     # unmatched: ['-x']
+```
+
+The exception is a group where *no* character resolves, which stays intact as one unmatched token so pass-through consumers see the argument as typed.
+
+Take care when declaring a multi-character alias whose characters double as single-character aliases on the same command. Given `--prc` alongside `-p` and `-r`, typing `-prc` out of habit resolves against the merged option set of the whole command chain, not against `--prc`. If `-p` takes a value, `-prc` means `-p rc`; if every member is a flag, `p` and `r` bind and `-c` is reported with the token that produced it, so it still suggests `--prc`. Neither reading is what the user meant — pick alias letters that don't spell each other.
+
 ## Validation
 
 Validation runs after coercion and before the handler. Each feature is opt-in.
@@ -144,6 +199,14 @@ By default, unknown arguments are silently collected into an `unmatched` array. 
 <%= example('strict-mode').region('cli') %>
 
 Use non-strict mode when wrapping another tool that needs pass-through arguments.
+
+Strict mode runs three checks, and `.strict()` takes an object to turn any of them off:
+
+- **`unknownOptions`** — an unmatched token starting with `-`.
+- **`unknownArguments`** — an unmatched bare token, including a typoed subcommand name.
+- **`partialShortFlagGroups`** — a short flag group such as `-fx` where some characters resolved and some didn't.
+
+The object spreads over the all-checks-on default, so `.strict({ unknownArguments: false })` reads as "strict, except stray positionals". `partialShortFlagGroups` stays separate from `unknownOptions` because a partial group has already applied the values of the characters that did resolve.
 
 For the deeper validation reference (validation order, custom validators, error handling), see the [validation guide](./validation).
 
@@ -185,6 +248,7 @@ Three forms — direct value, `{ value, description }`, and `{ factory, descript
 | `type: 'object'` + `properties` | option | Nested structure via dot-notation or JSON |
 | `type: 'oneOf'` + `valueTypes` | option | Multi-typed flag (e.g. boolean-or-string) |
 | `.positional(name, opts)` | builder | Argument matched by position, not by flag |
+| `alias: [...]` | option | Extra names; a one-character alias is the short flag |
 | `choices: [...]` | option | Restrict to a fixed set, narrows TS type |
 | `required: true` | option | Fail if no value from any source |
 | `default: ...` | option | Fallback when no source provides a value |
