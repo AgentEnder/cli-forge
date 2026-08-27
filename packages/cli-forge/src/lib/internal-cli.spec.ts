@@ -899,6 +899,98 @@ describe('cliForge', () => {
     expect(captured.unmatched).toEqual(['--unknown', 'arg']);
   });
 
+  it('should not let a short flag group swallow the tokens that follow it', async () => {
+    let captured: any;
+
+    await cli('test')
+      .option('verbose', { type: 'boolean', alias: ['v'] })
+      .command('start', {
+        builder: (argv) =>
+          argv
+            .option('force', { type: 'boolean', alias: ['f'] })
+            .option('title', { type: 'string', alias: ['t'] }),
+        handler: (args) => {
+          captured = args;
+        },
+      })
+      .forge(['start', '-vf', '--title', 'T']);
+
+    expect(captured).toMatchObject({
+      verbose: true,
+      force: true,
+      title: 'T',
+    });
+  });
+
+  it('should bind trailing characters of a group to its value-taking member', async () => {
+    let captured: any;
+
+    // A multi-character alias resolves against the merged root + subcommand
+    // option set when typed with a single dash, so `-prc` reads as `-p rc`.
+    await cli('test')
+      .command('start', {
+        builder: (argv) =>
+          argv
+            .option('primary-checkout', { type: 'string', alias: ['prc'] })
+            .option('prompt', { type: 'string', alias: ['p'] })
+            .option('repo', { type: 'array', items: 'string', alias: ['r'] }),
+        handler: (args) => {
+          captured = args;
+        },
+      })
+      .forge(['start', '-prc', 'fresh-checkout']);
+
+    expect(captured.prompt).toBe('rc');
+    expect(captured['primary-checkout']).toBeUndefined();
+  });
+
+  it('should report the unresolved character of a short flag group and suggest the alias it came from', async () => {
+    const mock = mockConsoleLog();
+
+    // Same collision, but every member is a flag, so the group is legal and
+    // only the character that resolves to nothing is reported.
+    try {
+      await cli('test')
+        .strict()
+        .command('start', {
+          builder: (argv) =>
+            argv
+              .option('primary-checkout', { type: 'string', alias: ['prc'] })
+              .option('prompt', { type: 'boolean', alias: ['p'] })
+              .option('repo', { type: 'boolean', alias: ['r'] }),
+          handler: () => {
+            // noop
+          },
+        })
+        .forge(['start', '-prc']);
+    } catch {
+      // Expected to throw
+    }
+
+    const output = mock.getOutput();
+    expect(output).toContain('Unknown argument: -c (in -prc)');
+    expect(output).toContain("did you mean '--prc'");
+    mock.restore();
+  });
+
+  it('should allow turning individual strict checks off', async () => {
+    let captured: any;
+
+    await cli('test')
+      .strict({ unknownArguments: false })
+      .option('foo', { type: 'string' })
+      .command('$0', {
+        builder: (args) => args,
+        handler: (args) => {
+          captured = args;
+        },
+      })
+      .forge(['--foo', 'hello', 'stray']);
+
+    expect(captured.foo).toBe('hello');
+    expect(captured.unmatched).toEqual(['stray']);
+  });
+
   it('should run parent middleware before evaluating child command handler', async () => {
     const executionOrder: string[] = [];
     let handlerArgs: any;

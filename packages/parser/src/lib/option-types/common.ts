@@ -1,3 +1,32 @@
+/**
+ * An alias for an option. Aliases and short flags are one mechanism: a
+ * single-character alias is the short flag, and there is no separate short-flag
+ * concept.
+ *
+ * The length of the alias decides how it can be typed:
+ *
+ * - **One character** — usable with a single dash (`-f`) and groupable, so
+ *   `-fb` means `-f -b`.
+ * - **Two or more characters** — long-form only (`--force`). A single dash is
+ *   read as a group of one-character aliases, so `-force` means
+ *   `-f -o -r -c -e`. Help output follows the same convention and renders any
+ *   alias longer than one character with two dashes.
+ *
+ * The first option in a group that takes a value ends the group: the rest of
+ * that token is its value, as GNU tools read short flags. So `-fnvalue`,
+ * `-fn=value` and `-fn value` all bind `value` to `n`. Nothing after that
+ * option is read as a flag, whatever the characters happen to alias elsewhere,
+ * so `-nf value` binds the literal `f` to `n` and leaves `value` over. Put
+ * value-taking options last; array options end a group the same way.
+ *
+ * A character that resolves to nothing is reported on its own: `-fx` with only
+ * `f` declared applies `f` and leaves `-x` unmatched. The exception is a group
+ * where no character resolves, which stays unmatched as one token.
+ *
+ * Beware of declaring a multi-character alias whose characters are also
+ * single-character aliases on the same command: `--prc` typed as `-prc` will
+ * resolve as `-p -r -c` rather than as a typo.
+ */
 export type AliasConfig = {
   /**
    * The alias name (without any leading dashes).
@@ -32,7 +61,9 @@ export type CommonOptionConfig<T, TCoerce = T, TChoices = T[]> = {
   positional?: boolean;
 
   /**
-   * Provide an array of aliases for the option.
+   * Provide an array of aliases for the option. See {@link AliasConfig} for how
+   * alias length decides between short-flag (`-f`) and long-form (`--force`)
+   * spelling, and for how short-flag groups such as `-fb` are resolved.
    *
    * Each entry may be a string, or an object with `{ name, hidden }`. When
    * `hidden: true` is set, the alias still works when parsing arguments but
