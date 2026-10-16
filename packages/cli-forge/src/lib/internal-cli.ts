@@ -7,6 +7,7 @@ import {
   LocalizationFunction,
   OptionConfig,
   ParsedArgs,
+  StrictOptions,
   UnknownArgumentError,
   UnknownOptionError,
   ValidationFailedError,
@@ -563,7 +564,9 @@ export class InternalCLI<
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }
 
-  strict(enable = true): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
+  strict(
+    enable: boolean | StrictOptions = true
+  ): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders> {
     this.parser.options.strict = enable;
     return this as unknown as CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
   }

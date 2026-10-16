@@ -89,6 +89,68 @@ export type ParsedArgs<T = never> = [T] extends [never]
     } & T;
 
 /**
+ * The individual checks strict mode performs. Each can be toggled on its own by
+ * passing an object to `strict`.
+ */
+export type StrictOptions = {
+  /**
+   * Reject unmatched tokens starting with `-`, e.g. `--bar` when no `bar`
+   * option is declared. Raises {@link UnknownOptionError}.
+   */
+  unknownOptions?: boolean;
+  /**
+   * Reject unmatched bare tokens, including typoed subcommand names. Raises
+   * {@link UnknownArgumentError}.
+   */
+  unknownArguments?: boolean;
+  /**
+   * Reject short-flag groups where some characters resolved to options and some
+   * did not, e.g. `-fx` when `f` is declared but `x` is not. Raises
+   * {@link UnknownOptionError} for each unresolved character.
+   *
+   * Kept separate from `unknownOptions` because a partial group has already
+   * *applied* the values of the characters that did resolve, and because a CLI
+   * that runs non-strict overall still benefits from this check — non-strict is
+   * exactly the mode where a partial group corrupts silently.
+   */
+  partialShortFlagGroups?: boolean;
+};
+
+/**
+ * Why an entry landed in `unmatched`, recorded while parsing so validation can
+ * name the token it was typed in. Aligned with `unmatched` by position, so two
+ * occurrences of the same character keep separate origins.
+ */
+type UnmatchedOrigin = {
+  /** The value pushed into `unmatched`. */
+  value: string;
+  /** The argv token that produced it. */
+  token: string;
+  kind: 'partial-short-flag-group';
+};
+
+const ALL_STRICT_CHECKS: Required<StrictOptions> = {
+  unknownOptions: true,
+  unknownArguments: true,
+  partialShortFlagGroups: true,
+};
+
+function resolveStrictOptions(
+  strict: boolean | StrictOptions
+): Required<StrictOptions> {
+  if (typeof strict === 'boolean') {
+    return strict
+      ? { ...ALL_STRICT_CHECKS }
+      : {
+          unknownOptions: false,
+          unknownArguments: false,
+          partialShortFlagGroups: false,
+        };
+  }
+  return { ...ALL_STRICT_CHECKS, ...strict };
+}
+
+/**
  * Extra options for the parser
  */
 export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
@@ -112,8 +174,12 @@ export type ParserOptions<T extends ParsedArgs = ParsedArgs> = {
   /**
    * When set to true, throws a validation error if any unmatched arguments are encountered.
    * Unmatched arguments are those that don't match any configured option or positional argument.
+   *
+   * Pass a {@link StrictOptions} object to enable strict mode but opt out of
+   * individual checks, e.g. `{ unknownArguments: false }` for "strict, except
+   * stray positionals".
    */
-  strict?: boolean;
+  strict?: boolean | StrictOptions;
 
   /**
    * When set to false, skips validation (required checks, choices, conflicts, etc.)
@@ -208,6 +274,18 @@ export class ArgvParser<
   parserMap: Record<string, Parser<any>>;
 
   private configuredConfigurationProviders: AnyConfigProvider<TArgs>[] = [];
+
+  /**
+   * Provenance for the unmatched entries the last parse produced, in the order
+   * they were reported, so validation can say which group token an unknown
+   * character such as `-c` was typed in.
+   *
+   * Shared by reference with parsers produced by {@link clone}, and rewritten
+   * in place by every parse: consumers like cli-forge re-feed leftover
+   * unmatched tokens into a second parse, and `-c` on its own no longer knows
+   * where it came from.
+   */
+  private shortFlagGroupOrigins: UnmatchedOrigin[] = [];
 
   /**
    * If set, options can be populated from environment variables of the form `${envPrefix}_${optionName}`.
@@ -669,6 +747,28 @@ export class ArgvParser<
       ...alreadyParsed,
       unmatched: [],
     };
+    // Aligned 1:1 with `result.unmatched`, so two occurrences of the same
+    // token keep their own provenance.
+    const unmatchedOrigins: (UnmatchedOrigin | undefined)[] = [];
+    // Provenance recorded by a previous parse of the same argv chain. cli-forge
+    // re-feeds leftover unmatched tokens into its final parse, where `-x` alone
+    // no longer says which group it came from. Consumed in order, so repeated
+    // characters keep their own origin.
+    const carriedOrigins = [...this.shortFlagGroupOrigins];
+    // Cleared up front, and refilled once the loop finishes, so a parse that
+    // throws part way through leaves nothing stale behind. Mutated in place
+    // because parsers cloned from this one share the array.
+    this.shortFlagGroupOrigins.length = 0;
+    const pushUnmatched = (value: string, origin?: UnmatchedOrigin) => {
+      if (!origin) {
+        const carried = carriedOrigins.findIndex((o) => o.value === value);
+        if (carried !== -1) {
+          origin = carriedOrigins.splice(carried, 1)[0];
+        }
+      }
+      result.unmatched.push(value);
+      unmatchedOrigins.push(origin);
+    };
     let arg = argvClone.shift();
     let matchedPositionals = 0;
     while (arg) {
@@ -678,55 +778,120 @@ export class ArgvParser<
       }
       // Found a flag + value
       if (isFlag(arg)) {
-        const [maybeArg, maybeValue] = arg.split('=');
-        const keys = readArgKeys(
+        // Split on the FIRST `=` only, so `--name=a=b` yields the value `a=b`.
+        const equalsIndex = arg.indexOf('=');
+        const maybeArg = equalsIndex === -1 ? arg : arg.slice(0, equalsIndex);
+        const maybeValue =
+          equalsIndex === -1 ? undefined : arg.slice(equalsIndex + 1);
+        const token = readArgKeys(
           maybeArg as `-${string}`,
           this.options.stripDashed
         );
-        const configuredKeys = keys.map((key) =>
-          getConfiguredOptionKey<TArgs>(key, this.configuredOptions)
-        );
-        // Deduplicate configured keys to avoid processing the same option twice
-        // Filter out undefined values - if ANY key matches, we have a match
-        const uniqueConfiguredKeys = Array.from(
-          new Set(configuredKeys.filter((key) => key !== undefined))
-        );
+        const resolved = token.keys.map((key) => ({
+          key,
+          configuredKey: getConfiguredOptionKey<TArgs>(
+            key,
+            this.configuredOptions
+          ),
+        }));
         // Handles unmatched flags - only unmatched if NONE of the keys match
-        if (uniqueConfiguredKeys.length === 0) {
+        if (resolved.every(({ configuredKey }) => configuredKey === undefined)) {
           if (this.options.unmatchedParser(arg, argvClone, this)) {
             arg = argvClone.shift();
             continue;
           }
-          result.unmatched.push(arg);
+          pushUnmatched(arg);
           let next = argvClone.shift();
           // Collect all the values until the next flag
           while (next && !isNextFlag(next)) {
-            result.unmatched.push(next);
+            pushUnmatched(next);
             next = argvClone.shift();
           }
           arg = next;
           continue;
         }
-        if (maybeValue) {
-          argvClone.unshift(maybeValue);
-        }
-        for (const configuredKey of uniqueConfiguredKeys) {
-          if (configuredKey) {
-            const configuration = this.configuredOptions[configuredKey];
-            const value = tryParseValue(
-              this.parserMap[configuration.type],
-              {
-                config: configuration,
-                tokens: argvClone,
-                current: result[configuration.key],
-                providedFlag: maybeArg,
-              },
-              { lenient: this.options.lenient }
-            );
-            result[configuration.key] = value;
-            arg = argvClone.shift();
+        // A short-flag group is flags up to the first option that takes a
+        // value. That option ends the group: the rest of the token is its
+        // value, so `-fnvalue`, `-fn=value` and `-fn value` agree, and the
+        // trailing characters are never resolved as flags.
+        let members = resolved;
+        // The value handed to `valueReceiver`, when the token carries one.
+        let attachedValue = maybeValue;
+        let valueReceiver: (typeof resolved)[number] | undefined;
+        if (token.kind === 'short') {
+          const firstValueTaking = resolved.findIndex(
+            ({ configuredKey }) =>
+              configuredKey !== undefined &&
+              !supportsNegation(this.configuredOptions[configuredKey])
+          );
+          if (firstValueTaking !== -1) {
+            members = resolved.slice(0, firstValueTaking + 1);
+            valueReceiver = resolved[firstValueTaking];
+            const rest = resolved
+              .slice(firstValueTaking + 1)
+              .map(({ key }) => key)
+              .join('');
+            if (rest) {
+              attachedValue =
+                rest + (maybeValue === undefined ? '' : `=${maybeValue}`);
+            }
           }
         }
+        // A short-flag group names distinct options, so a character that
+        // resolves to nothing is an unknown flag and is reported on its own.
+        // A long flag's keys are alternate spellings of ONE option, where only
+        // one spelling is expected to resolve, so unresolved keys are ignored.
+        if (token.kind === 'short') {
+          for (const { key, configuredKey } of members) {
+            if (configuredKey === undefined) {
+              pushUnmatched(`-${key}`, {
+                value: `-${key}`,
+                token: maybeArg,
+                kind: 'partial-short-flag-group',
+              });
+            }
+          }
+        }
+        // Deduplicate configured keys to avoid processing the same option twice
+        const appliedKeys = new Set<string>();
+        const appliedMembers = members.filter(({ configuredKey }) => {
+          if (
+            configuredKey === undefined ||
+            appliedKeys.has(String(configuredKey))
+          ) {
+            return false;
+          }
+          appliedKeys.add(String(configuredKey));
+          return true;
+        });
+        // With no value-taking member, an `=value` goes to the last member, so
+        // `-fb=false` reads like `--bar=false`. A long flag has exactly one
+        // member once its alternate spellings are deduplicated.
+        valueReceiver ??= appliedMembers[appliedMembers.length - 1];
+        for (const member of appliedMembers) {
+          const { key, configuredKey } = member;
+          if (attachedValue && member === valueReceiver) {
+            argvClone.unshift(attachedValue);
+          }
+          const configuration = this.configuredOptions[
+            configuredKey as keyof TArgs
+          ];
+          const value = tryParseValue(
+            this.parserMap[configuration.type],
+            {
+              config: configuration,
+              tokens: argvClone,
+              current: result[configuration.key],
+              providedFlag: token.kind === 'short' ? `-${key}` : maybeArg,
+            },
+            { lenient: this.options.lenient }
+          );
+          result[configuration.key] = value;
+        }
+        // Advance past the flag token exactly once, no matter how many options
+        // the group named. Members that take values have already consumed them
+        // from `argvClone`.
+        arg = argvClone.shift();
         // Found a positional argument
       } else {
         // Try unmatchedParser first (e.g., for subcommand discovery).
@@ -762,10 +927,19 @@ export class ArgvParser<
       }
     }
 
+    for (const origin of unmatchedOrigins) {
+      if (origin) {
+        this.shortFlagGroupOrigins.push(origin);
+      }
+    }
+
     if (this.options.validate === false) {
       return this.normalizeOptions(result) as TArgs;
     }
-    return this.validateAndNormalizeResults(result) as TArgs;
+    return this.validateAndNormalizeResults(
+      result,
+      unmatchedOrigins
+    ) as TArgs;
   }
 
   private normalizeOptions(result: any) {
@@ -826,7 +1000,10 @@ export class ArgvParser<
     return normalized;
   }
 
-  private validateAndNormalizeResults(result: any) {
+  private validateAndNormalizeResults(
+    result: any,
+    unmatchedOrigins: (UnmatchedOrigin | undefined)[] = []
+  ) {
     const errors: Error[] = [];
     const normalized = this.normalizeOptions(result);
     const partial = { ...normalized };
@@ -889,19 +1066,48 @@ export class ArgvParser<
       }
     }
 
-    // Validate strict mode - check for unmatched arguments
     if (this.options.strict && result.unmatched?.length) {
-      for (const unmatchedArg of result.unmatched) {
-        const error = unmatchedArg.startsWith('-')
-          ? new UnknownOptionError(
-              unmatchedArg,
-              getSuggestedOptionsForUnknownInput(
+      const strict = resolveStrictOptions(this.options.strict);
+      const configuredOptions = this.configuredOptions as Record<
+        string,
+        InternalOptionConfig
+      >;
+      for (let i = 0; i < result.unmatched.length; i++) {
+        const unmatchedArg: string = result.unmatched[i];
+        const origin = unmatchedOrigins[i];
+        if (origin?.kind === 'partial-short-flag-group') {
+          if (strict.partialShortFlagGroups) {
+            errors.push(
+              new UnknownOptionError(
                 unmatchedArg,
-                this.configuredOptions as Record<string, InternalOptionConfig>
+                getSuggestedOptionsForUnknownInput(
+                  unmatchedArg,
+                  configuredOptions,
+                  origin.token
+                ),
+                origin.token
               )
-            )
-          : new UnknownArgumentError(unmatchedArg);
-        errors.push(error);
+            );
+          }
+          continue;
+        }
+        if (unmatchedArg.startsWith('-')) {
+          if (strict.unknownOptions) {
+            errors.push(
+              new UnknownOptionError(
+                unmatchedArg,
+                getSuggestedOptionsForUnknownInput(
+                  unmatchedArg,
+                  configuredOptions
+                )
+              )
+            );
+          }
+          continue;
+        }
+        if (strict.unknownArguments) {
+          errors.push(new UnknownArgumentError(unmatchedArg));
+        }
       }
     }
 
@@ -1024,10 +1230,23 @@ export class ArgvParser<
    * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
    * when unmatched arguments are encountered. Unmatched arguments are those that don't match any
    * configured option or positional argument.
-   * @param enable Whether to enable strict mode. Defaults to true.
+   *
+   * Pass a {@link StrictOptions} object to turn individual checks off. The
+   * object is spread over the all-checks-on default, so
+   * `strict({ unknownArguments: false })` reads as "strict, except stray
+   * positionals".
+   * @param enable Whether to enable strict mode, or which checks to run. Defaults to true.
    * @returns The parser instance for method chaining.
+   *
+   * @example
+   * ```ts
+   * parser()
+   *   .option('port', { type: 'number' })
+   *   // reject unknown flags, but pass stray positionals through to `unmatched`
+   *   .strict({ unknownArguments: false });
+   * ```
    */
-  strict(enable = true) {
+  strict(enable: boolean | StrictOptions = true) {
     this.options.strict = enable;
     return this;
   }
@@ -1068,6 +1287,10 @@ export class ArgvParser<
     clone.configuredConfigurationProviders = [
       ...this.configuredConfigurationProviders,
     ];
+    // Shared by reference, and rewritten in place by parse: a caller that
+    // parses with one clone and validates with another still needs to know
+    // which group an unmatched short flag came from.
+    clone.shortFlagGroupOrigins = this.shortFlagGroupOrigins;
 
     return clone;
   }
@@ -1275,10 +1498,19 @@ export class UnknownArgumentError extends Error {
 export class UnknownOptionError extends UnknownArgumentError {
   constructor(
     input: string,
-    public suggestedOptions: string[] = []
+    public suggestedOptions: string[] = [],
+    /**
+     * The argv token `input` was typed in, when it differs — a short-flag group
+     * reports each unresolved character, so `-prc` produces an error for `-c`
+     * with a token of `-prc`.
+     */
+    public token?: string
   ) {
     super(input, suggestedOptions);
     this.name = 'UnknownOptionError';
+    if (token && token !== input) {
+      this.message = `Unknown argument: ${input} (in ${token})`;
+    }
   }
 }
 
@@ -1320,11 +1552,19 @@ function applyNestedObjectDefaults(
   return normalized;
 }
 
+/**
+ * @param input The unmatched token to suggest replacements for.
+ * @param configuredOptions The options declared on the parser.
+ * @param token When `input` is a single character pulled out of a short-flag
+ *   group, the group token it came from. Searched alongside `input` so a typoed
+ *   multi-char alias (`-prc` for `--prc`) is still suggested — the character
+ *   alone is too short to reach it.
+ */
 function getSuggestedOptionsForUnknownInput(
   input: string,
-  configuredOptions: Record<string, InternalOptionConfig>
+  configuredOptions: Record<string, InternalOptionConfig>,
+  token?: string
 ): string[] {
-  const flagInput = input.split('=')[0];
   const validOptions = new Set<string>();
 
   const aliases = (config: InternalOptionConfig): string[] =>
@@ -1355,8 +1595,21 @@ function getSuggestedOptionsForUnknownInput(
     }
   }
 
-  const suggestion = calculateSuggestedString(flagInput, [...validOptions]);
-  return suggestion ? [suggestion] : [];
+  // The whole token is searched first: when both hit, `-prc` → `--prc` is the
+  // one the user meant, not whatever single letter is one edit from `-c`.
+  const candidates = [...validOptions];
+  const suggestions: string[] = [];
+  for (const search of [token, input]) {
+    if (!search) continue;
+    const suggestion = calculateSuggestedString(
+      search.split('=')[0],
+      candidates
+    );
+    if (suggestion && !suggestions.includes(suggestion)) {
+      suggestions.push(suggestion);
+    }
+  }
+  return suggestions;
 }
 
 /**

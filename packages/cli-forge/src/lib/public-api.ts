@@ -15,6 +15,7 @@ import {
   OptionConfigToType,
   ParsedArgs,
   ResolveProperties,
+  StrictOptions,
   StringOptionConfig,
   WithOptional,
 } from '@cli-forge/parser';
@@ -831,10 +832,20 @@ export interface CLI<
    * Enables or disables strict mode. When strict mode is enabled, the parser throws a validation error
    * when unmatched arguments are encountered. Unmatched arguments are those that don't match any
    * configured option or positional argument.
-   * @param enable Whether to enable strict mode. Defaults to true.
+   *
+   * Pass a `StrictOptions` object to turn individual checks off. The object is
+   * spread over the all-checks-on default, so
+   * `strict({ unknownArguments: false })` reads as "strict, except stray
+   * positionals".
+   *
+   * The checks are `unknownOptions` (an unmatched token starting with `-`),
+   * `unknownArguments` (an unmatched bare token, including a typoed
+   * subcommand), and `partialShortFlagGroups` (a short-flag group such as `-fx`
+   * where some characters resolved and some did not).
+   * @param enable Whether to enable strict mode, or which checks to run. Defaults to true.
    * @returns Updated CLI instance.
    */
-  strict(enable?: boolean): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
+  strict(enable?: boolean | StrictOptions): CLI<TArgs, THandlerReturn, TChildren, TParent, TProviders>;
 
   /**
    * Sets the usage text for the CLI. This text will be displayed in place of the default usage text
