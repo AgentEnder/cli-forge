@@ -138,6 +138,108 @@ describe('AggregateConfigProvider', () => {
       expect(result).toEqual({ foo: 'root', bar: 'base' });
     });
 
+    it('should handle deeply nested extends chains (A → B → C)', () => {
+      const provider: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.config';
+          if (dir === '/mid') return '/mid/.config';
+          if (dir === '/base') return '/base/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.config')
+            return { extends: '/mid', root: 'root-val' };
+          if (file === '/mid/.config')
+            return { extends: '/base', mid: 'mid-val', root: 'mid-override' };
+          if (file === '/base/.config')
+            return { base: 'base-val', mid: 'base-override', root: 'base-override' };
+          return {};
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([provider]);
+      const result = aggregate.load('/root');
+
+      // root's explicit "root" wins over mid and base
+      expect(result.root).toBe('root-val');
+      // mid's explicit "mid" wins over base
+      expect(result.mid).toBe('mid-val');
+      // base's "base" fills in (no one else set it)
+      expect(result.base).toBe('base-val');
+    });
+
+    it('should prioritize explicit values over extends-derived values regardless of provider order', () => {
+      // Provider A (first) has extends that brings in "name" from a base config.
+      // Provider B (second) explicitly sets "name" in its own config.
+      // Provider B's explicit value should win over A's extends-derived value.
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configA';
+          if (dir === '/base') return '/base/.configA';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configA')
+            return { extends: '/base', color: 'red' };
+          if (file === '/base/.configA')
+            return { name: 'from-base', host: 'base-host' };
+          return {};
+        },
+      };
+      const providerB = makeMockProvider({
+        '/root/.configB': { name: 'B-explicit', port: 8080 },
+      });
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      const result = aggregate.load('/root');
+
+      // B's explicit "name" beats A's extends-derived "name"
+      expect(result.name).toBe('B-explicit');
+      // A's explicit "color" is kept
+      expect(result.color).toBe('red');
+      // B's explicit "port" is kept
+      expect(result.port).toBe(8080);
+      // A's extends-derived "host" fills in (no explicit value from anyone)
+      expect(result.host).toBe('base-host');
+    });
+
+    it('should prioritize extends-derived values by provider order when no explicit value exists', () => {
+      // Both providers have extends. When no explicit value exists for a key,
+      // the first provider's extends-derived value should win.
+      const providerA: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configA';
+          if (dir === '/baseA') return '/baseA/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configA')
+            return { extends: '/baseA', color: 'red' };
+          if (file === '/baseA/.config') return { theme: 'dark' };
+          return {};
+        },
+      };
+      const providerB: ConfigurationProvider<any> = {
+        resolve: (dir) => {
+          if (dir === '/root') return '/root/.configB';
+          if (dir === '/baseB') return '/baseB/.config';
+          return undefined;
+        },
+        load: (file) => {
+          if (file === '/root/.configB')
+            return { extends: '/baseB', port: 8080 };
+          if (file === '/baseB/.config') return { theme: 'light' };
+          return {};
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([providerA, providerB]);
+      const result = aggregate.load('/root');
+
+      // A's extends-derived "theme" wins (first-provider-wins among extends)
+      expect(result.theme).toBe('dark');
+    });
+
     it('should load nested aggregates and merge their provenance', () => {
       const providerA = makeMockProvider({
         '/root/.configA': { foo: 'fromA' },
@@ -379,6 +481,286 @@ describe('AggregateConfigProvider', () => {
         { heading: 'A', body: 'A' },
         { heading: 'B', body: 'B' },
       ]);
+    });
+  });
+
+  describe('updateConfig with default fallback', () => {
+    it('should use default provider when no providers resolve', async () => {
+      const updates: any[] = [];
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined, // no file exists
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          updates.push(result);
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ foo: 'bar' });
+
+      expect(updates).toEqual([{ foo: 'bar' }]);
+      expect(targetPaths).toEqual(['/tmp/default.json']);
+    });
+
+    it('should support default as a function', async () => {
+      const updates: any[] = [];
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          updates.push(result);
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: () => '/tmp/from-function.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual(['/tmp/from-function.json']);
+    });
+
+    it('should support async default function', async () => {
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        {
+          provider,
+          default: async () => '/tmp/async-default.json',
+        },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual(['/tmp/async-default.json']);
+    });
+
+    it('should fall through when default function returns null', async () => {
+      const targetPaths: any[] = [];
+
+      const providerA: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const providerB: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider: providerA, default: () => null },
+        { provider: providerB, default: '/tmp/fallback.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      // Should skip providerA (returned null) and use providerB
+      expect(targetPaths).toEqual(['/tmp/fallback.json']);
+    });
+
+    it('should prefer resolving provider over default provider', async () => {
+      const resolvedUpdates: any[] = [];
+      const defaultUpdates: any[] = [];
+
+      const resolvingProvider: ConfigurationProvider<any> = {
+        resolve: (dir) =>
+          dir === '/root' ? '/root/.config.json' : undefined,
+        load: () => ({ existing: true }),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function'
+              ? await updater({ existing: true })
+              : updater;
+          resolvedUpdates.push(result);
+        },
+      };
+
+      const defaultProvider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (updater) => {
+          const result =
+            typeof updater === 'function' ? await updater({}) : updater;
+          defaultUpdates.push(result);
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        resolvingProvider,
+        { provider: defaultProvider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ newKey: 'value' } as any);
+
+      // Should route to resolving provider, not the default one
+      expect(resolvedUpdates).toEqual([
+        { existing: true, newKey: 'value' },
+      ]);
+      expect(defaultUpdates).toEqual([]);
+    });
+
+    it('should throw when no provider resolves and no default is configured', async () => {
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async () => {},
+      };
+
+      const aggregate = new AggregateConfigProvider([provider]);
+      aggregate.load('/root');
+
+      await expect(
+        aggregate.updateConfig({ foo: 'bar' })
+      ).rejects.toThrow(/no provider resolved/);
+    });
+
+    it('should support URL as default', async () => {
+      const targetPaths: any[] = [];
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => ({}),
+        updateConfig: async (_updater, options) => {
+          if (options?.targetPath) targetPaths.push(options.targetPath);
+        },
+      };
+
+      const defaultUrl = new URL('file:///tmp/url-default.json');
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: defaultUrl },
+      ]);
+      aggregate.load('/root');
+
+      await aggregate.updateConfig({ key: 'value' });
+
+      expect(targetPaths).toEqual([defaultUrl]);
+    });
+
+    it('updater form reads current state from the default-path file when nothing resolves from cwd', async () => {
+      // Simulates the flow: init writes to default path, later call wants
+      // to read-modify-write. Without the fix, the updater sees {}
+      // because load(cwd) finds nothing.
+      let onDisk: Record<string, unknown> = { count: 5 };
+
+      const provider: ConfigurationProvider<any> = {
+        // Never resolves from cwd — config only lives at the default path.
+        resolve: () => undefined,
+        load: (file) => {
+          if (file === '/tmp/default.json') return onDisk as any;
+          return {};
+        },
+        updateConfig: async (updater) => {
+          const next =
+            typeof updater === 'function'
+              ? await (updater as any)(onDisk)
+              : updater;
+          onDisk = next;
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      // Mock existsSync so the fallback path is considered "on disk"
+      const fs = await import('../environment-provider.js');
+      const original = fs.getFileSystemProvider();
+      fs.setFileSystemProvider({
+        ...original,
+        existsSync: (p: string) =>
+          p === '/tmp/default.json' ? true : original.existsSync(p),
+      });
+
+      try {
+        await aggregate.updateConfig((config) => {
+          // Should see the persisted count (5), not undefined
+          (config as any).count = ((config as any).count ?? 0) + 1;
+        });
+      } finally {
+        fs.setFileSystemProvider(original);
+      }
+
+      expect(onDisk).toEqual({ count: 6 });
+    });
+
+    it('updater form strips `extends` from the default-path file when loading current state', async () => {
+      let onDisk: Record<string, unknown> = {
+        extends: './base.json',
+        theme: 'dark',
+      };
+
+      const provider: ConfigurationProvider<any> = {
+        resolve: () => undefined,
+        load: () => onDisk as any,
+        updateConfig: async (updater) => {
+          const next =
+            typeof updater === 'function'
+              ? await (updater as any)(onDisk)
+              : updater;
+          onDisk = next;
+        },
+      };
+
+      const aggregate = new AggregateConfigProvider([
+        { provider, default: '/tmp/default.json' },
+      ]);
+      aggregate.load('/root');
+
+      const fs = await import('../environment-provider.js');
+      const original = fs.getFileSystemProvider();
+      fs.setFileSystemProvider({
+        ...original,
+        existsSync: () => true,
+      });
+
+      let seenExtends: unknown;
+      try {
+        await aggregate.updateConfig((config) => {
+          seenExtends = (config as any).extends;
+          (config as any).theme = 'system';
+        });
+      } finally {
+        fs.setFileSystemProvider(original);
+      }
+
+      // The updater should not see `extends` — it's a loader directive,
+      // not a config value.
+      expect(seenExtends).toBeUndefined();
     });
   });
 

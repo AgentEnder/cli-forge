@@ -1,0 +1,103 @@
+id: config-patterns
+title: Configuration Patterns
+hidden: true
+description: |
+  Demonstrates various configuration patterns: project-root defaults,
+  user-level config, hybrid config, updateConfig usage, and custom providers.
+test:
+  - name: 'Project tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json project-tool.ts'
+    assertions:
+      stdout:
+        contains: 'host: localhost'
+  - name: 'User tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json user-tool.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'Hybrid tool uses defaults when no config file exists'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json hybrid-tool.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'updateConfig writes and reads back values'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json update-usage.ts'
+    assertions:
+      stdout:
+        contains: 'theme: light'
+  - name: 'Custom key-value provider loads config'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json custom-provider.ts'
+    assertions:
+      stdout:
+        contains: 'howdy, partner!'
+  - name: 'init flow: first write creates file at default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'before init: exists=false'
+  - name: 'init flow: first write writes dark/fr'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'after init: theme=dark lang=fr'
+  - name: 'init flow: second write preserves lang and updates theme'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json init-flow.ts'
+    assertions:
+      stdout:
+        contains: 'after update: theme=system lang=fr'
+  - name: 'nested-default: default path file does not exist before write'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'before: exists=false'
+  - name: 'nested-default: framework creates intermediate directories and writes file'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'after: exists=true'
+  - name: 'nested-default: written file contains the updated value'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json nested-default.ts'
+    assertions:
+      stdout:
+        contains: 'written theme: dark'
+  - name: 'fresh-updater: first call writes initial value via default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
+    assertions:
+      stdout:
+        contains: 'first call count: 1'
+  - name: 'fresh-updater: second call reads previously persisted value from default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json fresh-updater.ts'
+    assertions:
+      stdout:
+        contains: 'second call count: 2'
+  - name: 'multi-provider-fallback: fallback provider default path is used when nothing resolves'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'before: user exists=false'
+  - name: 'multi-provider-fallback: fallback provider writes to its default path'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'after: user exists=true'
+  - name: 'multi-provider-fallback: written file has the updated theme'
+    options:
+      command: 'npx tsx --no-cache --tsconfig ../tsconfig.json multi-provider-fallback.ts'
+    assertions:
+      stdout:
+        contains: 'user config theme: dark'
