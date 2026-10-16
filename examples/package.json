@@ -13,7 +13,7 @@
     "citty": "^0.2.2",
     "cleye": "^2.3.0",
     "cli-forge": "workspace:*",
-    "esbuild": "^0.27.0",
+    "esbuild": "^0.28.1",
     "clipanion": "4.0.0-rc.4",
     "commander": "^14.0.3",
     "effect": "^3.21.0",
