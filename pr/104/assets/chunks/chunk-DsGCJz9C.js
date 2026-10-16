@@ -1,1 +1,0 @@
-var e,t=class{constructor(e,t){throw Error(`Interactive shell is only available in Node.js runtimes`)}};export{e as INTERACTIVE_SHELL,t as InteractiveShell};
