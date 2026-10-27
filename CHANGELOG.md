@@ -1,3 +1,19 @@
+## 1.11.0 (2026-10-27)
+
+### 🚀 Features
+
+- **cli-forge:** suggest closest subcommand for typoed positionals ([#95](https://github.com/agentender/cli-forge/pull/95))
+
+### 🩹 Fixes
+
+- short-flag groups silently eat following tokens; alias and short-flag rules are undocumented ([#104](https://github.com/agentender/cli-forge/pull/104))
+
+### ❤️ Thank You
+
+- brain loop
+- Claude Opus 5 (1M context)
+- Craigory Coppola @AgentEnder
+
 ## 1.10.0 (2026-04-23)
 
 ### 🚀 Features
