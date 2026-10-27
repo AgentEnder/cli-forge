@@ -1,0 +1,33 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 48 48" width="48" height="48">
+  <defs>
+    <linearGradient id="flame" x1="0.5" y1="1" x2="0.5" y2="0">
+      <stop offset="0%" stop-color="#cc4400"/>
+      <stop offset="40%" stop-color="#ff6a00"/>
+      <stop offset="75%" stop-color="#ff8c38"/>
+      <stop offset="100%" stop-color="#ffd5a0"/>
+    </linearGradient>
+    <linearGradient id="iron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#6a5540"/>
+      <stop offset="100%" stop-color="#3a2c20"/>
+    </linearGradient>
+    <filter id="glow">
+      <feGaussianBlur in="SourceAlpha" stdDeviation="2" result="b"/>
+      <feFlood flood-color="#ff6a00" flood-opacity="0.4"/>
+      <feComposite in2="b" operator="in" result="g"/>
+      <feMerge>
+        <feMergeNode in="g"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- CLI prompt "> _" rendered as a forge-hot brand mark -->
+  <g filter="url(#glow)">
+    <!-- The ">" chevron — like a CLI prompt, shaped like a hot iron brand -->
+    <path d="M8,12 L22,24 L8,36" fill="none"
+          stroke="url(#flame)" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <!-- The "_" underscore / cursor — a glowing ingot bar -->
+    <rect x="27" y="32" width="14" height="4.5" rx="1.5" fill="url(#flame)"/>
+  </g>
+</svg>
