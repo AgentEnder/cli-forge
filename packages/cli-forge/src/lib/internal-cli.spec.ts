@@ -2051,3 +2051,79 @@ describe('cliForge', () => {
     });
   });
 });
+
+describe('conflicts and implies with boolean options', () => {
+  afterEach(() => {
+    process.exitCode = undefined;
+    console.log = ORIGINAL_CONSOLE_LOG;
+  });
+
+  const run = async (
+    argv: string[],
+    configure: (app: ReturnType<typeof makeApp>) => ReturnType<typeof makeApp>,
+    aDefault?: boolean
+  ) => {
+    let handlerArgs: any;
+    const app = configure(makeApp(aDefault, (args) => (handlerArgs = args)));
+    try {
+      await app.forge(argv);
+    } catch (e: any) {
+      return {
+        errors: (e.errors ?? [e]).map((err: Error) => err.message),
+        handlerArgs,
+      };
+    }
+    return { errors: [] as string[], handlerArgs };
+  };
+
+  function makeApp(
+    aDefault: boolean | undefined,
+    handler: (args: any) => void
+  ) {
+    return cli('test', { handler })
+      .option('a', {
+        type: 'boolean',
+        ...(aDefault === undefined ? {} : { default: aDefault }),
+      })
+      .option('b', { type: 'string' });
+  }
+
+  const conflicting = (app: ReturnType<typeof makeApp>) =>
+    app.conflicts('a', 'b');
+  const implying = (app: ReturnType<typeof makeApp>) => app.implies('b', 'a');
+
+  it.each([
+    [['--b', 'x'], undefined, []],
+    [['--a', '--b', 'x'], undefined, ['Provided option a conflicts with b']],
+    [['--no-a', '--b', 'x'], undefined, []],
+    [['--a=false', '--b', 'x'], undefined, []],
+    [['--b', 'x'], false, []],
+    [['--a', '--b', 'x'], false, ['Provided option a conflicts with b']],
+  ] as const)(
+    'conflicts: %j with a default of %s',
+    async (argv, aDefault, expected) => {
+      const { errors, handlerArgs } = await run(
+        [...argv],
+        conflicting,
+        aDefault
+      );
+      for (const message of expected) {
+        expect(errors).toContain(message);
+      }
+      if (expected.length === 0) {
+        expect(errors).toEqual([]);
+        expect(handlerArgs.b).toBe('x');
+      }
+    }
+  );
+
+  it.each([
+    [['--b', 'x'], ['If b is set, a is required.']],
+    [['--b', 'x', '--no-a'], ['If b is set, a is required.']],
+    [['--b', 'x', '--a=false'], ['If b is set, a is required.']],
+    [['--b', 'x', '--a'], []],
+  ] as const)('implies: %j', async (argv, expected) => {
+    const { errors } = await run([...argv], implying);
+    expect(errors).toEqual(expected);
+  });
+});

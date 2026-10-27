@@ -725,6 +725,96 @@ describe('parser', () => {
     ).toThrowAggregateErrorContaining('Provided option foo conflicts with bar');
   });
 
+  describe('conflicts and implies with boolean options', () => {
+    const conflicting = (aConfig: { default?: boolean } = {}) =>
+      parser()
+        .option('a', { type: 'boolean', ...aConfig })
+        .option('b', { type: 'string' })
+        .conflicts('a', 'b');
+
+    const implying = (aConfig: { default?: boolean } = {}) =>
+      parser()
+        .option('a', { type: 'boolean', ...aConfig })
+        .option('b', { type: 'string' })
+        .implies('b', 'a');
+
+    it('allows the conflicting option alone', () => {
+      expect(conflicting().parse(['--b', 'x'])).toEqual({
+        b: 'x',
+        unmatched: [],
+      });
+    });
+
+    it('throws when the boolean is true alongside the conflicting option', () => {
+      expect(() =>
+        conflicting().parse(['--a', '--b', 'x'])
+      ).toThrowAggregateErrorContaining('Provided option a conflicts with b');
+    });
+
+    it('does not treat --no-a as conflicting', () => {
+      expect(conflicting().parse(['--no-a', '--b', 'x'])).toEqual({
+        a: false,
+        b: 'x',
+        unmatched: [],
+      });
+    });
+
+    it('does not treat --a=false as conflicting', () => {
+      expect(conflicting().parse(['--a=false', '--b', 'x'])).toEqual({
+        a: false,
+        b: 'x',
+        unmatched: [],
+      });
+    });
+
+    it('does not treat a false default as conflicting', () => {
+      expect(conflicting({ default: false }).parse(['--b', 'x'])).toEqual({
+        a: false,
+        b: 'x',
+        unmatched: [],
+      });
+    });
+
+    it('throws when a boolean with a false default is passed as true', () => {
+      expect(() =>
+        conflicting({ default: false }).parse(['--a', '--b', 'x'])
+      ).toThrowAggregateErrorContaining('Provided option a conflicts with b');
+    });
+
+    it('treats a defaulted non-boolean option as given', () => {
+      expect(() =>
+        parser()
+          .option('a', { type: 'string', default: 'x' })
+          .option('b', { type: 'string' })
+          .conflicts('a', 'b')
+          .parse(['--b', 'y'])
+      ).toThrowAggregateErrorContaining('Provided option a conflicts with b');
+    });
+
+    it('throws when an implied boolean is missing', () => {
+      expect(() =>
+        implying().parse(['--b', 'x'])
+      ).toThrowAggregateErrorContaining('If b is set, a is required.');
+    });
+
+    it('throws when an implied boolean is set to false', () => {
+      expect(() =>
+        implying().parse(['--b', 'x', '--no-a'])
+      ).toThrowAggregateErrorContaining('If b is set, a is required.');
+      expect(() =>
+        implying().parse(['--b', 'x', '--a=false'])
+      ).toThrowAggregateErrorContaining('If b is set, a is required.');
+    });
+
+    it('accepts an implied boolean set to true', () => {
+      expect(implying().parse(['--b', 'x', '--a'])).toEqual({
+        a: true,
+        b: 'x',
+        unmatched: [],
+      });
+    });
+  });
+
   it('should read negated boolean options', () => {
     expect(
       parser()

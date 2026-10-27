@@ -1008,10 +1008,19 @@ export class ArgvParser<
     const normalized = this.normalizeOptions(result);
     const partial = { ...normalized };
 
+    // A boolean set to `false` (`--no-x`, `--x=false`, `default: false`) is
+    // not "set" for the purposes of `conflicts` and `implies`.
+    const isSet = (key: string) =>
+      normalized[key] !== undefined &&
+      !(
+        this.configuredOptions[key as keyof TArgs]?.type === 'boolean' &&
+        normalized[key] === false
+      );
+
     const validateConflicts = (configuration: InternalOptionConfig) => {
       if (this.configuredConflicts[configuration.key]) {
         for (const conflict of this.configuredConflicts[configuration.key]) {
-          if (normalized[conflict] !== undefined) {
+          if (isSet(conflict)) {
             const error = new Error(
               `Provided option ${configuration.key} conflicts with ${conflict}`
             );
@@ -1027,7 +1036,7 @@ export class ArgvParser<
     const validateImplications = (configuration: InternalOptionConfig) => {
       if (this.configuredImplies[configuration.key]) {
         for (const imply of this.configuredImplies[configuration.key]) {
-          if (normalized[imply] === undefined) {
+          if (!isSet(imply)) {
             const error = new Error(
               `If ${configuration.key} is set, ${imply} is required.`
             );
@@ -1056,7 +1065,7 @@ export class ArgvParser<
             errors
           );
         }
-        if (normalized[configuration.key] !== undefined) {
+        if (isSet(configuration.key)) {
           validateConflicts(configuration);
           validateImplications(configuration);
         }
