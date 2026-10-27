@@ -68,6 +68,7 @@ type OneOfTopLevelFields = Pick<
   | 'env'
   | 'required'
   | 'hidden'
+  | 'configOnly'
   | 'group'
   | 'description'
   | 'deprecated'

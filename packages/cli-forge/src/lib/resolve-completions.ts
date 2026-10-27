@@ -34,6 +34,7 @@ function getDefaultCompletions(
   const seenOptionKeys = new Set<string>();
   for (const [key, config] of Object.entries(configuredOptions)) {
     if (config.hidden) continue;
+    if (config.configOnly) continue;
     if (config.positional) continue;
     // Deduplicate — the parser may register the same option under
     // both its camelCase key and dashed alias.
