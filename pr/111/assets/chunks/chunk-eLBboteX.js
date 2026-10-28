@@ -1,1 +1,0 @@
-import{o as e}from"./chunk-BBmhttnw.js";function t(){return e()?.data}export{t};
