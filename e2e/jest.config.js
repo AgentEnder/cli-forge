@@ -9,6 +9,9 @@ module.exports = {
       },
     ],
   },
+  // Nx loads its Cloud client bundle from .nx/cache during release. It is
+  // prebuilt JS and too large for ts-jest to transpile.
+  transformIgnorePatterns: ['/node_modules/', '/\\.nx/'],
   moduleFileExtensions: ['ts', 'js', 'html'],
   coverageDirectory: '../dist/coverage/e2ecore-e2e',
   testTimeout: 150000,
