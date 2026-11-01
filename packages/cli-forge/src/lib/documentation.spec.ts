@@ -32,6 +32,40 @@ describe('generateDocumentation', () => {
     expect(barDocs?.options?.['b']).toBeUndefined();
   });
 
+  it('should place configOnly options in configurationOptions, not options', () => {
+    const docs = generateDocumentation(
+      cli('test')
+        .option('verbose', { type: 'boolean' })
+        .option('logLevel', {
+          type: 'string',
+          configOnly: true,
+          description: 'Set the log level',
+        }) as unknown as InternalCLI
+    );
+
+    expect(docs.options['verbose']).toBeDefined();
+    expect(docs.options['logLevel']).toBeUndefined();
+
+    expect(docs.configurationOptions['logLevel']).toBeDefined();
+    expect(docs.configurationOptions['logLevel'].description).toBe(
+      'Set the log level'
+    );
+  });
+
+  it('should not include hidden configOnly options in configurationOptions', () => {
+    const docs = generateDocumentation(
+      cli('test')
+        .option('secret', {
+          type: 'string',
+          configOnly: true,
+          hidden: true,
+        }) as unknown as InternalCLI
+    );
+
+    expect(docs.options['secret']).toBeUndefined();
+    expect(docs.configurationOptions['secret']).toBeUndefined();
+  });
+
   it('should not execute command handlers', () => {
     let ran = false;
     generateDocumentation(

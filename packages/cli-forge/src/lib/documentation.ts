@@ -16,6 +16,11 @@ export type Documentation = {
   usage: string;
   examples: string[];
   options: Readonly<Record<string, NormalizedOptionConfig>>;
+  /**
+   * Options marked as `configOnly: true`. These are shown in a separate
+   * "Configuration Options" section rather than the main options list.
+   */
+  configurationOptions: Readonly<Record<string, NormalizedOptionConfig>>;
   positionals: readonly Readonly<NormalizedOptionConfig>[];
   groupedOptions: Array<{
     label: string;
@@ -121,9 +126,18 @@ export function generateDocumentation(
   const envInfo = parser.getEnvInfo();
   const options: Record<string, NormalizedOptionConfig> = Object.fromEntries(
     Object.entries(parser.configuredOptions)
-      .filter(([, c]) => !c.hidden)
+      .filter(([, c]) => !c.hidden && !c.configOnly)
       .map(([k, v]) => [k, normalizeOptionConfigForDocumentation(v, k, envInfo)])
   );
+  const configurationOptions: Record<string, NormalizedOptionConfig> =
+    Object.fromEntries(
+      Object.entries(parser.configuredOptions)
+        .filter(([, c]) => !c.hidden && c.configOnly)
+        .map(([k, v]) => [
+          k,
+          normalizeOptionConfigForDocumentation(v, k, envInfo),
+        ])
+    );
   const positionals = parser.configuredPositionals;
   for (const positional of positionals) {
     delete options[positional.key];
@@ -196,6 +210,7 @@ export function generateDocumentation(
     examples: cli.configuration?.examples ?? [],
     groupedOptions,
     options,
+    configurationOptions,
     positionals,
     subcommands,
   };

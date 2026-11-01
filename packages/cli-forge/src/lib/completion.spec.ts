@@ -60,6 +60,20 @@ describe('shell completion', () => {
     expect(output).toContain('public');
   });
 
+  it('should exclude configOnly options from completions', async () => {
+    const mock = mockConsoleLog();
+    await cli('test')
+      .completion()
+      .option('verbose', { type: 'boolean' })
+      .option('logLevel', { type: 'string', configOnly: true })
+      .command('$0', { handler: () => {} })
+      .forge(['--get-completions']);
+    mock.restore();
+    const output = mock.getOutput();
+    expect(output).toContain('--verbose');
+    expect(output).not.toContain('--logLevel');
+  });
+
   it('should return choices when completing an option value', async () => {
     const mock = mockConsoleLog();
     await cli('test')

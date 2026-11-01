@@ -212,6 +212,41 @@ function generateLlmsTxtContent(
     }
   }
 
+  // Configuration options
+  const configOptionEntries = Object.entries(docs.configurationOptions);
+  if (configOptionEntries.length > 0) {
+    lines.push(`${indent}Configuration Options:`);
+    for (const [, opt] of configOptionEntries) {
+      const typeStr = formatOptionType(opt);
+      const aliasStr = opt.alias?.length
+        ? ` (aliases: ${opt.alias
+            .map((a) => (a.length === 1 ? `-${a}` : `--${a}`))
+            .join(', ')})`
+        : '';
+      const reqStr =
+        opt.required && opt.default === undefined ? ' [required]' : '';
+      const deprecatedStr = opt.deprecated ? ' [deprecated]' : '';
+      lines.push(
+        `${indent}  --${opt.key}${aliasStr} <${typeStr}>${reqStr}${deprecatedStr}`
+      );
+      if (opt.description) {
+        lines.push(`${indent}    ${opt.description}`);
+      }
+      if (opt.default !== undefined) {
+        lines.push(`${indent}    Default: ${JSON.stringify(opt.default)}`);
+      }
+      if ('choices' in opt && opt.choices) {
+        const choicesList =
+          typeof opt.choices === 'function' ? opt.choices() : opt.choices;
+        lines.push(`${indent}    Valid values: ${choicesList.join(', ')}`);
+      }
+      if ('resolvedEnvKey' in opt && opt.resolvedEnvKey) {
+        lines.push(`${indent}    Env var: ${opt.resolvedEnvKey}`);
+      }
+    }
+    lines.push('');
+  }
+
   // Configuration sources
   if (docs.configurationSources && docs.configurationSources.length > 0) {
     lines.push(`${indent}Configuration:`);
@@ -292,6 +327,11 @@ async function generateMarkdownForSingleCommand(
             group.label,
             md
           )
+        ),
+        getFlagArgsFragment(
+          docs.configurationOptions,
+          'Configuration Options',
+          md
         ),
         getConfigurationSourcesLink(
           docs.configurationSources,
