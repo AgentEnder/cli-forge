@@ -1,12 +1,50 @@
 import { getFileSystemProvider } from '../environment-provider.js';
-import { ConfigurationProvider, ConfigurationDocSection } from './configuration-loader.js';
+import {
+  ConfigurationProvider,
+  ConfigurationDocSection,
+  DefaultConfig,
+} from './configuration-loader.js';
+import { toFilePath } from './utils.js';
+
+/**
+ * Returns true when an object has no own enumerable properties. Used to
+ * detect "nothing resolved from cwd" in {@link AggregateConfigProvider.updateConfig}
+ * so the updater form can fall back to reading the default-path file.
+ */
+function isEmptyObject(value: unknown): boolean {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    Object.keys(value as object).length === 0
+  );
+}
+
+/**
+ * A leaf ConfigurationProvider with any location type.
+ */
+type AnyProvider<T> = ConfigurationProvider<T, any>;
 
 /**
  * A provider child is either a single-file ConfigurationProvider or a nested AggregateConfigProvider.
  */
-export type AnyConfigProvider<T> =
-  | ConfigurationProvider<T>
-  | AggregateConfigProvider<T>;
+export type AnyConfigProvider<T> = AnyProvider<T> | AggregateConfigProvider<T>;
+
+/**
+ * A config registration can be a single provider or multiple providers.
+ * Parser/CLI registration APIs normalize arrays into separate provider entries.
+ */
+export type ConfigProviderRegistration<T> =
+  | AnyConfigProvider<T>
+  | readonly AnyConfigProvider<T>[];
+
+/**
+ * A provider entry pairs a provider with optional framework-level metadata.
+ */
+export type ProviderEntry<T> = {
+  provider: AnyConfigProvider<T>;
+  /** Framework-level default path for when no config file exists on disk. */
+  default?: DefaultConfig<any>;
+};
 
 /**
  * An updater function that receives the current merged configuration
@@ -24,13 +62,24 @@ export type ConfigUpdater<T> = (current: T) => void;
  * it delegates resolution to its children.
  */
 export class AggregateConfigProvider<T> {
-  readonly providers: AnyConfigProvider<T>[];
+  /**
+   * The list of child providers, derived from {@link entries}.
+   * Read-only to prevent desync with the entries array.
+   */
+  get providers(): ReadonlyArray<AnyConfigProvider<T>> {
+    return this.entries.map((e) => e.provider);
+  }
+
+  /**
+   * Internal entries storing providers with optional framework metadata.
+   */
+  private entries: ProviderEntry<T>[];
 
   /**
    * After {@link load} is called, maps each top-level key to the leaf
    * {@link ConfigurationProvider} that supplied it.
    */
-  provenance: Map<string, ConfigurationProvider<T>> = new Map();
+  provenance: Map<string, AnyProvider<T>> = new Map();
 
   /**
    * The last configuration root passed to {@link load}, stored for
@@ -38,8 +87,21 @@ export class AggregateConfigProvider<T> {
    */
   private lastConfigurationRoot?: string;
 
-  constructor(providers: AnyConfigProvider<T>[]) {
-    this.providers = providers;
+  constructor(providers: (AnyConfigProvider<T> | ProviderEntry<T>)[]) {
+    this.entries = providers.map((p) =>
+      isProviderEntry(p) ? p : { provider: p }
+    );
+  }
+
+  /**
+   * Adds a provider with optional framework metadata.
+   */
+  addProvider(
+    provider: AnyConfigProvider<T>,
+    metadata?: { default?: DefaultConfig<any> }
+  ) {
+    const entry: ProviderEntry<T> = { provider, ...metadata };
+    this.entries.push(entry);
   }
 
   /**
@@ -52,81 +114,112 @@ export class AggregateConfigProvider<T> {
    */
   load(
     configurationRoot: string,
-    visited?: Map<ConfigurationProvider<T>, Set<string>>
+    visited?: Map<AnyProvider<T>, Set<string>>
   ): T {
     const visitedMap =
-      visited ?? new Map<ConfigurationProvider<T>, Set<string>>();
+      visited ?? new Map<AnyProvider<T>, Set<string>>();
     this.provenance = new Map();
     this.lastConfigurationRoot = configurationRoot;
 
-    const combined: T = {} as T;
+    // Phase 1: Load each provider's own config, separating extends references.
+    // Aggregate children are loaded recursively (they handle extends internally).
+    const results = new Map<
+      AnyConfigProvider<T>,
+      {
+        own: Partial<T>;
+        extendsRef?: string;
+        childProvenance?: Map<string, AnyProvider<T>>;
+      }
+    >();
 
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {
         const childResult = provider.load(configurationRoot, visitedMap);
-        for (const key of Object.keys(childResult as any)) {
-          if (!(key in (combined as any))) {
-            (combined as any)[key] = (childResult as any)[key];
-            const childOwner = provider.provenance.get(key);
-            if (childOwner) {
-              this.provenance.set(key, childOwner);
-            }
-          }
-        }
+        results.set(provider, {
+          own: childResult,
+          childProvenance: provider.provenance,
+        });
       } else {
         const filename = provider.resolve(configurationRoot);
         if (filename) {
+          const filenameStr = toFilePath(filename);
           const loaderVisited = visitedMap.get(provider) ?? new Set<string>();
-          if (loaderVisited.has(filename)) {
+          if (loaderVisited.has(filenameStr)) {
             throw new Error(
-              `Circular reference detected in configuration file: ${filename}. This is likely caused by an "extends" property pointing to a directory which doesn't contain a configuration file.`
+              `Circular reference detected in configuration file: ${filenameStr}. This is likely caused by an "extends" property pointing to a directory which doesn't contain a configuration file.`
             );
           }
-          loaderVisited.add(filename);
+          loaderVisited.add(filenameStr);
           visitedMap.set(provider, loaderVisited);
 
-          const loaded = this.loadWithExtends(
-            filename,
-            provider,
-            configurationRoot,
-            visitedMap
-          );
+          const loaded = provider.load(filename);
+          const { extends: extendsRef, ...own } = loaded as any;
+          results.set(provider, { own, extendsRef });
+        }
+      }
+    }
 
-          for (const key of Object.keys(loaded as any)) {
-            if (!(key in (combined as any))) {
-              (combined as any)[key] = (loaded as any)[key];
-              this.provenance.set(key, provider);
+    // Phase 2: Merge explicit values in registration order (first-wins).
+    // Explicit values from ANY provider beat extends-derived values.
+    let combined: T = {} as T;
+
+    for (const provider of this.providers) {
+      const result = results.get(provider);
+      if (!result) continue;
+
+      for (const key of Object.keys(result.own as any)) {
+        if (!(key in (combined as any))) {
+          (combined as any)[key] = (result.own as any)[key];
+          if (
+            isAggregateConfigProvider(provider) &&
+            result.childProvenance
+          ) {
+            const childOwner = result.childProvenance.get(key);
+            if (childOwner) {
+              this.provenance.set(key, childOwner);
             }
+          } else {
+            this.provenance.set(
+              key,
+              provider as AnyProvider<T>
+            );
           }
         }
       }
     }
-    return combined;
-  }
 
-  private loadWithExtends(
-    filename: string,
-    provider: ConfigurationProvider<T>,
-    configurationRoot: string,
-    visited: Map<ConfigurationProvider<T>, Set<string>>
-  ): T {
-    const loaded = provider.load(filename);
-    if (loaded.extends) {
-      const fs = getFileSystemProvider();
-      const extendsRoot = loaded.extends.startsWith('.')
-        ? fs.join(configurationRoot, loaded.extends)
-        : loaded.extends;
-      const extendsAggregate = new AggregateConfigProvider<T>(this.providers);
-      const extended = extendsAggregate.load(extendsRoot, visited);
-      const { extends: _, ...rest } = loaded as any;
-      return { ...extended, ...rest } as T;
+    // Phase 3: Resolve extends chains and merge base values underneath.
+    // These only fill keys not already set by any explicit value.
+    const fs = getFileSystemProvider();
+    for (const provider of this.providers) {
+      if (isAggregateConfigProvider(provider)) continue;
+      const result = results.get(provider);
+      if (!result?.extendsRef) continue;
+
+      const extendsRoot = result.extendsRef.startsWith('.')
+        ? fs.join(configurationRoot, result.extendsRef)
+        : result.extendsRef;
+      const extendsAggregate = new AggregateConfigProvider<T>(this.entries);
+      const extended = extendsAggregate.load(extendsRoot, visitedMap);
+      for (const key of Object.keys(extended as any)) {
+        if (!(key in (combined as any))) {
+          (combined as any)[key] = (extended as any)[key];
+          this.provenance.set(
+            key,
+            provider as AnyProvider<T>
+          );
+        }
+      }
     }
-    return loaded;
+
+    return combined;
   }
 
   /**
    * Updates configuration by routing each key to its owning provider.
    * Keys not found in provenance are routed to the first resolving provider.
+   * If no provider resolves, attempts to use a provider with a `default` config
+   * to create a new configuration file.
    *
    * @param values Partial configuration to write.
    */
@@ -144,20 +237,34 @@ export class AggregateConfigProvider<T> {
   ): Promise<void> {
     let values: Partial<T>;
     if (typeof valuesOrUpdater === 'function') {
-      values = this.trackUpdates(valuesOrUpdater);
+      values = await this.trackUpdates(valuesOrUpdater);
     } else {
       values = valuesOrUpdater;
     }
 
     // Group keys by their owning provider
-    const updatesByProvider = new Map<ConfigurationProvider<T>, Partial<T>>();
+    const updatesByProvider = new Map<
+      AnyProvider<T>,
+      { partial: Partial<T>; targetPath?: string | URL }
+    >();
 
     // Find the first leaf provider that resolves (fallback for new keys)
-    let fallbackProvider: ConfigurationProvider<T> | undefined;
+    let fallbackProvider: AnyProvider<T> | undefined;
+    let fallbackTargetPath: (string | URL) | undefined;
+
     if (this.lastConfigurationRoot) {
       fallbackProvider = this.findFirstResolvingProvider(
         this.lastConfigurationRoot
       );
+    }
+
+    // If no provider resolves, try to find one with a default
+    if (!fallbackProvider) {
+      const defaultResult = await this.resolveDefaultProvider();
+      if (defaultResult) {
+        fallbackProvider = defaultResult.provider;
+        fallbackTargetPath = defaultResult.targetPath;
+      }
     }
 
     for (const key of Object.keys(values) as (keyof T & string)[]) {
@@ -173,16 +280,25 @@ export class AggregateConfigProvider<T> {
           `Cannot update config key "${key}": the owning provider does not implement updateConfig.`
         );
       }
-      const existing = updatesByProvider.get(owner) ?? ({} as Partial<T>);
-      (existing as any)[key] = values[key];
+      const existing = updatesByProvider.get(owner) ?? {
+        partial: {} as Partial<T>,
+      };
+      (existing.partial as any)[key] = values[key];
+      // Attach targetPath only for the fallback provider when using default
+      if (owner === fallbackProvider && fallbackTargetPath) {
+        existing.targetPath = fallbackTargetPath;
+      }
       updatesByProvider.set(owner, existing);
     }
 
     // Call each provider's updateConfig with an updater that merges the partial update
     const promises: Promise<void>[] = [];
-    for (const [provider, partial] of updatesByProvider) {
+    for (const [provider, { partial, targetPath }] of updatesByProvider) {
       promises.push(
-        provider.updateConfig!((current) => ({ ...current, ...partial }))
+        provider.updateConfig!(
+          (current) => ({ ...(current ?? ({} as T)), ...partial }),
+          targetPath ? { targetPath } : undefined
+        )
       );
     }
     await Promise.all(promises);
@@ -191,15 +307,57 @@ export class AggregateConfigProvider<T> {
   /**
    * Runs an updater function against a proxy of the merged config,
    * returning only the properties that were set during the callback.
+   *
+   * The proxy target is computed from:
+   *
+   * 1. The merged result of {@link load} against the current configuration
+   *    root. This sees any provider whose `resolve()` finds a file.
+   * 2. As a fallback, the default-path file of the first provider with a
+   *    `default` option, if that file exists on disk. This allows
+   *    read-modify-write updaters to see the most recently persisted
+   *    state even when the file lives outside the configuration root
+   *    (e.g. a user-level config in `~/.config/my-tool/config.json`).
+   *
+   * Without (2), a sequence like `init` → write via default path →
+   * later `app.updateConfig(config => config.count + 1)` would always
+   * see `count === undefined` because `load(cwd)` never touches the
+   * default-path file.
    */
-  private trackUpdates(updater: ConfigUpdater<T>): Partial<T> {
+  private async trackUpdates(
+    updater: ConfigUpdater<T>
+  ): Promise<Partial<T>> {
     if (!this.lastConfigurationRoot) {
       throw new Error(
         'Cannot use updater function: config has not been loaded yet. Call load() first.'
       );
     }
     // Re-load to get the current merged config
-    const current = this.load(this.lastConfigurationRoot);
+    let current = this.load(this.lastConfigurationRoot);
+
+    // Nothing resolved from cwd — try the default-path file as a fallback.
+    // This keeps updater-form reads consistent with updateConfig writes
+    // when the only on-disk config lives at a framework-managed default.
+    if (isEmptyObject(current) && this.provenance.size === 0) {
+      const defaultResult = await this.resolveDefaultProvider();
+      if (defaultResult) {
+        const fs = getFileSystemProvider();
+        const path = toFilePath(defaultResult.targetPath);
+        if (fs.existsSync(path)) {
+          try {
+            const loaded = defaultResult.provider.load(path);
+            const { extends: _extendsIgnored, ...rest } = (loaded ?? {}) as {
+              extends?: string;
+            } & T;
+            current = rest as T;
+          } catch {
+            // Failed to read the default-path file — leave `current` as the
+            // empty object that load() returned. The updater will see {}
+            // and can fall back to its own defaults.
+          }
+        }
+      }
+    }
+
     const changes: Partial<T> = {} as Partial<T>;
     const proxy = new Proxy(current as object, {
       set(_target, prop, value) {
@@ -214,15 +372,65 @@ export class AggregateConfigProvider<T> {
     return changes;
   }
 
+  /**
+   * Finds the first leaf provider that resolves a file in the given root.
+   */
   private findFirstResolvingProvider(
     configurationRoot: string
-  ): ConfigurationProvider<T> | undefined {
+  ): AnyProvider<T> | undefined {
     for (const provider of this.providers) {
       if (isAggregateConfigProvider(provider)) {
         const found = provider.findFirstResolvingProvider(configurationRoot);
         if (found) return found;
       } else {
         if (provider.resolve(configurationRoot)) return provider;
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Iterates entries looking for the first provider with a `default` config
+   * that resolves to a non-null path. Returns the provider and resolved path.
+   */
+  private async resolveDefaultProvider(): Promise<
+    | { provider: AnyProvider<T>; targetPath: string | URL }
+    | undefined
+  > {
+    for (const entry of this.entries) {
+      if (entry.default == null) continue;
+
+      const provider = isAggregateConfigProvider(entry.provider)
+        ? // For aggregate entries with a default, find the first leaf provider
+          this.findFirstLeafProvider(entry.provider)
+        : entry.provider;
+
+      if (!provider || !provider.updateConfig) continue;
+
+      const resolved =
+        typeof entry.default === 'function'
+          ? await entry.default()
+          : entry.default;
+
+      if (resolved != null) {
+        return { provider, targetPath: resolved };
+      }
+    }
+    return undefined;
+  }
+
+  /**
+   * Finds the first non-aggregate leaf provider in a nested structure.
+   */
+  private findFirstLeafProvider(
+    aggregate: AggregateConfigProvider<T>
+  ): AnyProvider<T> | undefined {
+    for (const provider of aggregate.providers) {
+      if (isAggregateConfigProvider(provider)) {
+        const found = this.findFirstLeafProvider(provider);
+        if (found) return found;
+      } else {
+        return provider;
       }
     }
     return undefined;
@@ -251,4 +459,18 @@ export function isAggregateConfigProvider<T>(
   provider: AnyConfigProvider<T>
 ): provider is AggregateConfigProvider<T> {
   return provider instanceof AggregateConfigProvider;
+}
+
+/**
+ * Type guard to distinguish a ProviderEntry from a bare provider.
+ */
+function isProviderEntry<T>(
+  value: AnyConfigProvider<T> | ProviderEntry<T>
+): value is ProviderEntry<T> {
+  return (
+    typeof value === 'object' &&
+    value !== null &&
+    'provider' in value &&
+    !(value instanceof AggregateConfigProvider)
+  );
 }

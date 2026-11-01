@@ -17,6 +17,7 @@ export type {
 } from './lib/completion-types';
 export { completionHelpers } from './lib/completion-types';
 export { ConfigurationProviders } from './lib/configuration-providers';
+export { ConfigurationFiles } from '@cli-forge/parser';
 export type { LocalizationDictionary, LocalizationFunction } from '@cli-forge/parser';
 export type { ProviderConfig, GlobalProviderConfig } from './lib/public-api';
 export type {
