@@ -78,5 +78,7 @@
   "analytics": true,
   "migrate": {
     "agentic": "claude-code"
-  }
+  },
+  "nxCloudId": "6af227e9103e76a1deb2f213",
+  "nxCloudUrl": "https://staging.nx.app"
 }
